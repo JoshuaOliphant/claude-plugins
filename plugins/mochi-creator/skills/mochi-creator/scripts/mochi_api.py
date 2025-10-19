@@ -21,6 +21,309 @@ class MochiAPIError(Exception):
     pass
 
 
+class PromptQualityError(Exception):
+    """Exception raised when a prompt fails quality validation."""
+    pass
+
+
+def validate_prompt_quality(question: str, answer: str, strict: bool = False) -> Dict[str, Any]:
+    """
+    Validate a prompt against the 5 properties of effective prompts.
+
+    Based on Andy Matuschak's research on spaced repetition prompt design.
+
+    Args:
+        question: The question/front of the card
+        answer: The answer/back of the card
+        strict: If True, raise exception on validation failure
+
+    Returns:
+        Dict with 'valid' (bool), 'issues' (list), and 'suggestions' (list)
+
+    Raises:
+        PromptQualityError: If strict=True and validation fails
+    """
+    issues = []
+    suggestions = []
+
+    # Check 1: Focused (one detail at a time)
+    if " and " in question or len(answer.split(",")) > 2:
+        issues.append("Prompt appears unfocused (tests multiple details)")
+        suggestions.append("Break into separate cards, one per detail")
+
+    # Check 2: Precise (specific, not vague)
+    vague_words = ["interesting", "important", "good", "bad", "tell me about", "what about"]
+    if any(word in question.lower() for word in vague_words):
+        issues.append("Question uses vague language")
+        suggestions.append("Be specific about what you're asking for")
+
+    # Check 3: Consistent (same answer each time)
+    variable_prompts = ["give an example", "name one", "describe a"]
+    if any(phrase in question.lower() for phrase in variable_prompts):
+        # This is OK for creative prompts, but warn
+        suggestions.append("Note: This prompt may produce variable answers (advanced technique)")
+
+    # Check 4: Binary questions (usually poor)
+    if question.strip().startswith(("Is ", "Does ", "Can ", "Will ", "Do ", "Are ")):
+        issues.append("Binary question (yes/no) - produces shallow understanding")
+        suggestions.append("Rephrase as open-ended question starting with What/Why/How/When")
+
+    # Check 5: Pattern-matchable (too long, answerable by syntax)
+    if len(question) > 200:
+        issues.append("Question is very long - may be answerable by pattern matching")
+        suggestions.append("Keep questions short and simple")
+
+    # Check 6: Trivial (too easy, no retrieval)
+    trivial_indicators = [
+        "what does", "is", "acronym", "stands for",
+        "true or false", "correct"
+    ]
+    if any(indicator in question.lower() for indicator in trivial_indicators) and len(answer) < 20:
+        suggestions.append("Verify this requires memory retrieval, not trivial knowledge")
+
+    valid = len(issues) == 0
+
+    result = {
+        "valid": valid,
+        "issues": issues,
+        "suggestions": suggestions
+    }
+
+    if strict and not valid:
+        error_msg = "Prompt quality validation failed:\n"
+        error_msg += "\n".join(f"  - {issue}" for issue in issues)
+        error_msg += "\n\nSuggestions:\n"
+        error_msg += "\n".join(f"  - {suggestion}" for suggestion in suggestions)
+        raise PromptQualityError(error_msg)
+
+    return result
+
+
+def create_conceptual_lens_cards(
+    api: "MochiAPI",
+    concept: str,
+    deck_id: str,
+    lenses: Optional[Dict[str, str]] = None,
+    base_tags: Optional[List[str]] = None
+) -> List[Dict]:
+    """
+    Create multiple cards for a concept using the 5 conceptual lenses approach.
+
+    This creates robust understanding by examining a concept from multiple angles:
+    - Attributes: What's always/sometimes/never true?
+    - Similarities: How does it relate to adjacent concepts?
+    - Parts/Wholes: Examples, sub-concepts, categories
+    - Causes/Effects: What does it do? When is it used?
+    - Significance: Why does it matter personally?
+
+    Args:
+        api: MochiAPI instance
+        concept: The concept to create cards about
+        deck_id: Target deck ID
+        lenses: Dict mapping lens names to specific prompts (optional - will use defaults)
+        base_tags: Common tags for all cards (concept name will be added automatically)
+
+    Returns:
+        List of created card objects
+
+    Example:
+        >>> api = MochiAPI()
+        >>> cards = create_conceptual_lens_cards(
+        ...     api,
+        ...     concept="dependency injection",
+        ...     deck_id="deck123",
+        ...     lenses={
+        ...         "attributes": "Dependencies are provided from outside",
+        ...         "similarities": "Different from service locator (push vs pull)",
+        ...         "parts": "Pass DB connection to constructor instead of creating it",
+        ...         "causes": "Makes code testable by allowing mock dependencies",
+        ...         "significance": "Essential for writing testable FastAPI endpoints"
+        ...     }
+        ... )
+    """
+    if base_tags is None:
+        base_tags = []
+
+    # Add concept as tag
+    concept_tag = concept.lower().replace(" ", "-")
+    all_tags = base_tags + [concept_tag]
+
+    # Default lens questions if not provided
+    default_questions = {
+        "attributes": f"What is the core attribute of {concept}?",
+        "similarities": f"How does {concept} differ from similar concepts?",
+        "parts": f"Give a concrete example of {concept}",
+        "causes": f"What problem does {concept} solve?",
+        "significance": f"When would you use {concept} in your work?"
+    }
+
+    cards = []
+
+    for lens_name, question in default_questions.items():
+        # Use custom lens content if provided, otherwise skip if not in lenses
+        if lenses and lens_name not in lenses:
+            continue
+
+        answer = lenses.get(lens_name, "") if lenses else ""
+
+        if not answer:
+            # Skip if no answer provided
+            continue
+
+        # Create the card
+        content = f"# {question}\n---\n{answer}"
+
+        card = api.create_card(
+            content=content,
+            deck_id=deck_id,
+            manual_tags=all_tags + [lens_name]
+        )
+        cards.append(card)
+
+    return cards
+
+
+def break_into_atomic_prompts(complex_prompt: str, answer: str) -> List[Dict[str, str]]:
+    """
+    Suggest how to break a complex prompt into atomic, focused prompts.
+
+    This is a heuristic function that identifies common patterns of unfocused prompts.
+
+    Args:
+        complex_prompt: The unfocused question
+        answer: The complex answer
+
+    Returns:
+        List of dicts with 'question' and 'answer' keys, or empty list if can't break down
+
+    Example:
+        >>> prompts = break_into_atomic_prompts(
+        ...     "What are Python decorators and what syntax do they use?",
+        ...     "Functions that modify behavior, use @ syntax"
+        ... )
+        >>> len(prompts)
+        2
+    """
+    suggestions = []
+
+    # Pattern 1: "What are X and Y" or "What do X and Y"
+    if " and " in complex_prompt:
+        parts = complex_prompt.split(" and ")
+        if len(parts) == 2:
+            # Try to split answer as well
+            answer_parts = answer.split(",")
+            if len(answer_parts) >= 2:
+                suggestions.append({
+                    "question": parts[0].strip() + "?",
+                    "answer": answer_parts[0].strip()
+                })
+                suggestions.append({
+                    "question": "What " + parts[1].strip(),
+                    "answer": ", ".join(answer_parts[1:]).strip()
+                })
+
+    # Pattern 2: Multiple comma-separated items in answer
+    if "," in answer:
+        items = [item.strip() for item in answer.split(",")]
+        if len(items) > 2:
+            # Suggest creating one card per item
+            for item in items:
+                suggestions.append({
+                    "question": f"{complex_prompt} (focus on {item.split()[0]})",
+                    "answer": item,
+                    "note": "Break into individual cards, one per item"
+                })
+
+    return suggestions
+
+
+def create_procedural_cards(
+    api: "MochiAPI",
+    procedure_name: str,
+    deck_id: str,
+    transitions: Optional[List[Dict[str, str]]] = None,
+    rationales: Optional[List[Dict[str, str]]] = None,
+    timings: Optional[List[Dict[str, str]]] = None,
+    base_tags: Optional[List[str]] = None
+) -> List[Dict]:
+    """
+    Create cards for procedural knowledge focusing on transitions, rationales, and timing.
+
+    Avoids rote "step 1, step 2" memorization in favor of understanding.
+
+    Args:
+        api: MochiAPI instance
+        procedure_name: Name of the procedure/process
+        deck_id: Target deck ID
+        transitions: List of dicts with 'condition' and 'next_step'
+        rationales: List of dicts with 'action' and 'reason'
+        timings: List of dicts with 'phase' and 'duration'
+        base_tags: Common tags for all cards
+
+    Returns:
+        List of created card objects
+
+    Example:
+        >>> cards = create_procedural_cards(
+        ...     api,
+        ...     procedure_name="sourdough bread making",
+        ...     deck_id="deck123",
+        ...     transitions=[
+        ...         {"condition": "flour is fully hydrated", "next_step": "add salt"}
+        ...     ],
+        ...     rationales=[
+        ...         {"action": "autolyse before adding salt",
+        ...          "reason": "salt inhibits gluten development"}
+        ...     ],
+        ...     timings=[
+        ...         {"phase": "bulk fermentation", "duration": "4-6 hours at room temp"}
+        ...     ]
+        ... )
+    """
+    if base_tags is None:
+        base_tags = []
+
+    procedure_tag = procedure_name.lower().replace(" ", "-")
+    all_tags = base_tags + [procedure_tag]
+
+    cards = []
+
+    # Create transition cards
+    if transitions:
+        for trans in transitions:
+            content = f"# When do you know it's time to {trans['next_step']} in {procedure_name}?\n---\n{trans['condition']}"
+            card = api.create_card(
+                content=content,
+                deck_id=deck_id,
+                manual_tags=all_tags + ["transitions"]
+            )
+            cards.append(card)
+
+    # Create rationale cards
+    if rationales:
+        for rat in rationales:
+            content = f"# Why do you {rat['action']} in {procedure_name}?\n---\n{rat['reason']}"
+            card = api.create_card(
+                content=content,
+                deck_id=deck_id,
+                manual_tags=all_tags + ["rationale"]
+            )
+            cards.append(card)
+
+    # Create timing cards
+    if timings:
+        for timing in timings:
+            content = f"# How long does {timing['phase']} take in {procedure_name}?\n---\n{timing['duration']}"
+            card = api.create_card(
+                content=content,
+                deck_id=deck_id,
+                manual_tags=all_tags + ["timing"]
+            )
+            cards.append(card)
+
+    return cards
+
+
 class MochiAPI:
     """Client for interacting with the Mochi.cards API."""
 
