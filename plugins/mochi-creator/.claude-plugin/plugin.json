@@ -1,0 +1,21 @@
+{
+  "name": "mochi-creator",
+  "description": "Create and manage Mochi.cards flashcards, decks, and templates. Enables automated card creation from conversations, documents, and structured data using the Mochi API.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Joshua Oliphant"
+  },
+  "homepage": "https://github.com/joshuaoliphant/claude-plugins",
+  "repository": "https://github.com/joshuaoliphant/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "mochi",
+    "flashcards",
+    "spaced-repetition",
+    "learning",
+    "memorization",
+    "study",
+    "anki",
+    "cards"
+  ]
+}

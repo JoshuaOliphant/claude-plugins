@@ -1,0 +1,25 @@
+{
+  "name": "laboeuf-plugins",
+  "owner": {
+    "name": "Joshua Oliphant",
+    "email": "joshua@example.com"
+  },
+  "metadata": {
+    "description": "Claude Code plugins by La Boeuf for productivity and learning workflows",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "mochi-creator",
+      "source": "./plugins/mochi-creator",
+      "description": "Create and manage Mochi.cards flashcards, decks, and templates via API",
+      "version": "1.0.0",
+      "author": {
+        "name": "Joshua Oliphant"
+      },
+      "keywords": ["mochi", "flashcards", "spaced-repetition", "learning"],
+      "category": "productivity",
+      "license": "MIT"
+    }
+  ]
+}
