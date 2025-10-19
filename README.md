@@ -26,7 +26,7 @@ Create and manage Mochi.cards flashcards, decks, and templates via API.
 /plugin marketplace add joshuaoliphant/claude-plugins
 
 # Install the plugin
-/plugin install mochi-creator@laboeuf-plugins
+/plugin install mochi-creator@oliphant-plugins
 ```
 
 **Setup:**
