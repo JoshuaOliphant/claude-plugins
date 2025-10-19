@@ -5,7 +5,7 @@
     "email": "joshua@example.com"
   },
   "metadata": {
-    "description": "Claude Code plugins by La Boeuf for productivity and learning workflows",
+    "description": "Claude Code plugins by Joshua Oliphant for productivity and learning workflows",
     "version": "1.0.0"
   },
   "plugins": [
