@@ -20,6 +20,18 @@
       "keywords": ["mochi", "flashcards", "spaced-repetition", "learning"],
       "category": "productivity",
       "license": "MIT"
+    },
+    {
+      "name": "adw-bootstrap",
+      "source": "./plugins/adw-bootstrap",
+      "description": "Bootstrap AI Developer Workflows (ADWs) infrastructure enabling programmatic agent orchestration",
+      "version": "1.0.0",
+      "author": {
+        "name": "Joshua Oliphant"
+      },
+      "keywords": ["adw", "agent-orchestration", "workflow-automation", "infrastructure", "agentic-coding"],
+      "category": "development",
+      "license": "MIT"
     }
   ]
 }

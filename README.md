@@ -81,6 +81,83 @@ This plugin is built on cognitive science research including:
 
 The 5 properties framework, knowledge-type patterns, and quality validation are all grounded in this research to ensure cards that actually work for long-term retention.
 
+### adw-bootstrap
+
+**Version 1.0.0** - Bootstrap AI Developer Workflows (ADWs) infrastructure in any codebase enabling programmatic agent orchestration.
+
+**What It Does:**
+Transforms regular projects into ones where AI agents can be invoked programmatically to plan, implement, test, and deploy features. Uses intelligent adaptation to fit any project structure, language, or framework.
+
+**Core Features:**
+- **Programmatic Agent Execution**: Execute prompts via subprocess or SDK
+- **Progressive Enhancement**: Three setup phases (Minimal → Enhanced → Scaled)
+- **Intelligent Adaptation**: Analyzes target project and adapts patterns to fit conventions
+- **Upgrade Support**: Safely upgrade existing setups to higher phases with automatic backups
+- **Reusable Templates**: Slash command templates for common workflows
+- **Multi-Phase Workflows**: Orchestrate plan → implement → test → deploy sequences
+- **Structured Observability**: Agent outputs tracked in `agents/{id}/` directories
+- **Three Model Support**: Haiku (fast), Sonnet (balanced), Opus (max intelligence)
+- **Git Worktree Isolation**: Scaled phase includes isolated development environments
+- **State Management**: Persistent state across workflow phases
+- **GitHub Integration**: Issue tracking, PR creation, automated workflows
+
+**Setup Phases:**
+
+**Minimal** (Always installed):
+- Core subprocess execution
+- Basic CLI (`adw_prompt.py`)
+- Essential slash commands (chore, implement)
+- Structured output directories
+
+**Enhanced** (Recommended for development):
+- SDK-based execution with type safety
+- Interactive session support
+- Compound workflows (plan + implement in one command)
+- Richer slash command library
+
+**Scaled** (Production/teams):
+- State management (`adw_state.json`)
+- Git worktree isolation in `trees/` directories
+- GitHub integration (gh CLI)
+- Multi-phase SDLC workflows
+- 20+ advanced slash commands
+
+**Installation:**
+
+```bash
+# Add this marketplace
+/plugin marketplace add joshuaoliphant/claude-plugins
+
+# Install the plugin
+/plugin install adw-bootstrap@oliphant-plugins
+```
+
+**Usage Examples:**
+
+Bootstrap new projects:
+- "Set up ADWs" → Analyzes project and creates appropriate infrastructure
+- "Bootstrap agentic workflows" → Detects language, framework, and adapts setup
+- "Initialize ADW infrastructure" → Recommends setup phase based on project maturity
+
+Upgrade existing setups:
+- "Upgrade my ADWs to enhanced" → Adds SDK support and compound workflows
+- "Upgrade to scaled ADWs" → Adds state management and worktree isolation
+- "Add scaled capabilities" → Safely adds features with automatic backups
+
+After setup:
+- `./adws/adw_prompt.py "implement feature X"` → Direct prompt execution
+- `./adws/adw_prompt.py "quick check" --model haiku` → Fast economical execution
+- `./adws/adw_chore_implement.py "add logging"` → Plan + implement workflow
+- `./adws/adw_sdlc_iso.py 123` → Complete SDLC for issue #123 (scaled phase)
+
+**Philosophy:**
+
+The skill uses "intelligence over templating" - it reads working reference implementations, analyzes your project structure, and intelligently adapts patterns to fit your conventions. No rigid string substitution.
+
+**Progressive Enhancement:**
+
+Start minimal (5 files) and add capabilities as needed. Clean upgrade path with safety backups ensures you never lose customizations.
+
 ## Contributing
 
 Contributions are welcome! Feel free to submit issues or pull requests.
