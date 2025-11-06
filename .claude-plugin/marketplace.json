@@ -2,11 +2,11 @@
   "name": "oliphant-plugins",
   "owner": {
     "name": "Joshua Oliphant",
-    "email": "joshua@example.com"
+    "email": "joshua.oliphant@hey.com"
   },
   "metadata": {
     "description": "Claude Code plugins by Joshua Oliphant for productivity and learning workflows",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "plugins": [
     {
@@ -25,7 +25,7 @@
       "name": "adw-bootstrap",
       "source": "./plugins/adw-bootstrap",
       "description": "Bootstrap AI Developer Workflows (ADWs) infrastructure enabling programmatic agent orchestration",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Joshua Oliphant"
       },
