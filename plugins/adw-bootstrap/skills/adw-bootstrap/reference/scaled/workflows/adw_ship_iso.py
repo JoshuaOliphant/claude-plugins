@@ -40,10 +40,16 @@ from adw_modules.github import (
     get_repo_url,
     extract_repo_path,
 )
+from adw_modules.beads_integration import is_beads_issue, close_beads_issue
 from adw_modules.workflow_ops import format_issue_message
-from adw_modules.utils import setup_logger, check_env_vars
 from adw_modules.worktree_ops import validate_worktree
 from adw_modules.data_types import ADWStateData
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 # Agent name constant
 AGENT_SHIPPER = "shipper"
@@ -195,11 +201,9 @@ def main():
     adw_id = sys.argv[2]
     
     # Try to load existing state
-    temp_logger = setup_logger(adw_id, "adw_ship_iso")
-    state = ADWState.load(adw_id, temp_logger)
+    state = ADWState.load(adw_id, logger)
     if not state:
         # No existing state found
-        logger = setup_logger(adw_id, "adw_ship_iso")
         logger.error(f"No state found for ADW ID: {adw_id}")
         logger.error("Run the complete SDLC workflow before shipping")
         print(f"\nError: No state found for ADW ID: {adw_id}")
@@ -212,19 +216,19 @@ def main():
     # Track that this ADW workflow has run
     state.append_adw_id("adw_ship_iso")
     
-    # Set up logger with ADW ID
-    logger = setup_logger(adw_id, "adw_ship_iso")
     logger.info(f"ADW Ship Iso starting - ID: {adw_id}, Issue: {issue_number}")
     
-    # Validate environment
-    check_env_vars(logger)
+    # Check if this is a beads issue
+    is_beads = is_beads_issue(issue_number)
+    logger.info(f"Issue type: {'beads' if is_beads else 'GitHub'}")
     
-    # Post initial status
-    make_issue_comment(
-        issue_number,
-        format_issue_message(adw_id, "ops", f"🚢 Starting ship workflow\n"
-                           f"📋 Validating state completeness...")
-    )
+    # Post initial status (only for GitHub issues)
+    if not is_beads:
+        make_issue_comment(
+            issue_number,
+            format_issue_message(adw_id, "ops", f"🚢 Starting ship workflow\n"
+                               f"📋 Validating state completeness...")
+        )
     
     # Step 1: Validate state completeness
     logger.info("Validating state completeness...")
@@ -233,16 +237,17 @@ def main():
     if not is_valid:
         error_msg = f"State validation failed. Missing fields: {', '.join(missing_fields)}"
         logger.error(error_msg)
-        make_issue_comment(
-            issue_number,
-            format_issue_message(adw_id, AGENT_SHIPPER, f"❌ {error_msg}\n\n"
-                               "Please ensure all workflows have been run:\n"
-                               "- adw_plan_iso.py (creates plan_file, branch_name, issue_class)\n"
-                               "- adw_build_iso.py (implements the plan)\n" 
-                               "- adw_test_iso.py (runs tests)\n"
-                               "- adw_review_iso.py (reviews implementation)\n"
-                               "- adw_document_iso.py (generates docs)")
-        )
+        if not is_beads:
+            make_issue_comment(
+                issue_number,
+                format_issue_message(adw_id, AGENT_SHIPPER, f"❌ {error_msg}\n\n"
+                                   "Please ensure all workflows have been run:\n"
+                                   "- adw_plan_iso.py (creates plan_file, branch_name, issue_class)\n"
+                                   "- adw_build_iso.py (implements the plan)\n" 
+                                   "- adw_test_iso.py (runs tests)\n"
+                                   "- adw_review_iso.py (reviews implementation)\n"
+                                   "- adw_document_iso.py (generates docs)")
+            )
         sys.exit(1)
     
     logger.info("✅ State validation passed - all fields have values")
@@ -251,10 +256,11 @@ def main():
     valid, error = validate_worktree(adw_id, state)
     if not valid:
         logger.error(f"Worktree validation failed: {error}")
-        make_issue_comment(
-            issue_number,
-            format_issue_message(adw_id, AGENT_SHIPPER, f"❌ Worktree validation failed: {error}")
-        )
+        if not is_beads:
+            make_issue_comment(
+                issue_number,
+                format_issue_message(adw_id, AGENT_SHIPPER, f"❌ Worktree validation failed: {error}")
+            )
         sys.exit(1)
     
     worktree_path = state.get("worktree_path")
@@ -264,52 +270,69 @@ def main():
     branch_name = state.get("branch_name")
     logger.info(f"Preparing to merge branch: {branch_name}")
     
-    make_issue_comment(
-        issue_number,
-        format_issue_message(adw_id, AGENT_SHIPPER, f"📋 State validation complete\n"
-                           f"🔍 Preparing to merge branch: {branch_name}")
-    )
+    if not is_beads:
+        make_issue_comment(
+            issue_number,
+            format_issue_message(adw_id, AGENT_SHIPPER, f"📋 State validation complete\n"
+                               f"🔍 Preparing to merge branch: {branch_name}")
+        )
     
     # Step 4: Perform manual merge
     logger.info(f"Starting manual merge of {branch_name} to main...")
-    make_issue_comment(
-        issue_number,
-        format_issue_message(adw_id, AGENT_SHIPPER, f"🔀 Merging {branch_name} to main...\n"
-                           "Using manual git operations in main repository")
-    )
+    if not is_beads:
+        make_issue_comment(
+            issue_number,
+            format_issue_message(adw_id, AGENT_SHIPPER, f"🔀 Merging {branch_name} to main...\n"
+                               "Using manual git operations in main repository")
+        )
     
     success, error = manual_merge_to_main(branch_name, logger)
     
     if not success:
         logger.error(f"Failed to merge: {error}")
-        make_issue_comment(
-            issue_number,
-            format_issue_message(adw_id, AGENT_SHIPPER, f"❌ Failed to merge: {error}")
-        )
+        if not is_beads:
+            make_issue_comment(
+                issue_number,
+                format_issue_message(adw_id, AGENT_SHIPPER, f"❌ Failed to merge: {error}")
+            )
         sys.exit(1)
     
     logger.info(f"✅ Successfully merged {branch_name} to main")
-    
-    # Step 5: Post success message
-    make_issue_comment(
-        issue_number,
-        format_issue_message(adw_id, AGENT_SHIPPER, 
-                           f"🎉 **Successfully shipped!**\n\n"
-                           f"✅ Validated all state fields\n"
-                           f"✅ Merged branch `{branch_name}` to main\n"
-                           f"✅ Pushed to origin/main\n\n"
-                           f"🚢 Code has been deployed to production!")
-    )
-    
+
+    # Step 5: Close beads issue if applicable
+    if is_beads:
+        logger.info(f"Closing beads issue: {issue_number}")
+        success, error = close_beads_issue(
+            issue_number,
+            f"Completed via ADW {adw_id} - merged to main"
+        )
+        if not success:
+            logger.warning(f"Failed to close beads issue: {error}")
+        else:
+            logger.info(f"✅ Closed beads issue: {issue_number}")
+
+    # Step 6: Post success message (only for GitHub issues)
+    if not is_beads:
+        make_issue_comment(
+            issue_number,
+            format_issue_message(adw_id, AGENT_SHIPPER,
+                               f"🎉 **Successfully shipped!**\n\n"
+                               f"✅ Validated all state fields\n"
+                               f"✅ Merged branch `{branch_name}` to main\n"
+                               f"✅ Pushed to origin/main\n\n"
+                               f"🚢 Code has been deployed to production!")
+        )
+
     # Save final state
     state.save("adw_ship_iso")
-    
-    # Post final state summary
-    make_issue_comment(
-        issue_number,
-        f"{adw_id}_ops: 📋 Final ship state:\n```json\n{json.dumps(state.data, indent=2)}\n```"
-    )
-    
+
+    # Post final state summary (only for GitHub issues)
+    if not is_beads:
+        make_issue_comment(
+            issue_number,
+            f"{adw_id}_ops: 📋 Final ship state:\n```json\n{json.dumps(state.data, indent=2)}\n```"
+        )
+
     logger.info("Ship workflow completed successfully")
 
 
