@@ -9,7 +9,7 @@ description: |
   This enables programmatic agent orchestration via subprocess/SDK,
   reusable workflow templates, multi-phase workflows, and structured
   observability for agent executions.
-allowed-tools: [Read, Write, Glob, Grep, Bash, Edit, TodoWrite]
+allowed-tools: [Read, Write, Edit, MultiEdit, Glob, Grep, Bash, TodoWrite, AskUserQuestion]
 ---
 
 # AI Developer Workflows Bootstrap Skill
