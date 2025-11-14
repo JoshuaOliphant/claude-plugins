@@ -6,10 +6,10 @@ description: |
   "add AI developer workflows", "enable programmatic agent execution",
   "initialize ADW infrastructure", or "set up programmatic Claude Code".
 
-  This enables programmatic agent orchestration via subprocess/SDK,
+  This enables programmatic agent orchestration via subprocess,
   reusable workflow templates, multi-phase workflows, and structured
   observability for agent executions.
-allowed-tools: [Read, Write, Edit, MultiEdit, Glob, Grep, Bash, TodoWrite, AskUserQuestion]
+allowed-tools: [Read, Write, Edit, MultiEdit, Glob, Grep, Bash, TodoWrite, AskUserQuestion, WebFetch]
 ---
 
 # AI Developer Workflows Bootstrap Skill
@@ -26,6 +26,8 @@ After setup, developers can:
 - **Orchestrate multi-phase workflows**: Plan → Implement → Test → Deploy
 - **Track agent behavior**: Structured outputs in `agents/{id}/` for debugging
 - **Scale compute**: Run multiple agents in parallel for complex tasks
+
+**Implementation:** All execution uses subprocess-based approach with smart CLI detection, ensuring compatibility with custom Claude CLI installations and maximum reliability.
 
 ## Core Philosophy: Intelligence Over Templating
 
@@ -54,8 +56,8 @@ The agentic layer wraps the application layer, providing a programmatic interfac
 Setup happens in phases based on project needs:
 
 - **Minimal** (Always): Core subprocess execution, basic prompts, essential commands
-- **Enhanced** (Recommended for dev projects): SDK support, compound workflows, richer commands
-- **Scaled** (Production/teams): State management, triggers, testing, worktree isolation
+- **Enhanced** (Recommended for dev projects): Compound workflows, TDD planning, richer commands
+- **Scaled** (Production/teams): State management, GitHub integration, worktree isolation
 
 ## IMPORTANT: Upgrade Detection
 
@@ -82,16 +84,16 @@ Use file presence to determine current phase:
 - ✅ `adws/adw_prompt.py` (basic CLI)
 - ✅ `.claude/commands/chore.md` (basic templates)
 - ✅ `.claude/commands/implement.md`
-- ❌ No `adws/adw_modules/agent_sdk.py`
+- ❌ No `adws/adw_slash_command.py`
 - ❌ No `adws/adw_modules/state.py`
 
 **Enhanced Phase Indicators:**
 - ✅ Everything from Minimal
-- ✅ `adws/adw_modules/agent_sdk.py` (SDK support)
-- ✅ `adws/adw_sdk_prompt.py` (SDK CLI)
 - ✅ `adws/adw_slash_command.py` (command executor)
 - ✅ `adws/adw_chore_implement.py` (compound workflows)
+- ✅ `adws/adw_plan_tdd.py` (TDD planning)
 - ✅ `.claude/commands/feature.md` (richer templates)
+- ✅ `.claude/commands/plan-tdd.md` (TDD task breakdown)
 - ✅ `.claude/commands/prime.md`
 - ❌ No `adws/adw_modules/state.py`
 - ❌ No `adws/adw_modules/worktree_ops.py`
@@ -151,10 +153,9 @@ Inform user: "✅ Created backup in .adw_backups/"
 Based on target phase, read appropriate references:
 
 **For Minimal → Enhanced upgrade:**
-- Read @reference/enhanced/adws/adw_modules/agent_sdk.py
-- Read @reference/enhanced/adws/adw_sdk_prompt.py
 - Read @reference/enhanced/adws/adw_slash_command.py
 - Read @reference/enhanced/adws/adw_chore_implement.py
+- Read @reference/enhanced/adws/adw_plan_tdd.py
 - Read @reference/enhanced/commands/*.md
 
 **For Enhanced → Scaled upgrade:**
@@ -191,12 +192,12 @@ for file_to_add in new_files:
 #### Step 4: Add New Capabilities
 
 **For Enhanced upgrade**, add:
-- `adws/adw_modules/agent_sdk.py` (if not exists)
-- `adws/adw_sdk_prompt.py` (if not exists)
 - `adws/adw_slash_command.py` (if not exists)
 - `adws/adw_chore_implement.py` (if not exists)
+- `adws/adw_plan_tdd.py` (if not exists)
 - `.claude/commands/feature.md` (if not exists)
 - `.claude/commands/prime.md` (if not exists)
+- `.claude/commands/plan-tdd.md` (if not exists)
 
 **For Scaled upgrade**, add:
 - `adws/adw_modules/state.py` (if not exists)
@@ -226,7 +227,7 @@ for file_to_add in new_files:
 
 **For Enhanced upgrade:**
 - Check if scripts use uv inline deps (PEP 723)
-- If agent_sdk.py is added, ensure claude-code-sdk is in dependencies
+- Verify all subprocess-based execution patterns use proper error handling
 
 **For Scaled upgrade:**
 - Ensure gh CLI is available (for GitHub operations)
@@ -425,16 +426,6 @@ Shows configuration for both usage modes:
 
 #### 2.2 Read for Enhanced Phase
 
-**Read @reference/enhanced/adws/adw_modules/agent_sdk.py**
-
-This shows the **SDK-based approach**. Understand:
-- Native async/await patterns
-- Typed message objects (AssistantMessage, ResultMessage, etc.)
-- SDK-specific error handling
-- Interactive session support via ClaudeSDKClient
-- Streaming with progress callbacks
-- When to use SDK vs subprocess
-
 **Read @reference/enhanced/adws/adw_slash_command.py**
 
 Shows how to execute slash commands programmatically.
@@ -458,6 +449,14 @@ More comprehensive planning template with:
 **Read @reference/enhanced/commands/prime.md**
 
 Context loading pattern for priming Claude with project knowledge.
+
+**Read @reference/enhanced/adws/adw_plan_tdd.py**
+
+Shows **TDD planning workflow**:
+- Breaking large specs into agent-sized tasks
+- Complexity estimation (S/M/L)
+- GitHub issue generation format
+- Plan file validation
 
 ### PHASE 3: Create Minimal Infrastructure
 
@@ -643,7 +642,26 @@ Check that `agents/{adw_id}/oneoff/` contains:
 - `cc_final_object.json` - Final result object
 - `custom_summary_output.json` - High-level summary
 
-#### 4.4 Report to User
+#### 4.4 Test Error Handling (Critical)
+
+**Test empty prompt rejection:**
+```bash
+./adws/adw_prompt.py ""
+```
+
+Expected:
+- ✓ Shows error: "Prompt cannot be empty"
+- ✓ Exits with code 1 (error)
+- ✓ Does NOT invoke Claude Code (no API call for empty prompt)
+
+**Verify in code:**
+```bash
+grep -B2 -A2 "Prompt cannot be empty" adws/adw_prompt.py
+```
+
+Should show validation at the start of the script that checks for empty/whitespace-only prompts.
+
+#### 4.5 Report to User
 
 Show:
 - ✅ What was created
@@ -655,33 +673,7 @@ Show:
 
 Only proceed if user wants enhanced setup or you recommended it.
 
-#### 5.1 Add SDK Support (adws/adw_modules/agent_sdk.py)
-
-Adapt the SDK reference:
-
-**Dependencies**:
-- Requires `claude-code-sdk` Python package
-- Add to project dependencies or inline script deps
-
-**Adaptation**:
-- Keep all the SDK patterns (async/await, typed messages, error handling)
-- Adjust imports if needed for project structure
-- Match project style
-- Add documentation explaining when to use SDK vs subprocess
-
-**When to use SDK approach**:
-- Interactive sessions (multi-turn conversations)
-- Better type safety needed
-- Async workflows
-- Native Python integration
-
-**When to use subprocess approach**:
-- Simple one-shot prompts
-- Shell script compatibility
-- Lower dependencies
-- Easier debugging
-
-#### 5.2 Add Slash Command Executor (adws/adw_slash_command.py)
+#### 5.1 Add Slash Command Executor (adws/adw_slash_command.py)
 
 Adapt for this project:
 - Adjust paths
@@ -689,7 +681,7 @@ Adapt for this project:
 - Use their package manager
 - Make executable
 
-#### 5.3 Add Compound Workflow (adws/adw_chore_implement.py)
+#### 5.2 Add Compound Workflow (adws/adw_chore_implement.py)
 
 This orchestrates: planning (/chore) → implementation (/implement)
 
@@ -698,6 +690,16 @@ Adapt:
 - Package manager
 - Output formatting to match project conventions
 - Error handling to project standards
+
+#### 5.3 Add TDD Planning (adws/adw_plan_tdd.py)
+
+This breaks large specs into agent-sized tasks:
+
+Adapt:
+- Paths and imports
+- Package manager
+- Task complexity estimation logic
+- GitHub issue format to match project conventions
 
 #### 5.4 Add Enhanced Commands
 
@@ -709,6 +711,10 @@ Adapt:
 **Create .claude/commands/prime.md**:
 - Update to read THIS project's docs
 - Point to their actual README, architecture docs, etc.
+
+**Create .claude/commands/plan-tdd.md**:
+- Adapt to project's complexity estimation needs
+- Update task breakdown format for their issue tracker
 
 **Create .claude/commands/start.md** (if applicable):
 - Update with commands to run THIS project's apps
@@ -725,6 +731,9 @@ Add to CLAUDE.md:
 # Plan and implement in one command
 ./adws/adw_chore_implement.py "add error handling to API"
 
+# TDD planning - break large spec into tasks
+./adws/adw_plan_tdd.py "implement user authentication system" --model opus
+
 # Feature development
 ./adws/adw_slash_command.py /feature <id> "user authentication"
 
@@ -733,21 +742,53 @@ Add to CLAUDE.md:
 ```
 
 **Architecture Deep Dive**:
-- Explain subprocess vs SDK approaches
+- Explain subprocess execution patterns
 - Show workflow orchestration patterns
 - Document output observability structure
 
 #### 5.6 Validate Enhanced Setup
 
+**Test 1: Slash Command Execution**
 ```bash
-# Test slash command execution
 ./adws/adw_slash_command.py /prime
+```
 
-# Test compound workflow
+Expected:
+- ✓ Executes without errors
+- ✓ Creates output in `agents/{id}/prime/`
+- ✓ Shows agent's response with context loaded
+
+**Test 2: Compound Workflow**
+```bash
 ./adws/adw_chore_implement.py "add a hello world endpoint"
 ```
 
-Check outputs, verify everything works.
+Expected:
+- ✓ Runs planning phase first
+- ✓ Creates plan file in `specs/`
+- ✓ Runs implementation phase
+- ✓ Creates workflow summary in `agents/{id}/workflow-summary.json`
+- ✓ Both phases show in output structure
+
+**Test 3: TDD Planning (Critical Validation)**
+```bash
+./adws/adw_plan_tdd.py "add comprehensive testing" --model haiku
+```
+
+Expected:
+- ✓ Creates plan file in `specs/plans/plan-{id}.md`
+- ✓ Shows task breakdown summary (S/M/L counts)
+- ✓ **IMPORTANT**: If plan file not created, script must exit with code 1 (error)
+- ✓ Verify: `echo $?` after failed run should show `1`, not `0`
+
+**Critical Code Review**: Verify `adw_plan_tdd.py` has correct exit code:
+```bash
+grep -A3 "if not plan_file.exists()" adws/adw_plan_tdd.py
+```
+
+Should show `sys.exit(1)` NOT `sys.exit(0)`.
+
+**If any test fails**: Review the reference implementation and ensure you copied the correct patterns.
 
 ### PHASE 6: Create Scaled Infrastructure (If Requested)
 
@@ -910,8 +951,8 @@ def get_safe_subprocess_env():
 
 ### 4. Type Safety
 - Use Pydantic models for data
-- Use SDK types when available
-- Document expected shapes
+- Document expected shapes in code comments
+- Validate inputs and outputs
 
 ### 5. Documentation
 - Inline code comments explain "why"
@@ -993,8 +1034,8 @@ See CLAUDE.md for:
 3. Read CLAUDE.md for more examples
 
 4. (Optional) Upgrade to enhanced setup for more features:
-   - SDK support for better type safety
    - Compound workflows (plan + implement in one command)
+   - TDD planning (break large specs into agent-sized tasks)
    - Richer slash commands (feature planning, testing)
 ```
 

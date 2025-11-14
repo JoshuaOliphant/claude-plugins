@@ -100,6 +100,18 @@ def main(
     """Run an adhoc Claude Code prompt from the command line."""
     console = Console()
 
+    # Validate prompt is not empty
+    if not prompt or not prompt.strip():
+        console.print(
+            Panel(
+                "[bold red]Error: Prompt cannot be empty[/bold red]\n\n"
+                "Please provide a valid prompt string.",
+                title="❌ Invalid Input",
+                border_style="red"
+            )
+        )
+        sys.exit(1)
+
     # Generate a unique ID for this execution
     adw_id = generate_short_id()
 
@@ -192,28 +204,33 @@ def main(
         # Show output file info
         console.print()
 
-        # Also create a JSON summary file
-        if output.endswith(f"/{OUTPUT_JSONL}"):
-            # Default path: save as custom_summary_output.json in same directory
-            simple_json_output = output.replace(f"/{OUTPUT_JSONL}", f"/{SUMMARY_JSON}")
-        else:
-            # Custom path: replace .jsonl with _summary.json
-            simple_json_output = output.replace(".jsonl", "_summary.json")
+        # Also create a JSON summary file with explicit error handling
+        try:
+            if output.endswith(f"/{OUTPUT_JSONL}"):
+                # Default path: save as custom_summary_output.json in same directory
+                simple_json_output = output.replace(f"/{OUTPUT_JSONL}", f"/{SUMMARY_JSON}")
+            else:
+                # Custom path: replace .jsonl with _summary.json
+                simple_json_output = output.replace(".jsonl", "_summary.json")
 
-        with open(simple_json_output, "w") as f:
-            json.dump(
-                {
-                    "adw_id": adw_id,
-                    "prompt": prompt,
-                    "model": model,
-                    "working_dir": working_dir,
-                    "success": response.success,
-                    "session_id": response.session_id,
-                    "retry_code": response.retry_code,
-                    "output": response.output,
-                },
-                f,
-                indent=2,
+            # Create summary data
+            summary_data = {
+                "adw_id": adw_id,
+                "prompt": prompt,
+                "model": model,
+                "working_dir": working_dir,
+                "success": response.success,
+                "session_id": response.session_id,
+                "retry_code": response.retry_code,
+                "output": response.output,
+            }
+
+            # Write summary file
+            with open(simple_json_output, "w") as f:
+                json.dump(summary_data, f, indent=2)
+        except Exception as e:
+            console.print(
+                f"[yellow]Warning: Could not create summary file: {e}[/yellow]"
             )
 
         # Files saved panel with descriptions

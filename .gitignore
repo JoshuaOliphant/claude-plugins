@@ -47,3 +47,10 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# adws
+agents/
+agents.backup.*
+adws.backup.*
+specs
+specs.backup.*
