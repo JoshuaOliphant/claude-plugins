@@ -6,10 +6,10 @@ description: |
   "add AI developer workflows", "enable programmatic agent execution",
   "initialize ADW infrastructure", or "set up programmatic Claude Code".
 
-  This enables programmatic agent orchestration via subprocess,
+  This enables programmatic agent orchestration via subprocess/SDK,
   reusable workflow templates, multi-phase workflows, and structured
   observability for agent executions.
-allowed-tools: [Read, Write, Edit, MultiEdit, Glob, Grep, Bash, TodoWrite, AskUserQuestion, WebFetch]
+allowed-tools: [Read, Write, Glob, Grep, Bash(mkdir:*), Bash(chmod:*), Bash(cp:*), Bash(mv:*), Bash(git:*), Bash(uv:*), Bash(python3:*), Bash(which:*), Bash(date:*), Bash(ls:*), Edit, TodoWrite, WebFetch]
 ---
 
 # AI Developer Workflows Bootstrap Skill
@@ -26,8 +26,6 @@ After setup, developers can:
 - **Orchestrate multi-phase workflows**: Plan → Implement → Test → Deploy
 - **Track agent behavior**: Structured outputs in `agents/{id}/` for debugging
 - **Scale compute**: Run multiple agents in parallel for complex tasks
-
-**Implementation:** All execution uses subprocess-based approach with smart CLI detection, ensuring compatibility with custom Claude CLI installations and maximum reliability.
 
 ## Core Philosophy: Intelligence Over Templating
 
@@ -56,8 +54,8 @@ The agentic layer wraps the application layer, providing a programmatic interfac
 Setup happens in phases based on project needs:
 
 - **Minimal** (Always): Core subprocess execution, basic prompts, essential commands
-- **Enhanced** (Recommended for dev projects): Compound workflows, TDD planning, richer commands
-- **Scaled** (Production/teams): State management, GitHub integration, worktree isolation
+- **Enhanced** (Recommended for dev projects): SDK support, compound workflows, richer commands
+- **Scaled** (Production/teams): State management, triggers, testing, worktree isolation
 
 ## IMPORTANT: Upgrade Detection
 
@@ -84,14 +82,16 @@ Use file presence to determine current phase:
 - ✅ `adws/adw_prompt.py` (basic CLI)
 - ✅ `.claude/commands/chore.md` (basic templates)
 - ✅ `.claude/commands/implement.md`
-- ❌ No `adws/adw_slash_command.py`
+- ❌ No `adws/adw_modules/agent_sdk.py`
 - ❌ No `adws/adw_modules/state.py`
 
 **Enhanced Phase Indicators:**
 - ✅ Everything from Minimal
+- ✅ `adws/adw_modules/agent_sdk.py` (SDK support)
+- ✅ `adws/adw_sdk_prompt.py` (SDK CLI)
 - ✅ `adws/adw_slash_command.py` (command executor)
 - ✅ `adws/adw_chore_implement.py` (compound workflows)
-- ✅ `adws/adw_plan_tdd.py` (TDD planning)
+- ✅ `adws/adw_plan_tdd.py` (TDD planning for large tasks)
 - ✅ `.claude/commands/feature.md` (richer templates)
 - ✅ `.claude/commands/plan-tdd.md` (TDD task breakdown)
 - ✅ `.claude/commands/prime.md`
@@ -153,10 +153,12 @@ Inform user: "✅ Created backup in .adw_backups/"
 Based on target phase, read appropriate references:
 
 **For Minimal → Enhanced upgrade:**
+- Read @reference/enhanced/adws/adw_modules/agent_sdk.py
+- Read @reference/enhanced/adws/adw_sdk_prompt.py
 - Read @reference/enhanced/adws/adw_slash_command.py
 - Read @reference/enhanced/adws/adw_chore_implement.py
 - Read @reference/enhanced/adws/adw_plan_tdd.py
-- Read @reference/enhanced/commands/*.md
+- Read @reference/enhanced/commands/*.md (especially plan-tdd.md)
 
 **For Enhanced → Scaled upgrade:**
 - Read @reference/scaled/adw_modules/state.py
@@ -192,12 +194,15 @@ for file_to_add in new_files:
 #### Step 4: Add New Capabilities
 
 **For Enhanced upgrade**, add:
+- `adws/adw_modules/agent_sdk.py` (if not exists)
+- `adws/adw_sdk_prompt.py` (if not exists)
 - `adws/adw_slash_command.py` (if not exists)
 - `adws/adw_chore_implement.py` (if not exists)
 - `adws/adw_plan_tdd.py` (if not exists)
 - `.claude/commands/feature.md` (if not exists)
-- `.claude/commands/prime.md` (if not exists)
 - `.claude/commands/plan-tdd.md` (if not exists)
+- `.claude/commands/prime.md` (if not exists)
+- `specs/plans/` directory (if not exists)
 
 **For Scaled upgrade**, add:
 - `adws/adw_modules/state.py` (if not exists)
@@ -205,11 +210,18 @@ for file_to_add in new_files:
 - `adws/adw_modules/worktree_ops.py` (if not exists)
 - `adws/adw_modules/workflow_ops.py` (if not exists)
 - `adws/adw_modules/github.py` (if not exists)
+- `adws/adw_modules/beads_integration.py` (if not exists) - Beads issue tracker integration
 - `adws/adw_modules/data_types.py` (if not exists or needs extension)
 - `adws/adw_modules/utils.py` (if not exists)
-- `adws/adw_sdlc_iso.py` (if not exists)
-- `adws/adw_plan_build_test_review_iso.py` (if not exists)
-- `adws/adw_ship_iso.py` (if not exists)
+- `adws/adw_plan_iso.py` (if not exists) - Individual planning phase
+- `adws/adw_build_iso.py` (if not exists) - Individual build/implementation phase
+- `adws/adw_test_iso.py` (if not exists) - Individual testing phase
+- `adws/adw_review_iso.py` (if not exists) - Individual review phase
+- `adws/adw_document_iso.py` (if not exists) - Individual documentation phase
+- `adws/adw_sdlc_iso.py` (if not exists) - Composite SDLC workflow
+- `adws/adw_plan_build_test_review_iso.py` (if not exists) - Composite workflow without documentation
+- `adws/adw_ship_iso.py` (if not exists) - Shipping/merge workflow
+- `adws/adw_beads_ready.py` (if not exists) - Interactive beads task picker
 - `.claude/commands/classify_issue.md` (if not exists)
 - `.claude/commands/classify_adw.md` (if not exists)
 - `.claude/commands/generate_branch_name.md` (if not exists)
@@ -227,7 +239,7 @@ for file_to_add in new_files:
 
 **For Enhanced upgrade:**
 - Check if scripts use uv inline deps (PEP 723)
-- Verify all subprocess-based execution patterns use proper error handling
+- If agent_sdk.py is added, ensure claude-code-sdk is in dependencies
 
 **For Scaled upgrade:**
 - Ensure gh CLI is available (for GitHub operations)
@@ -290,7 +302,304 @@ If setup has significant customizations, offer to create new files with `.new` e
 **Failed upgrades:**
 If any step fails, automatically rollback to backup and report error.
 
+## Issue Tracking System Support
+
+ADWs work with **any issue tracking system** - not just GitHub. The Scaled phase includes abstractions for multiple issue trackers.
+
+### Supported Systems
+
+**Built-in Support:**
+- **GitHub Issues** - Full integration with gh CLI
+- **Beads** - Local SQLite-based issue tracking (offline-first)
+
+**Extensible Pattern:**
+- GitLab Issues
+- Jira
+- Linear
+- Notion
+- Asana
+- Custom systems
+
+### Issue Tracking Abstraction Pattern
+
+The key insight: All issue trackers provide similar information:
+- Issue ID/number
+- Title
+- Description/body
+- Status (open, in progress, closed)
+- Labels/tags
+- Assignees
+
+Create adapters that convert from tracker-specific format to a common `Issue` interface.
+
+#### Implementation Pattern
+
+**1. Define Common Issue Interface** (in `data_types.py`):
+
+```python
+from typing import Optional, List
+from pydantic import BaseModel
+
+class Issue(BaseModel):
+    """Universal issue representation across all trackers."""
+    id: str  # Can be number or string depending on tracker
+    title: str
+    description: Optional[str] = None
+    status: str  # "open", "in_progress", "closed"
+    labels: List[str] = []
+    assignees: List[str] = []
+    url: Optional[str] = None
+
+    # Tracker-specific metadata (optional)
+    tracker_type: str  # "github", "beads", "gitlab", etc.
+    raw_data: Optional[dict] = None  # Original response
+```
+
+**2. Create Tracker-Specific Integration Modules**:
+
+Each tracker gets its own module (e.g., `github_integration.py`, `beads_integration.py`):
+
+```python
+# adws/adw_modules/beads_integration.py structure
+def is_beads_issue(issue_id: str) -> bool:
+    """Check if issue ID is from beads tracker."""
+    return "-" in issue_id and not issue_id.isdigit()
+
+def fetch_beads_issue(issue_id: str) -> tuple[Optional[Issue], Optional[str]]:
+    """Fetch beads issue and convert to universal Issue format."""
+    # Run beads command
+    # Parse output
+    # Return Issue object or error
+
+def get_ready_beads_tasks() -> tuple[List[str], Optional[str]]:
+    """Get list of ready task IDs."""
+
+def update_beads_status(issue_id: str, status: str) -> tuple[bool, Optional[str]]:
+    """Update issue status."""
+
+def close_beads_issue(issue_id: str, reason: str) -> tuple[bool, Optional[str]]:
+    """Close issue with reason."""
+```
+
+**3. Create Unified Fetch Function** (in `workflow_ops.py`):
+
+```python
+def fetch_issue_unified(issue_id: str, logger) -> tuple[Optional[Issue], Optional[str]]:
+    """Fetch issue from any tracker, returns universal Issue object."""
+    # Detect tracker type
+    if is_beads_issue(issue_id):
+        return fetch_beads_issue(issue_id)
+    elif issue_id.isdigit() or "/" in issue_id:
+        return fetch_github_issue(issue_id)
+    # Add more trackers...
+    else:
+        return None, f"Unknown issue format: {issue_id}"
+```
+
+**4. Usage in Workflows**:
+
+```python
+# Workflows use the unified interface
+issue, error = fetch_issue_unified(issue_number, logger)
+if error:
+    logger.error(f"Failed to fetch issue: {error}")
+    sys.exit(1)
+
+# Work with universal Issue object
+logger.info(f"Processing: {issue.title}")
+logger.info(f"Status: {issue.status}")
+```
+
+#### Adding Support for New Trackers
+
+To add support for a new issue tracker (GitLab, Jira, etc.):
+
+**Step 1**: Create integration module `adws/adw_modules/{tracker}_integration.py`
+
+```python
+# Example: gitlab_integration.py
+import subprocess
+from typing import Optional, List
+from .data_types import Issue
+
+def is_gitlab_issue(issue_id: str) -> bool:
+    """Detect GitLab issue format (e.g., 'project#123')."""
+    return "#" in issue_id
+
+def fetch_gitlab_issue(issue_id: str) -> tuple[Optional[Issue], Optional[str]]:
+    """Fetch from GitLab API or CLI."""
+    try:
+        # Parse project and issue number
+        project, number = issue_id.split("#")
+
+        # Call GitLab CLI or API
+        result = subprocess.run(
+            ["glab", "issue", "view", number, "-R", project],
+            capture_output=True, text=True
+        )
+
+        if result.returncode != 0:
+            return None, f"GitLab CLI error: {result.stderr}"
+
+        # Parse output and create Issue object
+        issue = Issue(
+            id=issue_id,
+            title=parse_title(result.stdout),
+            description=parse_description(result.stdout),
+            status=parse_status(result.stdout),
+            labels=parse_labels(result.stdout),
+            tracker_type="gitlab",
+            url=f"https://gitlab.com/{project}/-/issues/{number}"
+        )
+
+        return issue, None
+
+    except Exception as e:
+        return None, str(e)
+
+def get_ready_gitlab_issues(project: str) -> tuple[List[str], Optional[str]]:
+    """Get ready issues from GitLab."""
+    # Implementation...
+
+def update_gitlab_status(issue_id: str, status: str) -> tuple[bool, Optional[str]]:
+    """Update GitLab issue status."""
+    # Implementation...
+```
+
+**Step 2**: Update detection in `workflow_ops.py`:
+
+```python
+from .gitlab_integration import is_gitlab_issue, fetch_gitlab_issue
+
+def fetch_issue_unified(issue_id: str, logger) -> tuple[Optional[Issue], Optional[str]]:
+    """Fetch issue from any tracker."""
+    if is_beads_issue(issue_id):
+        return fetch_beads_issue(issue_id)
+    elif is_gitlab_issue(issue_id):  # Add detection
+        return fetch_gitlab_issue(issue_id)
+    elif issue_id.isdigit() or "/" in issue_id:
+        return fetch_github_issue(issue_id)
+    else:
+        return None, f"Unknown issue format: {issue_id}"
+```
+
+**Step 3**: Add interactive selector (optional):
+
+```python
+# adws/adw_gitlab_ready.py
+# Similar to adw_beads_ready.py but for GitLab
+```
+
+**Step 4**: Update documentation in CLAUDE.md with new tracker usage.
+
+#### Testing Integration Modules
+
+Each integration module should handle errors gracefully:
+
+```python
+# Test cases to verify:
+# 1. Issue not found
+# 2. Tracker CLI not installed
+# 3. Network errors (for API-based)
+# 4. Invalid issue format
+# 5. Missing fields in response
+# 6. Empty or malformed output
+
+# Example error handling:
+def fetch_tracker_issue(issue_id: str) -> tuple[Optional[Issue], Optional[str]]:
+    # Check CLI installed
+    if not shutil.which("tracker-cli"):
+        return None, "Tracker CLI not installed. Install with: <command>"
+
+    try:
+        result = subprocess.run(...)
+
+        if result.returncode != 0:
+            return None, f"Tracker error: {result.stderr}"
+
+        # Validate required fields present
+        if not title:
+            return None, "Could not parse issue title from tracker output"
+
+        return issue, None
+
+    except Exception as e:
+        return None, f"Unexpected error: {e}"
+```
+
+#### Configuration Management
+
+Store user's tracker preference during setup:
+
+```python
+# In state.py or config
+ISSUE_TRACKER_CONFIG = {
+    "type": "beads",  # or "github", "gitlab", etc.
+    "default_project": None,  # For GitLab, Jira, etc.
+    "cli_path": None,  # Optional custom CLI path
+}
+
+# Load from .adw_config.json or similar
+def get_tracker_config() -> dict:
+    """Load issue tracker configuration."""
+    config_path = Path(".adw_config.json")
+    if config_path.exists():
+        return json.loads(config_path.read_text())
+    return {"type": "github"}  # default
+```
+
+This pattern ensures:
+- ✅ Consistent interface across all workflows
+- ✅ Easy to add new trackers
+- ✅ Graceful error handling
+- ✅ User can choose their preferred system
+- ✅ No vendor lock-in
+
+### Setup Question: Issue Tracking
+
+**ALWAYS ASK during Scaled setup:**
+
+```
+How do you track issues for this project?
+
+1. GitHub Issues (most common)
+2. Beads (local/offline SQLite tracking)
+3. GitLab Issues
+4. Jira
+5. Linear
+6. Other (specify)
+
+Enter choice [1-6]:
+```
+
+Based on response, set up appropriate integration module.
+
 ## Setup Process (Fresh Installation)
+
+### PHASE 0: Discover Issue Tracking Preference
+
+**Before analyzing the project, understand how they track work.**
+
+Ask the user:
+```
+🎯 Issue Tracking Setup
+
+ADW workflows can integrate with your issue tracking system.
+How does your team track issues?
+
+1. GitHub Issues (default for GitHub repos)
+2. Beads (local SQLite - great for offline/personal projects)
+3. GitLab Issues
+4. Jira
+5. Linear
+6. Notion
+7. Other (manual - you'll provide issue details)
+8. None (pure prompt-driven, no issue integration)
+
+Choice [1-8]:
+```
+
+**Store the choice** for later setup phases.
 
 ### PHASE 1: Analyze Target Project
 
@@ -426,6 +735,16 @@ Shows configuration for both usage modes:
 
 #### 2.2 Read for Enhanced Phase
 
+**Read @reference/enhanced/adws/adw_modules/agent_sdk.py**
+
+This shows the **SDK-based approach**. Understand:
+- Native async/await patterns
+- Typed message objects (AssistantMessage, ResultMessage, etc.)
+- SDK-specific error handling
+- Interactive session support via ClaudeSDKClient
+- Streaming with progress callbacks
+- When to use SDK vs subprocess
+
 **Read @reference/enhanced/adws/adw_slash_command.py**
 
 Shows how to execute slash commands programmatically.
@@ -438,6 +757,30 @@ Shows **compound workflow orchestration**:
 - Comprehensive observability
 - Workflow summary generation
 
+**Read @reference/enhanced/adws/adw_plan_tdd.py**
+
+Shows **TDD planning workflow** for breaking large tasks into agent-sized chunks:
+- Subprocess execution with model selection (haiku/sonnet/opus)
+- Breaks specifications into GitHub issue-sized tasks
+- Agent-centric complexity metrics (context load, iterations, not human time)
+- Dependency tracking and parallelization analysis
+- Outputs to `specs/plans/plan-{id}.md`
+- Smart Claude CLI detection (checks common install locations)
+
+**Key Insight**: Complexity measures **context switching cost** and **iteration depth**:
+- **Size S**: Read 1-2 files, modify 1-2, write 5-10 tests, 1-2 iterations
+- **Size M**: Read 3-5 files, modify 2-4, write 10-20 tests, 2-4 iterations
+- **Size L**: Read 6+ files, modify 3-5, write 20+ tests, 4-6+ iterations
+
+**Read @reference/enhanced/commands/plan-tdd.md**
+
+Template for breaking down large specifications with:
+- Agent-centric task sizing philosophy
+- TDD approach (Red-Green-Refactor) for each task
+- Dependency graph and implementation phases
+- Critical path analysis
+- Parallelization opportunities
+
 **Read @reference/enhanced/commands/feature.md**
 
 More comprehensive planning template with:
@@ -449,14 +792,6 @@ More comprehensive planning template with:
 **Read @reference/enhanced/commands/prime.md**
 
 Context loading pattern for priming Claude with project knowledge.
-
-**Read @reference/enhanced/adws/adw_plan_tdd.py**
-
-Shows **TDD planning workflow**:
-- Breaking large specs into agent-sized tasks
-- Complexity estimation (S/M/L)
-- GitHub issue generation format
-- Plan file validation
 
 ### PHASE 3: Create Minimal Infrastructure
 
@@ -567,12 +902,18 @@ Adapt to show both usage modes:
 # Required for headless/automated workflows
 # ANTHROPIC_API_KEY=sk-ant-...
 
-# Optional: Claude Code Path
+# Optional: Claude Code Path (auto-detected if not set)
 # CLAUDE_CODE_PATH=claude
 
 # Optional: Maintain working directory
 # CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR=true
 ```
+
+**Note**: The agent module includes smart Claude CLI detection via `find_claude_cli()`:
+1. Checks `CLAUDE_CODE_PATH` environment variable
+2. Runs `which claude` command
+3. Checks common install locations (~/.claude/local/claude, /usr/local/bin/claude, etc.)
+4. Falls back to "claude" (assumes in PATH)
 
 #### 3.7 Update CLAUDE.md
 
@@ -642,26 +983,7 @@ Check that `agents/{adw_id}/oneoff/` contains:
 - `cc_final_object.json` - Final result object
 - `custom_summary_output.json` - High-level summary
 
-#### 4.4 Test Error Handling (Critical)
-
-**Test empty prompt rejection:**
-```bash
-./adws/adw_prompt.py ""
-```
-
-Expected:
-- ✓ Shows error: "Prompt cannot be empty"
-- ✓ Exits with code 1 (error)
-- ✓ Does NOT invoke Claude Code (no API call for empty prompt)
-
-**Verify in code:**
-```bash
-grep -B2 -A2 "Prompt cannot be empty" adws/adw_prompt.py
-```
-
-Should show validation at the start of the script that checks for empty/whitespace-only prompts.
-
-#### 4.5 Report to User
+#### 4.4 Report to User
 
 Show:
 - ✅ What was created
@@ -669,11 +991,73 @@ Show:
 - ✅ Test results
 - ✅ Next steps (enhance if desired)
 
+#### 4.5 Run Automated Validation Tests (NEW)
+
+**Test the installation systematically:**
+
+```bash
+# Test 1: Basic execution
+./adws/adw_prompt.py "What is 2 + 2?" --model haiku --no-retry
+
+# Test 2: Empty prompt validation
+./adws/adw_prompt.py "" --no-retry
+# Should show error and exit with code 1
+
+# Test 3: Output structure
+ls -la agents/*/oneoff/
+# Should show 4 files: JSONL, JSON, final, summary
+
+# Test 4: Module imports
+python3 << 'PYEOF'
+import sys
+sys.path.insert(0, 'adws')
+from adw_modules.agent import prompt_claude_code
+print("✓ Agent module imports correctly")
+PYEOF
+```
+
+**Create test report:**
+- Document which tests passed/failed
+- Save results to `specs/minimal-validation-results.md`
+- If any critical tests fail, STOP and fix before proceeding
+
+**Success Criteria:**
+- ✓ All 4 tests pass
+- ✓ No import errors
+- ✓ Output files created correctly
+- ✓ Error handling works (empty prompt rejected)
+
 ### PHASE 5: Create Enhanced Infrastructure (If Requested)
 
 Only proceed if user wants enhanced setup or you recommended it.
 
-#### 5.1 Add Slash Command Executor (adws/adw_slash_command.py)
+#### 5.1 Add SDK Support (adws/adw_modules/agent_sdk.py)
+
+Adapt the SDK reference:
+
+**Dependencies**:
+- Requires `claude-code-sdk` Python package
+- Add to project dependencies or inline script deps
+
+**Adaptation**:
+- Keep all the SDK patterns (async/await, typed messages, error handling)
+- Adjust imports if needed for project structure
+- Match project style
+- Add documentation explaining when to use SDK vs subprocess
+
+**When to use SDK approach**:
+- Interactive sessions (multi-turn conversations)
+- Better type safety needed
+- Async workflows
+- Native Python integration
+
+**When to use subprocess approach**:
+- Simple one-shot prompts
+- Shell script compatibility
+- Lower dependencies
+- Easier debugging
+
+#### 5.2 Add Slash Command Executor (adws/adw_slash_command.py)
 
 Adapt for this project:
 - Adjust paths
@@ -681,7 +1065,7 @@ Adapt for this project:
 - Use their package manager
 - Make executable
 
-#### 5.2 Add Compound Workflow (adws/adw_chore_implement.py)
+#### 5.3 Add Compound Workflow (adws/adw_chore_implement.py)
 
 This orchestrates: planning (/chore) → implementation (/implement)
 
@@ -690,16 +1074,6 @@ Adapt:
 - Package manager
 - Output formatting to match project conventions
 - Error handling to project standards
-
-#### 5.3 Add TDD Planning (adws/adw_plan_tdd.py)
-
-This breaks large specs into agent-sized tasks:
-
-Adapt:
-- Paths and imports
-- Package manager
-- Task complexity estimation logic
-- GitHub issue format to match project conventions
 
 #### 5.4 Add Enhanced Commands
 
@@ -711,10 +1085,6 @@ Adapt:
 **Create .claude/commands/prime.md**:
 - Update to read THIS project's docs
 - Point to their actual README, architecture docs, etc.
-
-**Create .claude/commands/plan-tdd.md**:
-- Adapt to project's complexity estimation needs
-- Update task breakdown format for their issue tracker
 
 **Create .claude/commands/start.md** (if applicable):
 - Update with commands to run THIS project's apps
@@ -731,9 +1101,6 @@ Add to CLAUDE.md:
 # Plan and implement in one command
 ./adws/adw_chore_implement.py "add error handling to API"
 
-# TDD planning - break large spec into tasks
-./adws/adw_plan_tdd.py "implement user authentication system" --model opus
-
 # Feature development
 ./adws/adw_slash_command.py /feature <id> "user authentication"
 
@@ -741,54 +1108,75 @@ Add to CLAUDE.md:
 ./adws/adw_slash_command.py /prime
 ```
 
+```markdown
+### TDD Planning for Large Tasks
+
+# Break down large spec into agent-sized tasks
+./adws/adw_plan_tdd.py "Add user authentication with JWT and OAuth2"
+
+# From a spec file
+./adws/adw_plan_tdd.py specs/feature-auth.md --spec-file
+
+# Use Opus for complex architecture planning
+./adws/adw_plan_tdd.py "Build real-time collaboration system" --model opus
+
+# Output: specs/plans/plan-{id}.md with:
+# - 25 tasks broken down (agent-optimized sizing)
+# - Dependency graph and phases
+# - TDD guidance for each task
+# - Agent-centric complexity metrics
+```
+
 **Architecture Deep Dive**:
-- Explain subprocess execution patterns
+- Explain subprocess vs SDK approaches
 - Show workflow orchestration patterns
 - Document output observability structure
 
 #### 5.6 Validate Enhanced Setup
 
-**Test 1: Slash Command Execution**
 ```bash
+# Test slash command execution
 ./adws/adw_slash_command.py /prime
-```
 
-Expected:
-- ✓ Executes without errors
-- ✓ Creates output in `agents/{id}/prime/`
-- ✓ Shows agent's response with context loaded
-
-**Test 2: Compound Workflow**
-```bash
+# Test compound workflow
 ./adws/adw_chore_implement.py "add a hello world endpoint"
 ```
 
-Expected:
-- ✓ Runs planning phase first
-- ✓ Creates plan file in `specs/`
-- ✓ Runs implementation phase
-- ✓ Creates workflow summary in `agents/{id}/workflow-summary.json`
-- ✓ Both phases show in output structure
+Check outputs, verify everything works.
 
-**Test 3: TDD Planning (Critical Validation)**
+#### 5.7 Run Comprehensive Enhanced Validation (NEW)
+
+**Automated test suite:**
+
 ```bash
-./adws/adw_plan_tdd.py "add comprehensive testing" --model haiku
+# Run all Enhanced regression tests
+./adws/adw_prompt.py "test" --model haiku --no-retry  # Base works
+./adws/adw_slash_command.py /prime  # Commands work
+./adws/adw_chore_implement.py "hello world" --model haiku  # Workflows work
+./adws/adw_plan_tdd.py "test planning" --model haiku  # TDD works
+
+# Verify critical patterns
+grep -A3 "if not plan_file.exists()" adws/adw_plan_tdd.py | grep "sys.exit(1)"
+# Must show exit(1) NOT exit(0)
+
+grep "Prompt cannot be empty" adws/adw_prompt.py
+# Must have empty prompt validation
 ```
 
-Expected:
-- ✓ Creates plan file in `specs/plans/plan-{id}.md`
-- ✓ Shows task breakdown summary (S/M/L counts)
-- ✓ **IMPORTANT**: If plan file not created, script must exit with code 1 (error)
-- ✓ Verify: `echo $?` after failed run should show `1`, not `0`
+**Create Enhanced validation report:**
+- Save results to `specs/enhanced-validation-results.md`
+- Document pass/fail for each test
+- Compare against Minimal (check for regressions)
+- List any issues found
 
-**Critical Code Review**: Verify `adw_plan_tdd.py` has correct exit code:
-```bash
-grep -A3 "if not plan_file.exists()" adws/adw_plan_tdd.py
-```
+**If failures occur:**
+1. Document the failure with reproduction steps
+2. Check reference implementation for correct pattern
+3. Fix the issue
+4. Re-run all tests
+5. Document the fix
 
-Should show `sys.exit(1)` NOT `sys.exit(0)`.
-
-**If any test fails**: Review the reference implementation and ensure you copied the correct patterns.
+**Success rate target:** 100% for Enhanced base functionality
 
 ### PHASE 6: Create Scaled Infrastructure (If Requested)
 
@@ -812,6 +1200,131 @@ Guide through adding:
 - `trees/` - Git worktree isolation
 - `.claude/hooks/` - Event handlers
 - `.claude/settings.json` - Hook configuration
+
+### PHASE 7: Validate Scaled Installation (NEW)
+
+**IMPORTANT:** Scaled phase has many components. Systematic validation is critical.
+
+#### 7.1 Create Test Plan
+
+Generate comprehensive test cases covering:
+
+**Base (Regression):**
+- All Minimal tests still pass
+- All Enhanced tests still pass
+
+**Scaled Modules:**
+- state.py imports
+- git_ops.py imports
+- worktree_ops.py imports
+- workflow_ops.py imports
+- github.py imports
+- beads_integration.py imports (if using Beads)
+
+**Scaled Workflows:**
+- adw_plan_iso.py --help works
+- adw_build_iso.py --help works
+- adw_test_iso.py --help works
+- adw_review_iso.py --help works
+- adw_document_iso.py --help works
+- adw_sdlc_iso.py --help works
+- adw_ship_iso.py --help works
+
+**Issue Tracker Integration:**
+- Beads CLI detected (if selected)
+- GitHub CLI detected (if selected)
+- Integration modules import correctly
+
+#### 7.2 Run Systematic Validation
+
+```bash
+# Category 1: Regression Tests
+./adws/adw_prompt.py "2+2" --model haiku --no-retry
+./adws/adw_slash_command.py /prime
+./adws/adw_plan_tdd.py "test" --model haiku
+
+# Category 2: Module Imports
+python3 << 'PYEOF'
+import sys
+sys.path.insert(0, 'adws')
+from adw_modules import state, git_ops, worktree_ops, workflow_ops
+from adw_modules import github, beads_integration
+print("✓ All Scaled modules import")
+PYEOF
+
+# Category 3: Workflow Scripts Executable
+for script in adw_plan_iso adw_build_iso adw_test_iso adw_review_iso adw_document_iso adw_sdlc_iso adw_ship_iso; do
+  ./adws/${script}.py --help >/dev/null 2>&1 && echo "✓ ${script}.py" || echo "❌ ${script}.py FAILED"
+done
+
+# Category 4: Issue Tracker
+which bd && echo "✓ Beads CLI found" || echo "⚠️  Beads CLI not found"
+which gh && echo "✓ GitHub CLI found" || echo "⚠️  GitHub CLI not found"
+
+# Category 5: Slash Commands Exist
+ls .claude/commands/*.md | wc -l
+# Should show 17+ command files
+```
+
+#### 7.3 Document Results
+
+Create `specs/scaled-validation-results.md` with:
+
+**Test Summary:**
+- Total tests: [count]
+- Passed: [count] ([percentage]%)
+- Failed: [count]
+- Warnings: [count]
+
+**Failures (if any):**
+For each failure:
+- Test ID and name
+- Command that failed
+- Error message
+- Reproduction steps
+- Impact (Critical/High/Medium/Low)
+
+**Success Criteria:**
+- ✓ 100% regression tests pass (Minimal + Enhanced)
+- ✓ 95%+ Scaled module tests pass
+- ✓ All critical workflows executable
+- ✓ Issue tracker integration works
+
+#### 7.4 Fix and Iterate
+
+If test pass rate < 95%:
+
+**Step 1: Triage failures**
+- Critical: Blocks all workflows
+- High: Breaks major features
+- Medium: Breaks optional features
+- Low: Minor issues
+
+**Step 2: Fix critical issues first**
+- Review reference implementation
+- Compare with working version
+- Apply fix
+- Re-test
+
+**Step 3: Create iteration report**
+Document in `specs/scaled-iteration-N-results.md`:
+- Issues found
+- Fixes applied
+- Test results before/after
+- Remaining issues
+
+**Step 4: Re-run full test suite**
+- Don't skip regression tests
+- Verify fixes didn't break other features
+- Update test pass rate
+
+**Step 5: Repeat until 95%+ pass rate**
+
+**When to stop iterating:**
+- 100% critical tests pass
+- 95%+ overall pass rate
+- All known issues documented
+- User can use system productively
 
 ## Special Adaptations for Different Project Types
 
@@ -951,8 +1464,8 @@ def get_safe_subprocess_env():
 
 ### 4. Type Safety
 - Use Pydantic models for data
-- Document expected shapes in code comments
-- Validate inputs and outputs
+- Use SDK types when available
+- Document expected shapes
 
 ### 5. Documentation
 - Inline code comments explain "why"
@@ -1034,8 +1547,8 @@ See CLAUDE.md for:
 3. Read CLAUDE.md for more examples
 
 4. (Optional) Upgrade to enhanced setup for more features:
+   - SDK support for better type safety
    - Compound workflows (plan + implement in one command)
-   - TDD planning (break large specs into agent-sized tasks)
    - Richer slash commands (feature planning, testing)
 ```
 
@@ -1091,11 +1604,71 @@ cat .env
 ✅ Directory structure created correctly
 ✅ Reference code adapted to project context
 ✅ Scripts are executable
-✅ Test prompt executes successfully
+✅ **Automated validation tests run successfully** (NEW)
+✅ **Test pass rate meets threshold:** (NEW)
+   - Minimal: 100%
+   - Enhanced: 100%
+   - Scaled: 95%+
+✅ **Test results documented in specs/** (NEW)
+✅ **Critical issues fixed and verified** (NEW)
 ✅ Output directories created properly
 ✅ Documentation updated with project-specific examples
 ✅ User understands how to use the system
 ✅ User knows how to extend the system
+✅ **User can iterate if issues found** (NEW)
+
+## Validation and Iteration Best Practices
+
+### Run Tests Immediately After Installation
+
+Don't wait - validate right after setup:
+1. Create test plan for the phase being installed
+2. Run all critical tests first
+3. Document results in `specs/`
+4. Fix critical issues before proceeding
+
+### Use Dogfooding Methodology
+
+Test the installation by actually using it:
+- Don't just check if files exist
+- Run actual workflows
+- Test error handling
+- Verify edge cases
+
+### Document Everything
+
+Create detailed test reports:
+- Commands run
+- Expected vs actual results
+- Pass/fail status
+- Error messages and stack traces
+- Reproduction steps for failures
+
+### Iterate Until Production-Ready
+
+For each iteration:
+1. Run full test suite
+2. Document results
+3. Fix highest-priority issues
+4. Re-test (including regression tests)
+5. Update test report
+6. Repeat until success criteria met
+
+### Compare Across Phases
+
+Check for regressions:
+- Minimal tests should pass in Enhanced
+- Enhanced tests should pass in Scaled
+- Each phase builds on previous
+- Never break working features
+
+### Set Clear Success Thresholds
+
+Know when to stop:
+- Minimal/Enhanced: 100% pass rate (smaller scope)
+- Scaled: 95%+ pass rate (acceptable for large phase)
+- All critical tests must pass
+- Remaining failures documented with workarounds
 
 ## Remember
 
@@ -1104,6 +1677,8 @@ cat .env
 - **Adapt thoughtfully** - Make it fit their conventions
 - **Document well** - Future maintainers will thank you
 - **Test thoroughly** - Ensure everything works before finishing
+- **Validate systematically** - Run automated tests after each phase (NEW)
+- **Iterate on failures** - Don't accept broken installations (NEW)
 - **Guide the user** - Show them how to use what you created
 
 You're not installing a template. You're teaching a codebase how to work with programmatic agents.
