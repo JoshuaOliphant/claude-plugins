@@ -49,6 +49,16 @@ To get your API key:
 3. Find the API Keys section
 4. Generate a new API key
 
+**Quick Start:**
+
+Here's the simplest way to get started—create flashcards about a basic concept:
+
+1. Set your API key: `export MOCHI_API_KEY="your_api_key_here"`
+2. Invoke the plugin: "Create Mochi cards to help me understand what recursion is"
+3. Get evidence-based flashcards: Cards appear in your Mochi deck with focused, atomic prompts
+
+That's it! The plugin handles quality validation and cognitive science principles automatically.
+
 **Usage Examples:**
 
 Simple requests:
