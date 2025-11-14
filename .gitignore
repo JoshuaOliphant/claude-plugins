@@ -54,3 +54,6 @@ agents.backup.*
 adws.backup.*
 specs
 specs.backup.*
+
+# Worktree isolation
+trees/

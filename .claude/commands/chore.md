@@ -13,19 +13,15 @@ prompt: $2
 - The plan should be simple, thorough, and precise
 - Create the plan in the `specs/` directory with filename: `chore-{adw_id}-{descriptive-name}.md`
   - Replace `{descriptive-name}` with a short, descriptive name based on the chore (e.g., "update-readme", "add-logging", "refactor-agent")
-- Research the codebase starting with `README.md` and `CLAUDE.md`
+- Research the codebase starting with `README.md`
 - Replace every <placeholder> in the `Plan Format` with the requested value
 
 ## Codebase Structure
 
-This is a Claude Code plugin marketplace repository:
-- `README.md` - Marketplace overview and plugin installation instructions
-- `CLAUDE.md` - Development guidance and architectural documentation
-- `plugins/` - Claude Code plugins (mochi-creator, adw-bootstrap)
-  - Each plugin has `.claude-plugin/plugin.json` for metadata
-  - Each plugin has `skills/` directory containing SKILL.md files
-- `adws/` - AI Developer Workflow scripts for programmatic agent execution
-- `.claude/commands/` - Claude Code slash command templates
+- `README.md` - Project overview and instructions (start here)
+- `adws/` - AI Developer Workflow scripts and modules
+- `apps/` - Example applications
+- `.claude/commands/` - Claude command templates
 - `specs/` - Specification and plan documents
 
 ## Plan Format
@@ -62,8 +58,7 @@ IMPORTANT: Execute every step in order, top to bottom.
 Execute these commands to validate the chore is complete:
 
 <list specific commands to validate the work. Be precise about what to run>
-- Example: `uv run python scripts/mochi_api.py list-decks` - Test Mochi API connectivity
-- Example: `uv run ruff check .` - Ensure code quality
+- Example: `uv run python -m py_compile apps/*.py` - Test to ensure the code compiles
 
 ## Notes
 <optional additional context or considerations>
