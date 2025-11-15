@@ -51,6 +51,8 @@ htmlcov/
 # adws
 agents/
 agents.backup.*
+adws.backups.*
+.adw_backups/
 adws.backup.*
 specs
 specs.backup.*
