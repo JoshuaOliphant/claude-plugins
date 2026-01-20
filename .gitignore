@@ -50,6 +50,7 @@ htmlcov/
 
 # adws
 agents/
+!plugins/*/agents/
 agents.backup.*
 adws.backups.*
 .adw_backups/
