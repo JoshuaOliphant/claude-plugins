@@ -495,14 +495,14 @@ def create_main(project_dir: Path, project_name: str, domain: str, entity: str, 
             <script src="https://unpkg.com/htmx.org@1.9.10"></script>
             <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
             <style>
-                .htmx-request .loading-indicator {{ display: flex; }}
-                .htmx-request #content {{ opacity: 0.6; pointer-events: none; }}
-                .loading-indicator {{ display: none; }}
-                @keyframes fadeSlideIn {{
-                    from {{ opacity: 0; transform: translateY(8px); }}
-                    to {{ opacity: 1; transform: translateY(0); }}
-                }}
-                .animate-in {{ animation: fadeSlideIn 0.3s ease-out; }}
+                .htmx-request .loading-indicator {{{{ display: flex; }}}}
+                .htmx-request #content {{{{ opacity: 0.6; pointer-events: none; }}}}
+                .loading-indicator {{{{ display: none; }}}}
+                @keyframes fadeSlideIn {{{{
+                    from {{{{ opacity: 0; transform: translateY(8px); }}}}
+                    to {{{{ opacity: 1; transform: translateY(0); }}}}
+                }}}}
+                .animate-in {{{{ animation: fadeSlideIn 0.3s ease-out; }}}}
             </style>
         </head>
         <body class="min-h-screen bg-slate-950 text-slate-100">
@@ -548,12 +548,12 @@ def create_main(project_dir: Path, project_name: str, domain: str, entity: str, 
             <div class="h-24"></div>
 
             <script>
-                document.body.addEventListener(\'htmx:afterRequest\', function(event) {{
-                    if (event.detail.elt.matches(\'form\')) {{
+                document.body.addEventListener(\'htmx:afterRequest\', function(event) {{{{
+                    if (event.detail.elt.matches(\'form\')) {{{{
                         const input = event.detail.elt.querySelector(\'input[name="message"]\');
                         if (input) input.value = \'\';
-                    }}
-                }});
+                    }}}}
+                }}}});
                 document.querySelector(\'input[name="message"]\')?.focus();
             </script>
         </body>
