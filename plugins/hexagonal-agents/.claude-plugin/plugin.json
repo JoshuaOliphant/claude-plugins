@@ -2,7 +2,12 @@
   "name": "hexagonal-agents",
   "description": "Build web applications where an AI agent dynamically generates HTML UI using hexagonal/ports-and-adapters architecture with HTMX for interactivity and MCP tools for data operations",
   "version": "1.0.0",
-  "author": "joshuaoliphant",
+  "author": {
+    "name": "Joshua Oliphant"
+  },
+  "homepage": "https://github.com/joshuaoliphant/claude-plugins",
+  "repository": "https://github.com/joshuaoliphant/claude-plugins",
+  "license": "MIT",
   "keywords": [
     "ai-agents",
     "hexagonal-architecture",
