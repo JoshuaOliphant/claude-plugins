@@ -44,6 +44,18 @@
       "keywords": ["sdlc", "tdd", "verification", "worktrees", "beads", "autonomous", "parallel"],
       "category": "development",
       "license": "MIT"
+    },
+    {
+      "name": "hexagonal-agents",
+      "source": "./plugins/hexagonal-agents",
+      "description": "Build web apps where an AI agent dynamically generates HTML UI using hexagonal architecture with HTMX",
+      "version": "1.0.0",
+      "author": {
+        "name": "Joshua Oliphant"
+      },
+      "keywords": ["ai-agents", "hexagonal-architecture", "htmx", "fastapi", "mcp-tools", "claude-agent-sdk", "ui-generation"],
+      "category": "development",
+      "license": "MIT"
     }
   ]
 }
