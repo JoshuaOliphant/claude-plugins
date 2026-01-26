@@ -1,0 +1,181 @@
+# ABOUTME: FastAPI application serving as the HTTP adapter for the hexagonal agent.
+# ABOUTME: Handles requests, passes messages to agent, returns HTML fragments.
+
+"""
+FastAPI application - HTTP adapter for the hexagonal agent pattern.
+
+Responsibilities:
+1. Serve the base HTML template
+2. Handle /agent POST requests
+3. Return HTML fragments for HTMX to swap
+"""
+
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from contextlib import asynccontextmanager
+
+from app.agent import Agent
+
+agent = Agent()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan - cleanup on shutdown."""
+    yield
+    await agent.close()
+
+
+app = FastAPI(lifespan=lifespan)
+
+
+BASE_TEMPLATE = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{APP_TITLE}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        .htmx-request .loading-indicator {{ display: flex; }}
+        .htmx-request #content {{ opacity: 0.6; pointer-events: none; }}
+        .loading-indicator {{ display: none; }}
+        @keyframes fadeSlideIn {{
+            from {{ opacity: 0; transform: translateY(8px); }}
+            to {{ opacity: 1; transform: translateY(0); }}
+        }}
+        .animate-in {{ animation: fadeSlideIn 0.3s ease-out; }}
+    </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+    <nav class="bg-slate-900 border-b border-slate-800">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold font-['Space_Grotesk']">{{APP_TITLE}}</h1>
+            <button hx-post="/reset" hx-target="#content"
+                    class="text-sm text-slate-400 hover:text-white transition-colors">
+                Reset
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto p-4">
+        <div class="loading-indicator items-center justify-center py-8">
+            <svg class="animate-spin h-8 w-8 text-indigo-500" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+        </div>
+
+        <div id="content">
+            {content}
+        </div>
+    </main>
+
+    <footer class="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800">
+        <form hx-post="/agent" hx-target="#content" class="max-w-4xl mx-auto p-4 flex gap-3">
+            <input type="text" name="message"
+                   placeholder="What would you like to do?"
+                   autocomplete="off"
+                   class="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg
+                          text-white placeholder-slate-500
+                          focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <button type="submit"
+                    class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500
+                           text-white font-medium rounded-lg transition-colors">
+                Send
+            </button>
+        </form>
+    </footer>
+
+    <div class="h-24"></div>
+
+    <script>
+        document.body.addEventListener('htmx:afterRequest', function(event) {{
+            if (event.detail.elt.matches('form')) {{
+                const input = event.detail.elt.querySelector('input[name="message"]');
+                if (input) input.value = '';
+            }}
+        }});
+        document.querySelector('input[name="message"]')?.focus();
+    </script>
+</body>
+</html>'''
+
+
+WELCOME_CONTENT = '''
+<div class="text-center py-16 animate-in">
+    <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-4">
+        <span class="text-2xl">{{EMOJI}}</span>
+    </div>
+    <h2 class="text-2xl font-bold font-['Space_Grotesk'] text-white mb-4">Welcome</h2>
+    <p class="text-slate-400 mb-8">What would you like to do today?</p>
+    <div class="flex flex-wrap justify-center gap-3">
+        <button hx-post="/agent" hx-target="#content" hx-vals='{"message":"show my {{ENTITIES}}"}'
+                class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors">
+            View {{ENTITIES_TITLE}}
+        </button>
+        <button hx-post="/agent" hx-target="#content" hx-vals='{"message":"create a new {{ENTITY}}"}'
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors">
+            Create {{ENTITY_TITLE}}
+        </button>
+    </div>
+</div>
+'''
+
+
+@app.get("/", response_class=HTMLResponse)
+async def home():
+    """Serve the main page."""
+    return BASE_TEMPLATE.format(content=WELCOME_CONTENT)
+
+
+@app.post("/agent", response_class=HTMLResponse)
+async def handle_message(request: Request):
+    """Handle user messages sent to the agent."""
+    form_data = await request.form()
+
+    message = form_data.get("message", "")
+    if not message or not str(message).strip():
+        return '<p class="text-amber-400">Please enter a message.</p>'
+
+    message = str(message).strip()
+
+    # Append form fields to message
+    extra_fields = []
+    for key, value in form_data.items():
+        if key != "message" and value:
+            extra_fields.append(f"{key}={value}")
+
+    if extra_fields:
+        message = f"{message} [{', '.join(extra_fields)}]"
+
+    try:
+        html = await agent.process(message)
+        return html
+    except Exception as e:
+        print(f"Agent error: {e}")
+        return '''
+<div class="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+    <p class="text-red-300">An error occurred. Please try again.</p>
+</div>
+'''
+
+
+@app.post("/reset", response_class=HTMLResponse)
+async def reset():
+    """Reset conversation state and return to welcome screen."""
+    await agent.reset()
+    return WELCOME_CONTENT
+
+
+# === Template Variables ===
+# Replace these placeholders when using this template:
+#
+# {{APP_TITLE}}      - Application title (e.g., "Book Tracker")
+# {{EMOJI}}          - Welcome screen emoji (e.g., "📚")
+# {{ENTITY}}         - Singular entity (e.g., "book")
+# {{ENTITIES}}       - Plural entity (e.g., "books")
+# {{ENTITY_TITLE}}   - Title case singular (e.g., "Book")
+# {{ENTITIES_TITLE}} - Title case plural (e.g., "Books")

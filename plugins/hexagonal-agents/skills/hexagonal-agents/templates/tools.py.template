@@ -1,0 +1,211 @@
+# ABOUTME: MCP tool definitions for {{DOMAIN}} management.
+# ABOUTME: Each tool handles one data operation, returns structured JSON.
+
+"""
+Tool definitions for the {{DOMAIN}} application.
+
+Each tool:
+1. Does ONE thing
+2. Returns structured JSON data
+3. Includes everything the agent needs for UI generation
+4. Handles errors gracefully
+"""
+
+from claude_agent_sdk import tool, create_sdk_mcp_server
+from typing import Any
+import json
+from pathlib import Path
+from datetime import datetime
+
+# === Data Persistence ===
+# Simple JSON file storage. Replace with database for production.
+
+DATA_FILE = Path("data/{{ENTITIES}}.json")
+
+
+def _load_data() -> dict:
+    """Load data from JSON file."""
+    if not DATA_FILE.exists():
+        return {"{{ENTITIES}}": []}
+    try:
+        return json.loads(DATA_FILE.read_text())
+    except json.JSONDecodeError:
+        return {"{{ENTITIES}}": []}
+
+
+def _save_data(data: dict) -> None:
+    """Save data to JSON file."""
+    DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
+    DATA_FILE.write_text(json.dumps(data, indent=2, default=str))
+
+
+# === Response Helpers ===
+
+def _success(data: Any) -> dict:
+    """Format successful tool response."""
+    return {
+        "content": [{
+            "type": "text",
+            "text": json.dumps(data, default=str)
+        }]
+    }
+
+
+def _error(message: str) -> dict:
+    """Format error tool response."""
+    return {
+        "content": [{
+            "type": "text",
+            "text": json.dumps({"error": message})
+        }],
+        "is_error": True
+    }
+
+
+# === Tool Definitions ===
+
+@tool(
+    "list_{{ENTITIES}}",
+    "Get all {{ENTITIES}}. Returns array with id, name, status, created_at.",
+    {}
+)
+async def list_{{ENTITIES}}(args: dict[str, Any]) -> dict[str, Any]:
+    """List all {{ENTITIES}}."""
+    data = _load_data()
+    items = data.get("{{ENTITIES}}", [])
+    return _success({"{{ENTITIES}}": items, "count": len(items)})
+
+
+@tool(
+    "get_{{ENTITY}}",
+    "Get a specific {{ENTITY}} by ID.",
+    {"id": str}
+)
+async def get_{{ENTITY}}(args: dict[str, Any]) -> dict[str, Any]:
+    """Get a single {{ENTITY}}."""
+    data = _load_data()
+    items = data.get("{{ENTITIES}}", [])
+
+    for item in items:
+        if item["id"] == args["id"]:
+            return _success({"{{ENTITY}}": item})
+
+    return _error(f"{{ENTITY_TITLE}} not found: {args['id']}")
+
+
+@tool(
+    "create_{{ENTITY}}",
+    "Create a new {{ENTITY}}. Requires: name. Optional: description.",
+    {"name": str, "description": str | None}
+)
+async def create_{{ENTITY}}(args: dict[str, Any]) -> dict[str, Any]:
+    """Create a new {{ENTITY}}."""
+    data = _load_data()
+    items = data.setdefault("{{ENTITIES}}", [])
+
+    item_id = str(len(items) + 1)
+
+    item = {
+        "id": item_id,
+        "name": args["name"],
+        "description": args.get("description", ""),
+        "status": "active",
+        "created_at": datetime.now().isoformat()
+    }
+
+    items.append(item)
+    _save_data(data)
+
+    return _success({"{{ENTITY}}": item, "message": "{{ENTITY_TITLE}} created"})
+
+
+@tool(
+    "update_{{ENTITY}}",
+    "Update an existing {{ENTITY}}. Requires: id. Optional: name, description, status.",
+    {"id": str, "name": str | None, "description": str | None, "status": str | None}
+)
+async def update_{{ENTITY}}(args: dict[str, Any]) -> dict[str, Any]:
+    """Update a {{ENTITY}}."""
+    data = _load_data()
+    items = data.get("{{ENTITIES}}", [])
+
+    for item in items:
+        if item["id"] == args["id"]:
+            if args.get("name"):
+                item["name"] = args["name"]
+            if args.get("description"):
+                item["description"] = args["description"]
+            if args.get("status"):
+                item["status"] = args["status"]
+
+            item["updated_at"] = datetime.now().isoformat()
+            _save_data(data)
+            return _success({"{{ENTITY}}": item, "message": "{{ENTITY_TITLE}} updated"})
+
+    return _error(f"{{ENTITY_TITLE}} not found: {args['id']}")
+
+
+@tool(
+    "delete_{{ENTITY}}",
+    "Delete a {{ENTITY}} by ID. This is permanent.",
+    {"id": str}
+)
+async def delete_{{ENTITY}}(args: dict[str, Any]) -> dict[str, Any]:
+    """Delete a {{ENTITY}}."""
+    data = _load_data()
+    items = data.get("{{ENTITIES}}", [])
+
+    for i, item in enumerate(items):
+        if item["id"] == args["id"]:
+            deleted = items.pop(i)
+            _save_data(data)
+            return _success({"deleted": deleted, "message": "{{ENTITY_TITLE}} deleted"})
+
+    return _error(f"{{ENTITY_TITLE}} not found: {args['id']}")
+
+
+@tool(
+    "search_{{ENTITIES}}",
+    "Search {{ENTITIES}} by keyword. Searches name and description.",
+    {"query": str}
+)
+async def search_{{ENTITIES}}(args: dict[str, Any]) -> dict[str, Any]:
+    """Search {{ENTITIES}}."""
+    data = _load_data()
+    items = data.get("{{ENTITIES}}", [])
+    query = args["query"].lower()
+
+    matches = [
+        item for item in items
+        if query in item["name"].lower()
+        or query in item.get("description", "").lower()
+    ]
+
+    return _success({"{{ENTITIES}}": matches, "count": len(matches), "query": args["query"]})
+
+
+# === MCP Server Creation ===
+
+def create_tools_server():
+    """Create the MCP server with all tools."""
+    return create_sdk_mcp_server(
+        name="app_tools",
+        version="1.0.0",
+        tools=[
+            list_{{ENTITIES}},
+            get_{{ENTITY}},
+            create_{{ENTITY}},
+            update_{{ENTITY}},
+            delete_{{ENTITY}},
+            search_{{ENTITIES}},
+        ]
+    )
+
+
+# === Template Variables ===
+# Replace these placeholders when using this template:
+#
+# {{DOMAIN}}       - Domain name (e.g., "books", "tasks")
+# {{ENTITY}}       - Singular entity (e.g., "book", "task")
+# {{ENTITIES}}     - Plural entity (e.g., "books", "tasks")
+# {{ENTITY_TITLE}} - Title case entity (e.g., "Book", "Task")

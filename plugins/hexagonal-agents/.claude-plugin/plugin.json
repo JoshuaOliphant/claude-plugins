@@ -1,0 +1,16 @@
+{
+  "name": "hexagonal-agents",
+  "description": "Build web applications where an AI agent dynamically generates HTML UI using hexagonal/ports-and-adapters architecture with HTMX for interactivity and MCP tools for data operations",
+  "version": "1.0.0",
+  "author": "joshuaoliphant",
+  "keywords": [
+    "ai-agents",
+    "hexagonal-architecture",
+    "htmx",
+    "fastapi",
+    "mcp-tools",
+    "claude-agent-sdk",
+    "web-development",
+    "ui-generation"
+  ]
+}
