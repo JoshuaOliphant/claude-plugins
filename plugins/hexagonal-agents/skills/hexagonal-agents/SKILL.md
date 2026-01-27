@@ -800,13 +800,68 @@ open http://localhost:8000
 
 ---
 
+## Evolving Your Application
+
+As your app matures, consider these advanced patterns documented in the references:
+
+### Multi-Agent Architecture
+
+When your app needs specialized domain expertise, evolve to multiple agents:
+- **UI Agent**: Handles user interaction, generates HTML
+- **Specialist Agents**: Handle recommendations, analytics, etc.
+- **Message Passing**: Agents communicate via semantic messages, not method calls
+
+See `references/multi_agent_patterns.md` for complete implementation.
+
+### Progressive UI Caching (Saved Views)
+
+Reduce latency and API costs by caching agent-generated views:
+- **Static Views**: Cache forms, welcome screens
+- **Data-Driven Views**: Templates with fresh data at serve time
+- **Fast Path**: Match saved views before calling agents
+
+See `references/saved_views.md` for implementation.
+
+### SQLite Persistence
+
+Migrate from JSON files to SQLite for ACID compliance:
+- Proper transactions
+- Concurrent access safety
+- Query capabilities
+- Auto-migration from JSON
+
+See `references/sqlite_persistence.md` for implementation.
+
+### Enhanced Loading UX
+
+Improve perceived performance with better feedback:
+- Animated loading indicators with status messages
+- Form disabling during requests
+- Content dimming during loading
+- Bouncing dots for agent activity
+
+See `references/enhanced_ux.md` for patterns.
+
+---
+
 ## Files Reference
 
 When implementing, refer to these reference files:
 
+### Core Architecture
 - `references/architecture.md` — Deep dive on hexagonal architecture
 - `references/sdk_reference.md` — Claude Agent SDK API details
+
+### UI & Components
 - `references/component_library.md` — Extended UI component patterns
+- `references/enhanced_ux.md` — Advanced loading states and visual feedback
+
+### Advanced Patterns
+- `references/multi_agent_patterns.md` — Multi-agent message-passing architecture
+- `references/saved_views.md` — Progressive UI caching (fast/slow path)
+- `references/sqlite_persistence.md` — SQLite database patterns
+
+### Testing & Evaluation
 - `references/eval_patterns.md` — Comprehensive evaluation examples
 
 ---
