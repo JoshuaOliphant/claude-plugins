@@ -40,6 +40,70 @@ bd list --status=closed --limit=20
 git branch -a | grep feature/
 ```
 
+**Two scenarios:**
+- **Feature branches exist** → Follow the branch review process below
+- **No branches (direct-to-main)** → Follow the "Reviewing Direct-to-Main Changes" section
+
+---
+
+## Reviewing Direct-to-Main Changes
+
+When changes were made directly on main (no feature branches), review the recent commits:
+
+### Step 1: Examine Recent Changes
+
+```bash
+# See recent commits
+git log --oneline -10
+
+# See what files changed
+git diff HEAD~3..HEAD --stat  # Adjust ~3 based on number of commits
+
+# Review the actual changes
+git diff HEAD~3..HEAD
+```
+
+### Step 2: Validate Against Requirements
+
+- Do the changes match what the Beads specified?
+- Were any files modified that shouldn't have been?
+- Are there any incomplete or missing pieces?
+
+### Step 3: Run Verification (if applicable)
+
+If the project has tests/linting, run them to ensure nothing broke:
+
+```bash
+# Adjust commands based on project
+uv run ruff check . 2>/dev/null || npm run lint 2>/dev/null || true
+uv run pytest tests/ 2>/dev/null || npm test 2>/dev/null || true
+```
+
+### Step 4: Report Findings
+
+Provide a summary:
+
+```markdown
+## Review: Direct-to-Main Changes
+
+**Commits reviewed:** abc123, def456, ghi789
+**Files affected:** 5 files changed, 120 insertions(+), 45 deletions(-)
+
+### Assessment
+- [x] Changes match Bead requirements
+- [x] No unintended modifications
+- [x] Clean execution
+
+### Notes
+- [Any observations, warnings, or suggestions for future work]
+
+**Verdict:** ✅ Approved / ⚠️ Issues Found
+```
+
+---
+
+## Reviewing Feature Branches
+
 ### Step 2: Review Each Feature Branch
 
 For each completed feature branch:

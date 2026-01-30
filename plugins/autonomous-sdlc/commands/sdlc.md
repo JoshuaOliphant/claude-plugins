@@ -78,24 +78,46 @@ Manage the implementation of ready Beads:
 )
 ```
 
-### Step 4: Spawn Reviewer
+### Step 4: Spawn Reviewer (When Appropriate)
 
-After all implementation is complete, spawn the reviewer:
+After implementation completes, decide whether to spawn the reviewer based on:
+
+**Always spawn reviewer when:**
+- Feature branches exist that need merging
+- Complex changes were made (refactoring, new features, business logic)
+- Multiple files were modified in non-trivial ways
+
+**Use judgment - reviewer may be skipped when:**
+- Simple deletions or cleanup (removing deprecated code/plugins)
+- Documentation-only changes
+- Trivial configuration updates
+- The worktree manager already verified the changes thoroughly
+
+When spawning the reviewer:
 
 ```python
 Task(
     subagent_type="autonomous-sdlc:reviewer",
     description="Review and merge completed work",
     prompt="""
-Review all completed feature branches:
+Review completed work:
 
-1. Check each feature branch for code quality
-2. Run full verification
-3. Merge approved branches to main
-4. Clean up worktrees and branches
+1. If feature branches exist:
+   - Check each branch for code quality
+   - Run full verification
+   - Merge approved branches to main
+   - Clean up worktrees and branches
+
+2. If changes were made directly on main:
+   - Review recent commits (git log/diff)
+   - Verify changes match requirements
+   - Confirm no issues or incomplete work
+   - Report findings
 """
 )
 ```
+
+**Note:** The coordinator has full context about what was implemented. Use that context to decide if a second pair of eyes adds value before marking the workflow complete.
 
 ### Step 5: Cleanup
 
@@ -123,8 +145,11 @@ Worktree Manager
     ↓ spawns parallel implementers
 Implementer 1 ←──────→ Implementer 2 ←──────→ Implementer 3
     ↓ all complete
-Reviewer (Opus)
-    ↓ merges to main
+    ↓
+Complex changes? ──YES──→ Reviewer (Opus) ──→ merges/validates
+    │                              ↓
+    └──NO (simple)─────────────────┘
+    ↓
 Done
 ```
 
