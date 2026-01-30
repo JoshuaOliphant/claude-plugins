@@ -17,20 +17,13 @@
       "author": {
         "name": "Joshua Oliphant"
       },
-      "keywords": ["mochi", "flashcards", "spaced-repetition", "learning"],
+      "keywords": [
+        "mochi",
+        "flashcards",
+        "spaced-repetition",
+        "learning"
+      ],
       "category": "productivity",
-      "license": "MIT"
-    },
-    {
-      "name": "adw-bootstrap",
-      "source": "./plugins/adw-bootstrap",
-      "description": "Bootstrap AI Developer Workflows (ADWs) infrastructure enabling programmatic agent orchestration",
-      "version": "1.0.1",
-      "author": {
-        "name": "Joshua Oliphant"
-      },
-      "keywords": ["adw", "agent-orchestration", "workflow-automation", "infrastructure", "agentic-coding"],
-      "category": "development",
       "license": "MIT"
     },
     {
@@ -41,7 +34,15 @@
       "author": {
         "name": "Joshua Oliphant"
       },
-      "keywords": ["sdlc", "tdd", "verification", "worktrees", "beads", "autonomous", "parallel"],
+      "keywords": [
+        "sdlc",
+        "tdd",
+        "verification",
+        "worktrees",
+        "beads",
+        "autonomous",
+        "parallel"
+      ],
       "category": "development",
       "license": "MIT"
     },
@@ -53,7 +54,15 @@
       "author": {
         "name": "Joshua Oliphant"
       },
-      "keywords": ["ai-agents", "hexagonal-architecture", "htmx", "fastapi", "mcp-tools", "claude-agent-sdk", "ui-generation"],
+      "keywords": [
+        "ai-agents",
+        "hexagonal-architecture",
+        "htmx",
+        "fastapi",
+        "mcp-tools",
+        "claude-agent-sdk",
+        "ui-generation"
+      ],
       "category": "development",
       "license": "MIT"
     }
