@@ -1,7 +1,7 @@
 {
   "name": "autonomous-sdlc",
-  "version": "0.1.0",
-  "description": "Autonomous Software Development Lifecycle - verification-driven development with parallel worktrees, async subagents, and Beads integration",
+  "version": "0.2.0",
+  "description": "Autonomous SDLC with plan-first architecture, builder/validator pairs, automatic validation hooks, and documentation sync",
   "author": {
     "name": "Joshua Oliphant",
     "email": "joshuaoliphant@gmail.com"
