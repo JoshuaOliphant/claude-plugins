@@ -1,7 +1,7 @@
 {
   "name": "autonomous-sdlc",
-  "version": "0.2.0",
-  "description": "Autonomous SDLC with plan-first architecture, builder/validator pairs, automatic validation hooks, and documentation sync",
+  "version": "0.3.0",
+  "description": "Autonomous SDLC with feature branches, wave-based integration, builder/validator pairs, automatic validation hooks, and PR creation",
   "author": {
     "name": "Joshua Oliphant",
     "email": "joshuaoliphant@gmail.com"

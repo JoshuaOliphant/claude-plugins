@@ -1,6 +1,6 @@
 ---
 name: sdlc
-description: Start an autonomous SDLC workflow with parallel worktrees, builder/validator pairs, and verification-driven development
+description: Start an autonomous SDLC workflow with feature branches, wave-based integration, and PR creation
 allowed-tools:
   - Read
   - Glob
@@ -16,64 +16,69 @@ argument-hint: "<description of what to build>"
 
 You are starting an autonomous software development lifecycle workflow. This workflow uses:
 
-- **Plan Documents** for comprehensive feature planning with team orchestration
-- **Beads** for work tracking and dependency management
-- **Git worktrees** for isolated parallel development
-- **Builder/Validator pairs** for implementation and verification
-- **TDD** for test-driven implementation
-- **Automatic validation hooks** for real-time quality enforcement
-- **Documenter** for keeping docs in sync with code
+- **Feature Branches**: One branch per feature, task branches underneath
+- **Plan Documents**: Comprehensive feature planning with team orchestration
+- **Beads**: Work tracking and dependency management
+- **Git Worktrees**: Isolated parallel development
+- **Builder/Validator Pairs**: Implementation and verification
+- **Wave-Based Integration**: Merge after each wave so dependencies work
+- **Automatic PR Creation**: Generate PR with rich description
 
 ## Arguments
 
 The user has requested: $ARGUMENTS
 
-## New Workflow Architecture
+## Complete Workflow Architecture
 
 ```
-/sdlc "description"
+/sdlc "Add user authentication"
     ↓
 ┌─────────────────────────────────────────────────────────────┐
 │ ARCHITECT (Opus)                                             │
 │   1. Explore codebase                                        │
-│   2. Create specs/{feature}-plan.md                          │
-│   3. Create Beads from plan with dependencies                │
-│   4. Report task graph                                       │
+│   2. Create feature branch: feature/user-auth                │
+│   3. Create specs/user-auth-plan.md                          │
+│   4. Create Beads from plan with dependencies                │
+│   5. Report task graph with waves                            │
 └─────────────────────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────────────────────┐
-│ WORKTREE MANAGER (Sonnet)                                    │
-│   1. bd ready → find unblocked tasks                         │
-│   2. git worktree add for each ready Bead                    │
-│   3. Spawn Builder agents in parallel (run_in_background)    │
-│   4. After each Builder, spawn Validator                     │
-│   5. Monitor, iterate until all Beads closed                 │
-└─────────────────────────────────────────────────────────────┘
-    ↓ (for each ready Bead)
-┌─────────────────────────────────────────────────────────────┐
-│ BUILDER (Sonnet) + VALIDATOR (Sonnet)                        │
+│ WORKTREE MANAGER (Sonnet) - Wave Loop                        │
 │                                                              │
-│   Builder:                                                   │
-│   1. Implement task with TDD                                 │
-│   2. PostToolUse hooks run Ruff + type check automatically   │
-│   3. Commit changes                                          │
-│                                                              │
-│   Validator (read-only):                                     │
-│   1. Verify acceptance criteria met                          │
-│   2. Run verification stack                                  │
-│   3. Report PASS/FAIL                                        │
-│   4. If PASS → bd close {bead-id}                            │
+│   WAVE 1 (tasks with no deps):                               │
+│   ├─ Create worktrees from feature branch                    │
+│   ├─ Spawn Builders in parallel                              │
+│   ├─ Spawn Validators after builders                         │
+│   └─ INTEGRATE into feature branch                           │
+│          ↓                                                   │
+│   WAVE 2 (tasks that depended on Wave 1):                    │
+│   ├─ Create worktrees (now sees Wave 1 code!)                │
+│   ├─ Spawn Builders in parallel                              │
+│   ├─ Spawn Validators after builders                         │
+│   └─ INTEGRATE into feature branch                           │
+│          ↓                                                   │
+│   ... repeat until all Beads closed ...                      │
 └─────────────────────────────────────────────────────────────┘
-    ↓ (all Beads closed)
+    ↓ (all waves complete)
 ┌─────────────────────────────────────────────────────────────┐
 │ DOCUMENTER (Haiku)                                           │
-│   1. Scan for undocumented new code                          │
-│   2. Update README.md with new features                      │
+│   1. Read plan for context                                   │
+│   2. Add ABOUTME comments to new files                       │
 │   3. Add/update docstrings                                   │
-│   4. Add ABOUTME comments to new files                       │
+│   4. Update README with new features                         │
+│   5. Commit documentation changes                            │
 └─────────────────────────────────────────────────────────────┘
     ↓
-Done! (PR review happens in CI/CD pipeline)
+┌─────────────────────────────────────────────────────────────┐
+│ PR-CREATOR (Sonnet)                                          │
+│   1. Push feature branch to remote                           │
+│   2. Generate PR description from plan                       │
+│   3. Create PR/MR (GitHub or GitLab)                         │
+│   4. Add labels and reviewers                                │
+│   5. Return PR URL                                           │
+└─────────────────────────────────────────────────────────────┘
+    ↓
+Done! PR ready for human review
 ```
 
 ## Workflow Steps
@@ -90,82 +95,113 @@ echo "$ARGUMENTS" > .sdlc/description
 
 ### Step 2: Spawn Architect Agent
 
-Use the Task tool to spawn the architect agent:
+The Architect creates the feature branch, plan, and Beads:
 
 ```python
 Task(
     subagent_type="autonomous-sdlc:architect",
-    description="Create plan and Beads",
+    description="Create feature branch, plan, and Beads",
     prompt=f"""
-Analyze this request and create an implementation plan:
+Create an implementation plan for:
 
 {user_request}
 
 Instructions:
 1. Explore the codebase to understand existing patterns
-2. Create a plan document at specs/{{feature-slug}}-plan.md
-3. Include Team Orchestration section with builders/validators
-4. Include Step by Step Tasks table with dependencies
-5. Create Beads with `bd create` for each task
-6. Set dependencies with `bd dep add`
-7. Report the task graph when done
+2. Create feature branch: feature/{{feature-slug}}
+3. Create plan document at specs/{{feature-slug}}-plan.md
+4. Include Team Orchestration section with builders/validators
+5. Include Step by Step Tasks table with dependencies
+6. Create Beads with `bd create` for each task
+7. Set dependencies with `bd dep add`
+8. Report the feature branch name and task graph
 
-The plan document is the source of truth - create Beads FROM the plan.
+The feature branch is the integration target. All task branches will be created from it.
 """
 )
 ```
 
 ### Step 3: Spawn Worktree Manager
 
-After the architect completes, spawn the worktree manager:
+The Worktree Manager handles wave-based execution and integration:
 
 ```python
 Task(
     subagent_type="autonomous-sdlc:worktree-manager",
-    description="Orchestrate parallel implementation",
-    prompt="""
-Manage the implementation of ready Beads using builder/validator pairs:
+    description="Execute waves with integration",
+    prompt=f"""
+Execute the SDLC workflow for feature/{feature_slug}:
 
-1. Run `bd ready` to find unblocked tasks
-2. Create worktrees for each ready Bead
-3. For each Bead:
-   a. Spawn Builder agent (run_in_background=True)
-   b. After Builder completes, spawn Validator agent
-   c. Validator verifies and closes Bead if passing
-4. Monitor progress and iterate until all Beads are closed
+Feature branch: feature/{feature_slug}
+Plan file: specs/{feature_slug}-plan.md
 
-Use `autonomous-sdlc:builder` and `autonomous-sdlc:validator` agents.
-Builders have automatic PostToolUse hooks for Ruff and type checking.
-Validators are read-only and cannot modify code.
+Instructions:
+1. Process tasks in waves (bd ready shows current wave)
+2. For each wave:
+   a. Create worktrees FROM feature/{feature_slug}
+   b. Spawn Builders in parallel
+   c. Spawn Validators after builders complete
+   d. Spawn Integrator to merge wave into feature branch
+3. Repeat until all Beads are closed
+4. Clean up worktrees
+
+Task branches should be named: feature/{feature_slug}/beads-xxx
+Integrate after EACH wave so subsequent waves see previous code.
 """
 )
 ```
 
 ### Step 4: Spawn Documenter
 
-After all implementation and validation is complete:
+After all implementation is complete:
 
 ```python
 Task(
     subagent_type="autonomous-sdlc:documenter",
     description="Update documentation",
-    prompt="""
-Update documentation to match the implemented features:
+    prompt=f"""
+Update documentation for feature/{feature_slug}:
 
-1. Read the plan file from specs/ to understand what was built
+1. Read specs/{feature_slug}-plan.md for context
 2. Find new Python files and add ABOUTME comments
 3. Add docstrings to new public functions
-4. Update README.md with new features and usage examples
-5. Commit documentation changes
+4. Update README.md with new features and usage
+5. Commit documentation changes to feature/{feature_slug}
 
-The plan's acceptance criteria tell you what features to document.
+Work on the feature branch, not main.
 """
 )
 ```
 
-### Step 5: Cleanup
+### Step 5: Spawn PR-Creator
 
-After the workflow completes:
+Create the pull request:
+
+```python
+Task(
+    subagent_type="autonomous-sdlc:pr-creator",
+    description="Create pull request",
+    prompt=f"""
+Create a PR for feature/{feature_slug}:
+
+Feature branch: feature/{feature_slug}
+Plan file: specs/{feature_slug}-plan.md
+Target branch: main
+
+Instructions:
+1. Push feature branch to remote
+2. Generate PR description from the plan document
+3. Create PR using gh (GitHub) or glab (GitLab)
+4. Include acceptance criteria as checklist
+5. Link related Beads in description
+6. Return the PR URL
+"""
+)
+```
+
+### Step 6: Cleanup
+
+After PR is created:
 
 ```bash
 # Remove SDLC marker
@@ -174,19 +210,47 @@ rm -rf .sdlc
 # Sync Beads
 bd sync
 
-# Report completion
+# Report completion with PR URL
 echo "SDLC workflow complete"
+echo "PR: {pr_url}"
 ```
 
 ## Agent Summary
 
 | Agent | Model | Purpose | Key Feature |
 |-------|-------|---------|-------------|
-| **Architect** | Opus | Creates plan + Beads | Plan-first approach |
-| **Worktree Manager** | Sonnet | Orchestrates parallel work | Spawns builder/validator pairs |
+| **Architect** | Opus | Creates feature branch + plan + Beads | Plan-first approach |
+| **Worktree Manager** | Sonnet | Orchestrates waves | Wave-based integration |
 | **Builder** | Sonnet | Implements one task | PostToolUse validation hooks |
 | **Validator** | Sonnet | Verifies implementation | Read-only, can't modify code |
-| **Documenter** | Haiku | Updates docs | Runs after all validation |
+| **Integrator** | Sonnet | Merges task branches | Runs per-wave |
+| **Documenter** | Haiku | Updates docs | Fast, efficient |
+| **PR-Creator** | Sonnet | Creates PR/MR | Supports GitHub + GitLab |
+
+## Branch Strategy
+
+```
+main
+ └── feature/user-auth                    ← Feature branch (Architect creates)
+      ├── feature/user-auth/beads-abc     ← Task branch (Wave 1)
+      ├── feature/user-auth/beads-def     ← Task branch (Wave 1)
+      └── feature/user-auth/beads-ghi     ← Task branch (Wave 2)
+```
+
+After each wave, task branches merge INTO the feature branch.
+After all waves, feature branch becomes PR against main.
+
+## Wave-Based Integration
+
+**Why integrate between waves?**
+
+Without integration:
+- Wave 1: Builder A creates `User` model
+- Wave 2: Builder B needs `User` model but doesn't see it!
+
+With integration:
+- Wave 1: Builder A creates `User` model → merged into feature branch
+- Wave 2: Builder B branches from feature branch → sees `User` model ✅
 
 ## Error Handling
 
@@ -194,7 +258,8 @@ If any agent fails:
 1. Check Beads status: `bd list --status=open`
 2. Check worktree status: `git worktree list`
 3. Check plan file: `cat specs/*-plan.md`
-4. Resume from the failed point or clean up and restart
+4. Check feature branch: `git log feature/{name} --oneline -5`
+5. Resume from the failed point or clean up and restart
 
 ## Progress Tracking
 
@@ -202,37 +267,54 @@ Use TodoWrite to track high-level progress:
 
 ```python
 TodoWrite([
-    {"content": "Architect: Create plan and Beads", "status": "in_progress"},
-    {"content": "Worktree Manager: Parallel implementation", "status": "pending"},
+    {"content": "Architect: Create feature branch and plan", "status": "in_progress"},
+    {"content": "Worktree Manager: Execute waves", "status": "pending"},
     {"content": "Documenter: Update documentation", "status": "pending"},
-    {"content": "Cleanup and sync", "status": "pending"}
+    {"content": "PR-Creator: Create pull request", "status": "pending"},
+    {"content": "Cleanup and report", "status": "pending"}
 ])
 ```
 
-Update todos as each phase completes.
+## Key Features
 
-## Key Differences from Previous Workflow
+1. **Feature Branch**: Single branch for entire feature, task branches underneath
+2. **Plan-First**: Architect creates plan BEFORE Beads
+3. **Wave-Based**: Tasks processed in dependency waves
+4. **Inter-Wave Integration**: Each wave merges before next starts
+5. **Builder/Validator Pairs**: Separate implementation and verification
+6. **Automatic Validation**: PostToolUse hooks run Ruff + mypy
+7. **Documentation Sync**: Documenter ensures docs match code
+8. **PR Generation**: Automatic PR with rich description from plan
 
-1. **Plan-First**: Architect creates `specs/{feature}-plan.md` BEFORE Beads
-2. **Builder/Validator Pairs**: Separate agents for implementation and verification
-3. **Automatic Validation**: PostToolUse hooks run Ruff + mypy on every edit
-4. **Read-Only Validator**: Validator cannot modify code, only verify
-5. **Documenter Step**: Ensures docs stay in sync with code
-6. **No Reviewer**: PR review handled by CI/CD pipeline, not in-workflow
+## Output
 
-## Plan Document Location
+When complete, provide:
 
-Plans are stored at: `specs/{feature-slug}-plan.md`
+```markdown
+## SDLC Workflow Complete
 
-Example slugs:
-- "Add user authentication" → `specs/user-auth-plan.md`
-- "Implement rate limiting" → `specs/rate-limiting-plan.md`
+**Feature**: {description}
+**Feature Branch**: feature/{slug}
+**Plan**: specs/{slug}-plan.md
 
-## CI/CD Integration
+### Execution Summary
+| Phase | Status |
+|-------|--------|
+| Architect | ✅ Complete |
+| Wave 1 (3 tasks) | ✅ Integrated |
+| Wave 2 (2 tasks) | ✅ Integrated |
+| Wave 3 (1 task) | ✅ Integrated |
+| Documenter | ✅ Complete |
+| PR-Creator | ✅ Complete |
 
-After SDLC workflow completes:
-1. Feature branches are ready for PR
-2. CI/CD pipeline runs Claude Code for PR review
-3. Merge to main happens through normal PR process
+### Pull Request
+**URL**: https://github.com/owner/repo/pull/123
+**Title**: feat: Add user authentication
+**Target**: main
+**Status**: Open (ready for review)
 
-This separation keeps the SDLC focused on implementation while PR review is a separate concern.
+### Next Steps
+1. Review the PR
+2. Address any review feedback
+3. Merge when approved
+```
