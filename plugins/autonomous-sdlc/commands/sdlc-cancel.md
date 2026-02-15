@@ -19,6 +19,10 @@ if [ ! -d ".sdlc" ]; then
     echo "No active SDLC workflow to cancel"
     exit 0
 fi
+
+echo "Active workflow found"
+cat .sdlc/description 2>/dev/null
+cat .sdlc/mode 2>/dev/null
 ```
 
 ### 2. List Active Resources
@@ -30,6 +34,10 @@ git worktree list | grep trees/
 echo ""
 echo "=== Open Beads ==="
 bd list --status=open | head -20
+
+echo ""
+echo "=== Coordination Mode ==="
+cat .sdlc/mode 2>/dev/null || echo "unknown"
 ```
 
 ### 3. Clean Up Worktrees
@@ -48,8 +56,9 @@ git worktree prune
 ### 4. Clean Up Branches
 
 ```bash
-# Delete feature branches that were created
-for branch in $(git branch | grep "feature/beads-"); do
+# Delete task branches that were created
+for branch in $(git branch | grep "feature/.*beads-"); do
+    branch=$(echo "$branch" | sed 's/^[* ]*//')
     echo "Deleting branch: $branch"
     git branch -D "$branch" 2>/dev/null || true
 done
@@ -78,7 +87,7 @@ bd list --status=open
 
 After cancellation:
 - Worktrees are removed
-- Feature branches are deleted
+- Task branches are deleted
 - SDLC marker is removed
 - Beads remain open (manual cleanup if needed)
 

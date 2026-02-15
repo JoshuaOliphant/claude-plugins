@@ -1,17 +1,17 @@
 # Autonomous SDLC Plugin
 
-Verification-driven software development lifecycle for Claude Code. This plugin enables autonomous feature development from initial requirements through PR creation.
+Adaptive autonomous software development lifecycle for Claude Code. The lead orchestrator chooses the right coordination mode — solo, subagents, or agent teams — based on task complexity.
 
 ## Key Features
 
-- **Feature Branches**: One branch per feature, task branches underneath
+- **Adaptive Orchestration**: Lead decides coordination mode per-task (solo, subagents, agent teams)
+- **Agent Teams Support**: Teammates message each other directly when `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+- **Prompt Objects**: Agents use identity/context/success-criteria instead of step-by-step scripts
+- **Optional Worktrees**: Parallel isolation when needed, shared directory when not
 - **Plan-First Architecture**: Comprehensive plan documents before implementation
-- **Wave-Based Integration**: Merge after each dependency wave
-- **Parallel Worktrees**: Isolated development environments
-- **Builder/Validator Pairs**: Separate implementation and verification
+- **Builder/Validator Pairs**: Separate implementation and verification with direct feedback
 - **Automatic Validation Hooks**: Ruff + type checking on every edit
-- **Documentation Sync**: Automatic doc updates after implementation
-- **PR Generation**: Rich PR descriptions from plan documents
+- **Graceful Degradation**: Works without agent teams, without Beads, without worktrees
 
 ## Quick Start
 
@@ -26,40 +26,39 @@ Verification-driven software development lifecycle for Claude Code. This plugin 
 /autonomous-sdlc:sdlc-cancel
 ```
 
-## Complete Workflow
+## How It Works
+
+The lead orchestrator assesses your request and picks a coordination mode:
+
+### Simple Tasks (1-2 tasks)
+Lead does it directly or uses a single subagent. No worktrees needed.
+
+### Moderate Tasks (3-5 tasks)
+Subagents with optional worktrees. Architect plans, builders implement, validators verify.
+
+### Complex Tasks (6+ tasks)
+Agent teams preferred (if available). Teammates self-coordinate, builders and validators communicate directly.
+
+## Workflow Phases
 
 ```
 /sdlc "Add user authentication"
     ↓
-┌─────────────────────────────────────────────────────────────┐
-│ ARCHITECT (Opus)                                             │
-│   1. Explore codebase                                        │
-│   2. Create feature branch: feature/user-auth                │
-│   3. Create specs/user-auth-plan.md                          │
-│   4. Create Beads with dependencies                          │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│ WORKTREE MANAGER - Wave Loop                                 │
-│                                                              │
-│   WAVE 1 (tasks with no deps):                               │
-│   ├─ Builders in parallel → Validators → INTEGRATE           │
-│          ↓                                                   │
-│   WAVE 2 (depends on Wave 1):                                │
-│   ├─ Builders (see Wave 1 code!) → Validators → INTEGRATE    │
-│          ↓                                                   │
-│   ... repeat until all Beads closed ...                      │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│ DOCUMENTER (Haiku)                                           │
-│   Update README, docstrings, ABOUTME comments                │
-└─────────────────────────────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────────────────────────────┐
-│ PR-CREATOR (Sonnet)                                          │
-│   Create PR/MR with rich description from plan               │
-└─────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────┐
+│ LEAD ORCHESTRATOR (Opus)                    │
+│                                             │
+│  1. Orient — understand codebase            │
+│  2. Plan — feature branch + plan doc        │
+│  3. Decompose — break into tasks            │
+│  4. Build — solo, subagents, or team        │
+│  5. Verify — validators check work          │
+│  6. Integrate — merge if using worktrees    │
+│  7. Document — update docs                  │
+│  8. Ship — create PR                        │
+│                                             │
+│  Phases are flexible, not sequential.       │
+│  Lead may skip, reorder, or combine.        │
+└───────────────────────────────────────────┘
     ↓
 Done! PR ready for human review
 ```
@@ -68,14 +67,17 @@ Done! PR ready for human review
 
 | Agent | Model | Purpose | Key Feature |
 |-------|-------|---------|-------------|
-| **Architect** | Opus | Creates feature branch + plan + Beads | Plan-first |
-| **Worktree Manager** | Sonnet | Orchestrates waves | Inter-wave integration |
-| **Builder** | Sonnet | Implements one task | PostToolUse hooks |
-| **Validator** | Sonnet | Verifies implementation | Read-only |
-| **Integrator** | Sonnet | Merges task branches | Conflict resolution |
+| **Architect** | Opus | Creates feature branch + plan + tasks | Plan-first |
+| **Builder** | Sonnet | Implements one task with TDD | PostToolUse hooks |
+| **Validator** | Sonnet | Verifies implementation (read-only) | Direct builder feedback |
+| **Integrator** | Sonnet | Merges task branches (optional) | Conflict resolution |
 | **Documenter** | Haiku | Updates docs | Fast, efficient |
 | **PR-Creator** | Sonnet | Creates PR/MR | GitHub + GitLab |
-| **Implementer** | Sonnet | Legacy TDD agent | Use Builder instead |
+
+Reference patterns (not spawnable):
+| Pattern | Purpose |
+|---------|---------|
+| **Worktree/Wave Guide** | Worktree creation, wave processing, integration loops |
 
 ## Commands
 
@@ -94,32 +96,28 @@ Done! PR ready for human review
 | `verification-stack` | Full verification pipeline |
 | `tdd-workflow` | Test-driven development |
 
+## Coordination Modes
+
+### Subagent Mode (Default)
+Wave-based processing with background subagents. The lead spawns builders in parallel, validators after, integrates between waves.
+
+### Agent Teams Mode
+Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`. Teammates communicate directly — validators message builders with feedback instead of creating fix tasks. Faster iteration cycles.
+
+### Solo Mode
+For simple tasks, the lead just does the work directly.
+
 ## Branch Strategy
 
 ```
 main
  └── feature/user-auth                    ← Feature branch
-      ├── feature/user-auth/beads-abc     ← Task branch (Wave 1)
-      ├── feature/user-auth/beads-def     ← Task branch (Wave 1)
-      └── feature/user-auth/beads-ghi     ← Task branch (Wave 2)
+      ├── feature/user-auth/beads-abc     ← Task branch (if using worktrees)
+      ├── feature/user-auth/beads-def     ← Task branch (if using worktrees)
+      └── feature/user-auth/beads-ghi     ← Task branch (if using worktrees)
 ```
 
-- **Architect** creates the feature branch
-- **Worktree Manager** creates task branches FROM the feature branch
-- **Integrator** merges task branches INTO the feature branch after each wave
-- **PR-Creator** opens a PR from feature branch to main
-
-## Wave-Based Integration
-
-**Why integrate between waves?**
-
-Wave 2 tasks often depend on Wave 1 code. Without integration:
-- Wave 1 Builder creates `User` model
-- Wave 2 Builder needs `User` but doesn't see it!
-
-With integration:
-- Wave 1: Create `User` model → merge into feature branch
-- Wave 2: Branch from feature branch → sees `User` model ✅
+Without worktrees, all work happens directly on the feature branch.
 
 ## Validation Hooks
 
@@ -135,21 +133,11 @@ Issues are reported immediately so builders fix them inline.
 ## Prerequisites
 
 - Claude Code v2.1.0+
-- Git (for worktrees)
-- Beads CLI (`bd` command)
+- Git
 - `gh` CLI (GitHub) or `glab` CLI (GitLab)
 - `uv` for Python package management
-
-## Plan Documents
-
-Every workflow creates `specs/{feature}-plan.md` containing:
-
-- Task description and objectives
-- Solution approach
-- Team orchestration (builders, validators)
-- Step-by-step tasks with dependencies
-- Acceptance criteria
-- Validation commands
+- Optional: Beads CLI (`bd` command) for task tracking
+- Optional: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` for agent teams
 
 ## Verification Stack
 
@@ -157,34 +145,20 @@ Every workflow creates `specs/{feature}-plan.md` containing:
 Tests (pytest) → Lint (ruff) → Types (mypy) → Build
 ```
 
-If any gate fails, the agent fixes it before proceeding.
-
-## Example Output
-
-```markdown
-## SDLC Workflow Complete
-
-**Feature**: Add user authentication
-**Feature Branch**: feature/user-auth
-**Plan**: specs/user-auth-plan.md
-
-### Execution Summary
-| Phase | Status |
-|-------|--------|
-| Architect | ✅ Complete |
-| Wave 1 (3 tasks) | ✅ Integrated |
-| Wave 2 (2 tasks) | ✅ Integrated |
-| Documenter | ✅ Complete |
-| PR-Creator | ✅ Complete |
-
-### Pull Request
-**URL**: https://github.com/owner/repo/pull/123
-**Status**: Open (ready for review)
-```
+If any gate fails, the agent communicates the issue and fixes it.
 
 ## Version History
 
-### v0.3.0 (Current)
+### v0.4.0 (Current)
+- Adaptive orchestration — lead chooses coordination mode per-task
+- Agent teams support with direct builder-validator communication
+- Prompt objects replace procedural step-by-step instructions
+- Worktrees are optional, not required
+- Worktree-manager absorbed into lead (now a reference pattern)
+- Removed legacy implementer agent
+- Graceful degradation without agent teams, Beads, or worktrees
+
+### v0.3.0
 - Added feature branch strategy
 - Added wave-based integration (inter-wave merging)
 - Added Integrator agent for branch merging

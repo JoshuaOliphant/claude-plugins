@@ -19,6 +19,8 @@ Check the current status of an autonomous SDLC workflow.
 if [ -d ".sdlc" ]; then
     echo "SDLC workflow is ACTIVE"
     cat .sdlc/started 2>/dev/null && echo "Started at above timestamp"
+    cat .sdlc/description 2>/dev/null && echo "Description: $(cat .sdlc/description)"
+    cat .sdlc/mode 2>/dev/null && echo "Coordination mode: $(cat .sdlc/mode)"
 else
     echo "No active SDLC workflow"
 fi
@@ -50,7 +52,18 @@ echo "=== Feature Branches ==="
 git branch -a | grep feature/
 ```
 
-### 4. Recent Completions
+### 4. Agent Teams Status
+
+```bash
+echo "=== Agent Teams ==="
+if [ -n "$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS" ]; then
+    echo "Agent teams: ENABLED"
+else
+    echo "Agent teams: NOT AVAILABLE"
+fi
+```
+
+### 5. Recent Completions
 
 ```bash
 echo "=== Recently Closed Beads ==="
@@ -66,6 +79,7 @@ Provide a summary in this format:
 
 **State**: Active / Inactive
 **Started**: {timestamp}
+**Coordination Mode**: {solo | subagents | agent-teams}
 
 ### Progress
 - Total Beads: X
@@ -75,7 +89,11 @@ Provide a summary in this format:
 
 ### Active Worktrees
 - trees/beads-xxx (feature/beads-xxx)
-- trees/beads-yyy (feature/beads-yyy)
+
+### Environment
+- Agent Teams: Available / Not Available
+- Beads CLI: Available / Not Available
+- Worktrees: Available / Not Available
 
 ### Next Steps
 - {What needs to happen next}
