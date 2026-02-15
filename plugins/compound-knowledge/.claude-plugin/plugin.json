@@ -1,0 +1,19 @@
+{
+  "name": "compound-knowledge",
+  "version": "0.1.0",
+  "description": "Capture solved problems as structured solution files with YAML frontmatter for grep-based retrieval. Compounds engineering knowledge across sessions and projects.",
+  "license": "MIT",
+  "author": {
+    "name": "Joshua Oliphant"
+  },
+  "homepage": "https://github.com/joshuaoliphant/claude-plugins",
+  "repository": "https://github.com/joshuaoliphant/claude-plugins",
+  "keywords": [
+    "knowledge-management",
+    "compound-engineering",
+    "solutions",
+    "grep-retrieval",
+    "yaml-frontmatter",
+    "institutional-knowledge"
+  ]
+}
