@@ -4,7 +4,7 @@ description: >
   Search knowledge/solutions/ for relevant past solutions by YAML frontmatter.
   Use before implementing features or fixing bugs to surface institutional
   knowledge and prevent repeated mistakes. Designed for speed (<30s).
-tools: Read, Glob, Grep
+allowed-tools: [Read, Glob, Grep]
 model: haiku
 ---
 

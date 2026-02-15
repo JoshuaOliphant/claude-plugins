@@ -65,7 +65,7 @@ If the resolved directory does not exist, inform the user:
 
 ---
 
-## Capture Workflow (7 Steps)
+## Capture Workflow (8 Steps)
 
 ### Step 1: Resolve Solutions Path
 
