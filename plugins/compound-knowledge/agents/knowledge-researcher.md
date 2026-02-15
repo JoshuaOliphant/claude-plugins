@@ -22,7 +22,16 @@ Extract the path from the line starting with `solutions_path:`. Expand `~` to th
 
 Store the resolved path as `{solutions_path}` for all subsequent operations.
 
-## Search Algorithm (7 Steps)
+## Search Algorithm (9 Steps)
+
+### Step 0: Read Registry
+
+Read `~/.claude/compound-knowledge-registry.md` (the path may also be provided as `registry_path` in the prompt).
+
+- If the file exists, parse it to identify all registered knowledge bases
+- Identify the **primary knowledge base** — the one matching `{solutions_path}` from the prompt
+- Note the **other registered knowledge bases** for potential cross-project search in Step 8
+- If the file does not exist, skip this step — no cross-project search will be available
 
 ### Step 1: Extract Keywords
 
@@ -98,6 +107,21 @@ Read the full content of the **top 2-5 solutions** (based on score). Extract:
 - Key code examples
 - Prevention strategies
 
+### Step 8: Cross-Project Search
+
+**Trigger**: Only run this step if the primary search returned **<3 scored results** AND the registry from Step 0 contains other knowledge bases.
+
+For each additional registered knowledge base:
+
+1. Run the same parallel Grep pattern from Step 3 against that KB's path
+2. Read frontmatter of matches (Step 5 logic)
+3. Score results using the same algorithm from Step 6, but with a **-1 penalty** (no same-project bonus applies to cross-project results)
+4. Track which knowledge base each result came from
+
+Merge cross-project results into the main results list, sorted by score. Clearly label each cross-project result with its source KB name and path.
+
+**Limit**: Search at most 5 additional knowledge bases to stay within the speed budget.
+
 ## Output Format
 
 Return your findings in this structure:
@@ -108,6 +132,7 @@ Return your findings in this structure:
 - **Task**: [what was searched for]
 - **Keywords**: [extracted search terms]
 - **Solutions Path**: {solutions_path}
+- **Registry**: [number of registered KBs, or "not available"]
 - **Files Scanned**: [count of frontmatter-filtered candidates]
 
 ## Critical Patterns
@@ -118,6 +143,7 @@ Return your findings in this structure:
 
 ### 1. [Solution Title]
 - **File**: `{solutions_path}/{category}/{filename}.md`
+- **Source KB**: {project-name} (primary)
 - **Project**: {project} | **Component**: {component}
 - **Relevance**: [why this matches - 1 sentence]
 - **Key Insight**: [the most important takeaway - 1-2 sentences]
@@ -125,6 +151,20 @@ Return your findings in this structure:
 
 ### 2. [Solution Title]
 ...
+
+## Cross-Project Results
+
+[Only present if Step 8 was triggered and found results]
+
+### 1. [Solution Title]
+- **File**: `{other_solutions_path}/{category}/{filename}.md`
+- **Source KB**: {other-project-name}
+- **Project**: {project} | **Component**: {component}
+- **Relevance**: [why this matches - 1 sentence]
+- **Key Insight**: [the most important takeaway - 1-2 sentences]
+- **Severity**: {severity}
+
+[If no cross-project results: omit this section entirely]
 
 ## Recommendations
 

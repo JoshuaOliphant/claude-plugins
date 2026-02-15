@@ -93,9 +93,39 @@ Compound Knowledge initialized!
   Solutions directory: {solutions_path}
   Categories created: 10
   Config file: {config_path} (or "none — using default location")
+  Registry: registered in ~/.claude/compound-knowledge-registry.md
 
   Next steps:
   - Solve a problem, then say "capture that" or invoke /compound-knowledge
   - Search past solutions with "check if we've seen this before"
   - Add critical patterns to critical-patterns.md as you discover them
 ```
+
+### Step 6: Register Knowledge Base
+
+Register this knowledge base in the cross-project registry so solutions are discoverable from other projects.
+
+1. Read `~/.claude/compound-knowledge-registry.md`
+   - If the file does not exist, create it with this header:
+     ```markdown
+     # Compound Knowledge Registry
+
+     Central directory of all knowledge bases on this machine.
+     Updated automatically when solutions are captured or `/compound-knowledge:setup` is run.
+
+     ## Registered Knowledge Bases
+     ```
+2. Determine the project name from the current working directory (last path component, lowercase, hyphens)
+3. Check if an entry already exists for `{solutions_path}` (search for the path string in the file)
+4. **If entry exists**: Update `last_updated` to today's date, `solution_count` to 0, `primary_components` to []
+5. **If new entry**: Append:
+   ```markdown
+
+   ### {project-name}
+   - **path**: {solutions_path}
+   - **last_updated**: {YYYY-MM-DD}
+   - **solution_count**: 0
+   - **primary_components**: []
+   ```
+
+See `references/registry-format.md` for the full schema and update rules.

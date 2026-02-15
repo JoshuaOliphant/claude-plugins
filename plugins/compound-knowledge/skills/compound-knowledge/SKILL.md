@@ -34,6 +34,17 @@ Extract the path from the line starting with `solutions_path:`. Expand `~` to th
 
 **Store the resolved path as `{solutions_path}` for all subsequent operations.**
 
+## Registry
+
+A central registry at `~/.claude/compound-knowledge-registry.md` tracks all knowledge bases on the machine. This enables cross-project solution search — a Docker fix captured in project A is discoverable when debugging the same issue in project B.
+
+See `references/registry-format.md` for the full schema and update rules.
+
+**When registration happens:**
+1. **`/compound-knowledge:setup`** — registers after creating the directory structure
+2. **After capture** — updates entry (last_updated, solution_count, primary_components) as final step
+3. **First retrieval from a path** — registers if not already present (idempotent)
+
 If the resolved directory does not exist, inform the user:
 > "Solutions directory not found at `{solutions_path}`. Run `/compound-knowledge:setup` to initialize it."
 
@@ -66,7 +77,7 @@ If the resolved directory does not exist, inform the user:
 
 ---
 
-## Capture Workflow (8 Steps)
+## Capture Workflow (9 Steps)
 
 ### Step 1: Resolve Solutions Path
 
@@ -168,6 +179,18 @@ Related solutions:
   - [title](path) — {why related}
 ```
 
+### Step 9: Update Registry
+
+Update the cross-project registry so this knowledge base is discoverable from other projects.
+
+1. Read `~/.claude/compound-knowledge-registry.md` (if it doesn't exist, create it with the header from `references/registry-format.md`)
+2. Determine the project name from the current working directory (lowercase, hyphens)
+3. Check if an entry already exists for `{solutions_path}` (path is the unique key)
+4. Count solution files: `Glob(pattern="**/*.md", path="{solutions_path}")` minus `critical-patterns.md`
+5. Extract unique components: `Grep(pattern="^component:", path="{solutions_path}", output_mode="content")` — deduplicate and take top 10
+6. **If entry exists**: Update `last_updated`, `solution_count`, and `primary_components` in-place
+7. **If new entry**: Append a new entry block at the end of the file
+
 ---
 
 ## Retrieval Workflow (Delegation)
@@ -184,10 +207,12 @@ Follow the Path Resolution algorithm above. Store the result as `{solutions_path
 Task(
   subagent_type="compound-knowledge:knowledge-researcher",
   model="haiku",
-  prompt="Search for solutions related to: {task_description}. Project: {project_name}. Keywords: {extracted_keywords}. Solutions path: {solutions_path}",
+  prompt="Search for solutions related to: {task_description}. Project: {project_name}. Keywords: {extracted_keywords}. Solutions path: {solutions_path}. Registry path: ~/.claude/compound-knowledge-registry.md",
   description="Search past solutions"
 )
 ```
+
+The researcher reads the registry to identify other knowledge bases for cross-project search when primary results are thin (<3 hits).
 
 ### When to Invoke Retrieval
 
@@ -228,3 +253,4 @@ Surface the top results to the user and incorporate insights into your approach.
 
 - `references/yaml-schema.md` — YAML frontmatter field definitions and enum values
 - `references/solution-template.md` — Template for new solution files
+- `references/registry-format.md` — Cross-project registry schema and update rules
