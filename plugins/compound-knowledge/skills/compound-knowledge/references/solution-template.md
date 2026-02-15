@@ -17,11 +17,11 @@ symptoms:
   - "{Observable symptom or error message 2}"
 solution_summary: "{One-line summary of what fixed it}"
 severity: {critical|high|medium|low}
-root_cause: {enum value from yaml-schema.md}
-resolution_type: {enum value from yaml-schema.md}
-tags: [{keyword1}, {keyword2}, {keyword3}]
-environment: "{Runtime context if relevant}"
-related_solutions:
+root_cause: {enum value from yaml-schema.md}  # optional
+resolution_type: {enum value from yaml-schema.md}  # optional
+tags: [{keyword1}, {keyword2}, {keyword3}]  # optional
+environment: "{Runtime context if relevant}"  # optional
+related_solutions:  # optional
   - "{category}/{related-file}.md"
 ---
 

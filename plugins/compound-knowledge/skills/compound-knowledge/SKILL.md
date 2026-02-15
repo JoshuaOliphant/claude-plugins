@@ -1,12 +1,13 @@
 ---
 name: compound-knowledge
 description: >
-  Capture solved problems as structured solution files with YAML frontmatter
-  for grep-based retrieval. Use after confirming a non-trivial problem is fixed,
-  when explicitly invoked with /compound-knowledge, or when starting work that could
-  benefit from past solutions. Creates individual solution files in a configurable
-  solutions directory and delegates retrieval to the knowledge-researcher agent.
-allowed-tools: [Read, Write, Edit, Bash, Grep, Glob]
+  This skill should be used when the user says "that worked", "it's fixed",
+  "problem solved", "capture that solution", or explicitly invokes /compound-knowledge
+  after solving a non-trivial problem. Also activates when starting debugging or
+  planning work where past solutions might help — triggered by phrases like
+  "check if we've seen this before" or "search for solutions". Captures solved
+  problems as structured YAML-frontmatter solution files for grep-based retrieval.
+allowed-tools: [Read, Write, Edit, Grep, Glob]
 ---
 
 # Compound Knowledge
@@ -73,6 +74,8 @@ Follow the Path Resolution algorithm above. Store the result as `{solutions_path
 
 ### Step 2: Detect Confirmation
 
+Apply the Triviality Filter (above). If the problem is trivial, skip capture.
+
 Look for trigger phrases in conversation:
 - "That worked" / "It's fixed" / "Problem solved"
 - "Finally got it working"
@@ -89,6 +92,7 @@ Extract from the conversation:
 | Field | Source | Required? |
 |-------|--------|-----------|
 | `title` | Problem description | Yes |
+| `date` | Current date (auto-populated as YYYY-MM-DD) | Yes |
 | `project` | Current working directory or explicit mention | Yes |
 | `problem_type` | Nature of issue (see yaml-schema.md) | Yes |
 | `component` | Technology involved | Yes |
@@ -135,7 +139,7 @@ Examples:
 
 Read `references/yaml-schema.md` to validate all enum fields:
 - `problem_type` must map to a known category directory
-- `component` must be from the component enum
+- `component` should be from the component enum when possible; project-specific values are acceptable
 - `root_cause` must be from the root_cause enum (if provided)
 - `resolution_type` must be from the resolution_type enum (if provided)
 - `severity` must be: critical, high, medium, or low
