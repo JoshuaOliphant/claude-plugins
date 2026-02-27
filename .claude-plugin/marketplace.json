@@ -65,6 +65,23 @@
       ],
       "category": "development",
       "license": "MIT"
+    },
+    {
+      "name": "compound-knowledge",
+      "source": "./plugins/compound-knowledge",
+      "description": "Capture solved problems and engineering wisdom as structured YAML-frontmatter files for grep-based retrieval",
+      "version": "0.2.0",
+      "author": {
+        "name": "Joshua Oliphant"
+      },
+      "keywords": [
+        "knowledge-management",
+        "compound-engineering",
+        "principles",
+        "grep-retrieval"
+      ],
+      "category": "productivity",
+      "license": "MIT"
     }
   ]
 }
