@@ -40,6 +40,7 @@ Create the following directories under the chosen path:
 ├── configuration/
 ├── migration/
 ├── integration/
+├── principles/
 └── critical-patterns.md
 ```
 

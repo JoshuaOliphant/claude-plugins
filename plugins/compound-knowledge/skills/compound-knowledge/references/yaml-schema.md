@@ -16,6 +16,13 @@
 | `solution_summary` | string | One-line summary of fix |
 | `severity` | enum | critical, high, medium, low |
 
+## Conditional Fields (Principles Only)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `statement` | string | Concise, generalizable rule (1-2 sentences). Required when `problem_type: principles` |
+| `confidence` | enum | high, medium, low — how validated the principle is. Required when `problem_type: principles` |
+
 ## Optional Fields
 
 | Field | Type | Description |
@@ -42,6 +49,7 @@
 | `configuration` | `configuration/` | Nested values, env var validation, MCP config, settings |
 | `migration` | `migration/` | Unix socket→TCP, S6→K8s, legacy config extraction |
 | `integration` | `integration/` | Cross-account Bedrock, metadata schemas, API compatibility |
+| `principles` | `principles/` | Engineering wisdom, governing rules, validated best practices |
 
 **Note**: `problem_type: ci_cd` maps to directory `ci-cd/` (underscore in YAML, hyphen in filesystem).
 
@@ -127,8 +135,9 @@ Extend with project-specific values as needed. The enum is a starting vocabulary
 2. `problem_type` must match a value in the enum table
 3. `component` must match a value in the enum table
 4. `severity` must be one of: critical, high, medium, low
-5. `symptoms` must have 1-5 entries
+5. `symptoms` must have 1-5 entries — **unless** `problem_type: principles` (symptoms not required for principles)
 6. `tags` must have at most 8 entries
 7. `date` must be in YYYY-MM-DD format
 8. `root_cause` and `resolution_type` are optional but must match enum if provided
 9. `related_solutions` paths must be relative to the solutions directory root
+10. When `problem_type: principles`, `statement` and `confidence` are required; `confidence` must be one of: high, medium, low

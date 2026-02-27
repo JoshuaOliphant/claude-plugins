@@ -49,8 +49,9 @@ If the task type is clear, scope searches to the relevant subdirectory:
 - Design question → `{solutions_path}/patterns/`
 - CI/CD pipeline → `{solutions_path}/ci-cd/`
 - Config issue → `{solutions_path}/configuration/`
+- Engineering wisdom / best practices → `{solutions_path}/principles/`
 
-If unclear, search all of `{solutions_path}`.
+If unclear, search all of `{solutions_path}`. **Always include `principles/` when the task involves design decisions, architecture choices, or process questions.**
 
 ### Step 3: Parallel Grep Pre-Filter
 
@@ -61,6 +62,8 @@ Grep(pattern="project:.*{name}", path="{solutions_path}", output_mode="files_wit
 Grep(pattern="component:.*{tech}", path="{solutions_path}", output_mode="files_with_matches")
 Grep(pattern="tags:.*{keyword}", path="{solutions_path}", output_mode="files_with_matches")
 Grep(pattern="symptoms:.*{error_or_symptom}", path="{solutions_path}", output_mode="files_with_matches")
+Grep(pattern="statement:.*{keyword}", path="{solutions_path}/principles/", output_mode="files_with_matches")
+Grep(pattern="confidence:.*{level}", path="{solutions_path}/principles/", output_mode="files_with_matches")
 ```
 
 **Thresholds**:
@@ -138,6 +141,17 @@ Return your findings in this structure:
 ## Critical Patterns
 
 [Summary of relevant items from critical-patterns.md, if any apply]
+
+## Relevant Principles
+
+[Include if any principle files matched. Omit section if none found.]
+
+### 1. [Principle Title]
+- **File**: `{solutions_path}/principles/{filename}.md`
+- **Source KB**: {project-name} (primary)
+- **Statement**: {statement}
+- **Confidence**: {confidence}
+- **Relevance**: [why this applies - 1 sentence]
 
 ## Relevant Solutions
 

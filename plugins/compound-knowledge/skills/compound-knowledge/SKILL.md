@@ -1,12 +1,18 @@
 ---
 name: compound-knowledge
 description: >
-  This skill should be used when the user says "that worked", "it's fixed",
-  "problem solved", "capture that solution", or explicitly invokes /compound-knowledge
-  after solving a non-trivial problem. Also activates when starting debugging or
-  planning work where past solutions might help — triggered by phrases like
-  "check if we've seen this before" or "search for solutions". Captures solved
-  problems as structured YAML-frontmatter solution files for grep-based retrieval.
+  CAPTURE MODE: Use after solving a non-trivial problem, discovering a reusable
+  pattern, validating a principle through experience, completing non-trivial
+  debugging, making architecture decisions worth preserving, or generating any
+  reusable insight. Triggers on "that worked", "it's fixed", "problem solved",
+  "capture that", or explicit /compound-knowledge invocation.
+  RETRIEVAL MODE: Use when starting debugging, planning a feature, encountering
+  an error, working in an unfamiliar codebase, making design decisions, or any
+  time past experience might help. Triggers on "have we seen this before",
+  "search for solutions", "check knowledge", or when beginning any non-trivial
+  investigation.
+  Captures solved problems AND engineering principles as structured
+  YAML-frontmatter files for grep-based retrieval.
 allowed-tools: [Read, Write, Edit, Grep, Glob]
 ---
 
@@ -52,15 +58,21 @@ If the resolved directory does not exist, inform the user:
 
 ## When This Skill Activates
 
-### Capture Mode (Writing Solutions)
+### Capture Mode (Writing Solutions or Principles)
 - User says "that worked", "it's fixed", "problem solved", or similar confirmation
 - User explicitly invokes `/compound-knowledge`
 - A non-trivial debugging session concludes successfully
+- A reusable pattern or principle is discovered or validated
+- An architecture decision is made that future sessions should know about
+- A non-obvious insight is generated that applies beyond the current task
 
-### Retrieval Mode (Finding Solutions)
+### Retrieval Mode (Finding Solutions and Principles)
 - Starting a non-trivial debugging session
 - Planning a feature that touches previously-solved domains
 - Encountering errors that might have documented solutions
+- Working in an unfamiliar codebase or domain
+- Making design decisions where past experience would help
+- Any time past engineering wisdom might prevent repeated mistakes
 
 ## Triviality Filter
 
@@ -74,6 +86,26 @@ If the resolved directory does not exist, inform the user:
 - Non-obvious root causes
 - Solutions involving code examples or architecture decisions
 - Issues likely to recur in other contexts
+
+## Principles vs Solutions
+
+When capturing knowledge, determine whether you're recording a **solution** (specific problem fix) or a **principle** (generalizable engineering wisdom).
+
+### Solutions
+- Have `symptoms` (required) — observable errors or behaviors
+- Live in category directories (`debugging/`, `patterns/`, etc.)
+- Document a specific problem and its fix
+- Use `problem_type` matching the category
+
+### Principles
+- Have `statement` (required) — a concise, generalizable rule
+- Have `confidence` (required) — high, medium, or low
+- Do **NOT** have `symptoms`
+- Live in `principles/` directory
+- Use `problem_type: principles`
+- Document wisdom extracted from experience across projects
+
+**Decision heuristic**: If someone could grep for an error message and find this, it's a solution. If it's advice that applies across many situations, it's a principle.
 
 ---
 
@@ -98,7 +130,9 @@ If unsure whether the problem warrants capture, ask:
 
 ### Step 3: Gather Context
 
-Extract from the conversation:
+Determine whether this is a **solution** or a **principle** (see "Principles vs Solutions" above).
+
+**For solutions**, extract from the conversation:
 
 | Field | Source | Required? |
 |-------|--------|-----------|
@@ -117,6 +151,24 @@ Extract from the conversation:
 
 If critical fields (title, project, component, symptoms) are missing, ask and wait:
 > "I need a few details to capture this properly: What project is this for? What were the symptoms?"
+
+**For principles**, extract from the conversation:
+
+| Field | Source | Required? |
+|-------|--------|-----------|
+| `title` | Principle name | Yes |
+| `date` | Current date (auto-populated as YYYY-MM-DD) | Yes |
+| `project` | Where validated or "cross-project" | Yes |
+| `problem_type` | Always `principles` | Yes |
+| `component` | Technology domain | Yes |
+| `statement` | Concise, generalizable rule (1-2 sentences) | Yes |
+| `confidence` | high, medium, or low | Yes |
+| `solution_summary` | One-line description of the principle | Yes |
+| `severity` | Impact if ignored | Yes |
+| `tags` | Searchable keywords | No |
+
+If critical fields (title, statement, confidence) are missing, ask and wait:
+> "I need a few details to capture this principle: What's the core statement? How confident are we?"
 
 ### Step 4: Check Existing Solutions
 
@@ -154,14 +206,18 @@ Read `references/yaml-schema.md` to validate all enum fields:
 - `root_cause` must be from the root_cause enum (if provided)
 - `resolution_type` must be from the resolution_type enum (if provided)
 - `severity` must be: critical, high, medium, or low
+- `symptoms` required **unless** `problem_type: principles`
+- When `problem_type: principles`, `statement` and `confidence` are required
 
 **Block creation if validation fails.** Report which fields are invalid and suggest corrections.
 
-### Step 7: Create Solution File
+### Step 7: Create Solution or Principle File
 
-1. Determine category directory from `problem_type` (e.g., `security` → `{solutions_path}/security/`)
-2. Read `references/solution-template.md` for the file structure
-3. Write the solution file with validated YAML frontmatter and structured content
+1. Determine category directory from `problem_type` (e.g., `security` → `{solutions_path}/security/`, `principles` → `{solutions_path}/principles/`)
+2. Read the appropriate template:
+   - **Solutions**: `references/solution-template.md`
+   - **Principles**: `references/principle-template.md`
+3. Write the file with validated YAML frontmatter and structured content
 
 ### Step 8: Cross-Reference and Confirm
 
@@ -246,6 +302,7 @@ Surface the top results to the user and incorporate insights into your approach.
 ├── configuration/    # Config management, env vars, settings
 ├── migration/        # System transitions, format changes
 ├── integration/      # Cross-system compatibility
+├── principles/       # Engineering wisdom and governing principles
 └── critical-patterns.md  # High-severity patterns (always read)
 ```
 
@@ -253,4 +310,5 @@ Surface the top results to the user and incorporate insights into your approach.
 
 - `references/yaml-schema.md` — YAML frontmatter field definitions and enum values
 - `references/solution-template.md` — Template for new solution files
+- `references/principle-template.md` — Template for new principle files
 - `references/registry-format.md` — Cross-project registry schema and update rules
