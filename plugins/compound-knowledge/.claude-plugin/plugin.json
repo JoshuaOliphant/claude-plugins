@@ -1,6 +1,6 @@
 {
   "name": "compound-knowledge",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Capture solved problems as structured solution files with YAML frontmatter for grep-based retrieval. Compounds engineering knowledge across sessions and projects.",
   "license": "MIT",
   "author": {

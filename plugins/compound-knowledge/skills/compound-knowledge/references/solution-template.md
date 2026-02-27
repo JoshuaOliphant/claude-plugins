@@ -21,7 +21,7 @@ root_cause: {enum value from yaml-schema.md}  # optional
 resolution_type: {enum value from yaml-schema.md}  # optional
 tags: [{keyword1}, {keyword2}, {keyword3}]  # optional
 environment: "{Runtime context if relevant}"  # optional
-related_solutions:  # optional
+related_solutions:  # optional, max 5, bidirectional (if A links B, update B to link A)
   - "{category}/{related-file}.md"
 ---
 

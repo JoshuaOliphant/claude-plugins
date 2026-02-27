@@ -31,7 +31,7 @@
 | `resolution_type` | enum | Type of fix applied |
 | `tags` | string[] (max 8) | Freeform searchable keywords |
 | `environment` | string | Runtime context (Python 3.12, K8s 1.28, etc.) |
-| `related_solutions` | string[] | Paths to related solution files |
+| `related_solutions` | string[] (max 5) | Paths to related solution files. **Bidirectional**: if A links to B, B must link to A. Format: `category/filename.md` |
 
 ---
 
@@ -139,5 +139,5 @@ Extend with project-specific values as needed. The enum is a starting vocabulary
 6. `tags` must have at most 8 entries
 7. `date` must be in YYYY-MM-DD format
 8. `root_cause` and `resolution_type` are optional but must match enum if provided
-9. `related_solutions` paths must be relative to the solutions directory root
+9. `related_solutions` paths must use `category/filename.md` format (relative to solutions directory root). Max 5 entries per file. Links must be bidirectional — when adding A→B, also add B→A
 10. When `problem_type: principles`, `statement` and `confidence` are required; `confidence` must be one of: high, medium, low

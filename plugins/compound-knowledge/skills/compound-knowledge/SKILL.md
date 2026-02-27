@@ -219,10 +219,17 @@ Read `references/yaml-schema.md` to validate all enum fields:
    - **Principles**: `references/principle-template.md`
 3. Write the file with validated YAML frontmatter and structured content
 
-### Step 8: Cross-Reference and Confirm
+### Step 8: Cross-Reference with Bidirectional Links
 
-1. Add `related_solutions` links if similar files were found in Step 4
-2. Present a summary to the user:
+Links must be **bidirectional** — if file A references file B, file B must reference file A.
+
+1. Identify related files from Step 4 results
+2. Add `related_solutions` entries to the **new file** pointing to related files
+3. **Update each related file** to add a backlink to the new file
+   - Read the related file's `related_solutions` list
+   - If the new file's path is not already present, append it
+   - Cap at **5 entries per file** — if a related file already has 5 entries, skip adding the backlink to it
+4. Present a summary to the user:
 
 ```
 Created: {solutions_path}/{category}/{filename}.md
@@ -233,7 +240,13 @@ Created: {solutions_path}/{category}/{filename}.md
 
 Related solutions:
   - [title](path) — {why related}
+
+Updated backlinks in:
+  - {path1} (now links back to new file)
+  - {path2} (now links back to new file)
 ```
+
+**Path format**: All `related_solutions` entries must use `category/filename.md` format (e.g., `debugging/my-fix-project-20260226.md`). Never use absolute paths, `~/` prefixes, or `knowledge/solutions/` prefixes.
 
 ### Step 9: Update Registry
 
