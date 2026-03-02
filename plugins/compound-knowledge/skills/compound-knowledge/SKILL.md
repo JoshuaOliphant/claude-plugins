@@ -1,18 +1,10 @@
 ---
 name: compound-knowledge
 description: >
-  CAPTURE MODE: Use after solving a non-trivial problem, discovering a reusable
-  pattern, validating a principle through experience, completing non-trivial
-  debugging, making architecture decisions worth preserving, or generating any
-  reusable insight. Triggers on "that worked", "it's fixed", "problem solved",
-  "capture that", or explicit /compound-knowledge invocation.
-  RETRIEVAL MODE: Use when starting debugging, planning a feature, encountering
-  an error, working in an unfamiliar codebase, making design decisions, or any
-  time past experience might help. Triggers on "have we seen this before",
-  "search for solutions", "check knowledge", or when beginning any non-trivial
-  investigation.
-  Captures solved problems AND engineering principles as structured
-  YAML-frontmatter files for grep-based retrieval.
+  Use when starting debugging, implementing features, encountering errors,
+  making design decisions, or working in unfamiliar code. Also use after
+  solving non-trivial problems, completing debugging, or discovering
+  reusable patterns.
 allowed-tools: [Read, Write, Edit, Grep, Glob]
 ---
 
