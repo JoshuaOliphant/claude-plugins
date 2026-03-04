@@ -1,12 +1,13 @@
 ---
 name: compound-retrieve
 description: >
-  Use when starting debugging, planning features, encountering errors,
-  making design decisions, or working in unfamiliar code. Searches past
-  solutions and engineering principles captured by compound-capture to
-  surface institutional knowledge and prevent repeated mistakes. Trigger
-  phrases include "have we seen this before", "check knowledge", "search
-  for solutions", or any time past experience might inform the current task.
+  Use when starting debugging, planning features, encountering errors, making design decisions,
+  or working in unfamiliar code. Searches past solutions and engineering principles captured by
+  compound-capture to surface institutional knowledge and prevent repeated mistakes. Trigger
+  phrases include "have we seen this before", "check knowledge", "search for solutions", "this
+  looks familiar", "check if we've solved this", "any past experience with this", "before I
+  start, check for existing solutions", or any time past experience might inform the current
+  task. Not for capturing new solutions — use compound-capture for that.
 allowed-tools: [Read, Grep, Glob]
 ---
 

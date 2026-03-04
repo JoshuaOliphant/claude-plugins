@@ -1,6 +1,13 @@
 ---
 name: bdd-spec
-description: This skill should be used when brainstorming features, defining requirements, discussing what something should do, writing acceptance criteria, exploring edge cases, or starting new feature work before implementation begins. Trigger phrases include "what should happen when", "help me spec this out", "BDD", "behavior driven", "acceptance tests", "Given When Then", "acceptance criteria", and "define requirements".
+description: >
+  This skill should be used when brainstorming features, defining requirements, discussing what
+  something should do, writing acceptance criteria, exploring edge cases, or starting new feature
+  work before implementation begins. This is the conversational, pre-code phase — defining WHAT to
+  build, not building it. Trigger phrases include "what should happen when", "help me spec this out",
+  "let's define the requirements", "write acceptance criteria", "BDD", "behavior driven", "what are
+  the edge cases", "help me think through this feature", and "define requirements". Not for generating
+  test code — use bdd-generate for that.
 version: 1.0.0
 ---
 

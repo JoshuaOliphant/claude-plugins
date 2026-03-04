@@ -1,6 +1,12 @@
 ---
 name: tdd-workflow
-description: Use when implementing features with test-driven development, writing tests before code, or following the red-green-refactor cycle
+description: >
+  Use when implementing features with test-driven development, writing tests before implementation
+  code, or following the red-green-refactor cycle. Trigger phrases include "write a failing test first",
+  "implement this with TDD", "test first then code", "red green refactor", "let's do TDD", "write the
+  test before the implementation", or when the user asks to build a feature and the project practices
+  TDD. This skill enforces the discipline of writing a failing test, making it pass with minimal code,
+  then refactoring — never skipping the test-first step.
 version: 1.0.0
 ---
 

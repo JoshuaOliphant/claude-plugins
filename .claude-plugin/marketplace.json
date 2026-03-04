@@ -12,8 +12,8 @@
     {
       "name": "mochi-creator",
       "source": "./plugins/mochi-creator",
-      "description": "Create and manage Mochi.cards flashcards, decks, and templates via API",
-      "version": "1.0.0",
+      "description": "Create evidence-based spaced repetition flashcards using cognitive science principles. Applies the 5 properties of effective prompts for long-term retention.",
+      "version": "1.1.1",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -29,8 +29,8 @@
     {
       "name": "autonomous-sdlc",
       "source": "./plugins/autonomous-sdlc",
-      "description": "Verification-driven SDLC with parallel worktrees, async subagents, TDD workflow, and Beads integration",
-      "version": "0.5.0",
+      "description": "Adaptive autonomous SDLC with agent teams, TDD, BDD, Beads issue tracking, and verification pipelines",
+      "version": "0.5.1",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -51,7 +51,7 @@
       "name": "hexagonal-agents",
       "source": "./plugins/hexagonal-agents",
       "description": "Build web apps where an AI agent dynamically generates HTML UI using hexagonal architecture with HTMX",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -71,7 +71,7 @@
       "name": "compound-knowledge",
       "source": "./plugins/compound-knowledge",
       "description": "Capture solved problems and retrieve past solutions as structured YAML-frontmatter files. Split into compound-capture and compound-retrieve skills for precise triggering.",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "author": {
         "name": "Joshua Oliphant"
       },

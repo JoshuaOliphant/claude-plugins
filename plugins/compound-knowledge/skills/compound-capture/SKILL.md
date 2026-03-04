@@ -1,12 +1,14 @@
 ---
 name: compound-capture
 description: >
-  Use after solving non-trivial problems, completing debugging sessions,
-  discovering reusable patterns, making architecture decisions, or when
-  the user confirms something works ("that worked", "it's fixed", "problem solved").
-  Also use when explicitly invoked via /compound-knowledge in capture context.
-  This skill captures solved problems and engineering principles as structured
-  YAML-frontmatter files for grep-based retrieval across sessions and projects.
+  Use after solving non-trivial problems, completing debugging sessions, discovering reusable
+  patterns, making architecture decisions, or when the user confirms something works. Trigger
+  phrases include "that worked", "it's fixed", "problem solved", "document this solution",
+  "capture this pattern", "save this for next time", "we should remember this", "finally got
+  it working", and explicit /compound-knowledge invocations in capture context. This skill
+  captures solved problems and engineering principles as structured YAML-frontmatter files
+  for grep-based retrieval across sessions and projects. Not for searching existing knowledge
+  — use compound-retrieve for that.
 allowed-tools: [Read, Write, Edit, Grep, Glob]
 ---
 

@@ -1,6 +1,12 @@
 ---
 name: verification-stack
-description: Use when running verification pipelines, checking test/lint/type status, or ensuring code quality gates pass before completing work
+description: >
+  Use when running verification pipelines, checking test/lint/type status, or ensuring code quality
+  gates pass before completing work. Trigger phrases include "run all checks", "make sure everything
+  passes", "run the tests and linter", "verify the code", "check quality gates", "run ruff and pytest",
+  "before I merge, check everything", "is the build green", "run the full verification pipeline", or
+  any request to confirm code quality through automated tests, linting, formatting, and type checking
+  before a commit, merge, or PR.
 version: 1.0.0
 ---
 

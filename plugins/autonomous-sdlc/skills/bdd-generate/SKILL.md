@@ -1,6 +1,13 @@
 ---
 name: bdd-generate
-description: This skill should be used when generating feature files, scaffolding BDD tests, creating step definitions, wiring pytest-bdd, converting acceptance criteria to Gherkin, or when acceptance criteria exist and need runnable test scaffolding. Trigger phrases include "generate feature files", "scaffold BDD tests", "create step definitions", "pytest-bdd", "Gherkin", and "make these acceptance criteria runnable".
+description: >
+  This skill should be used when generating feature files, scaffolding BDD tests, creating step
+  definitions, wiring pytest-bdd, converting acceptance criteria to Gherkin, or when acceptance
+  criteria already exist and need runnable test scaffolding. This is the mechanical, code-generation
+  phase — turning specs into test files, not writing specs. Trigger phrases include "generate feature
+  files", "scaffold BDD tests", "create step definitions", "wire up pytest-bdd", "convert these
+  criteria to Gherkin", "make these acceptance criteria runnable", and "generate test scaffolding
+  from the spec". Requires existing acceptance criteria as input — use bdd-spec first if none exist.
 version: 1.0.0
 ---
 
