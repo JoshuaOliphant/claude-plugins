@@ -1,20 +1,22 @@
 ---
-name: compound-knowledge
+name: compound-capture
 description: >
-  Use when starting debugging, implementing features, encountering errors,
-  making design decisions, or working in unfamiliar code. Also use after
-  solving non-trivial problems, completing debugging, or discovering
-  reusable patterns.
+  Use after solving non-trivial problems, completing debugging sessions,
+  discovering reusable patterns, making architecture decisions, or when
+  the user confirms something works ("that worked", "it's fixed", "problem solved").
+  Also use when explicitly invoked via /compound-knowledge in capture context.
+  This skill captures solved problems and engineering principles as structured
+  YAML-frontmatter files for grep-based retrieval across sessions and projects.
 allowed-tools: [Read, Write, Edit, Grep, Glob]
 ---
 
-# Compound Knowledge
+# Compound Capture
 
-Capture solved problems as searchable solution files. Surface past solutions when facing similar problems.
+Capture solved problems and engineering principles as searchable solution files. Every capture creates a structured markdown file with YAML frontmatter that enables fast grep-based retrieval in future sessions.
 
 ## Path Resolution
 
-Before any capture or retrieval operation, resolve the solutions directory path.
+Before any capture operation, resolve the solutions directory path.
 
 **Check in this order (first match wins):**
 
@@ -32,41 +34,26 @@ Extract the path from the line starting with `solutions_path:`. Expand `~` to th
 
 **Store the resolved path as `{solutions_path}` for all subsequent operations.**
 
-## Registry
-
-A central registry at `~/.claude/compound-knowledge-registry.md` tracks all knowledge bases on the machine. This enables cross-project solution search — a Docker fix captured in project A is discoverable when debugging the same issue in project B.
-
-See `references/registry-format.md` for the full schema and update rules.
-
-**When registration happens:**
-1. **`/compound-knowledge:setup`** — registers after creating the directory structure
-2. **After capture** — updates entry (last_updated, solution_count, primary_components) as final step
-3. **First retrieval from a path** — registers if not already present (idempotent)
-
 If the resolved directory does not exist, inform the user:
 > "Solutions directory not found at `{solutions_path}`. Run `/compound-knowledge:setup` to initialize it."
 
+## Registry
+
+A central registry at `~/.claude/compound-knowledge-registry.md` tracks all knowledge bases on the machine. This enables cross-project solution search.
+
+See `references/registry-format.md` for the full schema and update rules.
+
 ---
 
-## When This Skill Activates
+## When to Capture
 
-### Capture Mode (Writing Solutions or Principles)
-- User says "that worked", "it's fixed", "problem solved", or similar confirmation
-- User explicitly invokes `/compound-knowledge`
-- A non-trivial debugging session concludes successfully
-- A reusable pattern or principle is discovered or validated
-- An architecture decision is made that future sessions should know about
-- A non-obvious insight is generated that applies beyond the current task
+### Trigger Phrases
+- "That worked" / "It's fixed" / "Problem solved"
+- "Finally got it working"
+- Explicit `/compound-knowledge` invocation
+- Test suite going from red to green after debugging
 
-### Retrieval Mode (Finding Solutions and Principles)
-- Starting a non-trivial debugging session
-- Planning a feature that touches previously-solved domains
-- Encountering errors that might have documented solutions
-- Working in an unfamiliar codebase or domain
-- Making design decisions where past experience would help
-- Any time past engineering wisdom might prevent repeated mistakes
-
-## Triviality Filter
+### Triviality Filter
 
 **Skip capture for:**
 - Typos, syntax errors, missing imports
@@ -81,7 +68,7 @@ If the resolved directory does not exist, inform the user:
 
 ## Principles vs Solutions
 
-When capturing knowledge, determine whether you're recording a **solution** (specific problem fix) or a **principle** (generalizable engineering wisdom).
+Determine whether you're recording a **solution** (specific problem fix) or a **principle** (generalizable engineering wisdom).
 
 ### Solutions
 - Have `symptoms` (required) — observable errors or behaviors
@@ -110,12 +97,6 @@ Follow the Path Resolution algorithm above. Store the result as `{solutions_path
 ### Step 2: Detect Confirmation
 
 Apply the Triviality Filter (above). If the problem is trivial, skip capture.
-
-Look for trigger phrases in conversation:
-- "That worked" / "It's fixed" / "Problem solved"
-- "Finally got it working"
-- Explicit `/compound-knowledge` invocation
-- Test suite going from red to green after debugging
 
 If unsure whether the problem warrants capture, ask:
 > "This seems like a solution worth documenting. Want me to capture it?"
@@ -188,7 +169,6 @@ Rules:
 Examples:
 - `api-timeout-my-api-20260214.md`
 - `missing-env-var-web-app-20260214.md`
-- `docker-build-cache-cli-tool-20260214.md`
 
 ### Step 6: Validate YAML
 
@@ -251,45 +231,6 @@ Update the cross-project registry so this knowledge base is discoverable from ot
 5. Extract unique components: `Grep(pattern="^component:", path="{solutions_path}", output_mode="content")` — deduplicate and take top 10
 6. **If entry exists**: Update `last_updated`, `solution_count`, and `primary_components` in-place
 7. **If new entry**: Append a new entry block at the end of the file
-
----
-
-## Retrieval Workflow (Delegation)
-
-When starting work that could benefit from past solutions:
-
-### Step 1: Resolve Solutions Path
-
-Follow the Path Resolution algorithm above. Store the result as `{solutions_path}`.
-
-### Step 2: Delegate to Knowledge Researcher
-
-```
-Task(
-  subagent_type="compound-knowledge:knowledge-researcher",
-  model="haiku",
-  prompt="Search for solutions related to: {task_description}. Project: {project_name}. Keywords: {extracted_keywords}. Solutions path: {solutions_path}. Registry path: ~/.claude/compound-knowledge-registry.md",
-  description="Search past solutions"
-)
-```
-
-The researcher reads the registry to identify other knowledge bases for cross-project search when primary results are thin (<3 hits).
-
-### When to Invoke Retrieval
-
-- **Before non-trivial debugging**: "Let me check if we've seen this before..."
-- **During planning phases**: "Checking for relevant past solutions..."
-- **When encountering errors**: Search by symptom/error message
-- **When working on a project**: Search by project name for all related solutions
-
-### Interpreting Results
-
-The knowledge-researcher returns:
-1. **Critical patterns** — always-relevant warnings from `critical-patterns.md`
-2. **Ranked solutions** — scored by project, component, symptom, and tag relevance
-3. **Recommendations** — actionable suggestions based on found solutions
-
-Surface the top results to the user and incorporate insights into your approach.
 
 ---
 

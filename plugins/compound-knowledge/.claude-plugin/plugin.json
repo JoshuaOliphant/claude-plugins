@@ -1,7 +1,7 @@
 {
   "name": "compound-knowledge",
-  "version": "0.3.0",
-  "description": "Capture solved problems as structured solution files with YAML frontmatter for grep-based retrieval. Compounds engineering knowledge across sessions and projects.",
+  "version": "0.4.0",
+  "description": "Capture solved problems and retrieve past solutions as structured YAML-frontmatter files. Split into compound-capture (post-solve documentation) and compound-retrieve (pre-work knowledge search) for precise triggering.",
   "license": "MIT",
   "author": {
     "name": "Joshua Oliphant"
