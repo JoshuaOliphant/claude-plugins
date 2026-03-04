@@ -9,6 +9,10 @@
   "keywords": [
     "sdlc",
     "tdd",
+    "bdd",
+    "acceptance-criteria",
+    "gherkin",
+    "pytest-bdd",
     "agent-teams",
     "adaptive-orchestration",
     "prompt-objects",

@@ -95,6 +95,8 @@ Reference patterns (not spawnable):
 | `beads-workflow` | Beads CLI commands |
 | `verification-stack` | Full verification pipeline |
 | `tdd-workflow` | Test-driven development |
+| `bdd-spec` | Acceptance criteria co-authoring |
+| `bdd-generate` | BDD test scaffolding with pytest-bdd |
 
 ## Coordination Modes
 
