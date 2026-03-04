@@ -172,6 +172,20 @@ except MochiAPIError as e:
     print(f"Failed to create card: {e}")
 ```
 
+## Versioning
+
+This repository has two version scopes that must stay in sync:
+
+- **`plugin.json`** (per-plugin) is the **source of truth** for each plugin's version. Bump it whenever the plugin changes.
+- **`marketplace.json`** has two version fields:
+  - `metadata.version` (top-level): the marketplace catalog version. Only bump when adding/removing plugins or changing marketplace structure.
+  - Per-plugin `version`: must be **copied from the plugin's `plugin.json`** at publication time. Never maintain independently.
+
+When changing a plugin:
+1. Bump the version in `plugins/{name}/.claude-plugin/plugin.json`
+2. Copy that version into the corresponding entry in `.claude-plugin/marketplace.json`
+3. Only bump `metadata.version` if the marketplace itself changed (new plugin added/removed)
+
 ## Testing and Development
 
 When developing new plugins or modifying existing ones:
