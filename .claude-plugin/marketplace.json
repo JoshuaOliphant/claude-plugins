@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by Joshua Oliphant for productivity and learning workflows",
-    "version": "1.0.1"
+    "version": "1.0.2"
   },
   "plugins": [
     {
@@ -82,6 +82,24 @@
         "grep-retrieval"
       ],
       "category": "productivity",
+      "license": "MIT"
+    },
+    {
+      "name": "autoloop",
+      "source": "./plugins/autoloop",
+      "description": "Generate autonomous experiment loops. LLM edits, runs, measures, and git commits improvements overnight.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Joshua Oliphant"
+      },
+      "keywords": [
+        "autoloop",
+        "autoresearch",
+        "experiment-loop",
+        "optimization",
+        "agentic"
+      ],
+      "category": "development",
       "license": "MIT"
     }
   ]
