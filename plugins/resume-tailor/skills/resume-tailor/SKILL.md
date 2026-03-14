@@ -45,9 +45,21 @@ python ${SKILL_DIR}/scripts/profile_manager.py load
 
 This returns:
 - Existing profile data (name, career level, preferences)
+- Stored feedback from past customizations (applied to agents automatically)
 - Recent customization history
 - Cached enrichment data (GitHub, portfolio)
 - Whether this is a new user
+
+### Apply Stored Feedback
+
+If the profile contains feedback entries, include them in the prompts for relevant agents:
+- Feedback with `category: summary` → pass to the summary section-optimizer
+- Feedback with `category: experience` → pass to the experience section-optimizer
+- Feedback with `category: cover_letter` → pass to the cover-letter-writer
+- Feedback with `category: general` or `category: formatting` → pass to all agents
+- Feedback with `category: tone` → pass to all writing agents
+
+This ensures past corrections are never repeated.
 
 ### Gather Inputs
 
@@ -165,6 +177,9 @@ EVALUATION FINDINGS:
 
 CAREER LEVEL: <from evaluation>
 INDUSTRY: <from evaluation>
+
+STORED FEEDBACK (respect these preferences):
+<paste any feedback entries matching this section's category or 'general'>
 
 Read references/action-verbs.md for verb guidance.
 Read references/industry-conventions.md for industry standards.
@@ -350,6 +365,36 @@ The evaluator will detect a mismatch between resume industry and job industry. S
 ### Verification Fails Repeatedly
 If verification fails 2+ times on the same section, flag it for the user's manual review rather than re-optimizing indefinitely.
 
+## Capturing User Feedback
+
+After presenting results, if the user provides feedback on the output (corrections, preferences, style requests), save it for future sessions:
+
+```bash
+echo '{"category": "<section_or_general>", "feedback": "<user feedback>", "context": "<job/company>"}' | \
+  python ${SKILL_DIR}/scripts/profile_manager.py save-feedback
+```
+
+**Categories**: summary, experience, skills, education, projects, cover_letter, formatting, general, tone
+
+**Examples of feedback to capture**:
+- "Don't change my summary tone" → category: summary
+- "Always emphasize Kubernetes experience" → category: skills
+- "Make cover letters more concise" → category: cover_letter
+- "Keep the technical stack lists" → category: formatting
+
+Saved feedback is automatically loaded in Phase 0 on the next run and passed to relevant agents.
+
+## Related Skills
+
+These skills can be invoked independently for specific parts of the pipeline:
+
+| Skill | Command | What it does |
+|-------|---------|-------------|
+| Evaluate | `/resume-tailor:evaluate` | Phases 0-2 only: parse, score, evaluate — no optimization |
+| Cover Letter | `/resume-tailor:cover-letter` | Phase 5 only: generate cover letter from existing resume |
+| ATS Score | `/resume-tailor:ats-score` | Quick deterministic ATS score — no agents, instant results |
+| Feedback | `/resume-tailor:feedback` | View, save, or clear stored feedback preferences |
+
 ## Script Reference
 
 | Script | Input | Output |
@@ -358,6 +403,9 @@ If verification fails 2+ times on the same section, flag it for the user's manua
 | `extract_requirements.py <file>` | Job description | JSON: title, skills, keywords |
 | `ats_scorer.py --resume <r> --job <j>` | Both files | JSON: score, matched/missing |
 | `diff_report.py --original <o> --optimized <n>` | Both files | Markdown change report |
-| `profile_manager.py load` | None | JSON: profile, preferences, history |
+| `profile_manager.py load` | None | JSON: profile, preferences, feedback, history |
 | `profile_manager.py save-history` | JSON stdin | Saves history record |
+| `profile_manager.py save-feedback` | JSON stdin | Saves feedback entry |
+| `profile_manager.py show-feedback` | None | Lists all stored feedback |
+| `profile_manager.py clear-feedback [category]` | Optional category | Clears feedback entries |
 | `enrich_github.py --username <u>` | GitHub user | JSON: repos, languages, activity |

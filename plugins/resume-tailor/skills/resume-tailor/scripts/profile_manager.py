@@ -14,6 +14,7 @@ from pathlib import Path
 PROFILE_DIR = Path.home() / ".claude" / "resume-tailor"
 PROFILE_FILE = PROFILE_DIR / "profile.yaml"
 PREFERENCES_FILE = PROFILE_DIR / "preferences.yaml"
+FEEDBACK_FILE = PROFILE_DIR / "feedback.yaml"
 HISTORY_DIR = PROFILE_DIR / "history"
 ENRICHMENT_DIR = PROFILE_DIR / "enrichment"
 
@@ -122,6 +123,11 @@ def load_profile() -> dict:
     if portfolio_file.exists():
         enrichment["portfolio"] = parse_simple_yaml(portfolio_file.read_text(encoding="utf-8"))
 
+    # Load feedback
+    feedback = []
+    if FEEDBACK_FILE.exists():
+        feedback = load_feedback_entries()
+
     # Load recent history (last 5 entries)
     history = []
     if HISTORY_DIR.exists():
@@ -133,6 +139,7 @@ def load_profile() -> dict:
         "profile": profile,
         "preferences": preferences,
         "enrichment": enrichment,
+        "feedback": feedback,
         "recent_history": history,
         "is_new_user": not PROFILE_FILE.exists(),
         "profile_dir": str(PROFILE_DIR),
@@ -214,11 +221,105 @@ def update_preferences(data: dict):
     return {"status": "saved", "preferences": existing}
 
 
+def load_feedback_entries() -> list:
+    """Load all feedback entries from the feedback file."""
+    if not FEEDBACK_FILE.exists():
+        return []
+
+    entries = []
+    current_entry = {}
+    content = FEEDBACK_FILE.read_text(encoding="utf-8")
+
+    for line in content.split("\n"):
+        stripped = line.strip()
+        if stripped == "---":
+            if current_entry:
+                entries.append(current_entry)
+            current_entry = {}
+            continue
+        if not stripped:
+            continue
+        match = re.match(r"^([a-z_]+)\s*:\s*(.+)$", stripped)
+        if match:
+            current_entry[match.group(1)] = match.group(2).strip()
+
+    if current_entry:
+        entries.append(current_entry)
+
+    return entries
+
+
+def save_feedback(data: dict):
+    """Append a feedback entry to the feedback file.
+
+    Expected fields:
+    - category: section name (summary, experience, skills, etc.) or "general"
+    - feedback: the actual feedback text
+    - context: optional job/company context when the feedback was given
+    """
+    ensure_dirs()
+
+    entry = {
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "category": data.get("category", "general"),
+        "feedback": data.get("feedback", ""),
+    }
+    if data.get("context"):
+        entry["context"] = data["context"]
+
+    # Append to feedback file (entries separated by ---)
+    lines = ["---"]
+    for key, value in entry.items():
+        lines.append(f"{key}: {value}")
+    lines.append("")
+
+    mode = "a" if FEEDBACK_FILE.exists() else "w"
+    with open(FEEDBACK_FILE, mode, encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+    return {"status": "saved", "entry": entry, "total_feedback": len(load_feedback_entries())}
+
+
+def show_feedback() -> dict:
+    """Show all stored feedback entries."""
+    entries = load_feedback_entries()
+    return {
+        "total_entries": len(entries),
+        "feedback": entries,
+    }
+
+
+def clear_feedback(category: str | None = None) -> dict:
+    """Clear feedback entries, optionally filtering by category."""
+    if category is None:
+        # Clear all
+        if FEEDBACK_FILE.exists():
+            FEEDBACK_FILE.unlink()
+        return {"status": "cleared", "scope": "all"}
+
+    # Clear only entries matching category
+    entries = load_feedback_entries()
+    remaining = [e for e in entries if e.get("category") != category]
+
+    if remaining:
+        FEEDBACK_FILE.unlink()
+        for entry in remaining:
+            save_feedback(entry)
+    elif FEEDBACK_FILE.exists():
+        FEEDBACK_FILE.unlink()
+
+    removed = len(entries) - len(remaining)
+    return {"status": "cleared", "scope": category, "removed": removed, "remaining": len(remaining)}
+
+
 def main():
     if len(sys.argv) < 2:
         print(json.dumps({
             "error": "Usage: profile_manager.py <command> [args]",
-            "commands": ["load", "save", "save-history", "show-history", "update-preferences"],
+            "commands": [
+                "load", "save", "save-history", "show-history",
+                "update-preferences", "save-feedback", "show-feedback", "clear-feedback",
+            ],
         }))
         sys.exit(1)
 
@@ -247,6 +348,17 @@ def main():
         else:
             data = json.loads(sys.stdin.read())
         result = update_preferences(data)
+    elif command == "save-feedback":
+        if len(sys.argv) > 2:
+            data = json.loads(sys.argv[2])
+        else:
+            data = json.loads(sys.stdin.read())
+        result = save_feedback(data)
+    elif command == "show-feedback":
+        result = show_feedback()
+    elif command == "clear-feedback":
+        category = sys.argv[2] if len(sys.argv) > 2 else None
+        result = clear_feedback(category)
     else:
         result = {"error": f"Unknown command: {command}"}
 
