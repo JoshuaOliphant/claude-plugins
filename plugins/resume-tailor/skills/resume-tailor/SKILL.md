@@ -64,8 +64,15 @@ This ensures past corrections are never repeated.
 ### Gather Inputs
 
 If `resume` argument is provided, use that path. Otherwise:
-1. Check the loaded profile for `resume_path`
-2. Ask the user for their resume file path
+1. Check for master resume at `~/.claude/resume-tailor/master-resume.md` (canonical source of truth)
+2. Check the loaded profile for `resume_path`
+3. Ask the user for their resume file path
+
+If using the master resume, also run drift detection:
+```bash
+python ${SKILL_DIR}/scripts/master_sync.py drift
+```
+If drifted, warn the user and suggest running `/resume-tailor:sync sync` first.
 
 If `job` argument is provided, use that. Otherwise:
 1. Ask the user for the job description (file path, URL, or pasted text)
@@ -394,6 +401,7 @@ These skills can be invoked independently for specific parts of the pipeline:
 | Cover Letter | `/resume-tailor:cover-letter` | Phase 5 only: generate cover letter from existing resume |
 | ATS Score | `/resume-tailor:ats-score` | Quick deterministic ATS score — no agents, instant results |
 | Feedback | `/resume-tailor:feedback` | View, save, or clear stored feedback preferences |
+| Sync | `/resume-tailor:sync` | Sync master markdown ↔ YAML, detect drift |
 
 ## Script Reference
 
@@ -409,3 +417,6 @@ These skills can be invoked independently for specific parts of the pipeline:
 | `profile_manager.py show-feedback` | None | Lists all stored feedback |
 | `profile_manager.py clear-feedback [category]` | Optional category | Clears feedback entries |
 | `enrich_github.py --username <u>` | GitHub user | JSON: repos, languages, activity |
+| `master_sync.py sync` | None | Parses master MD → generates YAML |
+| `master_sync.py drift` | None | Compares MD vs YAML, reports differences |
+| `master_sync.py export` | None | Outputs parsed MD as JSON |
