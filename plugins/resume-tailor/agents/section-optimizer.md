@@ -105,6 +105,16 @@ Return your optimized section in this format:
 
 The changes list is critical — it enables the truthfulness verifier to check each change and the user to understand what was modified and why.
 
+## LLM Tell Avoidance
+
+Read `references/llm-tells.md` before returning your output. Scan for banned words and phrases. Replace any found with natural alternatives. Key rules:
+- No "leverage", "utilize", "delve", "foster", "pivotal", "multifaceted", "holistic"
+- No triple adjective stacking ("dynamic, innovative, and results-oriented")
+- Vary bullet length and structure — don't make every bullet grammatically identical
+- Use contractions occasionally in summaries
+- Limit em-dashes to 0-2 per section
+- Use "robust" and "scalable" at most once each across the entire resume
+
 ## Quality Checklist
 
 Before returning your optimized section, verify:

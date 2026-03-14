@@ -417,6 +417,7 @@ These skills can be invoked independently for specific parts of the pipeline:
 | `profile_manager.py show-feedback` | None | Lists all stored feedback |
 | `profile_manager.py clear-feedback [category]` | Optional category | Clears feedback entries |
 | `enrich_github.py --username <u>` | GitHub user | JSON: repos, languages, activity |
+| `to_pdf.py <resume.md>` | Resume markdown | PDF file (pandoc or weasyprint) |
 | `master_sync.py sync` | None | Parses master MD → generates YAML |
 | `master_sync.py drift` | None | Compares MD vs YAML, reports differences |
 | `master_sync.py export` | None | Outputs parsed MD as JSON |

@@ -89,6 +89,9 @@ Read `references/cover-letter-guide.md` and `references/industry-conventions.md`
 - Connection between your experience and their needs
 - A genuine reason for interest in THIS company
 
+### LLM Tell Avoidance
+Read `references/llm-tells.md` and strictly avoid all banned words, phrases, and patterns. Use contractions. Vary sentence length. Don't restate the job description back. No em-dashes. Add something specific to the candidate that couldn't be about anyone else.
+
 ### Must Avoid
 - Generic opening lines
 - Repeating resume bullets verbatim
