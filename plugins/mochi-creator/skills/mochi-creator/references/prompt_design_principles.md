@@ -566,4 +566,4 @@ A: (Generate novel answer using current context)
 
 ---
 
-For practical application guidance, see the main SKILL.md file and knowledge_type_templates.md.
+For practical application guidance, see the main SKILL.md file and `references/knowledge_type_templates.md`.

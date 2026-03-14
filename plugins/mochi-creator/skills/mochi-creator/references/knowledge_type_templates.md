@@ -594,5 +594,5 @@ if not result["valid"]:
 ---
 
 For deeper understanding of the principles behind these templates, see:
-- SKILL.md - Main skill documentation with workflows
-- references/prompt_design_principles.md - Research and cognitive science background
+- `SKILL.md` — Main skill documentation with workflows
+- `references/prompt_design_principles.md` — Research and cognitive science background

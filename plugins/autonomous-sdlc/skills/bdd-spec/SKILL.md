@@ -13,56 +13,25 @@ version: 1.0.0
 
 # Acceptance Criteria Co-Author
 
-Co-author acceptance criteria with the human before code exists. Specs are the primary control surface — they define *what*, agents figure out *how*. Verification is deterministic and decoupled from the author.
+## Goal
 
-This skill coaches humans through the Given/When/Then format, probes for edge cases, and produces structured acceptance criteria that feed directly into the SDLC pipeline. The output becomes the source of truth for what "done" means.
+Co-author acceptance criteria with the user before code exists. Produce structured Given/When/Then specs that define *what* "done" means — the source of truth that feeds the SDLC pipeline (architect plans, builder TDD targets, validator reports, bdd-generate scaffolding).
 
-Stance: assume the human is learning BDD. Guide, don't lecture. Ask questions, don't assert assumptions.
+Stance: assume the user is learning BDD. Guide, don't lecture. Ask questions, don't assert assumptions.
 
-## Quick Start
+## Dependencies
 
-Starting point — a vague idea:
+### Tools
 
-> "I want users to be able to reset their password"
+- None required — this is a conversational skill that produces markdown output.
 
-Clarifying questions to ask:
+### Connectors
 
-1. How does the user prove identity? (Email link, security questions, SMS?)
-2. What happens if the reset link expires?
-3. Should there be rate limiting on reset requests?
+- **SDLC pipeline** — Output feeds into: architect (plan documents), builder (TDD targets), validator (PASS/FAIL rows), and `bdd-generate` (Gherkin scaffolding). The handoff to `bdd-generate` is optional.
 
-Resulting acceptance criteria:
+## Context
 
-```markdown
-## Acceptance Criteria: Password Reset
-
-### AC-1: Successful password reset via email
-**Given** a registered user with a verified email address
-**When** the user requests a password reset
-**Then** a reset link is sent to their registered email
-  and the link expires after 30 minutes
-  and the link is single-use
-
-### AC-2: Reset with expired link
-**Given** a user with an expired password reset link
-**When** the user clicks the expired link
-**Then** the system displays "This link has expired"
-  and offers a "Request new link" action
-
-### AC-3: Rate limiting on reset requests
-**Given** a user who has requested 3 password resets in the last hour
-**When** the user requests another reset
-**Then** the system responds with "Too many requests, try again later"
-  and no additional email is sent
-
-**Edge cases:**
-- User requests reset for unregistered email (silent success — no information leakage)
-- User changes email while a reset link is active (invalidate existing links)
-```
-
-## Output Format
-
-Structure all acceptance criteria using this format:
+### Output Format
 
 ```markdown
 ## Acceptance Criteria: {Feature Name}
@@ -72,7 +41,6 @@ Structure all acceptance criteria using this format:
 **When** {single action the user or system takes}
 **Then** {verifiable, measurable outcome}
   and {additional outcome on indented line}
-  and {additional outcome on indented line}
 
 **Edge cases:**
 - {What should happen when...?}
@@ -80,17 +48,15 @@ Structure all acceptance criteria using this format:
 **Notes:** {Open questions, V2 considerations, or scope decisions}
 ```
 
-Design points:
-
-- **AC-N numbering** maps directly to the architect plan template and validator report rows. Numbering provides traceability from spec through implementation to verification.
-- **Bold Given/When/Then** — human-readable markdown, not Gherkin syntax. Conversion to Gherkin happens downstream in `bdd-generate`.
-- **One action per When** — if "When" contains "and", split into separate criteria.
-- **Verifiable Then** — every outcome must be observable and testable. "The system works correctly" is not verifiable. "The system returns HTTP 200 with a JSON body containing `user_id`" is.
-- **Multi-line Then** — use `and` continuations on indented lines for compound outcomes.
-- **Scenario Outline tables** — when 3+ edge cases follow the same pattern, consolidate:
+Design rules:
+- **AC-N numbering** — provides traceability from spec → plan → implementation → verification
+- **Bold Given/When/Then** — human-readable markdown, not Gherkin. Conversion happens in `bdd-generate`
+- **One action per When** — if "When" contains "and", split into separate criteria
+- **Verifiable Then** — every outcome must be observable and testable. "The system works correctly" is not verifiable. "The system returns HTTP 200 with `user_id`" is.
+- **Scenario Outline tables** — consolidate when 3+ edge cases follow the same pattern:
 
 ```markdown
-### AC-4: Input validation (parameterized)
+### AC-N: Input validation (parameterized)
 **Given** a user on the registration form
 **When** the user submits with `<input>`
 **Then** the system displays `<error_message>`
@@ -99,125 +65,89 @@ Design points:
 |-------|---------------|
 | empty email | "Email is required" |
 | "not-an-email" | "Invalid email format" |
-| email longer than 254 chars | "Email is too long" |
 ```
 
-## Coaching Workflow
+### Anti-Patterns
 
-### Step 1: Understand feature intent
+| Anti-Pattern | Example | Fix |
+|---|---|---|
+| Implementation-as-criteria | "Then the system stores a bcrypt hash" | "Then the password is stored securely" |
+| God criterion | AC covers login + session + redirect + audit | Split into AC-1, AC-2, AC-3, AC-4 |
+| Missing the Given | "When the user clicks delete Then removed" | "Given a user viewing their own item When..." |
+| Non-verifiable Then | "Then handles the error gracefully" | "Then displays 'Unable to process' and logs correlation ID" |
 
-Redirect implementation language to behavior language. The human might say "I need JWT authentication" — translate to "Users need to log in and stay authenticated across requests."
+### Positive Patterns
 
-Questions to ask:
+- **Negative Path** — spec what should *not* happen: "Then does not reveal whether the email exists"
+- **State Transition** — "Given order in 'pending' When payment confirmed Then transitions to 'confirmed'"
+- **Permission Matrix** — Scenario Outline for role-based access (role × action × result table)
+
+### Edge Case Probing
+
+For structured probing questions organized by domain (input validation, auth, state integrity, concurrency, boundaries, errors, external deps, UX states), consult:
+
+→ **`references/edge-case-checklist.md`**
+
+For BDD terminology definitions, consult:
+
+→ **`references/bdd-glossary.md`**
+
+## Process
+
+### Step 1: Understand Feature Intent
+
+Redirect implementation language to behavior language. "I need JWT authentication" → "Users need to log in and stay authenticated across requests."
+
+Ask:
 - Who is the actor? (End user, admin, system, external service?)
-- What is the core behavior? (What does the actor want to accomplish?)
-- Why does this matter? (What problem does this solve?)
+- What is the core behavior?
+- Why does this matter?
 - What does success look like from the actor's perspective?
 
-Red flag: if the human describes *how* instead of *what*, gently redirect. "That sounds like an implementation approach. What behavior should the user see?"
+Red flag: if the user describes *how* instead of *what*, gently redirect.
 
-### Step 2: Identify the happy path
+### Step 2: Write the Happy Path
 
 Coach the Given/When/Then for the primary success scenario:
+- **Given** — What must be true before the action?
+- **When** — What single action triggers the behavior?
+- **Then** — What is the observable result?
 
-- **Given** — What must be true before the action? What state is the system in? What has the user already done?
-- **When** — What single action triggers the behavior? Keep it atomic. If there are multiple actions, that's multiple criteria.
-- **Then** — What is the observable result? Measurable, specific, testable. Not "the system handles it" but "the system returns a 201 with the created resource."
+Write it. Read it back. Ask: "Does this capture what you mean?"
 
-Write the happy path criterion first. Read it back. Ask: "Does this capture what you mean?"
+### Step 3: Probe for Error Scenarios
 
-### Step 3: Probe for error scenarios
+Consult `references/edge-case-checklist.md` for structured probing questions.
 
-Consult `references/edge-case-checklist.md` for structured probing questions organized by domain (input validation, auth, state integrity, concurrency, boundaries, errors, external deps, UX states).
-
-Present edge cases as questions, not assertions. Let the human decide what matters for V1:
-
+Present edge cases as questions, not assertions. Let the user decide what matters for V1:
 - "What should happen when the user submits an empty form?"
-- "What if the database is unreachable during this operation?"
-- "What about concurrent updates to the same resource?"
+- "What if the database is unreachable?"
+- "What about concurrent updates?"
 
-For each edge case the human confirms matters:
-1. Write it as a full AC block (Given/When/Then)
-2. Or add it to the Edge Cases list under an existing AC
+For each confirmed edge case, write a full AC block or add to an existing AC's edge case list.
 
 ### Step 4: Look for Scenario Outlines
 
-When 3+ edge cases follow the same behavioral pattern (same Given/When structure, different inputs/outputs), consolidate into a parameterized table.
+When 3+ edge cases follow the same behavioral pattern, consolidate into a parameterized table. Signs: "It should reject empty, too-long, and malformed input" or "Different roles have different permissions."
 
-Signs a Scenario Outline is needed:
-- "It should reject empty, too-long, and malformed input"
-- "Different roles have different permissions"
-- "Various HTTP methods should return specific status codes"
+### Human Checkpoint: Review and Refine
 
-Convert repetitive criteria into the table format shown in the Output Format section.
-
-### Step 5: Review and refine
-
-Read back all acceptance criteria. Then:
+Read back all acceptance criteria, then:
 
 1. **Scope check** — "Are we trying to do too much for V1? What can wait?"
 2. **Completeness check** — "Is there a scenario we haven't considered?"
 3. **Verifiability check** — "Can each Then be tested automatically?"
 4. **One more thing** — "Anything else before we lock these down?"
 
-Mark any deferred items in a **Notes** section with "V2:" prefix.
+Mark deferred items with "V2:" prefix in a Notes section.
 
-## Patterns and Anti-Patterns
+**Wait for user confirmation before considering the spec complete.**
 
-### Anti-Patterns (with fixes)
+## Output
 
-**Implementation-as-criteria**
-- Bad: "**Then** the system stores a bcrypt hash in the users table"
-- Good: "**Then** the password is stored securely and cannot be retrieved in plaintext"
+Structured acceptance criteria in markdown, ready to:
+- Slot into the `## Acceptance Criteria` section of an architect plan document
+- Feed into `bdd-generate` for Gherkin scaffolding
+- Serve as standalone specification artifacts
 
-**God criterion** — too many things in one AC
-- Bad: AC covers login, session creation, redirect, and audit logging
-- Good: Split into AC-1 (login), AC-2 (session), AC-3 (redirect), AC-4 (audit)
-
-**Missing the Given** — no precondition stated
-- Bad: "**When** the user clicks delete **Then** the item is removed"
-- Good: "**Given** a user viewing their own item **When** the user clicks delete **Then** the item is removed"
-
-**Non-verifiable Then**
-- Bad: "**Then** the system handles the error gracefully"
-- Good: "**Then** the system displays 'Unable to process request' and logs the error with a correlation ID"
-
-### Positive Patterns
-
-**Negative Path** — explicitly spec what should *not* happen:
-- "**Then** the system does not reveal whether the email exists in the system"
-
-**State Transition** — spec before and after states:
-- "**Given** an order in 'pending' status **When** payment is confirmed **Then** the order transitions to 'confirmed' status"
-
-**Permission Matrix** — use Scenario Outline for role-based access:
-
-```markdown
-### AC-N: Role-based access control
-**Given** a user with role `<role>`
-**When** the user attempts to `<action>`
-**Then** the system responds with `<result>`
-
-| role | action | result |
-|------|--------|--------|
-| admin | delete user | success (HTTP 200) |
-| member | delete user | forbidden (HTTP 403) |
-| guest | delete user | unauthorized (HTTP 401) |
-```
-
-## SDLC Pipeline Integration
-
-The acceptance criteria produced by this skill feed directly into the autonomous SDLC pipeline:
-
-1. **Architect** — AC blocks slot into the `## Acceptance Criteria` section of the plan document. AC-N numbers provide traceability across the plan.
-2. **Builder** — Each AC provides a precise TDD target. Builders write tests that verify each Given/When/Then before writing implementation code.
-3. **Validator** — AC-N numbers map to PASS/FAIL rows in the validator report. Validators check each criterion independently.
-4. **bdd-generate** — Structured Given/When/Then converts directly to Gherkin `.feature` files. Use `bdd-generate` to scaffold executable pytest-bdd tests from these acceptance criteria.
-
-The handoff to `bdd-generate` is optional — acceptance criteria are valuable on their own as a specification artifact even without executable BDD tests.
-
-## Resources
-
-- **`references/bdd-glossary.md`** — Consult for BDD terminology definitions when the human uses unfamiliar terms or when explaining concepts. Contains one-line definitions and examples for Feature, Scenario, Given/When/Then, Background, Scenario Outline, and more.
-
-- **`references/edge-case-checklist.md`** — Consult during Step 3 of the coaching workflow. Contains structured probing questions organized by domain (input validation, auth/authz, state integrity, concurrency, boundaries, error handling, external dependencies, UX states). Use as a prompt to surface edge cases the human hasn't considered.
+AC-N numbers provide traceability across the entire SDLC pipeline.

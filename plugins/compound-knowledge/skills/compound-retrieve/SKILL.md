@@ -8,31 +8,40 @@ description: >
   looks familiar", "check if we've solved this", "any past experience with this", "before I
   start, check for existing solutions", or any time past experience might inform the current
   task. Not for capturing new solutions — use compound-capture for that.
-allowed-tools: [Read, Grep, Glob]
+allowed-tools: [Read, Grep, Glob, Agent]
 ---
 
 # Compound Retrieve
 
-Search past solutions and engineering principles to surface institutional knowledge before starting work. This skill delegates to the `knowledge-researcher` subagent for fast, grep-based retrieval across YAML-frontmatter solution files.
+## Goal
 
-## Path Resolution
+Surface institutional knowledge from past solutions and engineering principles before starting work. Prevent repeated mistakes by searching YAML-frontmatter solution files captured by compound-capture.
 
-Before any retrieval operation, resolve the solutions directory path.
+## Dependencies
 
-**Check in this order (first match wins):**
+### Tools
+
+- **`compound-knowledge:knowledge-researcher`** — Haiku-powered subagent that performs fast, parallel grep-based retrieval across solution files. Designed for speed (<30s).
+
+### Connectors
+
+- **Solutions directory** — Resolved via path resolution (see Context). Default: `{project_root}/knowledge/solutions/`
+- **Cross-project registry** — `~/.claude/compound-knowledge-registry.md`. Enables searching other projects' knowledge bases when local results are thin.
+
+## Context
+
+### Path Resolution
+
+Resolve the solutions directory before any operation. **First match wins:**
 
 1. **Project-level override**: Read `{project_root}/.claude/compound-knowledge.local.md` — extract `solutions_path` value
 2. **User-level override**: Read `~/.claude/compound-knowledge.local.md` — extract `solutions_path` value
 3. **Default**: `{project_root}/knowledge/solutions/`
 
-Extract the path from the line starting with `solutions_path:`. Expand `~` to the user's home directory.
-
-If the resolved directory does not exist, inform the user:
+If the resolved directory does not exist:
 > "Solutions directory not found at `{solutions_path}`. Run `/compound-knowledge:setup` to initialize it."
 
----
-
-## When to Retrieve
+### When to Retrieve
 
 - **Before non-trivial debugging**: "Let me check if we've seen this before..."
 - **During planning phases**: "Checking for relevant past solutions..."
@@ -41,18 +50,18 @@ If the resolved directory does not exist, inform the user:
 - **Making design decisions**: Surface relevant principles and past architectural choices
 - **Working in unfamiliar code**: Check for documented patterns and gotchas
 
-## Retrieval Workflow
+## Process
 
 ### Step 1: Resolve Solutions Path
 
-Follow the Path Resolution algorithm above. Store the result as `{solutions_path}`.
+Follow the Path Resolution algorithm from Context. Store as `{solutions_path}`.
 
 ### Step 2: Delegate to Knowledge Researcher
 
-Spawn the knowledge-researcher subagent for fast parallel search:
+Spawn the subagent for fast parallel search:
 
 ```
-Task(
+Agent(
   subagent_type="compound-knowledge:knowledge-researcher",
   model="haiku",
   prompt="Search for solutions related to: {task_description}. Project: {project_name}. Keywords: {extracted_keywords}. Solutions path: {solutions_path}. Registry path: ~/.claude/compound-knowledge-registry.md",
@@ -73,11 +82,14 @@ The knowledge-researcher returns:
 
 Surface the top results to the user and incorporate insights into your approach:
 
-- If a **critical pattern** matches, warn the user prominently
-- If a **principle** applies, reference it when making design decisions
-- If a **past solution** matches the current problem, suggest the documented fix
-- If **nothing found**, say so clearly — don't fabricate relevance
+- If a **critical pattern** matches → warn the user prominently
+- If a **principle** applies → reference it when making design decisions
+- If a **past solution** matches → suggest the documented fix
+- If **nothing found** → say so clearly, don't fabricate relevance
 
-## References
+## Output
 
-- `references/registry-format.md` — Cross-project registry schema (used by the knowledge-researcher for cross-project search)
+A concise summary of relevant past solutions and principles, presented to the user with:
+- File paths for deeper reading
+- Actionable recommendations based on findings
+- Prominent warnings for any matching critical patterns

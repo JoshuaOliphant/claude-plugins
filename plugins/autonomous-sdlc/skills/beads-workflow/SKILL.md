@@ -11,132 +11,119 @@ version: 1.0.0
 
 # Beads Workflow for SDLC
 
-Beads is a git-native issue tracker that stores work items as files. This skill teaches how to use Beads effectively for autonomous SDLC workflows.
+## Goal
 
-## Core Commands
+Use the Beads CLI (`bd`) to track work items as git-native files with explicit dependencies. Beads enables autonomous SDLC by making blocking relationships visible — `bd ready` shows what can be worked on now, `bd close` unblocks dependents.
 
-### Finding Work
+## Dependencies
 
+### Tools
+
+- **`bd` CLI** — Git-native issue tracker. Commands: `bd create`, `bd ready`, `bd close`, `bd dep add`, `bd show`, `bd list`, `bd sync`.
+- **Bash** — Runs all `bd` commands.
+- **git** — Beads stores work items as files in the repo.
+
+### Connectors
+
+- **Git worktrees** (optional) — Each Bead can map to an isolated worktree for parallel execution.
+
+## Context
+
+### Core Commands
+
+**Finding work:**
 ```bash
-bd ready                         # Show tasks with no blockers (ready to implement)
+bd ready                         # Tasks with no blockers (ready now)
 bd list --status=open           # All open tasks
 bd list --status=in_progress    # Active work
-bd show <bead-id>               # Full task details with dependencies
-bd blocked                      # Show all blocked tasks
+bd show <bead-id>               # Full details with dependencies
+bd blocked                      # All blocked tasks
 ```
 
-### Creating Work
-
+**Creating work:**
 ```bash
-# Create a task (priority: 0=critical, 1=high, 2=medium, 3=low, 4=backlog)
-bd create --title="Implement feature X" --type=task --priority=1
-
-# Create with full details
-bd create --title="Add JWT authentication" --type=feature --priority=1
-
+# Priority: 0=critical, 1=high, 2=medium, 3=low, 4=backlog
 # Types: task, feature, bug, epic, chore
+bd create --title="Implement feature X" --type=task --priority=1
 ```
 
-### Managing Dependencies
-
+**Managing dependencies:**
 ```bash
-# Add dependency: first arg DEPENDS ON second arg
+# First arg DEPENDS ON second arg
 bd dep add <task-that-needs> <task-it-needs>
-
-# Example: tests depend on feature implementation
-bd create --title="Implement auth" --type=feature  # → beads-001
-bd create --title="Write auth tests" --type=task   # → beads-002
-bd dep add beads-002 beads-001  # tests depend on auth
-
-# Remove dependency
 bd dep remove <task> <dependency>
 ```
 
-### Completing Work
-
+**Completing work:**
 ```bash
-bd close <bead-id>                    # Mark complete (unblocks dependents)
+bd close <bead-id>                    # Unblocks dependents
 bd close <id1> <id2> <id3>           # Close multiple at once
 bd close <bead-id> --reason="Done"   # Close with reason
 ```
 
-### Synchronization
-
+**Syncing:**
 ```bash
 bd sync              # Sync with git remote
-bd sync --status     # Check sync status
 bd stats             # Project statistics
 bd doctor            # Check for issues
 ```
 
-## SDLC Workflow Pattern
+### Best Practices
 
-### 1. Architect Creates Feature Graph
+1. **Granular tasks** — Each Bead should be implementable in one focused session
+2. **Clear dependencies** — Use `bd dep add` to make blocking relationships explicit
+3. **Close immediately** — Run `bd close` as soon as verification passes
+4. **Sync often** — Run `bd sync` after completing work
+5. **Check ready first** — Always start with `bd ready` to find unblocked work
 
-The architect agent breaks down requirements into Beads with dependencies:
+## Process
+
+### Step 1: Architect Creates Feature Graph
+
+Break requirements into Beads with dependencies:
 
 ```bash
-# Create features in dependency order
 bd create --title="Database schema for users" --type=task --priority=1     # → beads-abc
 bd create --title="User model and repository" --type=task --priority=1     # → beads-def
 bd create --title="Auth middleware" --type=task --priority=1               # → beads-ghi
 bd create --title="Login/logout endpoints" --type=feature --priority=1    # → beads-jkl
 
-# Set up dependency chain
+# Dependency chain
 bd dep add beads-def beads-abc   # Model depends on schema
 bd dep add beads-ghi beads-def   # Middleware depends on model
 bd dep add beads-jkl beads-ghi   # Endpoints depend on middleware
 ```
 
-### 2. Worktree Manager Finds Ready Work
+### Step 2: Find Ready Work
 
 ```bash
 bd ready  # Shows beads-abc (no blockers)
 ```
 
-### 3. Implementer Completes Work
+When `bd ready` returns multiple tasks, they can be implemented in parallel (no mutual dependencies).
+
+### Step 3: Implement and Close
 
 ```bash
-# In worktree, after implementation passes verification
+# After implementation passes verification
 git add -A
 git commit -m "feat(beads-abc): implement database schema for users"
 bd close beads-abc   # Unblocks beads-def
 bd sync
 ```
 
-### 4. Parallel Execution
+### Step 4: Worktree Integration (Optional)
 
-When `bd ready` returns multiple tasks, spawn async subagents:
-
-```bash
-bd ready
-# Output:
-# 1. beads-xyz: API validation helpers
-# 2. beads-uvw: Error response formatting
-
-# Both can be implemented in parallel (no mutual dependencies)
-```
-
-## Best Practices
-
-1. **Granular Tasks**: Each Bead should be implementable in one focused session
-2. **Clear Dependencies**: Use `bd dep add` to make blocking relationships explicit
-3. **Close Immediately**: Run `bd close` as soon as verification passes
-4. **Sync Often**: Run `bd sync` after completing work to share progress
-5. **Check Ready First**: Always start with `bd ready` to find unblocked work
-
-## Integration with Worktrees
-
-Each Bead maps to a worktree:
+Each Bead can map to an isolated worktree:
 
 ```bash
-# Create worktree for a bead
 git worktree add ../trees/beads-abc -b feature/beads-abc
-
-# Work in isolation
 cd ../trees/beads-abc
-
-# After completion
+# ... implement ...
 bd close beads-abc
 git worktree remove ../trees/beads-abc
 ```
+
+## Output
+
+A dependency graph of Beads tracked as git-native files. The graph drives autonomous workflow: `bd ready` determines what to work on, `bd close` cascades unblocking, and `bd sync` shares progress.

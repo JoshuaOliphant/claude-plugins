@@ -12,34 +12,69 @@ version: 1.0.0
 
 # Test-Driven Development Workflow
 
-TDD is the foundation of verification-driven development. Write tests first, then implement code to make them pass.
+## Goal
 
-## The Red-Green-Refactor Cycle
+Enforce the discipline of writing tests before implementation code. Every feature starts with a failing test (RED), passes with minimal code (GREEN), then improves through refactoring while green. Never skip the test-first step.
+
+## Dependencies
+
+### Tools
+
+- **pytest** — Test runner. Invoked via `uv run pytest`.
+- **Bash** — Runs test commands to confirm RED/GREEN status.
+
+### Connectors
+
+- **Project test infrastructure** — Existing `tests/` directory with pytest configuration.
+
+## Context
+
+### The Red-Green-Refactor Cycle
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                                                     │
-│   RED: Write failing test                           │
-│         ↓                                           │
-│   GREEN: Write minimal code to pass                 │
-│         ↓                                           │
-│   REFACTOR: Improve code while keeping tests green  │
-│         ↓                                           │
-│   (repeat)                                          │
-│                                                     │
-└─────────────────────────────────────────────────────┘
+RED: Write failing test
+  ↓
+GREEN: Write minimal code to pass
+  ↓
+REFACTOR: Improve code while keeping tests green
+  ↓
+(repeat)
 ```
 
-## Step-by-Step Process
+### TDD Rules
 
-### 1. RED - Write a Failing Test
+1. **Never write production code without a failing test**
+2. **Write only enough test to fail** (compilation failures count)
+3. **Write only enough code to pass the failing test**
+4. **Refactor only when tests are green**
+
+### Test Organization
+
+```
+tests/
+├── unit/                    # Fast, isolated tests
+├── integration/             # Tests with real dependencies
+└── e2e/                     # Full system tests
+```
+
+### Coverage Guidance
+
+Focus on meaningful coverage, not 100%:
+- Critical business logic: 90%+
+- Edge cases and error paths
+- Integration points
+
+Don't obsess over: simple getters/setters, framework boilerplate, generated code.
+
+## Process
+
+### Step 1: RED — Write a Failing Test
 
 ```python
 # tests/test_user_service.py
 def test_create_user_returns_user_with_id():
     """Test that creating a user returns a user with an assigned ID."""
     service = UserService()
-
     user = service.create_user(name="Alice", email="alice@example.com")
 
     assert user.id is not None
@@ -47,13 +82,13 @@ def test_create_user_returns_user_with_id():
     assert user.email == "alice@example.com"
 ```
 
-Run test to confirm it fails:
+Run to confirm failure:
 ```bash
 uv run pytest tests/test_user_service.py::test_create_user_returns_user_with_id -x
 # Expected: FAILED (UserService doesn't exist)
 ```
 
-### 2. GREEN - Minimal Implementation
+### Step 2: GREEN — Minimal Implementation
 
 Write just enough code to make the test pass:
 
@@ -73,20 +108,19 @@ class UserService:
         return User(id=str(uuid.uuid4()), name=name, email=email)
 ```
 
-Run test to confirm it passes:
+Run to confirm pass:
 ```bash
 uv run pytest tests/test_user_service.py::test_create_user_returns_user_with_id -x
 # Expected: PASSED
 ```
 
-### 3. REFACTOR - Improve While Green
+### Step 3: REFACTOR — Improve Structure While Green
 
-Now improve the code (add validation, better types, etc.) while keeping tests green:
+Refactoring means improving code *structure* without changing behavior. Do not add new features here.
 
 ```python
-# src/user_service.py
+# src/user_service.py — structural improvement only
 from dataclasses import dataclass, field
-from typing import Optional
 import uuid
 
 @dataclass
@@ -97,111 +131,43 @@ class User:
 
 class UserService:
     def create_user(self, name: str, email: str) -> User:
-        if not name.strip():
-            raise ValueError("Name cannot be empty")
-        if "@" not in email:
-            raise ValueError("Invalid email format")
-        return User(name=name.strip(), email=email.lower())
+        return User(name=name, email=email)
 ```
 
-Run full test suite:
 ```bash
 uv run pytest tests/test_user_service.py -x
-# Should still pass
+# Should still pass — behavior unchanged, structure improved
 ```
 
-### 4. Add More Tests
+### Step 4: Next RED Cycle — Add Validation
 
-Continue the cycle with edge cases:
+New behavior requires a new failing test first:
 
 ```python
+# RED: Write failing test for validation
 def test_create_user_validates_empty_name():
     service = UserService()
-
     with pytest.raises(ValueError, match="Name cannot be empty"):
         service.create_user(name="", email="test@example.com")
-
-def test_create_user_validates_email_format():
-    service = UserService()
-
-    with pytest.raises(ValueError, match="Invalid email"):
-        service.create_user(name="Alice", email="not-an-email")
-
-def test_create_user_normalizes_email():
-    service = UserService()
-
-    user = service.create_user(name="Alice", email="Alice@Example.COM")
-
-    assert user.email == "alice@example.com"
 ```
 
-## TDD Rules
-
-1. **Never write production code without a failing test**
-2. **Write only enough test to fail** (compilation failures count)
-3. **Write only enough code to pass the failing test**
-4. **Refactor only when tests are green**
-
-## Test Organization
-
-```
-tests/
-├── unit/                    # Fast, isolated tests
-│   ├── test_user_service.py
-│   └── test_auth.py
-├── integration/             # Tests with real dependencies
-│   ├── test_user_api.py
-│   └── test_database.py
-└── e2e/                     # Full system tests
-    └── test_user_workflow.py
-```
-
-## Pytest Markers for Speed
-
-```python
-# conftest.py
-import pytest
-
-def pytest_configure(config):
-    config.addinivalue_line("markers", "slow: marks tests as slow")
-    config.addinivalue_line("markers", "integration: marks integration tests")
+```bash
+uv run pytest tests/test_user_service.py -x
+# Expected: FAILED (no validation exists yet)
 ```
 
 ```python
-# tests/test_slow.py
-@pytest.mark.slow
-def test_large_data_processing():
-    ...
-
-@pytest.mark.integration
-def test_database_connection():
-    ...
+# GREEN: Add just enough code to pass
+class UserService:
+    def create_user(self, name: str, email: str) -> User:
+        if not name.strip():
+            raise ValueError("Name cannot be empty")
+        return User(name=name, email=email)
 ```
 
-Run fast tests only:
-```bash
-uv run pytest -m "not slow and not integration" -x
-```
+Then repeat for email validation, normalization, etc. — always RED first.
 
-## Coverage Guidance
-
-Aim for meaningful coverage, not 100%:
-
-```bash
-uv run pytest --cov=src/ --cov-report=term-missing
-```
-
-Focus on:
-- Critical business logic: 90%+
-- Edge cases and error paths
-- Integration points
-
-Don't obsess over:
-- Simple getters/setters
-- Framework boilerplate
-- Generated code
-
-## Test-First Checklist
+### Test-First Checklist
 
 Before implementing any feature:
 
@@ -213,3 +179,7 @@ Before implementing any feature:
 - [ ] Run tests (confirm GREEN)
 - [ ] Refactor if needed
 - [ ] Run full suite
+
+## Output
+
+Working tests and implementation code produced through the red-green-refactor cycle. The test suite serves as living documentation of the system's behavior.

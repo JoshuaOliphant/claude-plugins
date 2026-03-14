@@ -13,28 +13,37 @@ version: 1.0.0
 
 # BDD Test Scaffolder
 
-Mechanical counterpart to `bdd-spec`. Takes structured acceptance criteria and produces runnable pytest-bdd scaffolding. This skill generates files — it is not conversational.
+## Goal
 
-Input: acceptance criteria in Given/When/Then format (from `bdd-spec` output, a plan document, or directly from the human).
+Take structured acceptance criteria (Given/When/Then) and produce runnable pytest-bdd scaffolding: `.feature` files, step definition stubs, pytest configuration, and directory structure. This skill generates files — it is not conversational.
 
-Output: `.feature` files, step definition stubs, pytest configuration, and directory structure.
+## Dependencies
 
-## Prerequisite Check
+### Tools
+
+- **Bash** — Runs `uv add`, `mkdir`, `pytest --collect-only`
+- **Write** — Creates feature files, step definitions, conftest.py
+
+### Connectors
+
+- **pytest-bdd** — Installed via `uv add --dev pytest-bdd`
+- **Acceptance criteria** — Input from `bdd-spec` output, a plan document, or directly from the user
+
+## Context
+
+### Prerequisite Guard
 
 Before generating any files, verify acceptance criteria exist. Check in this order:
 
-1. Look for `bdd-spec` output in the current conversation (structured AC blocks with Given/When/Then)
-2. Look for a plan document at `specs/{feature-slug}-plan.md` and extract the `## Acceptance Criteria` section
-3. Check if the human provided AC directly in the current prompt
+1. `bdd-spec` output in the current conversation (structured AC blocks)
+2. Plan document at `specs/{feature-slug}-plan.md` → extract `## Acceptance Criteria`
+3. AC provided directly in the current prompt
 
-If no acceptance criteria are found:
-- STOP generation
-- Report: "No acceptance criteria found. To generate BDD tests, provide acceptance criteria in Given/When/Then format."
-- Suggest: "Run `bdd-spec` to co-author acceptance criteria first, or provide them directly."
+> **STOP if no acceptance criteria are found.** Do not generate generic or placeholder feature files. Report: "No acceptance criteria found." Suggest: "Run `bdd-spec` to co-author acceptance criteria first."
 
-Do not generate generic or placeholder feature files. Every scenario must trace back to a specific acceptance criterion.
+Every scenario must trace back to a specific acceptance criterion.
 
-## Target Directory Structure
+### Target Directory Structure
 
 ```
 tests/bdd/
@@ -46,112 +55,72 @@ tests/bdd/
     └── test_{feature}.py          # Feature-specific step definitions
 ```
 
-Create `tests/bdd/` alongside existing test directories. Do not move or restructure existing tests.
+### AC → Gherkin Mapping
 
-## pyproject.toml Configuration
+| Acceptance Criteria | Gherkin |
+|---|---|
+| AC heading | Feature name |
+| AC-N blocks | Individual Scenarios |
+| Bold **Given/When/Then** | Gherkin `Given`/`When`/`Then` keywords |
+| `and` continuations | Gherkin `And` keyword |
+| Edge case tables | `Scenario Outline` with `Examples` |
+| Shared preconditions across all ACs | `Background` |
 
-Ensure pytest-bdd is installed and configured:
+Tag each scenario with `@ac-N` for traceability.
+
+### Integration with Other Skills
+
+- **BDD** (this skill) — Outer loop. Acceptance-level tests verifying user-perspective behavior.
+- **TDD** (`tdd-workflow`) — Inner loop. Unit-level tests verifying component internals.
+- **Verification** (`verification-stack`) — `uv run pytest tests/ -x` auto-discovers BDD tests. No config changes needed.
+
+For detailed pytest-bdd syntax, parser types, and step decorator patterns:
+
+→ **`references/pytest_bdd_reference.md`**
+
+## Process
+
+### Step 1: Locate Acceptance Criteria
+
+Run the prerequisite guard. Extract each AC-N block, noting feature name, AC numbers, Given/When/Then content, edge cases, and Scenario Outline tables.
+
+### Step 2: Ensure Dependencies
 
 ```bash
 uv add --dev pytest-bdd
 ```
 
-Add to `pyproject.toml` under `[tool.pytest.ini_options]` if not present:
+Add to `pyproject.toml` if not present:
 
 ```toml
 [tool.pytest.ini_options]
-markers = [
-    "bdd: BDD acceptance tests",
-]
+markers = ["bdd: BDD acceptance tests"]
 
 [tool.pytest-bdd]
 bdd_features_base_dir = "tests/bdd/features/"
 ```
 
-Run BDD tests:
-
-```bash
-# BDD tests only
-uv run pytest tests/bdd/ -x -m bdd
-
-# All tests including BDD
-uv run pytest tests/ -x
-```
-
-## Generation Workflow
-
-Follow these steps in order:
-
-### 1. Locate acceptance criteria
-
-Run the prerequisite check. Extract each AC-N block, noting:
-- The feature name (from the `## Acceptance Criteria: {Feature Name}` heading)
-- Each AC number and title
-- Given/When/Then content
-- Edge cases and Scenario Outline tables
-
-### 2. Ensure dependencies
-
-```bash
-uv add --dev pytest-bdd
-```
-
-Check `pyproject.toml` for existing pytest-bdd configuration. Add if missing.
-
-### 3. Create directory structure
+### Step 3: Create Directory Structure
 
 ```bash
 mkdir -p tests/bdd/features tests/bdd/steps
 ```
 
-Create `tests/bdd/__init__.py`, `tests/bdd/features/__init__.py`, and `tests/bdd/steps/__init__.py` if they don't exist (empty files).
+Create `__init__.py` files in each directory if they don't exist.
 
-### 4. Configure pytest
+### Step 4: Generate .feature Files
 
-Add BDD marker and features base directory to `pyproject.toml` if not already present. See the pyproject.toml Configuration section.
-
-### 5. Generate .feature files
-
-Create one `.feature` file per feature. Map acceptance criteria to Gherkin:
-
-- AC heading → Feature name
-- AC-N blocks → individual Scenarios
-- Bold **Given/When/Then** → Gherkin `Given`/`When`/`Then` keywords
-- `and` continuations → Gherkin `And` keyword
-- Edge case tables → `Scenario Outline` with `Examples`
-- Shared preconditions across all ACs → `Background`
-
-### 6. Generate step definition stubs
-
-Create one test file per feature in `tests/bdd/steps/`. Use the `scenarios()` shortcut to auto-bind all scenarios from the feature file. Generate `@given`, `@when`, `@then` stubs with `parsers.parse()` for parameterized steps and `TODO` markers for implementation.
-
-### 7. Verify scaffolding
-
-Run collection check then execution:
-
-```bash
-# Verify all scenarios are discovered
-uv run pytest tests/bdd/ --collect-only
-
-# Run BDD tests (stubs will fail at TODO markers)
-uv run pytest tests/bdd/ -x
-```
-
-Collection should succeed with zero errors. Execution will show failures at TODO stubs — this is expected and correct. The stubs are ready for implementation.
-
-## File Templates
-
-### Feature File
+One `.feature` file per feature:
 
 ```gherkin
 # ABOUTME: BDD feature file for {feature_name}
 # ABOUTME: Generated from acceptance criteria — scenarios map to AC-N numbers
 
 Feature: {Feature Name}
-    {One-line feature description}
+    {One-line description}
 
     Background:
-        Given {shared precondition across all scenarios}
+        Given {shared precondition}
 
     @ac-1
     Scenario: {AC-1 title}
@@ -161,29 +130,19 @@ Feature: {Feature Name}
         And {additional outcome}
 
     @ac-2
-    Scenario: {AC-2 title}
-        Given {precondition}
-        When {action}
-        Then {outcome}
-
-    @ac-3
-    Scenario Outline: {AC-3 title — parameterized}
+    Scenario Outline: {AC-2 title — parameterized}
         Given {precondition}
         When the user submits <input>
         Then the system displays <error_message>
 
         Examples:
-            | input          | error_message        |
-            | empty email    | Email is required    |
-            | not-an-email   | Invalid email format |
+            | input        | error_message        |
+            | empty email  | Email is required    |
 ```
 
-Notes:
-- Tag each scenario with `@ac-N` to maintain traceability to acceptance criteria
-- Use `Background` only when a precondition applies to *every* scenario in the feature
-- Keep step text close to natural language — avoid implementation jargon
+### Step 5: Generate Step Definition Stubs
 
-### Step Definitions
+One test file per feature in `tests/bdd/steps/`:
 
 ```python
 # ABOUTME: Step definitions for {feature_name} BDD tests
@@ -192,93 +151,59 @@ Notes:
 import pytest
 from pytest_bdd import scenarios, given, when, then, parsers
 
-# Auto-bind all scenarios from the feature file
 scenarios("../features/{feature}.feature")
 
 
 @given(parsers.parse("a registered user with email {email}"), target_fixture="user")
 def given_registered_user(email):
     """Set up a registered user."""
-    # TODO: Implement — create or retrieve a user with the given email
+    # TODO: Implement
     raise NotImplementedError("Implement this step")
 
 
 @when(parsers.parse("the user submits the login form with {credentials}"))
 def when_user_submits_login(credentials, user):
     """Perform the login action."""
-    # TODO: Implement — submit login form with the given credentials
-    raise NotImplementedError("Implement this step")
-
-
-@then(parsers.parse("the user is redirected to {destination}"))
-def then_user_redirected(destination):
-    """Verify redirect destination."""
-    # TODO: Implement — assert the user was redirected to the expected destination
+    # TODO: Implement
     raise NotImplementedError("Implement this step")
 
 
 @then(parsers.parse("the system displays {message}"))
 def then_system_displays(message):
     """Verify displayed message."""
-    # TODO: Implement — assert the expected message is shown to the user
+    # TODO: Implement
     raise NotImplementedError("Implement this step")
 ```
 
 Notes:
-- `scenarios()` auto-discovers and binds all scenarios from the feature file — no need for individual `@scenario` decorators
-- Use `parsers.parse()` for steps with parameters (curly braces)
-- Use `target_fixture` to inject state from `@given` steps into `@when` and `@then` steps
-- Raise `NotImplementedError` in stubs so failures are explicit, not silent
+- `scenarios()` auto-discovers all scenarios from the feature file
+- Use `parsers.parse()` for parameterized steps
+- Use `target_fixture` to inject state from `@given` into `@when`/`@then`
+- `NotImplementedError` makes failures explicit, not silent
 
-### Shared Fixtures (tests/bdd/conftest.py)
+### Step 6: Generate Shared Fixtures
 
-```python
-# ABOUTME: Shared BDD fixtures for acceptance tests
-# ABOUTME: Common setup used across multiple feature files
+Create `tests/bdd/conftest.py` and `tests/bdd/steps/conftest.py` with common fixtures and shared steps.
 
-import pytest
+### Step 7: Verify Scaffolding
 
+```bash
+# Verify all scenarios are discovered
+uv run pytest tests/bdd/ --collect-only
 
-@pytest.fixture
-def app_client():
-    """Provide a test client for the application."""
-    # TODO: Implement — return a test client instance
-    raise NotImplementedError("Implement shared fixture")
+# Run BDD tests (stubs will fail at TODO markers — expected)
+uv run pytest tests/bdd/ -x
 ```
 
-### Shared Steps (tests/bdd/steps/conftest.py)
+Collection should succeed with zero errors. Execution failures at TODO stubs are expected and correct.
 
-```python
-# ABOUTME: Shared step definitions used across multiple BDD features
-# ABOUTME: Steps that appear in more than one feature file belong here
+## Output
 
-from pytest_bdd import given, parsers
+| File | Purpose |
+|---|---|
+| `tests/bdd/features/{feature}.feature` | Gherkin scenarios tagged with `@ac-N` |
+| `tests/bdd/steps/test_{feature}.py` | Step definition stubs with `NotImplementedError` |
+| `tests/bdd/conftest.py` | Shared BDD fixtures |
+| `tests/bdd/steps/conftest.py` | Shared step definitions (cross-feature) |
 
-
-@given(parsers.parse("the application is running"), target_fixture="app")
-def given_app_running():
-    """Ensure the application is available for testing."""
-    # TODO: Implement — start or connect to the application
-    raise NotImplementedError("Implement shared step")
-```
-
-## Integration with Existing Skills
-
-BDD and TDD serve complementary roles in the testing pyramid:
-
-- **BDD (this skill)** — Outer loop. Acceptance-level tests that verify the system behaves correctly from the user's perspective. Feature files describe *what* the system does.
-- **TDD (`tdd-workflow`)** — Inner loop. Unit-level tests that verify individual components work correctly. Test files describe *how* the code works.
-
-BDD tests run through the existing verification pipeline without modification. The `verification-stack` skill's `uv run pytest tests/ -x` command auto-discovers BDD tests in `tests/bdd/` via standard pytest collection. No changes to `verification-stack` are needed.
-
-Workflow in practice:
-1. `bdd-spec` produces acceptance criteria (human-readable)
-2. `bdd-generate` scaffolds feature files and step stubs (machine-runnable)
-3. Builder implements step definitions using TDD (inner loop red-green-refactor)
-4. Validator confirms all BDD scenarios pass (outer loop verification)
-
-For data table support beyond Scenario Outlines, consider `pytest-bdd-ng` which extends Gherkin with richer table types.
-
-## Resources
-
-- **`references/pytest_bdd_reference.md`** — Consult for detailed pytest-bdd syntax, parser types, step decorator patterns, conftest discovery rules, and tag-to-marker mapping. Use when generating step definitions or troubleshooting pytest-bdd configuration.
+Stubs are ready for implementation via TDD inner loop (red-green-refactor on each step).

@@ -2,94 +2,76 @@
 
 A collection of Claude Code plugins for productivity and learning workflows.
 
-## Available Plugins
-
-### mochi-creator
-
-**Version 1.1.0** - Create evidence-based spaced repetition flashcards using cognitive science principles from Andy Matuschak's research.
-
-**What Makes This Different:**
-This plugin doesn't just create flashcards—it applies research-backed principles to ensure cards actually work for long-term retention. Based on Andy Matuschak's extensive work on spaced repetition and retrieval practice.
-
-**Core Features:**
-- **Quality Validation**: Checks prompts against 5 properties (focused, precise, consistent, tractable, effortful)
-- **Evidence-Based Design**: Applies cognitive science principles to every card
-- **Knowledge-Type Workflows**: Specialized patterns for factual, conceptual, procedural, and salience prompts
-- **Anti-Pattern Detection**: Identifies and fixes common mistakes (binary questions, unfocused prompts, vague language)
-- **5 Conceptual Lenses**: Creates robust understanding through multiple angles (attributes, similarities, parts, causes, significance)
-- **Procedural Patterns**: Focus on transitions, rationale, and timing instead of rote memorization
-- **Interactive Creation**: Guided workflows with quality checks at every step
-- **Template Support**: Build reusable card formats with custom fields
-- **Deck Management**: Hierarchical organization and batch operations
-
-**Requirements:**
-- Mochi.cards account and API key
-- Python with `requests` library
-
-**Installation:**
+## Installation
 
 ```bash
 # Add this marketplace
 /plugin marketplace add joshuaoliphant/claude-plugins
 
-# Install the plugin
-/plugin install mochi-creator@oliphant-plugins
+# Install any plugin
+/plugin install <plugin-name>@oliphant-plugins
 ```
 
-**Setup:**
+## Available Plugins
 
-Set your Mochi API key as an environment variable:
+### mochi-creator (v1.2.0)
+
+Create evidence-based spaced repetition flashcards using cognitive science principles from Andy Matuschak's research. Applies the 5 properties of effective prompts (focused, precise, consistent, tractable, effortful) to ensure cards actually work for long-term retention.
+
+**Features:** Quality validation, knowledge-type workflows (factual, conceptual, procedural, salience), anti-pattern detection, template support, deck management, batch operations.
+
+**Requirements:** Mochi.cards account + `MOCHI_API_KEY` environment variable.
+
 ```bash
+/plugin install mochi-creator@oliphant-plugins
 export MOCHI_API_KEY="your_api_key_here"
 ```
 
-To get your API key:
-1. Open Mochi.cards application
-2. Navigate to Account Settings
-3. Find the API Keys section
-4. Generate a new API key
+### autonomous-sdlc (v0.6.0)
 
-**Quick Start:**
+Adaptive autonomous SDLC with 5 skills covering the full development lifecycle:
 
-Here's the simplest way to get started—create flashcards about a basic concept:
+- **bdd-spec** — Co-author acceptance criteria in Given/When/Then format before code exists
+- **bdd-generate** — Scaffold pytest-bdd feature files and step definitions from acceptance criteria
+- **tdd-workflow** — Enforce red-green-refactor discipline with test-first development
+- **verification-stack** — Run automated quality gates (format, lint, type check, test) as deterministic verification
+- **beads-workflow** — Track work items with the Beads CLI (`bd` commands) with explicit dependencies
 
-1. Set your API key: `export MOCHI_API_KEY="your_api_key_here"`
-2. Invoke the plugin: "Create Mochi cards to help me understand what recursion is"
-3. Get evidence-based flashcards: Cards appear in your Mochi deck with focused, atomic prompts
+```bash
+/plugin install autonomous-sdlc@oliphant-plugins
+```
 
-That's it! The plugin handles quality validation and cognitive science principles automatically.
+### hexagonal-agents (v1.1.0)
 
-**Usage Examples:**
+Build web applications where an AI agent dynamically generates HTML UI using hexagonal/ports-and-adapters architecture with HTMX for interactivity and MCP tools for data operations.
 
-Simple requests:
-- "Create Mochi cards about dependency injection" → Creates 5-8 focused, atomic cards
-- "Turn this conversation into flashcards" → Extracts key concepts with quality validation
-- "Help me create flashcards for learning React hooks" → Interactive workflow with guidance
+**Stack:** Claude Agent SDK + FastAPI + HTMX + Tailwind CSS.
 
-Advanced workflows:
-- "Create conceptual cards for TDD using the 5 lenses approach" → Attributes, similarities, examples, causes, significance
-- "Make procedural cards for git workflow focusing on transitions and rationale" → No rote steps, emphasis on understanding
-- "Create factual cards from this recipe" → Breaks into atomic prompts automatically
+```bash
+/plugin install hexagonal-agents@oliphant-plugins
+export ANTHROPIC_API_KEY="your_key_here"
+```
 
-Quality-focused:
-- Claude will proactively validate prompts and suggest improvements
-- Detects unfocused prompts: "This tests 3 details - let me split into separate cards"
-- Identifies anti-patterns: "This is a binary question - let me rephrase as open-ended"
-- Applies knowledge-type appropriate patterns automatically
+### compound-knowledge (v0.5.0)
 
-**The "More Than You Think" Rule:**
-The plugin encourages creating 3-5 focused cards instead of 1 comprehensive card. Each focused prompt takes only 10-30 seconds across an entire year of review, but creates much stronger, more reliable memories.
+Capture solved problems and retrieve past solutions as structured YAML-frontmatter files for grep-based retrieval across sessions and projects.
 
-**Research Foundation:**
+- **compound-capture** — Document solved problems and engineering principles after debugging sessions
+- **compound-retrieve** — Search past solutions before starting work to prevent repeated mistakes
 
-This plugin is built on cognitive science research including:
-- **Retrieval Practice** (Roediger & Karpicke, 2006): Active recall strengthens memory more than passive review
-- **Spacing Effect** (Ebbinghaus, 1885; Cepeda et al., 2006): Distributed practice beats massed practice
-- **Elaborative Encoding** (Craik & Lockhart, 1972): Deeper processing creates stronger memories
-- **Desirable Difficulties** (Bjork, 1994): Optimal learning occurs with moderate challenge
-- Andy Matuschak's extensive work on prompt design and spaced repetition systems
+```bash
+/plugin install compound-knowledge@oliphant-plugins
+```
 
-The 5 properties framework, knowledge-type patterns, and quality validation are all grounded in this research to ensure cards that actually work for long-term retention.
+### autoloop (v0.3.0)
+
+Generate autonomous experiment loops that iteratively improve code by editing, running, measuring a scalar metric, and keeping improvements via git commit/reset. Based on Karpathy's autoresearch pattern.
+
+**Generates:** `program.md` + `auto/run.sh` with tiered quality gates, ready to run with `claude --dangerously-skip-permissions`.
+
+```bash
+/plugin install autoloop@oliphant-plugins
+```
 
 ## Contributing
 
