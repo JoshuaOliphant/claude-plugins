@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by Joshua Oliphant for productivity and learning workflows",
-    "version": "1.0.2"
+    "version": "1.0.3"
   },
   "plugins": [
     {
@@ -100,6 +100,28 @@
         "agentic"
       ],
       "category": "development",
+      "license": "MIT"
+    },
+    {
+      "name": "resume-tailor",
+      "source": "./plugins/resume-tailor",
+      "description": "Multi-agent resume customization pipeline with parallel section optimization, ATS scoring, truthfulness verification, and cover letter generation",
+      "version": "1.0.0",
+      "author": {
+        "name": "Joshua Oliphant"
+      },
+      "keywords": [
+        "resume",
+        "cover-letter",
+        "ats",
+        "job-search",
+        "career",
+        "customization",
+        "optimization",
+        "multi-agent",
+        "parallel"
+      ],
+      "category": "productivity",
       "license": "MIT"
     }
   ]

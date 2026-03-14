@@ -1,0 +1,23 @@
+{
+  "name": "resume-tailor",
+  "description": "Multi-agent resume customization pipeline that parses resumes, evaluates job fit, optimizes sections in parallel, verifies truthfulness, and generates cover letters. Combines deterministic scripts (parsing, scoring, diffing) with specialized LLM agents (evaluation, optimization, verification) for fast, accurate resume tailoring.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Joshua Oliphant"
+  },
+  "homepage": "https://github.com/joshuaoliphant/claude-plugins",
+  "repository": "https://github.com/joshuaoliphant/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "resume",
+    "cover-letter",
+    "ats",
+    "job-search",
+    "career",
+    "customization",
+    "optimization",
+    "tailoring",
+    "multi-agent",
+    "parallel"
+  ]
+}
