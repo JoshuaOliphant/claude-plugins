@@ -1,7 +1,7 @@
 {
   "name": "autoloop",
-  "version": "0.1.0",
-  "description": "Generate self-improving experiment loops driven by program.md files.",
+  "version": "0.2.0",
+  "description": "Generate autonomous experiment loops with immutable runner scripts, tiered quality gates, secondary metrics, and structured METRIC output.",
   "license": "MIT",
   "author": { "name": "Joshua Oliphant" },
   "homepage": "https://github.com/joshuaoliphant/claude-plugins",
