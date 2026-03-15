@@ -105,8 +105,8 @@
     {
       "name": "resume-tailor",
       "source": "./plugins/resume-tailor",
-      "description": "Multi-agent resume customization pipeline with parallel section optimization, ATS scoring, truthfulness verification, and cover letter generation",
-      "version": "1.3.0",
+      "description": "Multi-agent resume customization pipeline with parallel section optimization, ATS scoring, truthfulness verification, cover letter generation, and GitHub profile sync",
+      "version": "1.4.0",
       "author": {
         "name": "Joshua Oliphant"
       },
