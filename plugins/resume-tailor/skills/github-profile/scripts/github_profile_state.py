@@ -11,7 +11,22 @@ import sys
 from pathlib import Path
 
 
-PROFILE_REPO_PATH = Path.home() / "Dropbox" / "python_workspace" / "JoshuaOliphant"
+PROFILE_DIR = Path.home() / ".claude" / "resume-tailor"
+
+
+def resolve_profile_repo_path() -> Path:
+    """Resolve GitHub profile repo path from profile config, falling back to default."""
+    profile_file = PROFILE_DIR / "profile.yaml"
+    if profile_file.exists():
+        content = profile_file.read_text(encoding="utf-8")
+        for line in content.split("\n"):
+            if line.strip().startswith("github_profile_repo:"):
+                configured = line.split(":", 1)[1].strip()
+                configured_path = Path(configured).expanduser()
+                if configured_path.exists():
+                    return configured_path
+    # Default: look for username/username repo in common locations
+    return Path.home() / "Dropbox" / "python_workspace" / "JoshuaOliphant"
 
 
 def run_gh(args: list[str]) -> dict | list | str | None:
@@ -53,7 +68,7 @@ def get_api_fields(username: str) -> dict:
 
 def get_current_readme() -> str | None:
     """Read the current README from the local profile repo."""
-    readme_path = PROFILE_REPO_PATH / "README.md"
+    readme_path = resolve_profile_repo_path() / "README.md"
     if readme_path.exists():
         return readme_path.read_text(encoding="utf-8")
     return None
@@ -150,7 +165,7 @@ def main():
         "current_readme": get_current_readme(),
         "repos": get_repos(args.username),
         "pinned_repos": get_pinned_repos(args.username),
-        "profile_repo_path": str(PROFILE_REPO_PATH),
+        "profile_repo_path": str(resolve_profile_repo_path()),
     }
 
     print(json.dumps(state, indent=2, default=str))

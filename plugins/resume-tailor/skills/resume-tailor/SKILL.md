@@ -63,10 +63,17 @@ This ensures past corrections are never repeated.
 
 ### Gather Inputs
 
-If `resume` argument is provided, use that path. Otherwise:
-1. Check for master resume at `~/.claude/resume-tailor/master-resume.md` (canonical source of truth)
-2. Check the loaded profile for `resume_path`
-3. Ask the user for their resume file path
+If `resume` argument is provided, use that path. Otherwise, locate the master resume:
+
+1. Run `python ${SKILL_DIR}/scripts/master_sync.py export` — the script resolves the path automatically:
+   - First checks `master_resume_dir` in `~/.claude/resume-tailor/profile.yaml` (user-configured)
+   - Falls back to `~/.claude/resume-tailor/master-resume.md` (default location)
+2. If the script returns an error (master resume not found at either location):
+   - Ask the user: "Where is your master resume? Give me the directory path."
+   - Save their answer: `python ${SKILL_DIR}/scripts/profile_manager.py set-master-path <directory>`
+   - This persists the path in profile.yaml so they won't be asked again on this machine.
+3. If no master resume exists at all, check the loaded profile for `resume_path`
+4. As a last resort, ask the user for their resume file path
 
 If using the master resume, also run drift detection:
 ```bash

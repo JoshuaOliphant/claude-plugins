@@ -11,8 +11,35 @@ from pathlib import Path
 
 
 PROFILE_DIR = Path.home() / ".claude" / "resume-tailor"
-MASTER_MD = PROFILE_DIR / "master-resume.md"
-MASTER_YAML = PROFILE_DIR / "master-resume.yaml"
+DEFAULT_MASTER_DIR = PROFILE_DIR
+
+
+def resolve_master_dir() -> Path:
+    """Resolve master resume directory from profile config, falling back to default.
+
+    Lookup order:
+    1. master_resume_dir in profile.yaml (user-configured path)
+    2. Default ~/.claude/resume-tailor/
+    """
+    profile_file = PROFILE_DIR / "profile.yaml"
+    if profile_file.exists():
+        content = profile_file.read_text(encoding="utf-8")
+        for line in content.split("\n"):
+            if line.strip().startswith("master_resume_dir:"):
+                configured = line.split(":", 1)[1].strip()
+                configured_path = Path(configured).expanduser()
+                if configured_path.exists():
+                    return configured_path
+    return DEFAULT_MASTER_DIR
+
+
+def get_master_paths() -> tuple[Path, Path]:
+    """Return resolved (master_md, master_yaml) paths."""
+    master_dir = resolve_master_dir()
+    return master_dir / "master-resume.md", master_dir / "master-resume.yaml"
+
+
+MASTER_MD, MASTER_YAML = get_master_paths()
 
 
 def parse_master_md(filepath: Path) -> dict:

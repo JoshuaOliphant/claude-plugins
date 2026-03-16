@@ -22,8 +22,17 @@ Maintain the two-tier master resume system: a human-editable markdown file and a
 
 | File | Purpose | Who edits it |
 |------|---------|-------------|
-| `~/.claude/resume-tailor/master-resume.md` | Canonical source of truth | You (directly) |
-| `~/.claude/resume-tailor/master-resume.yaml` | Structured data for scripts/agents | Auto-generated |
+| `<master_resume_dir>/master-resume.md` | Canonical source of truth | You (directly) |
+| `<master_resume_dir>/master-resume.yaml` | Structured data for scripts/agents | Auto-generated |
+
+The master resume directory is resolved automatically:
+1. `master_resume_dir` in `~/.claude/resume-tailor/profile.yaml` (if configured)
+2. `~/.claude/resume-tailor/` (default)
+
+To set a custom location (e.g., a Dropbox-synced directory):
+```bash
+python ${PLUGIN_ROOT}/skills/resume-tailor/scripts/profile_manager.py set-master-path /path/to/directory
+```
 
 ## Commands
 

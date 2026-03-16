@@ -312,6 +312,34 @@ def clear_feedback(category: str | None = None) -> dict:
     return {"status": "cleared", "scope": category, "removed": removed, "remaining": len(remaining)}
 
 
+def set_master_path(directory: str) -> dict:
+    """Set the master resume directory in profile.yaml."""
+    ensure_dirs()
+
+    dir_path = Path(directory).expanduser().resolve()
+    if not dir_path.exists():
+        return {"error": f"Directory does not exist: {dir_path}"}
+
+    md_file = dir_path / "master-resume.md"
+    if not md_file.exists():
+        return {"error": f"No master-resume.md found in {dir_path}"}
+
+    existing = {}
+    if PROFILE_FILE.exists():
+        existing = parse_simple_yaml(PROFILE_FILE.read_text(encoding="utf-8"))
+
+    existing["master_resume_dir"] = str(dir_path)
+    existing["last_updated"] = datetime.now().strftime("%Y-%m-%d")
+    write_simple_yaml(existing, PROFILE_FILE)
+
+    return {
+        "status": "saved",
+        "master_resume_dir": str(dir_path),
+        "master_resume_md": str(md_file),
+        "master_resume_yaml": str(dir_path / "master-resume.yaml"),
+    }
+
+
 def main():
     if len(sys.argv) < 2:
         print(json.dumps({
@@ -319,6 +347,7 @@ def main():
             "commands": [
                 "load", "save", "save-history", "show-history",
                 "update-preferences", "save-feedback", "show-feedback", "clear-feedback",
+                "set-master-path",
             ],
         }))
         sys.exit(1)
@@ -359,6 +388,11 @@ def main():
     elif command == "clear-feedback":
         category = sys.argv[2] if len(sys.argv) > 2 else None
         result = clear_feedback(category)
+    elif command == "set-master-path":
+        if len(sys.argv) < 3:
+            result = {"error": "Usage: profile_manager.py set-master-path <directory>"}
+        else:
+            result = set_master_path(sys.argv[2])
     else:
         result = {"error": f"Unknown command: {command}"}
 

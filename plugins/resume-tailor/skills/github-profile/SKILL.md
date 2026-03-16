@@ -25,33 +25,33 @@ Update your GitHub profile README, API fields, and pinned repos from your master
 
 This skill reads your master resume (the same source of truth used by `/resume-tailor`) and your current GitHub state, then generates an updated profile that's casual, structured, and badge-rich — while staying aligned with your professional narrative.
 
-## Constants
-
-```
-GITHUB_USERNAME=JoshuaOliphant
-PROFILE_REPO_PATH=/Users/joshuaoliphant/Dropbox/python_workspace/JoshuaOliphant
-MASTER_RESUME_YAML=~/.claude/resume-tailor/master-resume.yaml
-MASTER_RESUME_MD=~/.claude/resume-tailor/master-resume.md
-```
-
 ## Phase 0: Gather State
 
 ### Load Master Resume
 
-Read the structured resume data:
+Export the structured resume data via the sync script (it resolves the configured path automatically):
 
 ```bash
-cat ~/.claude/resume-tailor/master-resume.yaml
+python ${PLUGIN_ROOT}/skills/resume-tailor/scripts/master_sync.py export
 ```
 
+If this returns an error (master resume not found):
+1. Ask the user: "Where is your master resume directory?"
+2. Save: `python ${PLUGIN_ROOT}/skills/resume-tailor/scripts/profile_manager.py set-master-path <directory>`
+3. Retry the export.
+
 This provides: summary, experience, skills (by category), projects, education, contact info.
+
+### Determine GitHub Username
+
+Check the master resume contact field for a GitHub URL, or check profile.yaml for `github_username`. If neither is found, ask the user.
 
 ### Fetch Current GitHub State
 
 Run the state-gathering script to get current profile data:
 
 ```bash
-python ${SKILL_DIR}/scripts/github_profile_state.py --username JoshuaOliphant
+python ${SKILL_DIR}/scripts/github_profile_state.py --username <github_username>
 ```
 
 This returns:
@@ -127,10 +127,10 @@ Prioritize:
 
 **Format per project:**
 ```markdown
-### [Project Name](https://github.com/JoshuaOliphant/repo-name)
+### [Project Name](https://github.com/<username>/repo-name)
 > Casual one-line description (NOT the resume bullet — rewrite for GitHub audience)
 
-![Language](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white) ![Stars](https://img.shields.io/github/stars/JoshuaOliphant/repo-name?style=flat-square)
+![Language](https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white) ![Stars](https://img.shields.io/github/stars/<username>/repo-name?style=flat-square)
 ```
 
 **Source data**: `projects` from resume YAML cross-referenced with `repos` from GitHub state. Use actual repo descriptions as a starting point, then rewrite casually.
@@ -176,7 +176,7 @@ Keep it brief — the detail is on LinkedIn.]
 ## Get in Touch
 
 [![Email](badge)](mailto:joshua.oliphant@hey.com)
-[![LinkedIn](badge)](https://linkedin.com/in/joshuaoliphant)
+[![LinkedIn](badge)](<linkedin_url_from_resume_contact>)
 [![Blog](badge)](https://anoliphantneverforgets.com)
 ```
 
@@ -198,7 +198,7 @@ Show the user the complete generated README in a code block. Ask:
 After user approval, write the README to the profile repo:
 
 ```
-Write to: /Users/joshuaoliphant/Dropbox/python_workspace/JoshuaOliphant/README.md
+Write to: <profile_repo_path>/README.md (path from github_profile_state.py output)
 ```
 
 ## Phase 2: Update API Fields
@@ -266,7 +266,7 @@ Recommend: "Here are my top 6 picks. [Explain reasoning for each — especially 
 
 ```markdown
 To update your pinned repos:
-1. Go to https://github.com/JoshuaOliphant
+1. Go to https://github.com/<username>
 2. Click "Customize your pins"
 3. Select these 6 repos: [list]
 4. Save
@@ -279,7 +279,7 @@ If `gh` CLI adds pinning support in the future, use that instead.
 ### Stage and Review
 
 ```bash
-cd /Users/joshuaoliphant/Dropbox/python_workspace/JoshuaOliphant
+cd <profile_repo_path>
 git diff README.md
 ```
 
@@ -290,7 +290,7 @@ Show the diff to the user.
 If the user approves:
 
 ```bash
-cd /Users/joshuaoliphant/Dropbox/python_workspace/JoshuaOliphant
+cd <profile_repo_path>
 git add README.md
 git commit -m "Update profile README from master resume data
 
@@ -304,7 +304,7 @@ Ask the user: "Push to GitHub now?"
 
 If yes:
 ```bash
-cd /Users/joshuaoliphant/Dropbox/python_workspace/JoshuaOliphant
+cd <profile_repo_path>
 git push origin main
 ```
 
@@ -333,7 +333,7 @@ python ${PLUGIN_ROOT}/skills/resume-tailor/scripts/master_sync.py sync
 ### Profile Repo Not Found
 If the profile repo path doesn't exist, ask the user where it is or offer to clone:
 ```bash
-gh repo clone JoshuaOliphant/JoshuaOliphant /Users/joshuaoliphant/Dropbox/python_workspace/JoshuaOliphant
+gh repo clone <username>/<username> <profile_repo_path>
 ```
 
 ### No Recent Repos
