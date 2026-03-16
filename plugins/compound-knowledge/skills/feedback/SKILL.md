@@ -6,10 +6,11 @@ description: >
   behavior. Use when the user wants to adjust how solutions are captured, categorized, or retrieved.
   Trigger phrases include "remember this for next time", "save this feedback", "don't capture that",
   "always categorize like this", "show my feedback", "clear feedback", "too verbose", "not enough detail",
-  "wrong category", and "knowledge preferences".
+  "wrong category", "knowledge preferences", "update the plugin based on feedback",
+  "consolidate feedback", "bake in my preferences", and "graduate feedback into the skill".
 args:
   - name: action
-    description: "Action to take: save, show, or clear"
+    description: "Action to take: save, show, clear, or consolidate"
     required: false
 user-invokable: true
 ---
@@ -60,6 +61,52 @@ python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge clear-feedb
 # Clear only categorization feedback
 python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge clear-feedback categorization
 ```
+
+### Consolidate Feedback
+
+Graduate stable feedback into the actual SKILL.md files, making corrections permanent. This is a
+Claude-driven operation — no script needed.
+
+**When to consolidate**: When the user says "update the plugin based on feedback", "consolidate feedback",
+"bake in my preferences", or "graduate feedback into the skill".
+
+**Process**:
+
+1. Load all stored feedback:
+```bash
+python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show-feedback
+```
+
+2. Read the target SKILL.md files that the feedback applies to:
+   - `${PLUGIN_ROOT}/skills/compound-capture/SKILL.md`
+   - `${PLUGIN_ROOT}/skills/compound-retrieve/SKILL.md`
+
+3. For each feedback entry, determine if it should be consolidated:
+   - **Consolidate**: Universal preferences, repeated corrections, style rules that always apply
+   - **Keep as runtime feedback**: Situational preferences, context-dependent corrections, temporary focus areas
+
+4. Present a consolidation plan to the user:
+   ```
+   ## Consolidation Plan
+
+   **Will bake into SKILL.md** (permanent):
+   - [feedback] → edit [file]: [what will change]
+
+   **Will keep as runtime feedback** (situational):
+   - [feedback] → reason: [why it stays runtime]
+
+   Proceed?
+   ```
+
+5. On approval:
+   - Edit the target SKILL.md files using the Edit tool
+   - Clear only the graduated feedback entries:
+   ```bash
+   python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge clear-feedback <category>
+   ```
+   - Keep non-graduated entries untouched
+
+6. Report what changed and what remains as runtime feedback.
 
 ## How Feedback is Used
 

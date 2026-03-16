@@ -7,10 +7,11 @@ description: >
   set rules for future customizations, or review stored feedback. Trigger phrases include
   "remember this for next time", "save this feedback", "don't do that again",
   "always do this", "show my feedback", "resume preferences", "clear feedback",
-  "what feedback have I given", and "remember for future resumes".
+  "what feedback have I given", "remember for future resumes", "update the plugin based on feedback",
+  "consolidate feedback", "bake in my preferences", and "graduate feedback into the skill".
 args:
   - name: action
-    description: "Action to take: save, show, or clear"
+    description: "Action to take: save, show, clear, or consolidate"
     required: false
 user-invokable: true
 ---
@@ -60,6 +61,51 @@ python ${PLUGIN_ROOT}/skills/resume-tailor/scripts/profile_manager.py clear-feed
 # Clear only cover letter feedback
 python ${PLUGIN_ROOT}/skills/resume-tailor/scripts/profile_manager.py clear-feedback cover_letter
 ```
+
+### Consolidate Feedback
+
+Graduate stable feedback into the actual SKILL.md files, making corrections permanent. This is a
+Claude-driven operation — no script needed.
+
+**When to consolidate**: When the user says "update the plugin based on feedback", "consolidate feedback",
+"bake in my preferences", or "graduate feedback into the skill".
+
+**Process**:
+
+1. Load all stored feedback:
+```bash
+python ${PLUGIN_ROOT}/skills/resume-tailor/scripts/profile_manager.py show-feedback
+```
+
+2. Read the target SKILL.md file:
+   - `${PLUGIN_ROOT}/skills/resume-tailor/SKILL.md`
+
+3. For each feedback entry, determine if it should be consolidated:
+   - **Consolidate**: Universal preferences, repeated corrections, style rules that always apply
+   - **Keep as runtime feedback**: Situational preferences, context-dependent corrections, temporary focus areas
+
+4. Present a consolidation plan to the user:
+   ```
+   ## Consolidation Plan
+
+   **Will bake into SKILL.md** (permanent):
+   - [feedback] → edit [file]: [what will change]
+
+   **Will keep as runtime feedback** (situational):
+   - [feedback] → reason: [why it stays runtime]
+
+   Proceed?
+   ```
+
+5. On approval:
+   - Edit the target SKILL.md files using the Edit tool
+   - Clear only the graduated feedback entries:
+   ```bash
+   python ${PLUGIN_ROOT}/skills/resume-tailor/scripts/profile_manager.py clear-feedback <category>
+   ```
+   - Keep non-graduated entries untouched
+
+6. Report what changed and what remains as runtime feedback.
 
 ## How Feedback is Used
 
