@@ -1,19 +1,43 @@
 ---
 name: worktree-manager
 description: >-
-  Reference pattern for worktree and wave management. Not a spawnable agent —
-  the lead orchestrator consults this guide when using worktrees for parallel
-  isolation. Contains wave processing logic, worktree lifecycle, and integration
-  patterns.
+  Reference pattern for worktree isolation and wave management. Not a spawnable
+  agent — the lead orchestrator consults this guide when using worktrees for
+  parallel isolation. Claude Code handles worktree lifecycle natively via
+  isolation: "worktree" on the Task tool.
 ---
 
 # Worktree & Wave Management Reference
 
-This is a reference document for the lead orchestrator. It describes patterns for managing git worktrees and wave-based parallel execution. The lead absorbs this role — there is no separate worktree-manager agent.
+This is a reference document for the lead orchestrator. Claude Code provides native worktree isolation — you no longer need to manually create, manage, or clean up worktrees.
 
-## When to Use Worktrees
+## Native Worktree Isolation
 
-Use worktrees when:
+Claude Code supports `isolation: "worktree"` on the Task tool. When used:
+
+1. **Automatic creation**: A temporary git worktree is created for the agent
+2. **Full isolation**: The agent works on an isolated copy of the repo
+3. **Automatic cleanup**: If no changes are made, the worktree is cleaned up
+4. **Branch returned**: If changes are made, the worktree path and branch name are returned in the result
+
+```python
+# Spawn a builder in an isolated worktree — no manual setup needed
+Task(
+    subagent_type="autonomous-sdlc:builder",
+    description=f"Build {task_id}",
+    prompt=f"Implement {task_title}...",
+    isolation="worktree",
+    run_in_background=True
+)
+```
+
+### WorktreeCreate / WorktreeRemove Hooks
+
+Claude Code fires `WorktreeCreate` and `WorktreeRemove` hook events during worktree lifecycle. Use these for custom setup (e.g., installing dependencies in the new worktree) or teardown.
+
+## When to Use Worktree Isolation
+
+Use `isolation: "worktree"` when:
 - Multiple builders modify overlapping files in parallel
 - Heavy parallel test runs interfere with each other
 - You want full git isolation between concurrent work
@@ -49,105 +73,49 @@ WAVE 3 (depends on Wave 2):
 
 **Why integrate between waves?** Wave 2 tasks depend on Wave 1 code. Without integration, Wave 2 builders don't see Wave 1 changes.
 
-## Worktree Lifecycle
-
-### Create Worktrees FROM Feature Branch
-
-```bash
-# Branch from feature branch, NOT from main
-git worktree add ../trees/{bead-id} -b feature/{feature-name}/{bead-id}
-
-# Verify it was created from feature branch
-cd ../trees/{bead-id}
-git log --oneline -3  # Should show feature branch history
-```
-
-### Task Branch Naming
-```
-feature/{feature-name}/{bead-id}
-```
-Example: `feature/user-auth/beads-abc`
-
-### Worktree Directory Layout
-```
-trees/
-├── beads-abc/      # Branch: feature/user-auth/beads-abc
-├── beads-def/      # Branch: feature/user-auth/beads-def
-└── beads-ghi/      # Branch: feature/user-auth/beads-ghi
-```
-
 ## Wave Processing Loop
 
 ```python
 wave = 1
 while True:
     # Get ready tasks (no unresolved dependencies)
-    ready_tasks = get_ready_beads()  # bd ready
+    ready_tasks = get_ready_tasks()  # bd ready or TaskList
 
     if not ready_tasks:
         break  # All done
 
     print(f"=== WAVE {wave}: {len(ready_tasks)} tasks ===")
 
-    # Create worktrees and spawn builders (parallel, background)
-    for bead_id in ready_tasks:
-        create_worktree(bead_id, feature_branch)
-        spawn_builder(bead_id, run_in_background=True)
+    # Spawn builders with native worktree isolation (parallel, background)
+    builder_results = []
+    for task in ready_tasks:
+        result = Task(
+            subagent_type="autonomous-sdlc:builder",
+            description=f"Build {task.id}",
+            prompt=f"Implement {task.title}...",
+            isolation="worktree",
+            run_in_background=True
+        )
+        builder_results.append(result)
 
-    # Wait for builders, then spawn validators
-    wait_for_builders()
-    for bead_id in ready_tasks:
-        spawn_validator(bead_id)
-    wait_for_validators()
+    # Wait for builders — results contain worktree branch names
+    # Then spawn validators (can also use worktree isolation)
+    for task in ready_tasks:
+        Task(
+            subagent_type="autonomous-sdlc:validator",
+            description=f"Validate {task.id}",
+            prompt=f"Verify {task.title}..."
+        )
 
-    # INTEGRATE this wave into feature branch
-    integrate_wave(feature_branch, task_branches=ready_tasks)
+    # INTEGRATE: merge worktree branches into feature branch
+    # Each builder result includes the branch name if changes were made
+    Task(
+        subagent_type="autonomous-sdlc:integrator",
+        description=f"Integrate wave {wave}",
+        prompt=f"Merge task branches into feature branch..."
+    )
 
     wave += 1
-```
-
-## Spawning Builders in Worktrees
-
-```python
-Task(
-    subagent_type="autonomous-sdlc:builder",
-    description=f"Build {bead_id}",
-    prompt=f"""
-Implement Bead {bead_id} in worktree ../trees/{bead_id}
-
-Task: {bead_title}
-
-Instructions:
-1. cd ../trees/{bead_id}
-2. Follow TDD workflow
-3. Hooks run Ruff + mypy after each edit automatically
-4. Commit your changes
-5. Close the Bead when done
-
-Read specs/*-plan.md for acceptance criteria.
-""",
-    run_in_background=True
-)
-```
-
-## Spawning Validators in Worktrees
-
-```python
-Task(
-    subagent_type="autonomous-sdlc:validator",
-    description=f"Validate {bead_id}",
-    prompt=f"""
-Verify the implementation of Bead {bead_id} in worktree ../trees/{bead_id}
-
-Instructions:
-1. cd ../trees/{bead_id}
-2. Read the plan file for acceptance criteria
-3. Run full verification stack
-4. Report PASS/FAIL
-
-You CANNOT modify code — only verify.
-"""
-)
 ```
 
 ## Integration After Each Wave
@@ -172,26 +140,22 @@ for branch in task_branches:
 
 ## Cleanup
 
-After all waves complete:
+With native worktree isolation, cleanup is largely automatic. After all waves:
 
 ```bash
 # Verify all tasks are closed
-bd list --status=open  # Should be empty
+bd list --status=open  # Should be empty (or use TaskList)
 
-# Clean up worktrees
-git worktree list
+# Prune any stale worktrees (Claude Code cleans up automatically, but belt-and-suspenders)
 git worktree prune
 
-# Remove worktree directories
-rm -rf ../trees/
-
-# Sync
+# Sync beads
 bd sync
 ```
 
 ## Error Handling
 
-**Builder fails**: Check worktree for partial work, review hook output, fix or create blocker task.
+**Builder fails**: The worktree and branch are preserved if changes were made. Check the result for the worktree path, investigate, fix or create a blocker task.
 
 **Validator fails**: Issues are communicated to builder (team mode) or reported to lead (subagent mode).
 

@@ -7,8 +7,12 @@ allowed-tools:
   - Grep
   - Bash
   - Task
-  - TodoWrite
+  - TaskCreate
+  - TaskUpdate
+  - TaskList
   - Write
+  - EnterWorktree
+  - ExitWorktree
 argument-hint: "<description of what to build>"
 ---
 
@@ -27,17 +31,19 @@ The user has requested: $ARGUMENTS
 Check what coordination modes are available:
 
 ```bash
-# Agent teams available?
+# Agent teams available? (research preview — requires env var)
 [ -n "$CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS" ] && echo "AGENT_TEAMS=available" || echo "AGENT_TEAMS=unavailable"
 
 # Beads available?
 command -v bd &>/dev/null && echo "BEADS=available" || echo "BEADS=unavailable"
 
-# Git worktrees available?
-git worktree list &>/dev/null 2>&1 && echo "WORKTREES=available" || echo "WORKTREES=unavailable"
+# Native worktree isolation available? (via isolation: "worktree" on Task tool — always available in git repos)
+git rev-parse --is-inside-work-tree &>/dev/null 2>&1 && echo "WORKTREES=available" || echo "WORKTREES=unavailable"
 ```
 
 Store what's available. Your decisions adapt to the environment.
+
+**Note on worktrees**: Claude Code natively supports `isolation: "worktree"` on the Task tool. When used, the agent runs in an automatically-created temporary git worktree with full isolation. Cleanup is automatic. You do NOT need to manually create or manage worktrees — just pass `isolation: "worktree"` when spawning builders.
 
 ## Agent Pattern Vocabulary
 
@@ -79,6 +85,8 @@ Assess the task, then pick a mode:
 
 ## Worktree Decision Framework
 
+Claude Code provides native worktree isolation via `isolation: "worktree"` on the Task tool. When used, agents automatically get their own git worktree — creation and cleanup are handled by Claude Code.
+
 Use worktrees when:
 - Multiple builders modify overlapping files in parallel
 - Heavy parallel test runs that interfere with each other
@@ -109,8 +117,8 @@ Plan documents go to `specs/{feature-slug}-plan.md` when created.
 
 ### 3. Decompose
 Break work into tasks. Choose your tracking tool:
-- **Beads** (`bd create`): Best for multi-session work with dependencies
-- **Shared task list** (TodoWrite): Best for single-session coordination
+- **Beads** (`bd create`): Best for multi-session work with persistent dependencies
+- **Task system** (`TaskCreate`): Best for single-session coordination with dependency tracking
 - **Mental model**: Fine for 1-2 tasks you'll do yourself
 
 ### 4. Build
@@ -139,19 +147,21 @@ Create the PR. Use the PR-Creator pattern or `gh pr create` yourself.
 
 ## Agent Teams Mode
 
-When `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is set and complexity warrants it:
+Agent teams enable direct peer-to-peer communication between agents (research preview, requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). When enabled and complexity warrants it:
 
 ### Creating a Team
 
 ```python
-# Spawn teammates — they message each other directly
+# Spawn named teammates — they message each other directly via SendMessage
 Task(
     subagent_type="autonomous-sdlc:builder",
+    name="auth-builder",
     description="Builder: implement auth models",
     prompt="""...""",
-    # Agent teams configuration handled by Claude Code runtime
 )
 ```
+
+Teams support `TeammateIdle` and `TaskCompleted` hooks for automated wave transitions. Teammates inherit the leader's model by default but can override via the `model` parameter.
 
 ### Team Coordination Patterns
 
@@ -173,20 +183,21 @@ When agent teams aren't available, or for moderate complexity:
 
 ### Wave-Based Processing
 
-Consult `agents/worktree-manager.md` for the full wave pattern. The core loop:
+Tasks form dependency waves. Each wave contains tasks whose dependencies are satisfied.
 
 ```python
 wave = 1
-while ready_tasks := get_ready_tasks():  # bd ready or check task list
+while ready_tasks := get_ready_tasks():  # bd ready or TaskList
     print(f"=== Wave {wave} ===")
 
-    # Spawn builders (parallel, background)
+    # Spawn builders (parallel, background, with optional worktree isolation)
     for task in ready_tasks:
         Task(
             subagent_type="autonomous-sdlc:builder",
             description=f"Build {task.id}",
             prompt=f"Implement {task.title}...",
-            run_in_background=True
+            run_in_background=True,
+            isolation="worktree"  # Native worktree isolation — automatic creation and cleanup
         )
 
     # Wait for builders, then spawn validators
@@ -197,7 +208,8 @@ while ready_tasks := get_ready_tasks():  # bd ready or check task list
             prompt=f"Verify {task.title}..."
         )
 
-    # Integrate this wave (if using worktrees)
+    # Integration: if builders used worktree isolation, their changes are on
+    # separate branches. Use the integrator to merge, or merge yourself.
     if using_worktrees:
         Task(
             subagent_type="autonomous-sdlc:integrator",
@@ -207,6 +219,8 @@ while ready_tasks := get_ready_tasks():  # bd ready or check task list
 
     wave += 1
 ```
+
+**Note**: When `isolation: "worktree"` is used, Claude Code automatically creates a temporary git worktree for each builder. If the builder makes changes, the worktree path and branch are returned in the result. If no changes are made, the worktree is cleaned up automatically.
 
 ## SDLC Marker
 
@@ -233,8 +247,8 @@ If `bd` is available:
 - Use `bd sync` at the end
 
 If `bd` is unavailable:
-- Use TodoWrite for task tracking
-- Track dependencies mentally or in the plan document
+- Use `TaskCreate` / `TaskUpdate` for task tracking with dependency support
+- Use `TaskList` to check status and find ready work
 
 ## Branch Strategy
 
@@ -259,17 +273,20 @@ When something fails, communicate. Assess the situation. Don't follow a recovery
 
 ## Progress Tracking
 
-Use TodoWrite for high-level visibility:
+Use TaskCreate for high-level phase visibility with dependency tracking:
 
 ```python
-TodoWrite([
-    {"content": "Orient: Understand codebase", "status": "completed"},
-    {"content": "Plan: Create feature branch and plan", "status": "in_progress"},
-    {"content": "Build: Implement tasks", "status": "pending"},
-    {"content": "Verify: Validate implementation", "status": "pending"},
-    {"content": "Document: Update docs", "status": "pending"},
-    {"content": "Ship: Create PR", "status": "pending"}
-])
+# Create phase tasks with dependencies
+orient = TaskCreate(description="Orient: Understand codebase", status="in_progress")
+plan = TaskCreate(description="Plan: Create feature branch and plan")
+build = TaskCreate(description="Build: Implement tasks")
+verify = TaskCreate(description="Verify: Validate implementation")
+document = TaskCreate(description="Document: Update docs")
+ship = TaskCreate(description="Ship: Create PR")
+
+# Update as phases complete
+TaskUpdate(taskId=orient.id, status="completed")
+TaskUpdate(taskId=plan.id, status="in_progress")
 ```
 
 ## Output

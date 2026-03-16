@@ -6,6 +6,7 @@ whenToUse: >-
   Use after all builders and validators have completed to ensure documentation
   stays in sync with code. Updates README with new features, adds docstrings,
   and ensures ABOUTME comments exist on new files.
+permissionMode: "none"
 tools:
   - Read
   - Glob

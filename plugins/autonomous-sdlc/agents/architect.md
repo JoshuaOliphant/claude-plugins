@@ -6,13 +6,16 @@ whenToUse: >-
   Use when starting a new SDLC workflow to create a comprehensive plan,
   break down requirements into implementable tasks with dependencies,
   and establish the feature branch.
+permissionMode: "none"
+memory: project
 tools:
   - Read
   - Glob
   - Grep
   - Bash
   - Write
-  - TodoWrite
+  - TaskCreate
+  - TaskUpdate
   - WebSearch
   - WebFetch
 skills:
@@ -97,7 +100,7 @@ Any additional context, warnings, or considerations.
 
 ## Task Decomposition
 
-The lead may use Beads, TodoWrite, or a shared task list. Create tasks appropriate to what's available:
+The lead may use Beads or the built-in task system. Create tasks appropriate to what's available:
 
 **If Beads available**:
 ```bash
@@ -105,7 +108,7 @@ bd create --title="Create User model with password hashing" --type=task --priori
 bd dep add <dependent-bead> <dependency-bead>
 ```
 
-**If Beads unavailable**: Include the task table in the plan document. The lead will create tasks from it.
+**If Beads unavailable**: Use `TaskCreate` for task tracking with dependency support, or include the task table in the plan document for the lead to create tasks from.
 
 ## Task Naming Conventions
 

@@ -6,13 +6,14 @@ whenToUse: >-
   Use when task branches from worktrees need to be merged into the feature branch.
   Optional — the lead may handle integration directly for simple merges, or
   delegate to the integrator when conflict resolution needs dedicated attention.
+permissionMode: "none"
 tools:
   - Read
   - Edit
   - Glob
   - Grep
   - Bash
-  - TodoWrite
+  - TaskUpdate
 skills:
   - verification-stack
   - beads-workflow
