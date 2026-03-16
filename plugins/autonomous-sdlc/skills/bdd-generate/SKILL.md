@@ -80,6 +80,14 @@ For detailed pytest-bdd syntax, parser types, and step decorator patterns:
 
 ## Process
 
+### Step 0: Load Stored Feedback
+
+```bash
+python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
+```
+
+Apply relevant feedback: **test_generation**, **bdd_workflow**, **general**.
+
 ### Step 1: Locate Acceptance Criteria
 
 Run the prerequisite guard. Extract each AC-N block, noting feature name, AC numbers, Given/When/Then content, edge cases, and Scenario Outline tables.

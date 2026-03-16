@@ -56,6 +56,14 @@ Run checks in this order — stop at first failure:
 
 ## Process
 
+### Step 0: Load Stored Feedback
+
+```bash
+python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
+```
+
+Apply relevant feedback: **verification**, **general**.
+
 ### Step 1: Run the Pipeline
 
 For Python projects:

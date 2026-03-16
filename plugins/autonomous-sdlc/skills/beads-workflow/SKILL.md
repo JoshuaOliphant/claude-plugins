@@ -78,6 +78,14 @@ bd doctor            # Check for issues
 
 ## Process
 
+### Step 0: Load Stored Feedback
+
+```bash
+python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
+```
+
+Apply relevant feedback: **beads_workflow**, **general**.
+
 ### Step 1: Architect Creates Feature Graph
 
 Break requirements into Beads with dependencies:
@@ -114,14 +122,18 @@ bd sync
 
 ### Step 4: Worktree Integration (Optional)
 
-Each Bead can map to an isolated worktree:
+Each Bead can map to an isolated worktree. Claude Code provides native worktree isolation via `isolation: "worktree"` on the Task tool — worktree creation and cleanup are automatic:
 
-```bash
-git worktree add ../trees/beads-abc -b feature/beads-abc
-cd ../trees/beads-abc
-# ... implement ...
-bd close beads-abc
-git worktree remove ../trees/beads-abc
+```python
+# Spawn a builder in an isolated worktree for this Bead
+Task(
+    subagent_type="autonomous-sdlc:builder",
+    description=f"Build beads-abc",
+    prompt="Implement the task...",
+    isolation="worktree",
+    run_in_background=True
+)
+# On completion: bd close beads-abc
 ```
 
 ## Output

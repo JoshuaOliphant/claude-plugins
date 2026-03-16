@@ -68,6 +68,14 @@ Don't obsess over: simple getters/setters, framework boilerplate, generated code
 
 ## Process
 
+### Step 0: Load Stored Feedback
+
+```bash
+python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
+```
+
+Apply relevant feedback: **tdd_workflow**, **test_generation**, **general**.
+
 ### Step 1: RED — Write a Failing Test
 
 ```python

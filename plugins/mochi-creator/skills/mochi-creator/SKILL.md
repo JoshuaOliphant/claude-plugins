@@ -79,6 +79,23 @@ For full cognitive science background, knowledge-type strategies (factual, conce
 
 ## Process
 
+### Step 0: Load Stored Feedback
+
+Load any stored feedback preferences before starting:
+
+```bash
+python ${PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator show-feedback
+```
+
+If feedback entries exist, apply them throughout card creation:
+- **card_quality** → adjust the bar for what cards get created
+- **difficulty** → calibrate tractability — how challenging cards should be
+- **formatting** → shape card format (Q&A vs cloze, markdown style)
+- **deck_organization** → guide deck/subdeck structure and tagging
+- **topics** → inform current study focus and priority areas
+- **batch_size** → limit how many cards are created per session
+- **general** → apply to all aspects of card creation
+
 ### Step 1: Establish Context
 
 Determine the scope and emotional connection before drafting any cards.

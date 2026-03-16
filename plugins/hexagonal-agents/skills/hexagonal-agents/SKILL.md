@@ -107,6 +107,23 @@ For detailed hexagonal architecture explanation and SDK API details:
 
 ## Process
 
+### Step 0: Load Stored Feedback
+
+Load any stored feedback preferences before starting:
+
+```bash
+python ${PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents show-feedback
+```
+
+If feedback entries exist, apply them throughout app scaffolding:
+- **architecture** → adjust project structure and module organization
+- **tools** → guide MCP tool design patterns
+- **skill_file** → shape agent skill file content and examples
+- **ui_components** → adjust component selection and structure
+- **styling** → calibrate Tailwind theme and design system defaults
+- **agent_behavior** → strengthen or adjust agent instructions
+- **general** → apply to all aspects of app generation
+
 ### Step 1: Initialize Project Structure
 
 Locate the init script within this skill's directory and run it:

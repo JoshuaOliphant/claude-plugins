@@ -108,6 +108,23 @@ For detailed allowed change types per domain (ML, test coverage, performance, li
 
 ## Process
 
+### Step 0: Load Stored Feedback
+
+Load any stored feedback preferences before starting:
+
+```bash
+python ${PLUGIN_ROOT}/scripts/feedback_manager.py autoloop show-feedback
+```
+
+If feedback entries exist, apply them throughout loop design:
+- **loop_design** → adjust overall loop structure and iteration strategy
+- **metrics** → guide metric selection and direction
+- **quality_gates** → ensure preferred gates are included or excluded
+- **runner_script** → adjust runner script generation
+- **time_budget** → calibrate experiment duration and timeout settings
+- **change_strategy** → shape allowed change types in program.md
+- **general** → apply to all aspects of loop design
+
 ### Step 1: Scout the Project
 
 Delegate to the codebase-scout agent:

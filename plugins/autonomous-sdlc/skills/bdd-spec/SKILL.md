@@ -94,6 +94,14 @@ For BDD terminology definitions, consult:
 
 ## Process
 
+### Step 0: Load Stored Feedback
+
+```bash
+python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
+```
+
+Apply relevant feedback: **spec_writing**, **bdd_workflow**, **general**.
+
 ### Step 1: Understand Feature Intent
 
 Redirect implementation language to behavior language. "I need JWT authentication" → "Users need to log in and stay authenticated across requests."

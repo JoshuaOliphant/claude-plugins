@@ -94,6 +94,22 @@ For cross-project registry schema:
 
 ## Process
 
+### Step 0: Load Stored Feedback
+
+Load any stored feedback preferences before starting:
+
+```bash
+python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show-feedback
+```
+
+If feedback entries exist, apply them throughout the capture process:
+- **capture_format** → adjust solution file structure and detail level
+- **categorization** → guide directory placement decisions
+- **triviality_threshold** → calibrate what gets captured vs skipped
+- **cross_references** → adjust linking aggressiveness
+- **principle_style** → shape principle wording
+- **general** → apply to all operations
+
 ### Step 1: Resolve Solutions Path
 
 Follow the Path Resolution algorithm from Context. Store as `{solutions_path}`.

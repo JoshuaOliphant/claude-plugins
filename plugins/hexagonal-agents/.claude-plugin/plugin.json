@@ -1,7 +1,7 @@
 {
   "name": "hexagonal-agents",
   "description": "Build web applications where an AI agent dynamically generates HTML UI using hexagonal/ports-and-adapters architecture with HTMX for interactivity and MCP tools for data operations",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": {
     "name": "Joshua Oliphant"
   },

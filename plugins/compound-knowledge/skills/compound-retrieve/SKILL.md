@@ -52,6 +52,18 @@ If the resolved directory does not exist:
 
 ## Process
 
+### Step 0: Load Stored Feedback
+
+Load any stored feedback preferences before starting:
+
+```bash
+python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show-feedback
+```
+
+If feedback entries exist, apply them:
+- **retrieval_depth** → adjust how many results are surfaced
+- **general** → apply to result formatting and presentation
+
 ### Step 1: Resolve Solutions Path
 
 Follow the Path Resolution algorithm from Context. Store as `{solutions_path}`.
