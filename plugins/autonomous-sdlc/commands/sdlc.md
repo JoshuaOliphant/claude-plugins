@@ -63,6 +63,19 @@ Reference patterns (not spawnable):
 |---------|------|---------|
 | **Worktree/Wave Guide** | `agents/worktree-manager.md` | Reference for worktree creation, wave processing, integration loops |
 
+### Agent Spawn Restrictions
+
+Spawn permissions are enforced via `Task(agent_type)` entries in each agent's `tools` frontmatter. Only agents with a matching `Task(...)` entry can spawn that agent type.
+
+| Agent | Can Spawn | Rationale |
+|-------|-----------|-----------|
+| **Architect** | `autonomous-sdlc:builder` | May delegate quick prototyping tasks |
+| **Builder** | `autonomous-sdlc:builder` | May delegate sub-tasks to other builders |
+| **Validator** | _(none)_ | Read-only verifier — spawning would break verification isolation |
+| **Integrator** | _(none)_ | Merge-only role — no spawning needed |
+| **Documenter** | _(none)_ | Docs-only role — no spawning needed |
+| **PR-Creator** | _(none)_ | Shipping role — no spawning needed |
+
 ## Coordination Decision Framework
 
 Assess the task, then pick a mode:
@@ -114,6 +127,12 @@ git checkout -b feature/{feature-slug}
 ```
 
 Plan documents go to `specs/{feature-slug}-plan.md` when created.
+
+> **Tip**: Set `plansDirectory: "specs"` in your project's `.claude/settings.json` so that Claude Code's `/plan` mode stores its output in the same `specs/` directory that the Architect agent uses. This keeps all plan documents in one place.
+>
+> ```json
+> { "plansDirectory": "specs" }
+> ```
 
 ### 3. Decompose
 Break work into tasks. Choose your tracking tool:

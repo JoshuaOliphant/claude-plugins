@@ -132,6 +132,18 @@ Builders have PostToolUse hooks that run automatically:
 
 Issues are reported immediately so builders fix them inline.
 
+## Recommended Settings
+
+Add the following to your project's `.claude/settings.json` to align Claude Code's built-in `/plan` mode with the `specs/` convention used by the Architect agent:
+
+```json
+{
+  "plansDirectory": "specs"
+}
+```
+
+**Why this matters**: The Architect agent writes plan documents to `specs/{feature-slug}-plan.md`. Claude Code v2.1.9+ also has a `/plan` mode that stores plan files — but by default it stores them in a different location. Setting `plansDirectory: "specs"` ensures that `/plan` mode output and Architect-generated plans land in the same directory, so the full team (lead, builders, validators) always finds plans where they expect them.
+
 ## Prerequisites
 
 - Claude Code v2.1.0+
