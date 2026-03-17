@@ -35,6 +35,15 @@ Task(
 
 Claude Code fires `WorktreeCreate` and `WorktreeRemove` hook events during worktree lifecycle. Use these for custom setup (e.g., installing dependencies in the new worktree) or teardown.
 
+### TaskCompleted / TeammateIdle Hooks
+
+The plugin registers `TaskCompleted` and `TeammateIdle` hooks via `hooks/scripts/wave-transition-check.sh`. These fire automatically during agent team workflows:
+
+- **`TaskCompleted`**: Fires when a teammate finishes its task. The lead should check `bd ready` or `TaskList` to determine if the current wave is done and spawn the next wave.
+- **`TeammateIdle`**: Fires when a teammate goes idle. The lead should assign new tasks or wind down the team. Return `{"continue": false, "stopReason": "..."}` to stop the idle teammate.
+
+Both events are logged to `.sdlc/events/hook-events.jsonl` for audit purposes when an SDLC workflow is active.
+
 ## When to Use Worktree Isolation
 
 Use `isolation: "worktree"` when:
