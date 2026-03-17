@@ -97,7 +97,7 @@ For BDD terminology definitions, consult:
 ### Step 0: Load Stored Feedback
 
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
 ```
 
 Apply relevant feedback: **spec_writing**, **bdd_workflow**, **general**.

@@ -60,7 +60,7 @@ Run checks in this order — stop at first failure:
 ### Step 0: Load Stored Feedback
 
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
 ```
 
 Apply relevant feedback: **verification**, **general**.

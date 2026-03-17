@@ -81,7 +81,7 @@ bd doctor            # Check for issues
 ### Step 0: Load Stored Feedback
 
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
 ```
 
 Apply relevant feedback: **beads_workflow**, **general**.

@@ -84,7 +84,7 @@ For detailed pytest-bdd syntax, parser types, and step decorator patterns:
 ### Step 0: Load Stored Feedback
 
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
 ```
 
 Apply relevant feedback: **test_generation**, **bdd_workflow**, **general**.

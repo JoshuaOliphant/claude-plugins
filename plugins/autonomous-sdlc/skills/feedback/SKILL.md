@@ -27,7 +27,7 @@ When the user provides feedback on SDLC workflow behavior, save it:
 
 ```bash
 echo '{"category": "<category>", "feedback": "<what the user said>", "context": "<optional context>"}' | \
-  python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc save-feedback
+  python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc save-feedback
 ```
 
 **Categories**: spec_writing, test_generation, tdd_workflow, bdd_workflow, verification, beads_workflow, general
@@ -45,7 +45,7 @@ echo '{"category": "<category>", "feedback": "<what the user said>", "context": 
 Display all stored feedback:
 
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
 ```
 
 Present as a readable list grouped by category.
@@ -56,10 +56,10 @@ Clear all feedback or feedback for a specific category:
 
 ```bash
 # Clear all
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc clear-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc clear-feedback
 
 # Clear only test_generation feedback
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc clear-feedback test_generation
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc clear-feedback test_generation
 ```
 
 ### Consolidate Feedback
@@ -74,15 +74,15 @@ Claude-driven operation — no script needed.
 
 1. Load all stored feedback:
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
 ```
 
 2. Read the target SKILL.md files:
-   - `${PLUGIN_ROOT}/skills/bdd-spec/SKILL.md`
-   - `${PLUGIN_ROOT}/skills/bdd-generate/SKILL.md`
-   - `${PLUGIN_ROOT}/skills/tdd-workflow/SKILL.md`
-   - `${PLUGIN_ROOT}/skills/verification-stack/SKILL.md`
-   - `${PLUGIN_ROOT}/skills/beads-workflow/SKILL.md`
+   - `${CLAUDE_PLUGIN_ROOT}/skills/bdd-spec/SKILL.md`
+   - `${CLAUDE_PLUGIN_ROOT}/skills/bdd-generate/SKILL.md`
+   - `${CLAUDE_PLUGIN_ROOT}/skills/tdd-workflow/SKILL.md`
+   - `${CLAUDE_PLUGIN_ROOT}/skills/verification-stack/SKILL.md`
+   - `${CLAUDE_PLUGIN_ROOT}/skills/beads-workflow/SKILL.md`
 
 3. For each feedback entry, determine if it should be consolidated:
    - **Consolidate**: Universal preferences, repeated corrections, style rules that always apply
@@ -105,7 +105,7 @@ python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback
    - Edit the target SKILL.md files using the Edit tool
    - Clear only the graduated feedback entries:
    ```bash
-   python ${PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc clear-feedback <category>
+   python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc clear-feedback <category>
    ```
    - Keep non-graduated entries untouched
 
