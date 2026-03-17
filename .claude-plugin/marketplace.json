@@ -30,7 +30,7 @@
       "name": "autonomous-sdlc",
       "source": "./plugins/autonomous-sdlc",
       "description": "Adaptive autonomous SDLC with agent teams, native worktree isolation, TDD, BDD, Beads issue tracking, and verification pipelines",
-      "version": "0.8.0",
+      "version": "0.9.0",
       "author": {
         "name": "Joshua Oliphant"
       },

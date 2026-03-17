@@ -27,6 +27,34 @@ hooks:
         - type: command
           command: "uv run ${CLAUDE_PLUGIN_ROOT}/hooks/validators/type_validator.py"
           timeout: 60
+  Stop:
+    - hooks:
+        - type: prompt
+          prompt: >-
+            You are a completion verifier for a builder agent. Review the
+            conversation to determine if the builder is ready to stop.
+
+            Check ALL of the following criteria:
+
+            1. **Tests written and passing**: Did the builder write tests FIRST
+               (TDD) and run the full test suite (not just individual test files)?
+               Look for `uv run pytest tests/` with all tests passing.
+
+            2. **Code committed**: Did the builder run `git commit`? Uncommitted
+               work means the task is incomplete.
+
+            3. **No unresolved hook errors**: Were the last Ruff and type check
+               hook outputs clean, or did the builder fix all reported issues?
+
+            4. **Task marked complete**: Did the builder close the Bead
+               (`bd close`) or update the task status (`TaskUpdate` to completed)?
+
+            If ALL criteria are met, respond: {"ok": true}
+
+            If ANY criterion is NOT met, respond: {"ok": false, "reason": "You
+            need to [specific missing step]. Do that before finishing."}
+          model: haiku
+          timeout: 30
 skills:
   - tdd-workflow
   - verification-stack
@@ -55,6 +83,7 @@ You may be working in different configurations. Adapt accordingly:
 
 - **TDD workflow**: Write a failing test, make it pass, refactor. This is non-negotiable.
 - **Validation hooks**: Ruff and type checking run automatically after every Write/Edit. Trust them. Fix issues immediately when they appear.
+- **Stop hook**: A completion verifier runs when you try to finish. It checks: tests passing, code committed, hook errors resolved, task closed. Complete all steps before wrapping up.
 - **Beads workflow**: If `bd` is available, update task status. If not, use TaskUpdate.
 - **Plan documents**: Check `specs/*-plan.md` for acceptance criteria and context.
 
