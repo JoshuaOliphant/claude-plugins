@@ -17,6 +17,7 @@ tools:
   - LSP
   - TaskGet
   - TaskUpdate
+  - Task(autonomous-sdlc:builder)
 hooks:
   PostToolUse:
     - matcher: "Write|Edit"

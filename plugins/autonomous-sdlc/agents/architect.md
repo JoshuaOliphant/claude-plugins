@@ -18,6 +18,7 @@ tools:
   - TaskUpdate
   - WebSearch
   - WebFetch
+  - Task(autonomous-sdlc:builder)
 skills:
   - beads-workflow
 ---

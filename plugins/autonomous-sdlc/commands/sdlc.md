@@ -182,6 +182,22 @@ Task(
 
 Teams support `TeammateIdle` and `TaskCompleted` hooks for automated wave transitions. Teammates inherit the leader's model by default but can override via the `model` parameter.
 
+### Automatic Wave Transition Hooks
+
+The plugin registers two hook events that fire automatically during agent team workflows:
+
+**`TaskCompleted`** — fires when a teammate finishes its task. The `wave-transition-check.sh` hook surfaces the completion event so the lead can:
+- Determine whether all tasks in the current wave are done
+- Advance to the next wave by spawning builders for the next set of ready tasks
+- Check `bd ready` or `TaskList` to confirm what's unblocked before advancing
+
+**`TeammateIdle`** — fires when a teammate goes idle (no more work assigned). The hook surfaces the idle event so the lead can:
+- Assign additional tasks to the idle teammate
+- Wind down the team if all work is complete
+- Return `{"continue": false, "stopReason": "..."}` from the hook to stop the teammate
+
+Both hooks log events to `.sdlc/events/hook-events.jsonl` when a `.sdlc/` marker directory exists, giving an audit trail of agent lifecycle transitions during the workflow.
+
 ### Team Coordination Patterns
 
 **Builder-Validator feedback loop**: Validator messages builder directly with issues. Builder fixes and re-messages. No "create fix Bead → new wave" cycle.
