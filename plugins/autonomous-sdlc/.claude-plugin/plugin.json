@@ -1,7 +1,7 @@
 {
   "name": "autonomous-sdlc",
-  "version": "0.9.0",
-  "description": "Adaptive autonomous SDLC with agent teams, native worktree isolation, task management, and prompt objects",
+  "version": "1.0.0",
+  "description": "Adaptive autonomous SDLC with agent teams, native worktree isolation, task management, prompt-based hooks, and prompt objects",
   "author": {
     "name": "Joshua Oliphant",
     "email": "joshuaoliphant@gmail.com"
