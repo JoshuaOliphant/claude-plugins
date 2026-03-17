@@ -9,6 +9,7 @@ description: >
   criteria to Gherkin", "make these acceptance criteria runnable", and "generate test scaffolding
   from the spec". Requires existing acceptance criteria as input — use bdd-spec first if none exist.
 version: 1.0.0
+context: fork
 ---
 
 # BDD Test Scaffolder

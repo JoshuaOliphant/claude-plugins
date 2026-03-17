@@ -8,6 +8,7 @@ description: >
   any request to confirm code quality through automated tests, linting, formatting, and type checking
   before a commit, merge, or PR.
 version: 1.0.0
+context: fork
 ---
 
 # Verification Stack
