@@ -1,12 +1,12 @@
 ---
 name: feedback
 description: >
-  Save, view, or manage feedback about SDLC workflow preferences. Feedback persists across sessions
-  and is automatically loaded by BDD, TDD, beads, and verification skills. Use when the user wants
-  to adjust spec writing style, test generation patterns, workflow behavior, or verification strictness.
-  Trigger phrases include "remember this for next time", "save this feedback", "don't generate tests
-  like that", "always use this pattern", "show my feedback", "clear feedback", "workflow preferences", "sdlc settings", "update the plugin based on feedback",
-  "consolidate feedback", "bake in my preferences", and "graduate feedback into the skill".
+  Save SDLC workflow feedback proactively. MUST trigger when the user corrects SDLC behavior ("don't
+  generate tests like that", "always use this pattern", "that's not how I want specs written") or
+  confirms a non-obvious approach worked ("yes exactly", "perfect"). Also trigger on explicit requests:
+  "save this feedback", "show my feedback", "clear feedback", "workflow preferences", "sdlc settings",
+  "consolidate feedback", "bake in my preferences". Feedback persists across sessions and is loaded
+  by BDD, TDD, beads, and verification skills.
 args:
   - name: action
     description: "Action to take: save, show, clear, or consolidate"

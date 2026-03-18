@@ -1,14 +1,11 @@
 ---
 name: evaluate
 description: >
-  Evaluate how well a resume matches a specific job description without modifying anything.
-  Use when the user wants to check their resume fit, get a match score, or understand gaps
-  before committing to a full customization. Trigger phrases include "evaluate my resume",
-  "how does my resume match", "check resume fit", "score my resume", "analyze my resume
-  against this job", "what are the gaps", "resume analysis", and "how well do I match".
-  This runs Phases 0-2 of the resume-tailor pipeline (parse, extract, score, evaluate)
-  without any optimization. Returns a detailed assessment with strengths, gaps, and
-  recommendations.
+  Read-only resume evaluation — no modifications. Use INSTEAD OF resume-tailor when the user wants
+  to understand gaps before committing to a full customization. Runs Phases 0-2 only (parse, extract,
+  score, evaluate). Trigger: "evaluate my resume", "how does my resume match", "check resume fit",
+  "what are the gaps", "how well do I match", "resume analysis", or when the user is deciding
+  whether to run a full tailoring.
 args:
   - name: resume
     description: Path to the resume file (markdown)

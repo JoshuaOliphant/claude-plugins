@@ -1,15 +1,10 @@
 ---
 name: github-profile
 description: >
-  Update your GitHub profile README and API fields using master resume data.
-  Generates a structured, badge-rich README with casual tone, proposes API field
-  updates (bio, hireable, company, location), and interactively discusses pinned
-  repo selection based on resume alignment and recent activity. Use when the user
-  wants to update their GitHub profile, refresh their README, update their bio,
-  change pinned repos, or sync their GitHub presence with their resume. Trigger
-  phrases include "update GitHub profile", "refresh my GitHub", "update my GitHub
-  README", "sync GitHub with resume", "change my GitHub bio", "update pinned repos",
-  "GitHub profile", and "make my GitHub current".
+  Sync GitHub profile with master resume data — README, API fields (bio, hireable, company,
+  location), and pinned repos. Trigger: "update GitHub profile", "refresh my GitHub", "update my
+  GitHub README", "sync GitHub with resume", "change my GitHub bio", "update pinned repos", or
+  "make my GitHub current". Generates badge-rich README and interactively discusses pin selection.
 args:
   - name: section
     description: "Optional: update only a specific part — readme, api-fields, or pinned-repos (default: all)"

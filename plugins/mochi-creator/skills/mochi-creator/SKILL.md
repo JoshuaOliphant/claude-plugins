@@ -1,13 +1,11 @@
 ---
 name: mochi-creator
 description: >
-  Create evidence-based spaced repetition flashcards using cognitive science principles from Andy
-  Matuschak's research. Use when the user wants to create Mochi cards, flashcards, study materials,
-  or mentions learning, memorization, spaced repetition, SRS, Anki-style cards, or knowledge
-  retention. Trigger phrases include "make flashcards", "create Mochi cards", "I need to memorize
-  this", "help me study", "turn this into flashcards", "create study materials", "I want to remember
-  this", and "make SRS cards". Applies the 5 properties of effective prompts (focused, precise,
-  consistent, tractable, effortful) to ensure cards actually work for long-term retention.
+  MUST use when the user mentions flashcards, Mochi, spaced repetition, memorization, studying, or
+  wanting to remember something. Trigger proactively when the user says "I want to remember this",
+  "make flashcards", "create Mochi cards", "help me study", "turn this into flashcards", "SRS",
+  "Anki", or "I need to memorize this". Creates evidence-based cards using cognitive science
+  principles (Andy Matuschak's 5 properties of effective prompts) via the Mochi API.
 ---
 
 # Mochi Creator

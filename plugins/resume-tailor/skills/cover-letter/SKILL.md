@@ -1,11 +1,10 @@
 ---
 name: cover-letter
 description: >
-  Generate a tailored cover letter for a job description, using an existing resume for context.
-  Use when the user wants a cover letter without running the full resume customization pipeline.
-  Trigger phrases include "write a cover letter", "cover letter for this job", "generate cover
-  letter", "I need a cover letter", "draft a cover letter", "cover letter only", and "just the
-  cover letter". Can use either the original or a previously customized resume as the basis.
+  Cover letter only — no resume optimization. Use INSTEAD OF resume-tailor when the user already
+  has a tailored resume and just needs a cover letter, or explicitly asks for "just the cover letter".
+  Trigger: "write a cover letter", "cover letter for this job", "I need a cover letter", "draft a
+  cover letter", "cover letter only". Uses existing (or previously customized) resume as context.
 args:
   - name: resume
     description: Path to the resume file (markdown). Uses customized version if available.

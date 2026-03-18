@@ -1,12 +1,10 @@
 ---
 name: verification-stack
 description: >
-  Use when running verification pipelines, checking test/lint/type status, or ensuring code quality
-  gates pass before completing work. Trigger phrases include "run all checks", "make sure everything
-  passes", "run the tests and linter", "verify the code", "check quality gates", "run ruff and pytest",
-  "before I merge, check everything", "is the build green", "run the full verification pipeline", or
-  any request to confirm code quality through automated tests, linting, formatting, and type checking
-  before a commit, merge, or PR.
+  Python verification pipeline: ruff + pytest + type checking in sequence. Use INSTEAD OF
+  superpowers:verification-before-completion when the project uses Python tooling. MUST run before
+  any commit, merge, or PR claim in a Python project. Trigger: "run all checks", "verify the code",
+  "is the build green", "run ruff and pytest", or proactively before claiming work is done.
 version: 1.0.0
 context: fork
 ---

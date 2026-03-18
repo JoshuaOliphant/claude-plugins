@@ -1,14 +1,12 @@
 ---
 name: resume-tailor
 description: >
-  Customize a resume and optionally generate a cover letter for a specific job description.
-  Use when the user wants to tailor, customize, optimize, or adapt their resume for a job posting.
-  Trigger phrases include "tailor my resume", "customize my resume", "optimize my resume for this job",
-  "adapt my resume", "match my resume to this job", "ATS optimize", "resume for this position",
-  "help me apply", "write a cover letter", "cover letter for this job", "resume customization",
-  "job application", and "make my resume match this job". This skill runs a multi-agent pipeline:
-  deterministic scripts parse and score, specialized agents evaluate and optimize sections in parallel,
-  and a truthfulness verifier ensures no fabrication.
+  MUST use when the user wants to tailor, customize, or optimize their resume for a specific job.
+  This is the full pipeline — use ats-score for quick checks or evaluate for read-only analysis.
+  Trigger: "tailor my resume", "customize my resume", "optimize for this job", "help me apply",
+  "ATS optimize", "resume for this position", "job application", or "make my resume match this job".
+  Runs multi-agent pipeline: parse, score, evaluate, optimize sections in parallel, verify
+  truthfulness. For cover letters only, use the cover-letter skill instead.
 args:
   - name: resume
     description: Path to the resume file (markdown). If omitted, checks profile for last known path.

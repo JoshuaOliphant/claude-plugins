@@ -1,13 +1,11 @@
 ---
 name: feedback
 description: >
-  Save, view, or manage feedback about autoloop experiment design preferences. Feedback persists
-  across sessions and is automatically loaded when designing new experiment loops. Use when the user
-  wants to adjust how loops are designed, what quality gates to include, metric choices, or runner
-  script behavior. Trigger phrases include "remember this for next time", "save this feedback",
-  "always include this gate", "don't use that metric", "show my feedback", "clear feedback",
-  "loop preferences", "autoloop settings", "update the plugin based on feedback",
-  "consolidate feedback", "bake in my preferences", and "graduate feedback into the skill".
+  Save autoloop experiment feedback proactively. MUST trigger when the user corrects loop design
+  ("don't use that metric", "always include this gate", "wrong quality gate") or confirms good
+  output. Also trigger on explicit requests: "save this feedback", "show my feedback", "clear
+  feedback", "loop preferences", "autoloop settings", "consolidate feedback", "bake in my
+  preferences". Feedback loaded automatically when designing new experiment loops.
 args:
   - name: action
     description: "Action to take: save, show, clear, or consolidate"

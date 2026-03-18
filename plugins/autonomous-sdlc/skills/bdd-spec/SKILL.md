@@ -1,13 +1,12 @@
 ---
 name: bdd-spec
 description: >
-  This skill should be used when brainstorming features, defining requirements, discussing what
-  something should do, writing acceptance criteria, exploring edge cases, or starting new feature
-  work before implementation begins. This is the conversational, pre-code phase — defining WHAT to
-  build, not building it. Trigger phrases include "what should happen when", "help me spec this out",
-  "let's define the requirements", "write acceptance criteria", "BDD", "behavior driven", "what are
-  the edge cases", "help me think through this feature", and "define requirements". Not for generating
-  test code — use bdd-generate for that.
+  Use INSTEAD OF superpowers:brainstorming when the user wants structured acceptance criteria in
+  Given/When/Then format. This is the right choice when requirements need to be testable — not just
+  designed. Trigger: "spec this out", "acceptance criteria", "BDD", "behavior driven", "what should
+  happen when", "edge cases", "define requirements", or any pre-implementation requirements discussion
+  where the output should be runnable scenarios, not just a design doc. Produces Gherkin-ready
+  acceptance criteria. Not for generating test code — use bdd-generate after this.
 version: 1.0.0
 ---
 

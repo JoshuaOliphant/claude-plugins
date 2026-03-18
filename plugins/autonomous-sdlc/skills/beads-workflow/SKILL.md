@@ -1,11 +1,10 @@
 ---
 name: beads-workflow
 description: >
-  Use when managing work items with the Beads CLI (`bd` commands), creating issues, setting up task
-  dependencies, tracking feature implementation progress, or orchestrating SDLC workflows. Trigger
-  phrases include "create an issue", "what should I work on next", "mark this done", "track this work",
-  "set up dependencies", "close this issue", "bd create", "bd ready", "bd close", or any mention of
-  beads, work items, or issue tracking in the context of software development lifecycle management.
+  MUST use when creating, updating, or closing Beads issues via `bd` commands. Use proactively when
+  starting work (bd update --status=in_progress) and completing work (bd close). Trigger: any mention
+  of "issue", "task tracking", "what should I work on", "bd create/ready/close", or when the session
+  hook indicates beads is active. Provides full bd CLI reference and workflow patterns.
 version: 1.0.0
 ---
 

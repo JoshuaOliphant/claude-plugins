@@ -1,12 +1,10 @@
 ---
 name: sync
 description: >
-  Sync and manage the master resume source of truth. Three commands: sync (markdown → YAML),
-  drift (detect differences between markdown and YAML), and export (output parsed data as JSON).
-  The master resume at ~/.claude/resume-tailor/master-resume.md is the canonical source — edit it
-  directly, then run sync to update the structured YAML. Use drift to check if they're out of
-  sync. Trigger phrases include "sync my resume", "check resume drift", "update master resume",
-  "are my resume files in sync", "export resume data", "master resume", and "resume source of truth".
+  Manage the master resume source of truth at ~/.claude/resume-tailor/master-resume.md. Three
+  commands: sync (markdown → YAML), drift (detect out-of-sync files), export (JSON output).
+  Trigger: "sync my resume", "check resume drift", "update master resume", "are my resume files
+  in sync", "export resume data", "master resume", or "resume source of truth".
 args:
   - name: action
     description: "Action: sync, drift, or export (default: drift)"

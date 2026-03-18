@@ -1,13 +1,11 @@
 ---
 name: feedback
 description: >
-  Save, view, or manage feedback about knowledge capture and retrieval preferences. Feedback persists
-  across sessions and is automatically loaded by compound-capture and compound-retrieve to guide future
-  behavior. Use when the user wants to adjust how solutions are captured, categorized, or retrieved.
-  Trigger phrases include "remember this for next time", "save this feedback", "don't capture that",
-  "always categorize like this", "show my feedback", "clear feedback", "too verbose", "not enough detail",
-  "wrong category", "knowledge preferences", "update the plugin based on feedback",
-  "consolidate feedback", "bake in my preferences", and "graduate feedback into the skill".
+  Save knowledge capture/retrieval feedback proactively. MUST trigger when the user corrects capture
+  behavior ("don't capture that", "wrong category", "too verbose", "not enough detail") or confirms
+  a good capture ("yes, exactly like that"). Also trigger on explicit requests: "save this feedback",
+  "show my feedback", "clear feedback", "knowledge preferences", "consolidate feedback", "bake in
+  my preferences". Feedback loaded by compound-capture and compound-retrieve across sessions.
 args:
   - name: action
     description: "Action to take: save, show, clear, or consolidate"

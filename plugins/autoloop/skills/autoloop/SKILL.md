@@ -1,18 +1,12 @@
 ---
 name: autoloop
 description: >
-  Design and generate autonomous experiment loops that iteratively improve code by
-  editing, running, measuring a scalar metric, and keeping improvements via git
-  commit/reset. Based on Karpathy's autoresearch pattern. This skill should be
-  activated when the user mentions "autoloop", "autoresearch", "experiment loop", "hill-climbing",
-  "optimize overnight", "program.md", "karpathy loop", "autonomous optimization",
-  "self-improving loop", or wants to set up any kind of iterative improvement
-  process where an LLM agent runs experiments autonomously. Also trigger when the
-  user says things like "I want to let Claude optimize this while I sleep", "can we
-  automate trying different approaches", "set up a loop to improve this", or
-  "I want to run experiments overnight". This skill explores the current project,
-  designs loop parameters, and generates a complete self-contained program.md
-  plus an immutable runner script (auto/run.sh) with tiered quality gates and
+  MUST use when the user wants autonomous, iterative optimization — letting Claude run experiments
+  unattended. Trigger: "autoloop", "autoresearch", "experiment loop", "hill-climbing", "optimize
+  overnight", "karpathy loop", "let Claude optimize while I sleep", "automate trying different
+  approaches", "set up a loop to improve this", "run experiments overnight", or any request for
+  iterative improvement with a scalar metric. Generates program.md + immutable runner script
+  (auto/run.sh) with tiered quality gates and
   structured METRIC output, ready to run with claude --dangerously-skip-permissions.
 allowed-tools: [Read, Write, Glob, Grep, Bash, Agent]
 ---

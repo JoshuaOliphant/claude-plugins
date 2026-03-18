@@ -1,12 +1,12 @@
 ---
 name: feedback
 description: >
-  Save, view, or manage feedback about flashcard creation preferences. Feedback persists across
-  sessions and is automatically loaded when creating new Mochi cards. Use when the user wants to
-  adjust card quality, difficulty, formatting, deck organization, or topic selection. Trigger phrases
-  include "remember this for next time", "save this feedback", "cards are too easy", "too many cards",
-  "show my feedback", "clear feedback", "card preferences", "mochi settings", "flashcard style", "update the plugin based on feedback",
-  "consolidate feedback", "bake in my preferences", and "graduate feedback into the skill".
+  Save flashcard creation feedback proactively. MUST trigger when the user corrects card output
+  ("cards are too easy", "too many cards", "wrong difficulty", "bad formatting") or confirms good
+  output ("these cards are great", "yes, like that"). Also trigger on explicit requests: "save this
+  feedback", "show my feedback", "clear feedback", "card preferences", "mochi settings", "flashcard
+  style", "consolidate feedback", "bake in my preferences". Feedback loaded automatically when
+  creating new Mochi cards.
 args:
   - name: action
     description: "Action to take: save, show, clear, or consolidate"

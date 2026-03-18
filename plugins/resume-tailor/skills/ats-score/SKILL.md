@@ -1,11 +1,10 @@
 ---
 name: ats-score
 description: >
-  Quick ATS score check between a resume and job description. No agents, no optimization —
-  just the deterministic scoring scripts. Use when the user wants a fast score check, wants
-  to compare before/after, or wants to iterate on their resume manually. Trigger phrases
-  include "ATS score", "check my score", "how does my resume score", "keyword match",
-  "score check", "quick score", and "ATS check".
+  Fast, lightweight ATS score — no agents, no optimization, just deterministic scripts. Use INSTEAD
+  OF resume-tailor when the user only wants a score, not a full customization. Trigger: "ATS score",
+  "check my score", "how does my resume score", "keyword match", "quick score", "score check", or
+  when comparing before/after results during manual iteration.
 args:
   - name: resume
     description: Path to the resume file (markdown)

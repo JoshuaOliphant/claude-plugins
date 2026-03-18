@@ -1,12 +1,11 @@
 ---
 name: feedback
 description: >
-  Save, view, or manage feedback about hexagonal agent application preferences. Feedback persists
-  across sessions and is automatically loaded when building new hexagonal agent apps. Use when the
-  user wants to adjust architecture patterns, tool design, UI components, or skill file conventions.
-  Trigger phrases include "remember this for next time", "save this feedback", "always use this pattern",
-  "don't generate that", "show my feedback", "clear feedback", "app preferences", "hexagonal settings", "update the plugin based on feedback",
-  "consolidate feedback", "bake in my preferences", and "graduate feedback into the skill".
+  Save hexagonal agent app feedback proactively. MUST trigger when the user corrects architecture
+  patterns, tool design, or UI component choices ("don't generate that", "always use this pattern",
+  "wrong component") or confirms good output. Also trigger on explicit requests: "save this feedback",
+  "show my feedback", "clear feedback", "app preferences", "hexagonal settings", "consolidate
+  feedback", "bake in my preferences". Feedback loaded automatically when building hexagonal apps.
 args:
   - name: action
     description: "Action to take: save, show, clear, or consolidate"

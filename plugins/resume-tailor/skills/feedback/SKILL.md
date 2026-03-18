@@ -1,14 +1,11 @@
 ---
 name: feedback
 description: >
-  Save, view, or manage feedback about resume customization preferences. Feedback persists
-  across sessions and is automatically loaded by the resume-tailor pipeline to guide future
-  optimizations. Use when the user wants to save resume preferences, give feedback on output,
-  set rules for future customizations, or review stored feedback. Trigger phrases include
-  "remember this for next time", "save this feedback", "don't do that again",
-  "always do this", "show my feedback", "resume preferences", "clear feedback",
-  "what feedback have I given", "remember for future resumes", "update the plugin based on feedback",
-  "consolidate feedback", "bake in my preferences", and "graduate feedback into the skill".
+  Save resume customization feedback proactively. MUST trigger when the user corrects resume output
+  ("don't do that again", "always do this", "wrong tone", "too many bullet points") or confirms
+  good output ("perfect", "yes like that"). Also trigger on explicit requests: "save this feedback",
+  "show my feedback", "clear feedback", "resume preferences", "consolidate feedback", "bake in my
+  preferences". Feedback loaded automatically by the resume-tailor pipeline across sessions.
 args:
   - name: action
     description: "Action to take: save, show, clear, or consolidate"

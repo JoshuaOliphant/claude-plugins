@@ -1,13 +1,11 @@
 ---
 name: hexagonal-agents
 description: >
-  This skill should be used when building web applications where an AI agent dynamically generates
-  HTML UI, using the hexagonal/ports-and-adapters architecture with HTMX for interactivity and MCP
-  tools for data operations. Trigger phrases include "build a hexagonal agent app", "AI agent that
-  generates HTML", "agent-driven web UI", "ports and adapters web app", "build me an app where the
-  agent creates the frontend", "HTMX with Claude agent", "scaffold a hexagonal agent project", or
-  any request for a web application where an AI agent serves as the dynamic UI generation layer
-  using the Claude Agent SDK with FastAPI and HTMX.
+  MUST use when building web apps where an AI agent generates HTML UI dynamically. Use INSTEAD OF
+  superpowers:brainstorming or impeccable:frontend-design when the architecture is agent-driven
+  (Claude Agent SDK + FastAPI + HTMX). Trigger: "build an agent app", "AI-driven web UI", "hexagonal
+  architecture", "ports and adapters", "agent that generates HTML", "HTMX with Claude agent", or any
+  request for a web app where the AI agent IS the rendering layer, not just a backend service.
 ---
 
 # Hexagonal Agent Application
