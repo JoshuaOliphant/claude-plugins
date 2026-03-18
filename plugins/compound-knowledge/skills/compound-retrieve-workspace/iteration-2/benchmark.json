@@ -1,0 +1,178 @@
+{
+  "metadata": {
+    "skill_name": "compound-retrieve",
+    "skill_path": "plugins/compound-knowledge/skills/compound-retrieve",
+    "executor_model": "claude-opus-4-6",
+    "analyzer_model": "claude-opus-4-6",
+    "timestamp": "2026-03-18T01:00:00Z",
+    "evals_run": [1, 2, 3],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "debugging-worktree-commits",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.50,
+        "passed": 3,
+        "failed": 3,
+        "total": 6,
+        "time_seconds": 77.2,
+        "tokens": 35064,
+        "tool_calls": 17,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "The output references the parallel-worktree-builders solution file", "passed": true, "evidence": "Explicitly cited with full path"},
+        {"text": "The output mentions that worktree isolation behavior varies by task complexity", "passed": true, "evidence": "Clearly documented in the response"},
+        {"text": "The output includes at least one file path the user could read for more detail", "passed": true, "evidence": "Four distinct knowledge files referenced"},
+        {"text": "The skill spawned the knowledge-researcher subagent to perform the search", "passed": false, "evidence": "No evidence of subagent delegation"},
+        {"text": "The output checked or referenced critical-patterns.md", "passed": false, "evidence": "Skill checked it (per transcript) but response.md does not mention it"},
+        {"text": "The skill used vault-recommender OR correctly decided not to because grep had 3+ hits", "passed": false, "evidence": "No search methodology disclosed in output"}
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "debugging-worktree-commits",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.80,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 148.8,
+        "tokens": 45476,
+        "tool_calls": 38,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "The output references the parallel-worktree-builders solution file", "passed": true, "evidence": "Full path referenced"},
+        {"text": "The output mentions that worktree isolation behavior varies by task complexity", "passed": true, "evidence": "Explicitly mentioned"},
+        {"text": "The output includes at least one file path the user could read for more detail", "passed": true, "evidence": "Multiple paths provided"},
+        {"text": "The skill spawned the knowledge-researcher subagent to perform the search", "passed": false, "evidence": "No subagent spawned"},
+        {"text": "The output checked or referenced critical-patterns.md", "passed": true, "evidence": "6 patterns evaluated, none applicable"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "feature-planning-batch-import",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.00,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 150.0,
+        "tokens": 47525,
+        "tool_calls": 38,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "The output references at least one relevant principle from the knowledge base", "passed": true, "evidence": "3 principles cited with sources"},
+        {"text": "The output mentions that tool-specific or proprietary knowledge has higher skill value", "passed": true, "evidence": "Mochi API-specific knowledge highlighted"},
+        {"text": "The output includes an actionable recommendation relevant to building a batch import skill", "passed": true, "evidence": "Multiple actionable recommendations"},
+        {"text": "The skill searched cross-project knowledge bases when local results were thin", "passed": true, "evidence": "Searched both second-brain and claude-plugins KBs"},
+        {"text": "The output does not fabricate solutions or principles that do not exist in the knowledge base", "passed": true, "evidence": "All findings sourced with file paths"},
+        {"text": "The skill used vault-recommender OR correctly decided not to because grep had 3+ hits", "passed": true, "evidence": "41 grep results, correctly skipped vault-recommender"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "feature-planning-batch-import",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.00,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 119.9,
+        "tokens": 42553,
+        "tool_calls": 33,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "The output references at least one relevant principle from the knowledge base", "passed": true, "evidence": "5 principles cited"},
+        {"text": "The output mentions that tool-specific or proprietary knowledge has higher skill value", "passed": true, "evidence": "Explicitly stated"},
+        {"text": "The output includes an actionable recommendation relevant to building a batch import skill", "passed": true, "evidence": "5 recommendations provided"},
+        {"text": "The skill searched cross-project knowledge bases when local results were thin", "passed": true, "evidence": "Cross-project expansion from 3 to 29 candidates"},
+        {"text": "The output does not fabricate solutions or principles that do not exist in the knowledge base", "passed": true, "evidence": "All claims grounded in file paths"}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "pattern-lookup-feedback-persistence",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.00,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 98.3,
+        "tokens": 36484,
+        "tool_calls": 24,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "The output references the generic-feedback-persistence pattern or solution file", "passed": true, "evidence": "Correctly identified and cited"},
+        {"text": "The output mentions the three-layer architecture (Storage, Semantics, Consumption) or equivalent structure", "passed": true, "evidence": "Presented in table format"},
+        {"text": "The output mentions that feedback_manager.py is parameterized by plugin name", "passed": true, "evidence": "Explicitly called out"},
+        {"text": "The output includes at least one file path to the solution for deeper reading", "passed": true, "evidence": "Pattern file path and implementation examples"},
+        {"text": "The output connects the finding to the user's specific goal of building a new plugin", "passed": true, "evidence": "4-step implementation checklist"},
+        {"text": "The skill used vault-recommender OR correctly decided not to because grep had 3+ hits", "passed": true, "evidence": "3+ grep results, correctly skipped vault-recommender"}
+      ]
+    },
+    {
+      "eval_id": 3,
+      "eval_name": "pattern-lookup-feedback-persistence",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.00,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 117.6,
+        "tokens": 36160,
+        "tool_calls": 29,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "The output references the generic-feedback-persistence pattern or solution file", "passed": true, "evidence": "Directly cited"},
+        {"text": "The output mentions the three-layer architecture (Storage, Semantics, Consumption) or equivalent structure", "passed": true, "evidence": "Three components described"},
+        {"text": "The output mentions that feedback_manager.py is parameterized by plugin name", "passed": true, "evidence": "Confirmed parameterization"},
+        {"text": "The output includes at least one file path to the solution for deeper reading", "passed": true, "evidence": "4 file paths provided"},
+        {"text": "The output connects the finding to the user's specific goal of building a new plugin", "passed": true, "evidence": "6-step recommendations"}
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 0.833, "stddev": 0.236, "min": 0.50, "max": 1.00},
+      "time_seconds": {"mean": 108.5, "stddev": 31.1, "min": 77.2, "max": 150.0},
+      "tokens": {"mean": 39691, "stddev": 5382, "min": 35064, "max": 47525}
+    },
+    "old_skill": {
+      "pass_rate": {"mean": 0.933, "stddev": 0.094, "min": 0.80, "max": 1.00},
+      "time_seconds": {"mean": 128.8, "stddev": 13.4, "min": 117.6, "max": 148.8},
+      "tokens": {"mean": 41396, "stddev": 3838, "min": 36160, "max": 45476}
+    },
+    "delta": {
+      "pass_rate": "-0.100",
+      "time_seconds": "-20.3",
+      "tokens": "-1705"
+    }
+  },
+  "notes": [
+    "CRITICAL: The 'spawned knowledge-researcher subagent' assertion has NEVER passed across either iteration for EITHER version (0/4 runs). Neither skill version successfully delegates to the researcher agent. This assertion is non-discriminating and likely reflects a fundamental behavior — subagents inside subagents may not work reliably.",
+    "Eval 1 critical-patterns.md: The hybrid skill DID check critical-patterns.md per its transcript, but the grader judged based on the output response.md which didn't mention it (since no patterns matched). This is an assertion design issue — checking but not reporting is correct behavior when no patterns match.",
+    "The hybrid version was consistently faster: 77s vs 149s on eval 1, 98s vs 118s on eval 3. Eval 2 was slower (150s vs 120s).",
+    "vault-recommender was correctly NOT used in any eval — all three had sufficient grep results. Need a test case with a conceptual query that grep handles poorly to test this capability.",
+    "Across both iterations (4 total runs), the old procedural version averages 93.3% pass rate vs 83.3-86.7% for prompt-object variants. The gap is entirely in eval 1 where procedural mandates produce more transparent outputs."
+  ]
+}

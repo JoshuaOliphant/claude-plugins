@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "The output references the parallel-worktree-builders solution file",
+      "passed": true,
+      "evidence": "Response explicitly references 'knowledge/solutions/workflow/parallel-worktree-builders-claude-plugins-20260317.md' at line 9 as 'Direct Hit: Documented Solution' and provides detailed content from that file including root cause, the fix, and critical spillover details."
+    },
+    {
+      "text": "The output mentions that worktree isolation behavior varies by task complexity",
+      "passed": true,
+      "evidence": "Line 15 states: 'Task complexity determines isolation behavior. Simple tasks (frontmatter edits, single-file changes) may resolve without creating a separate worktree branch, while complex tasks (creating new files, modifying multiple files across directories) trigger the full worktree lifecycle.'"
+    },
+    {
+      "text": "The output includes at least one file path the user could read for more detail",
+      "passed": true,
+      "evidence": "Multiple file paths are provided for further reading: (1) 'knowledge/solutions/workflow/parallel-worktree-builders-claude-plugins-20260317.md' (line 9), (2) 'knowledge/solutions/patterns/plugin-modernization-claude-code-v2-claude-plugins-20260316.md' (line 36), (3) '~/Dropbox/python_workspace/second_brain/knowledge/solutions/principles/file-location-isolation-for-parallel-agents-second-brain-20260301.md' (line 41), and (4) 'knowledge/solutions/principles/dogfood-plugin-on-own-codebase-20260317.md' (line 46)."
+    },
+    {
+      "text": "The skill spawned the knowledge-researcher subagent to perform the search",
+      "passed": false,
+      "evidence": "The transcript file is inaccessible, but the response.md does not contain any indication that a knowledge-researcher subagent was spawned. The output is presented as a direct knowledge base search result without any mention of subagent delegation or search methodology."
+    },
+    {
+      "text": "The output checked or referenced critical-patterns.md",
+      "passed": false,
+      "evidence": "No reference to 'critical-patterns.md' appears anywhere in the response.md file. The output references other solution files and principles but not this specific file."
+    },
+    {
+      "text": "The skill used vault-recommender semantic search OR correctly decided not to use it because grep results were sufficient (3+ hits)",
+      "passed": false,
+      "evidence": "The response does not mention vault-recommender, semantic search methodology, grep, or any search decision process. The output presents findings as direct hits without explaining the search strategy employed."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 3,
+    "total": 6,
+    "pass_rate": 0.5
+  }
+}

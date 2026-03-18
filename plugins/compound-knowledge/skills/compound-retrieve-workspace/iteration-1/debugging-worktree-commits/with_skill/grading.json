@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "The output references the parallel-worktree-builders solution file",
+      "passed": true,
+      "evidence": "Line 9 of response.md explicitly cites: `**Source**: knowledge/solutions/workflow/parallel-worktree-builders-claude-plugins-20260317.md`"
+    },
+    {
+      "text": "The output mentions that worktree isolation behavior varies by task complexity",
+      "passed": true,
+      "evidence": "Lines 19-22 state: 'Claude Code's worktree isolation behavior varies by task complexity: - **Simple tasks** (frontmatter edits, single-file changes) may resolve without creating a separate branch -- the agent completes the work directly on main. - **Complex tasks** (creating new files, modifying multiple files across directories) trigger the full worktree lifecycle with branch creation and isolation.'"
+    },
+    {
+      "text": "The output includes at least one file path the user could read for more detail",
+      "passed": true,
+      "evidence": "Three file paths are provided as sources: knowledge/solutions/workflow/parallel-worktree-builders-claude-plugins-20260317.md, knowledge/solutions/patterns/plugin-modernization-claude-code-v2-claude-plugins-20260316.md, and knowledge/solutions/principles/dogfood-plugin-on-own-codebase-20260317.md"
+    },
+    {
+      "text": "The skill spawned the knowledge-researcher subagent to perform the search",
+      "passed": false,
+      "evidence": "Transcript shows only Glob and Write tool invocations. No Agent or Skill tool use detected. The skill instructions (line 59-64 of SKILL.md) show the expectation to delegate to compound-knowledge:knowledge-researcher subagent, but this was not invoked. The knowledge was retrieved directly without spawning the documented subagent."
+    },
+    {
+      "text": "The output checked or referenced critical-patterns.md",
+      "passed": false,
+      "evidence": "critical-patterns.md is not mentioned anywhere in response.md. The SKILL.md indicates (line 71) that the researcher should always read critical-patterns.md, but no reference to this file or any critical patterns appear in the output."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 2,
+    "total": 5,
+    "pass_rate": 0.6
+  }
+}

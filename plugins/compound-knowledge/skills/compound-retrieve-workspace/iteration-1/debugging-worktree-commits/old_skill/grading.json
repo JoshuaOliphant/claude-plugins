@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "The output references the parallel-worktree-builders solution file",
+      "passed": true,
+      "evidence": "Line 23 explicitly mentions: \"File: `~/Dropbox/python_workspace/claude-plugins/knowledge/solutions/workflow/parallel-worktree-builders-claude-plugins-20260317.md`\" under the 'Relevant Solutions' section."
+    },
+    {
+      "text": "The output mentions that worktree isolation behavior varies by task complexity",
+      "passed": true,
+      "evidence": "Line 27 states: \"Task complexity determines isolation behavior. Simple tasks (frontmatter edits, single-file changes) resolve without creating a worktree branch, while complex tasks (new files, multi-file changes) use the full worktree lifecycle.\""
+    },
+    {
+      "text": "The output includes at least one file path the user could read for more detail",
+      "passed": true,
+      "evidence": "Multiple file paths are provided: Line 23 (parallel-worktree-builders solution), Line 42 (plugin-modernization solution), Line 53 (file-location-isolation principle), and Line 61 (hooks-beat-skills principle). Each is a complete path the user could read."
+    },
+    {
+      "text": "The skill spawned the knowledge-researcher subagent to perform the search",
+      "passed": false,
+      "evidence": "The response.md output does not contain any evidence that a subagent was invoked. The transcript search for 'knowledge-researcher', 'subagent_type', or similar patterns yielded no results. The output appears to be the direct result of a local knowledge search without explicit subagent delegation."
+    },
+    {
+      "text": "The output checked or referenced critical-patterns.md",
+      "passed": true,
+      "evidence": "Lines 15-17 explicitly state: \"No critical patterns from `critical-patterns.md` apply to this specific issue (the critical patterns cover Kubernetes secrets, Docker security scans, AWS cross-account access, Fastlane, and iOS screenshots).\" The output directly checked critical-patterns.md and reported findings."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 1,
+    "total": 5,
+    "pass_rate": 0.80
+  }
+}

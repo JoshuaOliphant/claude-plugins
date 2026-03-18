@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "The output references at least one relevant principle from the knowledge base",
+      "passed": true,
+      "evidence": "The output contains 5 principles from the knowledge base, each with source files, dates, and relevance statements. These include 'Skill descriptions must contain only triggering conditions', 'Skill value correlates with knowledge specificity', 'Dogfood your plugin on its own codebase', 'Dogfood before finalizing API surface', and 'Phase Delivery, Not Feature Creep'."
+    },
+    {
+      "text": "The output mentions that tool-specific or proprietary knowledge has higher skill value",
+      "passed": true,
+      "evidence": "Principle 2 explicitly states: 'Skills that encode tool-specific knowledge or process discipline produce the highest eval deltas. Skills that teach general patterns Claude already knows produce the lowest deltas.' This directly supports the assertion."
+    },
+    {
+      "text": "The output includes an actionable recommendation relevant to building a batch import skill",
+      "passed": true,
+      "evidence": "The 'Recommendations' section provides 6 concrete, actionable items: (1) Focus on Mochi-specific knowledge, (2) Write a trigger-only description, (3) Reuse the existing mochi_api.py client, (4) Ship in phases, (5) Dogfood with a real import, (6) Remember versioning. Each is specific to batch import skill development."
+    },
+    {
+      "text": "The skill searched cross-project knowledge bases when local results were thin",
+      "passed": true,
+      "evidence": "The 'Search Context' section shows 'Registry: 2 registered KBs (claude-plugins, second-brain)' and 'Files Scanned: 3 local candidates, 8 cross-project candidates evaluated.' Multiple principles and solutions are explicitly sourced from 'second-brain (cross-project)', indicating cross-project searching was performed."
+    },
+    {
+      "text": "The output does not fabricate solutions or principles that do not exist in the knowledge base",
+      "passed": true,
+      "evidence": "All 5 principles include specific file paths with dates (e.g., 'skill-descriptions-trigger-only-claude-plugins-20260302.md', 'skill-value-correlates-with-knowledge-specificity-claude-plugins-20260304.md'). All 2 solutions include source KB identification and file locations. No vague or unsourced claims are made; every principle and pattern is grounded in specific knowledge base locations."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  }
+}

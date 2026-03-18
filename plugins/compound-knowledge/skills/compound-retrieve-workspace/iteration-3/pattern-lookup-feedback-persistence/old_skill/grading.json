@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "The output references the generic-feedback-persistence pattern or solution file",
+      "passed": true,
+      "evidence": "Line 7-9 explicitly names the file: '~/Dropbox/python_workspace/second_brain/knowledge/solutions/patterns/generic-feedback-persistence-plugin-ecosystem-claude-plugins-20260316.md'. Line 11 identifies it as 'the canonical solution'."
+    },
+    {
+      "text": "The output mentions the three-layer architecture (Storage, Semantics, Consumption) or equivalent structure",
+      "passed": true,
+      "evidence": "Lines 11-17 present a table with explicit header 'three-layer architecture' showing Storage, Semantics, and Consumption layers with their responsibilities clearly defined."
+    },
+    {
+      "text": "The output mentions that feedback_manager.py is parameterized by plugin name",
+      "passed": true,
+      "evidence": "Line 15 states 'Generic JSON-to-YAML persistence, parameterized by plugin name'. Line 21 elaborates: 'it takes the plugin name as the first CLI argument'. Line 28 shows usage: 'python ${PLUGIN_ROOT}/scripts/feedback_manager.py {your-plugin-name} show-feedback'."
+    },
+    {
+      "text": "The output includes at least one file path to the solution for deeper reading",
+      "passed": true,
+      "evidence": "Primary solution file path provided on line 9. Additional implementation references at lines 74-79 showing five existing plugin implementations as templates (e.g., 'plugins/autoloop/scripts/feedback_manager.py')."
+    },
+    {
+      "text": "The output connects the finding to the user's specific goal of building a new plugin",
+      "passed": true,
+      "evidence": "Line 19 introduces section 'How to set it up for your new plugin'. Lines 20-32 provide step-by-step setup instructions directly addressing the user's goal. Line 92 contains implementation timeline: 'The setup takes about 15 minutes: copy the script, write a feedback SKILL.md with your categories, add Step 0 to your main skills.'"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  }
+}

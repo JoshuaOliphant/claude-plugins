@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "The output references the generic-feedback-persistence pattern or solution file",
+      "passed": true,
+      "evidence": "Line 13 explicitly names 'Generic Feedback Persistence for Plugin Ecosystems' and line 15 provides the full source file path: ~/Dropbox/python_workspace/second_brain/knowledge/solutions/patterns/generic-feedback-persistence-plugin-ecosystem-claude-plugins-20260316.md"
+    },
+    {
+      "text": "The output mentions the three-layer architecture (Storage, Semantics, Consumption) or equivalent structure",
+      "passed": true,
+      "evidence": "Lines 17-23 contain a formatted table explicitly titled 'Three-Layer Architecture' with all three layers (Storage, Semantics, Consumption) clearly defined with descriptions, locations, and responsibilities"
+    },
+    {
+      "text": "The output mentions that feedback_manager.py is parameterized by plugin name",
+      "passed": true,
+      "evidence": "Line 21 states 'it is parameterized by plugin name and requires zero customization'. Lines 28-40 show multiple command examples using '{your-plugin}' as a parameter passed to feedback_manager.py"
+    },
+    {
+      "text": "The output includes at least one file path to the solution for deeper reading",
+      "passed": true,
+      "evidence": "Line 15 provides the primary solution path: ~/Dropbox/python_workspace/second_brain/knowledge/solutions/patterns/generic-feedback-persistence-plugin-ecosystem-claude-plugins-20260316.md. Line 74 also references the implementation location at plugins/compound-knowledge/scripts/feedback_manager.py"
+    },
+    {
+      "text": "The output connects the finding to the user's specific goal of building a new plugin",
+      "passed": true,
+      "evidence": "Lines 72-80 contain a 'What to Do' section with numbered steps (1-4) that directly address integration into a new plugin, including copying the script to 'your plugin's scripts/ directory' (line 75) and adding Step 0 to each skill (line 78)"
+    },
+    {
+      "text": "The output includes a search summary showing what knowledge bases were searched and what was checked",
+      "passed": true,
+      "evidence": "Lines 3-9 contain a dedicated 'Search Summary' section documenting: knowledge bases searched (second-brain with 379 solutions, claude-plugins with 3 solutions), search method used (Grep + full-text), candidates found (5 files, 3 relevant), critical patterns checked, and cross-project registry consulted"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

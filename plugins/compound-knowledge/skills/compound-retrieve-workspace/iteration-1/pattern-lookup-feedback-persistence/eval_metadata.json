@@ -1,0 +1,12 @@
+{
+  "eval_id": 3,
+  "eval_name": "pattern-lookup-feedback-persistence",
+  "prompt": "I need to set up feedback persistence for a new plugin I'm building. I know we've done this before across several plugins but I'm not sure what the recommended pattern is. Check the knowledge base.",
+  "assertions": [
+    "The output references the generic-feedback-persistence pattern or solution file",
+    "The output mentions the three-layer architecture (Storage, Semantics, Consumption) or equivalent structure",
+    "The output mentions that feedback_manager.py is parameterized by plugin name",
+    "The output includes at least one file path to the solution for deeper reading",
+    "The output connects the finding to the user's specific goal of building a new plugin"
+  ]
+}

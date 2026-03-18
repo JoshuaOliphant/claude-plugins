@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "The output references at least one relevant principle from the knowledge base",
+      "passed": true,
+      "evidence": "Response references three principles: (1) 'Skill descriptions must contain only triggering conditions' (lines 19-24), (2) 'Skill value correlates with knowledge specificity' (lines 26-31), (3) 'Dogfood your plugin on its own codebase' (lines 33-38). All sourced from identified knowledge base files."
+    },
+    {
+      "text": "The output mentions that tool-specific or proprietary knowledge has higher skill value",
+      "passed": true,
+      "evidence": "Line 29-31 explicitly states: 'Skills that encode tool-specific knowledge or process discipline produce the highest eval deltas.' Lines 31-32 contextualize this: 'A batch CSV import skill will be high-value if it encodes Mochi API-specific knowledge Claude cannot know from training data -- things like the kebab-case field naming convention, the `---` card separator format, the pagination bookmark pattern, and rate limiting behavior.'"
+    },
+    {
+      "text": "The output includes an actionable recommendation relevant to building a batch import skill",
+      "passed": true,
+      "evidence": "Lines 82-95 contain six concrete recommendations: (1) Structure as mochi-creator:batch-import companion skill, (2) Focus skill content on Mochi-specific mapping not CSV parsing, (3) Write trigger-only SKILL.md description, (4) Avoid YAML folded string operator in frontmatter, (5) Add feedback categories to existing feedback skill, (6) Capture Mochi API rate limiting patterns as knowledge gap."
+    },
+    {
+      "text": "The skill searched cross-project knowledge bases when local results were thin",
+      "passed": true,
+      "evidence": "Line 9-10 shows search context: primary KB `~/Dropbox/python_workspace/second_brain/knowledge/solutions/` (379 solutions) and local `knowledge/solutions/` (3 solutions). Line 11 confirms registry of 2 KBs (second-brain, claude-plugins). The skill explicitly searched the larger cross-project second-brain KB when local results were minimal (3 solutions vs 379)."
+    },
+    {
+      "text": "The output does not fabricate solutions or principles that do not exist in the knowledge base",
+      "passed": true,
+      "evidence": "All referenced patterns and principles include explicit file paths with dates (e.g., line 20: 'skill-descriptions-trigger-only-claude-plugins-20260302.md', line 27: 'skill-value-correlates-with-knowledge-specificity-claude-plugins-20260304.md'). Line 15 explicitly states when patterns DO NOT apply: 'None of the 6 critical patterns in critical-patterns.md apply to this task.' No unsourced claims made."
+    },
+    {
+      "text": "The skill used vault-recommender semantic search OR correctly decided not to use it because grep results were sufficient (3+ hits)",
+      "passed": true,
+      "evidence": "Transcript execution summary: 'Ran 8 parallel grep searches across both KBs on frontmatter fields' yielding 41 candidate files (line 11). This far exceeds the 3-hit threshold. The skill correctly prioritized grep-based search over semantic search because the grep results were abundant and actionable. No vault-recommender invocation mentioned — not needed given the volume and quality of grep results."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "eval_name": "feature-planning-batch-import",
+  "prompt": "I want to add a new skill to the mochi-creator plugin that handles batch card imports from CSV files. Before I start building, can you check if there are any relevant patterns or principles from past work that I should know about?",
+  "assertions": [
+    "The output references at least one relevant principle from the knowledge base",
+    "The output mentions that tool-specific or proprietary knowledge has higher skill value",
+    "The output includes an actionable recommendation relevant to building a batch import skill",
+    "The skill searched cross-project knowledge bases when local results were thin",
+    "The output does not fabricate solutions or principles that do not exist in the knowledge base"
+  ]
+}

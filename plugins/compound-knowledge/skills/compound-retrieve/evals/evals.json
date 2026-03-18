@@ -1,0 +1,44 @@
+{
+  "skill_name": "compound-retrieve",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I'm getting a weird error in my autonomous-sdlc plugin — the builder agents keep committing directly to main instead of using worktree branches. I've seen this before but can't remember what fixed it. Can you check if we've documented a solution?",
+      "expected_output": "Should search knowledge/solutions/ for worktree/builder/commit patterns, find the parallel-worktree-builders solution, and present the key insight about worktree isolation behavior varying by task complexity",
+      "files": [],
+      "expectations": [
+        "The output references the parallel-worktree-builders solution file",
+        "The output mentions that worktree isolation behavior varies by task complexity",
+        "The output includes at least one file path the user could read for more detail",
+        "The skill spawned the knowledge-researcher subagent to perform the search",
+        "The output checked or referenced critical-patterns.md"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I want to add a new skill to the mochi-creator plugin that handles batch card imports from CSV files. Before I start building, can you check if there are any relevant patterns or principles from past work that I should know about?",
+      "expected_output": "Should search for plugin architecture patterns, skill creation patterns, and mochi-related solutions. Should surface the skill-value-correlates-with-knowledge-specificity principle and the plugin-modernization pattern.",
+      "files": [],
+      "expectations": [
+        "The output references at least one relevant principle from the knowledge base",
+        "The output mentions that tool-specific or proprietary knowledge has higher skill value",
+        "The output includes an actionable recommendation relevant to building a batch import skill",
+        "The skill searched cross-project knowledge bases when local results were thin",
+        "The output does not fabricate solutions or principles that do not exist in the knowledge base"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I need to set up feedback persistence for a new plugin I'm building. I know we've done this before across several plugins but I'm not sure what the recommended pattern is. Check the knowledge base.",
+      "expected_output": "Should find the generic-feedback-persistence-plugin-ecosystem pattern and present the three-layer architecture (Storage/Semantics/Consumption).",
+      "files": [],
+      "expectations": [
+        "The output references the generic-feedback-persistence pattern or solution file",
+        "The output mentions the three-layer architecture (Storage, Semantics, Consumption) or equivalent structure",
+        "The output mentions that feedback_manager.py is parameterized by plugin name",
+        "The output includes at least one file path to the solution for deeper reading",
+        "The output connects the finding to the user's specific goal of building a new plugin"
+      ]
+    }
+  ]
+}

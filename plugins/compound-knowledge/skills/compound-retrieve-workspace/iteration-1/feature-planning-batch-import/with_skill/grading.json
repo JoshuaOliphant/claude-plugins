@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "The output references at least one relevant principle from the knowledge base",
+      "passed": true,
+      "evidence": "Output explicitly references 4 principles: (1) Skill descriptions must contain only triggering conditions (skill-descriptions-trigger-only), (2) Skill value correlates with knowledge specificity (skill-value-correlates-with-knowledge-specificity), (3) Encode existing vocabulary not abstract rules, (4) Hooks beat skills for autonomous agent behavior. Each is properly attributed to source files in the knowledge base."
+    },
+    {
+      "text": "The output mentions that tool-specific or proprietary knowledge has higher skill value",
+      "passed": true,
+      "evidence": "Line 29 states: 'Skills that encode tool-specific knowledge or process discipline produce the highest eval deltas.' This is reinforced in line 31: 'the skill's value is in the Mochi API specifics' and line 83-84 recommends 'Focus the skill on Mochi-specific vocabulary.' Directly addresses tool-specific knowledge value hierarchy."
+    },
+    {
+      "text": "The output includes an actionable recommendation relevant to building a batch import skill",
+      "passed": true,
+      "evidence": "Six actionable recommendations provided: (1) Focus on Mochi-specific vocabulary with concrete examples (card format, field naming, pagination), (2) Reuse existing MochiAPI class from scripts/mochi_api.py, (3) Write trigger-only descriptions for SKILL.md, (4) Use inline YAML descriptions avoid folded strings, (5) Apply multi-modal pattern for skill ecosystems, (6) Follow TDD practices. All are directly implementable."
+    },
+    {
+      "text": "The skill searched cross-project knowledge bases when local results were thin",
+      "passed": true,
+      "evidence": "Line 10-11 shows 'Registry: 2 registered KBs (second-brain: 379 solutions, claude-plugins: 3 solutions)' and 'Files Scanned: 19 frontmatter-filtered candidates across both KBs.' Output includes solutions from both second-brain KB (primary) and claude-plugins KB, demonstrating cross-project search. Line 74-75 explicitly references solution from claude-plugins KB."
+    },
+    {
+      "text": "The output does not fabricate solutions or principles that do not exist in the knowledge base",
+      "passed": true,
+      "evidence": "Every principle and solution is attributed with specific file paths from the knowledge base (e.g., skill-descriptions-trigger-only-claude-plugins-20260302.md, skill-value-correlates-with-knowledge-specificity-claude-plugins-20260304.md, multi-modal-skill-ecosystem-marketplace-20260304.md). All recommendations are derived from cited sources. Knowledge gap is explicitly noted at line 97-98 rather than inventing solutions for Mochi rate limiting or batch error recovery."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  }
+}

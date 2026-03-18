@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "The output references at least one relevant principle from the knowledge base",
+      "passed": true,
+      "evidence": "Output cites 5 distinct principles with file paths and source KBs: (1) 'Skill descriptions must contain only triggering conditions' (line 17), (2) 'Skill value correlates with knowledge specificity, not pattern complexity' (line 24), (3) 'Dogfood before finalizing API surface' (line 31), (4) 'Dogfood your plugin on its own codebase' (line 38), (5) 'API-first design' (line 45). Each principle is properly sourced."
+    },
+    {
+      "text": "The output mentions that tool-specific or proprietary knowledge has higher skill value",
+      "passed": true,
+      "evidence": "Lines 24-29 explicitly state: 'Skills that encode tool-specific knowledge or process discipline produce the highest eval deltas. Skills that teach general patterns Claude already knows produce the lowest deltas.' The relevance section further recommends focusing on 'Mochi API-specific knowledge (card content format with `---` separator, kebab-case field naming, template field mapping, pagination/bookmarks) rather than general CSV parsing, which Claude already knows how to do.' This directly addresses the value hierarchy principle."
+    },
+    {
+      "text": "The output includes an actionable recommendation relevant to building a batch import skill",
+      "passed": true,
+      "evidence": "Lines 70-80 provide 5 specific, actionable recommendations: (1) 'Focus the skill on Mochi-specific knowledge' (72-73), (2) 'Extend `mochi_api.py` first' with batch_create_cards() method (74-75), (3) 'Write trigger-only descriptions' with example format (76), (4) 'Dogfood with a real CSV' before considering skill done (78), (5) 'Consider soft delete for batch operations' using trashed field (80-81). Each recommendation is directly applicable to building the batch import skill."
+    },
+    {
+      "text": "The skill searched cross-project knowledge bases when local results were thin",
+      "passed": true,
+      "evidence": "Lines 7-9 document the search scope: 'Solutions Path: `knowledge/solutions/` (primary), `~/Dropbox/python_workspace/second_brain/knowledge/solutions/` (cross-project)' and 'Registry: 2 registered KBs (claude-plugins: 3 solutions, second-brain: 379 solutions)' and 'Files Scanned: 3 local + 29 cross-project candidates'. With only 3 local solutions available, the skill expanded to the cross-project second_brain KB containing 379 solutions, demonstrating appropriate escalation when local results were thin."
+    },
+    {
+      "text": "The output does not fabricate solutions or principles that do not exist in the knowledge base",
+      "passed": true,
+      "evidence": "All 5 principles cite specific file paths with dates and source KB names: skill-descriptions-trigger-only-claude-plugins-20260302.md (second-brain), skill-value-correlates-with-knowledge-specificity-claude-plugins-20260304.md (second-brain), dogfood-before-finalizing-api-surface-brooklet-20260315.md (second-brain), dogfood-plugin-on-own-codebase-20260317.md (claude-plugins), api-first-design-ragamuffin-20260122.md (second-brain). Solutions also cite specific files: plugin-modernization-claude-code-v2-claude-plugins-20260316.md and generic-feedback-persistence-plugin-ecosystem-claude-plugins-20260316.md. Specificity of filenames, dates, and source KBs indicates grounding in actual knowledge base entries rather than fabrication."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  }
+}

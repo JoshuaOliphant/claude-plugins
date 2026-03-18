@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "The output references the parallel-worktree-builders solution file",
+      "passed": true,
+      "evidence": "Output directly cites: 'File: `knowledge/solutions/workflow/parallel-worktree-builders-claude-plugins-20260317.md`' and provides context from this file as the primary solution."
+    },
+    {
+      "text": "The output mentions that worktree isolation behavior varies by task complexity",
+      "passed": true,
+      "evidence": "Output explicitly states: 'Claude Code's worktree isolation behavior varies by **task complexity**. When you dispatch parallel builders with `isolation: \"worktree\"`: **Simple tasks** (frontmatter edits, single-file changes) often resolve without creating a separate branch — they commit directly to main. **Complex tasks** (creating new files, modifying multiple files) use the full worktree lifecycle with an isolated branch.'"
+    },
+    {
+      "text": "The output includes at least one file path the user could read for more detail",
+      "passed": true,
+      "evidence": "Output includes 7 file path references: `knowledge/solutions/workflow/parallel-worktree-builders-claude-plugins-20260317.md`, `second_brain/knowledge/solutions/principles/file-location-isolation-for-parallel-agents-second-brain-20260301.md`, `second_brain/knowledge/solutions/patterns/unique-naming-parallel-resources-adw-cli-20260122.md`, and others with .md extensions that users can read for more detail."
+    },
+    {
+      "text": "The output includes a search summary showing what knowledge bases were searched and what was checked (e.g. critical-patterns.md, cross-project registry)",
+      "passed": true,
+      "evidence": "Output has dedicated 'Search Summary' section stating: 'Knowledge bases searched: claude-plugins local KB (3 solutions), second-brain cross-project KB (379 solutions)', 'Search strategy: Parallel grep on frontmatter fields...', 'Candidates evaluated: 16 worktree-related files, 7 claude-plugins project files, 18 agent-related files', 'Critical patterns checked: critical-patterns.md reviewed', 'Top results read in full: 3'."
+    },
+    {
+      "text": "The output checked or referenced critical-patterns.md (even if no patterns matched — look for explicit mention in output OR transcript)",
+      "passed": true,
+      "evidence": "Output explicitly states in Search Summary: 'Critical patterns checked: `critical-patterns.md` reviewed — no patterns apply to this task', meeting the skill requirement to 'Report what you checked even when nothing matches.'"
+    },
+    {
+      "text": "The skill used vault-recommender semantic search OR correctly decided not to because grep had 3+ hits",
+      "passed": true,
+      "evidence": "Grep search found 41+ candidates evaluated (16 worktree-related + 7 claude-plugins + 18 agent-related = 41 total), exceeding the 3-hit threshold for using vault-recommender. Per SKILL.md 'When grep is sufficient: The researcher already found 3+ relevant results', semantic search was correctly not used. This decision aligns with the skill's documented decision rule."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

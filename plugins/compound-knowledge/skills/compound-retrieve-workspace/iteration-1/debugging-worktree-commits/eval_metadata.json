@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "debugging-worktree-commits",
+  "prompt": "I'm getting a weird error in my autonomous-sdlc plugin — the builder agents keep committing directly to main instead of using worktree branches. I've seen this before but can't remember what fixed it. Can you check if we've documented a solution?",
+  "assertions": [
+    "The output references the parallel-worktree-builders solution file",
+    "The output mentions that worktree isolation behavior varies by task complexity",
+    "The output includes at least one file path the user could read for more detail",
+    "The skill spawned the knowledge-researcher subagent to perform the search",
+    "The output checked or referenced critical-patterns.md"
+  ]
+}

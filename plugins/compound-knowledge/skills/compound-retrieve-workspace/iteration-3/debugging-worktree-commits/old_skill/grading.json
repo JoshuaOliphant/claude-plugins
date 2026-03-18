@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "The output references the parallel-worktree-builders solution file",
+      "passed": true,
+      "evidence": "Line 27-31 explicitly references knowledge/solutions/workflow/parallel-worktree-builders-claude-plugins-20260317.md with detailed context about worktree isolation behavior and the exact symptom being described"
+    },
+    {
+      "text": "The output mentions that worktree isolation behavior varies by task complexity",
+      "passed": true,
+      "evidence": "Line 31 clearly states: 'Claude Code's worktree isolation behavior varies by task complexity. Simple tasks (frontmatter edits, single-file changes) may resolve without creating a separate branch, while complex tasks (creating new files, modifying multiple files) use the full worktree lifecycle.'"
+    },
+    {
+      "text": "The output includes at least one file path the user could read for more detail",
+      "passed": true,
+      "evidence": "Multiple file paths provided: knowledge/solutions/principles/dogfood-plugin-on-own-codebase-20260317.md (line 18), knowledge/solutions/workflow/parallel-worktree-builders-claude-plugins-20260317.md (line 27), and knowledge/solutions/patterns/plugin-modernization-claude-code-v2-claude-plugins-20260316.md (line 35)"
+    },
+    {
+      "text": "The output includes a search summary showing what knowledge bases were searched and what was checked",
+      "passed": true,
+      "evidence": "Lines 3-9 provide explicit 'Search Context' showing: Task description, Keywords used, Solutions Path searched, Registry info ('2 registered KBs (claude-plugins, second-brain)'), and Files Scanned ('3 candidates from content search')"
+    },
+    {
+      "text": "The output checked or referenced critical-patterns.md (even if no patterns matched — look for explicit mention in output OR transcript)",
+      "passed": true,
+      "evidence": "Lines 11-13 explicitly state: 'No `critical-patterns.md` file exists. Skipped.' This is a clear reference to checking for critical-patterns.md"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  }
+}

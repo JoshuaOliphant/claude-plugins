@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "skill_name": "compound-retrieve",
+    "skill_path": "plugins/compound-knowledge/skills/compound-retrieve",
+    "executor_model": "claude-opus-4-6",
+    "analyzer_model": "claude-opus-4-6",
+    "timestamp": "2026-03-18T02:00:00Z",
+    "evals_run": [1, 2, 3],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1, "eval_name": "debugging-worktree-commits", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.00, "passed": 6, "failed": 0, "total": 6, "time_seconds": 82.6, "tokens": 33532, "tool_calls": 23, "errors": 0}
+    },
+    {
+      "eval_id": 1, "eval_name": "debugging-worktree-commits", "configuration": "old_skill", "run_number": 1,
+      "result": {"pass_rate": 1.00, "passed": 5, "failed": 0, "total": 5, "time_seconds": 99.8, "tokens": 33198, "tool_calls": 28, "errors": 0}
+    },
+    {
+      "eval_id": 2, "eval_name": "feature-planning-batch-import", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.00, "passed": 7, "failed": 0, "total": 7, "time_seconds": 129.2, "tokens": 44089, "tool_calls": 32, "errors": 0}
+    },
+    {
+      "eval_id": 2, "eval_name": "feature-planning-batch-import", "configuration": "old_skill", "run_number": 1,
+      "result": {"pass_rate": 1.00, "passed": 5, "failed": 0, "total": 5, "time_seconds": 128.8, "tokens": 44076, "tool_calls": 37, "errors": 0}
+    },
+    {
+      "eval_id": 3, "eval_name": "pattern-lookup-feedback-persistence", "configuration": "with_skill", "run_number": 1,
+      "result": {"pass_rate": 1.00, "passed": 6, "failed": 0, "total": 6, "time_seconds": 93.3, "tokens": 30467, "tool_calls": 21, "errors": 0}
+    },
+    {
+      "eval_id": 3, "eval_name": "pattern-lookup-feedback-persistence", "configuration": "old_skill", "run_number": 1,
+      "result": {"pass_rate": 1.00, "passed": 5, "failed": 0, "total": 5, "time_seconds": 100.4, "tokens": 38850, "tool_calls": 21, "errors": 0}
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 1.00, "stddev": 0.00, "min": 1.00, "max": 1.00},
+      "time_seconds": {"mean": 101.7, "stddev": 19.8, "min": 82.6, "max": 129.2},
+      "tokens": {"mean": 36029, "stddev": 5812, "min": 30467, "max": 44089}
+    },
+    "old_skill": {
+      "pass_rate": {"mean": 1.00, "stddev": 0.00, "min": 1.00, "max": 1.00},
+      "time_seconds": {"mean": 109.7, "stddev": 13.5, "min": 99.8, "max": 128.8},
+      "tokens": {"mean": 38708, "stddev": 4479, "min": 33198, "max": 44076}
+    },
+    "delta": {
+      "pass_rate": "+0.00",
+      "time_seconds": "-8.0",
+      "tokens": "-2679"
+    }
+  },
+  "notes": [
+    "BREAKTHROUGH: Refined hybrid achieves 100% pass rate across all evals — matching old procedural version for the first time",
+    "The refined hybrid is 7% faster on average (102s vs 110s) and uses 7% fewer tokens (36k vs 39k)",
+    "vault-recommender was successfully used on eval 2 (semantic search returned 5 results alongside 32 grep candidates) — first confirmed semantic search usage across all iterations",
+    "Process transparency mandate worked: all 3 refined runs include search summaries and critical-patterns status in the output",
+    "The old procedural version also scored 100% this iteration — suggesting some run-to-run variance in prior iterations rather than systematic differences",
+    "Key refinements that closed the gap: (1) dropped dead-letter researcher-agent mandate, (2) added explicit 'report what you checked' instruction, (3) inline grep instructions instead of delegation",
+    "The hybrid now passes MORE assertions per eval (6-7 vs 5) due to vault-recommender and search summary assertions that the old version cannot satisfy"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "The output references the parallel-worktree-builders solution file",
+      "passed": true,
+      "evidence": "Line 18 explicitly references: '~/Dropbox/python_workspace/claude-plugins/knowledge/solutions/workflow/parallel-worktree-builders-claude-plugins-20260317.md' under section '1. Parallel Builder Dispatch with Worktree Isolation (DIRECT MATCH)'. Line 21 confirms this is a direct match for the documented behavior."
+    },
+    {
+      "text": "The output mentions that worktree isolation behavior varies by task complexity",
+      "passed": true,
+      "evidence": "Lines 22-25 explicitly state: 'Task complexity determines isolation behavior' and 'Claude Code's worktree isolation behavior varies by task complexity -- simpler tasks (frontmatter edits) may resolve without creating a separate branch, while complex tasks (creating scripts, modifying hooks.json + multiple .md files) do.'"
+    },
+    {
+      "text": "The output includes at least one file path the user could read for more detail",
+      "passed": true,
+      "evidence": "Multiple file paths are provided: Line 7 shows 'Solutions Paths: ~/Dropbox/python_workspace/claude-plugins/knowledge/solutions/' (primary), Line 18 provides the specific parallel-worktree-builders file path, Line 35 references plugin-modernization file, and Line 43 references prompt-objects file. All are actionable paths."
+    },
+    {
+      "text": "The skill spawned the knowledge-researcher subagent to perform the search",
+      "passed": false,
+      "evidence": "The response contains no indication of a knowledge-researcher subagent being spawned. The output appears to be a direct knowledge retrieval response with search results presented as the final output. There is no mention of subagent coordination, Task tool invocation, or delegation to another agent in the response text."
+    },
+    {
+      "text": "The output checked or referenced critical-patterns.md",
+      "passed": true,
+      "evidence": "Lines 11-13 explicitly state: 'None of the 6 critical patterns in critical-patterns.md apply to this issue (they cover Kubernetes secrets, Docker CVEs, AWS cross-account access, Fastlane pricing, iOS screenshots, and TestFlight build numbers).' This shows an active check of critical-patterns.md."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 1,
+    "total": 5,
+    "pass_rate": 0.8
+  }
+}

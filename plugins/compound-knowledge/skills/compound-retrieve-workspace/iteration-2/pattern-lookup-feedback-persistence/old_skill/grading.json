@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "The output references the generic-feedback-persistence pattern or solution file",
+      "passed": true,
+      "evidence": "Line 26-31 explicitly references 'Generic Feedback Persistence for Plugin Ecosystems (Direct Match)' and provides the full file path: '~/Dropbox/python_workspace/second_brain/knowledge/solutions/patterns/generic-feedback-persistence-plugin-ecosystem-claude-plugins-20260316.md'"
+    },
+    {
+      "text": "The output mentions the three-layer architecture (Storage, Semantics, Consumption) or equivalent structure",
+      "passed": true,
+      "evidence": "Line 31 states 'Use a three-layer architecture: (1) a generic `feedback_manager.py` script parameterized by plugin name, (2) a per-plugin `skills/feedback/SKILL.md` that defines domain-specific categories, and (3) a \"Step 0\" in each main skill that loads feedback before starting work.'"
+    },
+    {
+      "text": "The output mentions that feedback_manager.py is parameterized by plugin name",
+      "passed": true,
+      "evidence": "Line 31 mentions 'a generic `feedback_manager.py` script parameterized by plugin name' and line 54 confirms 'Copy the existing `feedback_manager.py`... It is generic and parameterized by plugin name -- no modification needed.'"
+    },
+    {
+      "text": "The output includes at least one file path to the solution for deeper reading",
+      "passed": true,
+      "evidence": "Multiple file paths provided: Line 18 references 'user-feedback-integration-snc-mailscan-20260122.md', Line 27 provides 'generic-feedback-persistence-plugin-ecosystem-claude-plugins-20260316.md', Line 35 references 'skill-ecosystem-interconnection-audit-second-brain-20260315.md', and Line 43 references 'two-tier-source-of-truth-resume-tailor-20260314.md'"
+    },
+    {
+      "text": "The output connects the finding to the user's specific goal of building a new plugin",
+      "passed": true,
+      "evidence": "Lines 5-6 frame the task as 'Feedback persistence pattern for a new plugin' and lines 52-81 provide concrete setup steps for the user's new plugin, including recommendations for copying the script, creating a SKILL.md, adding Step 0 to skills, and storing feedback at '~/.claude/{plugin-name}/feedback.yaml'"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  }
+}

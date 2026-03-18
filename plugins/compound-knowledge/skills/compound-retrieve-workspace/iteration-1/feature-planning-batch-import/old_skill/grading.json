@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "The output references at least one relevant principle from the knowledge base",
+      "passed": true,
+      "evidence": "The response explicitly cites 5 relevant principles: (1) Skill value correlates with knowledge specificity (lines 15-20), (2) Skill descriptions must contain only triggering conditions (lines 22-27), (3) Encode existing vocabulary, not abstract rules (lines 29-34), (4) Dogfood before finalizing API surface (lines 36-41), and (5) Phase delivery, not feature creep (lines 43-48). Each principle includes the source file path, KB source, statement, and relevance to the batch import task."
+    },
+    {
+      "text": "The output mentions that tool-specific or proprietary knowledge has higher skill value",
+      "passed": true,
+      "evidence": "In Principle 1 (lines 15-20), the response states: 'Skills that encode tool-specific knowledge or process discipline produce the highest eval deltas. Skills that teach general patterns Claude already knows produce the lowest deltas.' This is directly quoted from the knowledge base and applied to the batch import task, emphasizing that the skill should focus on Mochi API-specific knowledge rather than generic CSV parsing (lines 95-96)."
+    },
+    {
+      "text": "The output includes an actionable recommendation relevant to building a batch import skill",
+      "passed": true,
+      "evidence": "The response provides 7 concrete recommendations (lines 92-108): (1) Focus on Mochi-specific knowledge, not CSV parsing (lines 95-96), (2) Write trigger-only SKILL.md description with inline format (lines 97-98), (3) Create as separate skill named mochi-batch-import (lines 99-100), (4) Ship Phase 1 with simple Q/A CSV import (lines 101-102), (5) Dogfood with real CSV before finalizing (lines 103-104), (6) Leverage existing mochi_api.py client (lines 105-106), and (7) Install via /plugin install flow (lines 107-108)."
+    },
+    {
+      "text": "The skill searched cross-project knowledge bases when local results were thin",
+      "passed": true,
+      "evidence": "The search context (lines 1-7) explicitly shows the skill registered 2 KBs: 'second-brain: 379 solutions' and 'claude-plugins: 3 solutions'. The response drew from both: 5 of the 5 principles cited are from second-brain KB (the primary, larger knowledge base), and 2 of the 5 solutions are from second-brain while 3 are from claude-plugins (local). This demonstrates cross-project searching when the local KB had sparse results (only 3 solutions)."
+    },
+    {
+      "text": "The output does not fabricate solutions or principles that do not exist in the knowledge base",
+      "passed": true,
+      "evidence": "Every principle and solution cited includes a source file path prefixed with either '~/Dropbox/python_workspace/second_brain/knowledge/solutions/' or '~/Dropbox/python_workspace/claude-plugins/knowledge/solutions/', indicating retrieval from the knowledge base. The statements are quoted directly (e.g., lines 18, 25, 32, 39, 46). The response does not introduce generic advice without attribution; all guidance is grounded in documented principles."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  }
+}

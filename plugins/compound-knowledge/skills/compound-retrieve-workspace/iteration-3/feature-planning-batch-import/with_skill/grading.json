@@ -1,0 +1,45 @@
+{
+  "expectations": [
+    {
+      "text": "The output references at least one relevant principle from the knowledge base",
+      "passed": true,
+      "evidence": "The output contains 7 principles and patterns from the knowledge base, including: (1) 'Skill Value Correlates with Knowledge Specificity' referencing skill-value-correlates-with-knowledge-specificity-claude-plugins-20260304.md, (2) 'Skill Descriptions Must Be Trigger-Only' referencing skill-descriptions-trigger-only-claude-plugins-20260302.md, and (3) 'Native API Over Wrappers / Leverage SDK Patterns' referencing leverage-sdk-native-patterns-ragamuffin-20260122.md. All referenced files verified to exist in the knowledge base."
+    },
+    {
+      "text": "The output mentions that tool-specific or proprietary knowledge has higher skill value",
+      "passed": true,
+      "evidence": "In section 1 'Skill Value Correlates with Knowledge Specificity', the output explicitly states: 'Claude doesn't know any of this natively -- this is exactly the high-value skill type (tool-specific knowledge) that produces the biggest eval deltas.' This directly references the MEMORY.md insight about '** Skill value hierarchy**: tool-specific knowledge (+72-83%) > process discipline (+67-72%) > general patterns (+33%)'."
+    },
+    {
+      "text": "The output includes an actionable recommendation relevant to building a batch import skill",
+      "passed": true,
+      "evidence": "Section 'Actionable Recommendations' contains 6 specific, actionable items: (1) Structure recommendation for directory layout with mochi-batch-import/SKILL.md, (2) API Client recommendation to extend mochi_api.py with create_cards_batch() method, (3) Skill Focus on Mochi-specific knowledge, (4) Description guideline (trigger-only), (5) Script/Skill Split pattern, (6) Dogfood testing recommendation. These are specific, implementable recommendations."
+    },
+    {
+      "text": "The skill searched cross-project knowledge bases when local results were thin",
+      "passed": true,
+      "evidence": "Search Summary explicitly states: 'Knowledge bases searched: claude-plugins local (3 solutions), second-brain cross-project (379 solutions)'. The output notes 'No past solutions exist for CSV parsing, batch imports, or bulk card creation' locally, then explicitly searched the second-brain cross-project knowledge base via semantic search (vault-recommender) and grep queries. This demonstrates appropriate escalation from thin local results to cross-project search."
+    },
+    {
+      "text": "The output does not fabricate solutions or principles that do not exist in the knowledge base",
+      "passed": true,
+      "evidence": "All 7 cited principles and patterns were verified to exist in the knowledge base: (1) skill-value-correlates-with-knowledge-specificity-claude-plugins-20260304.md exists in second_brain, (2) skill-descriptions-trigger-only-claude-plugins-20260302.md exists, (3) native-async-api-over-wrapper-ragamuffin-20260122.md exists, (4) leverage-sdk-native-patterns-ragamuffin-20260122.md exists, (5) multi-modal-skill-ecosystem-marketplace-20260304.md exists, (6) multi-agent-plugin-pipeline-resume-tailor-20260314.md exists, (7) generic-feedback-persistence-plugin-ecosystem-claude-plugins-20260316.md exists, (8) plugin-modernization-claude-code-v2-claude-plugins-20260316.md exists. No fabricated or non-existent files were cited."
+    },
+    {
+      "text": "The skill used vault-recommender semantic search to discover additional connections beyond grep",
+      "passed": true,
+      "evidence": "Search Summary explicitly documents: 'Semantic search: vault-recommender on second-brain (5 results, top score 0.384)'. This indicates vault-recommender was used for semantic/conceptual discovery beyond simple keyword grep. The output also shows parallel execution: 'Grep queries: 7 parallel searches across project names, components (plugin/skill/api), tags (batch/csv/import/plugin/skill/pattern)' plus the separate 'Semantic search: vault-recommender' step, demonstrating use of both approaches."
+    },
+    {
+      "text": "The output includes a search summary showing what knowledge bases were searched and what was checked",
+      "passed": true,
+      "evidence": "Section 'Search Summary' (lines 5-12) documents: (1) Knowledge bases searched with counts (claude-plugins local: 3, second-brain: 379), (2) Grep queries: 7 parallel searches listing specific query dimensions (project names, components, tags), (3) Semantic search tool and results count (vault-recommender, 5 results, top score 0.384), (4) Critical patterns checked: explicit reference to critical-patterns.md review and finding none apply, (5) Stored feedback: checked and documented 'No feedback entries found', (6) Total candidates evaluated: 32 files, 9 fully read. This is comprehensive documentation of search scope and methodology."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  }
+}
