@@ -27,7 +27,7 @@ Create evidence-based spaced repetition flashcards using cognitive science princ
 export MOCHI_API_KEY="your_api_key_here"
 ```
 
-### autonomous-sdlc (v0.6.0)
+### autonomous-sdlc (v1.0.0)
 
 Adaptive autonomous SDLC with 5 skills covering the full development lifecycle:
 
