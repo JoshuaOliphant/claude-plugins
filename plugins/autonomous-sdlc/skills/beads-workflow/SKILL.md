@@ -6,6 +6,9 @@ description: >
   of "issue", "task tracking", "what should I work on", "bd create/ready/close", or when the session
   hook indicates beads is active. Provides full bd CLI reference and workflow patterns.
 version: 1.0.0
+effort: low
+allowed-tools:
+  - Bash
 ---
 
 # Beads Workflow for SDLC

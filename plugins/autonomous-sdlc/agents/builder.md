@@ -6,7 +6,8 @@ whenToUse: >-
   Use when a task is ready to implement. The builder follows TDD, has automatic
   validation hooks that run after every Write/Edit, and can operate in a worktree
   or shared directory, as a subagent or teammate.
-permissionMode: "none"
+permissionMode: bypassPermissions
+background: true
 tools:
   - Read
   - Edit
@@ -21,6 +22,7 @@ tools:
 hooks:
   PostToolUse:
     - matcher: "Write|Edit"
+      if: "Write(*.py)|Edit(*.py)"
       hooks:
         - type: command
           command: "uv run ${CLAUDE_PLUGIN_ROOT}/hooks/validators/ruff_validator.py"

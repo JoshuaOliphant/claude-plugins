@@ -8,6 +8,9 @@ description: >
   where the output should be runnable scenarios, not just a design doc. Produces Gherkin-ready
   acceptance criteria. Not for generating test code — use bdd-generate after this.
 version: 1.0.0
+effort: high
+allowed-tools:
+  - Bash
 ---
 
 # Acceptance Criteria Co-Author

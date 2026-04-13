@@ -163,7 +163,21 @@ If any gate fails, the agent communicates the issue and fixes it.
 
 ## Version History
 
-### v0.4.0 (Current)
+### v1.2.0 (Current)
+- Added `effort` and `allowed-tools` frontmatter to all 6 SKILL.md files
+- Fixed invalid `permissionMode: "none"` on all 6 agents (now correctly set per agent role)
+- Added `background: true` to builder for default parallel wave execution
+- Added `if: "Write(*.py)|Edit(*.py)"` condition to builder PostToolUse hooks (prevents subprocess spawning on non-Python files)
+- Added PostCompact hook: re-injects in-progress Beads context after context compaction
+- Added WorktreeCreate/WorktreeRemove hooks: lifecycle logging + systemMessage injection
+- Added StopFailure hook: logs API errors and surfaces them as systemMessage alerts
+
+### v1.1.0
+- Eval suites for all 5 skills (bdd-spec, bdd-generate, tdd-workflow, verification-stack, beads-workflow)
+- Beads project configuration (.beads/ directory with config.yaml)
+- Git attributes for Beads JSONL merge strategy
+
+### v0.4.0
 - Adaptive orchestration — lead chooses coordination mode per-task
 - Agent teams support with direct builder-validator communication
 - Prompt objects replace procedural step-by-step instructions

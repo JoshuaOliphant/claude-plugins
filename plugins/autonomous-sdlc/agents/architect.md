@@ -6,7 +6,7 @@ whenToUse: >-
   Use when starting a new SDLC workflow to create a comprehensive plan,
   break down requirements into implementable tasks with dependencies,
   and establish the feature branch.
-permissionMode: "none"
+permissionMode: acceptEdits
 memory: project
 tools:
   - Read

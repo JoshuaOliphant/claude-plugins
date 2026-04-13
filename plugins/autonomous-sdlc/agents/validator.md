@@ -5,7 +5,7 @@ description: Read-only verification agent that validates builder work without mo
 whenToUse: >-
   Use after a builder completes to verify the implementation meets acceptance
   criteria. The validator cannot modify code — it reads, verifies, and communicates.
-permissionMode: "none"
+permissionMode: default
 disallowedTools:
   - Write
   - Edit

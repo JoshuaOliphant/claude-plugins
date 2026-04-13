@@ -6,7 +6,7 @@ whenToUse: >-
   Use when task branches from worktrees need to be merged into the feature branch.
   Optional — the lead may handle integration directly for simple merges, or
   delegate to the integrator when conflict resolution needs dedicated attention.
-permissionMode: "none"
+permissionMode: acceptEdits
 tools:
   - Read
   - Edit

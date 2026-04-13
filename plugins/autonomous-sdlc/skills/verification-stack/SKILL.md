@@ -7,6 +7,9 @@ description: >
   "is the build green", "run ruff and pytest", or proactively before claiming work is done.
 version: 1.0.0
 context: fork
+effort: low
+allowed-tools:
+  - Bash
 ---
 
 # Verification Stack

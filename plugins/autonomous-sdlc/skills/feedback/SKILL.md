@@ -12,6 +12,11 @@ args:
     description: "Action to take: save, show, clear, or consolidate"
     required: false
 user-invokable: true
+effort: low
+allowed-tools:
+  - Bash
+  - Read
+  - Edit
 ---
 
 # Autonomous SDLC Feedback Manager

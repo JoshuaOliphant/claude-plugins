@@ -8,6 +8,11 @@ description: >
   mechanical code generation, not spec writing.
 version: 1.0.0
 context: fork
+effort: medium
+allowed-tools:
+  - Bash
+  - Write
+  - Read
 ---
 
 # BDD Test Scaffolder

@@ -6,7 +6,7 @@ whenToUse: >-
   Use after all implementation and documentation is complete to create a PR/MR
   for the feature branch. Generates comprehensive descriptions from the plan
   document and links related tasks.
-permissionMode: "none"
+permissionMode: acceptEdits
 tools:
   - Read
   - Glob

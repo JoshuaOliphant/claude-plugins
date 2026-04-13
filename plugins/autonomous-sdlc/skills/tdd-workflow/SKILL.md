@@ -7,6 +7,12 @@ description: >
   superpowers:test-driven-development. Trigger: "TDD", "test first", "red green refactor",
   "write a failing test" in any Python/pytest project.
 version: 1.0.0
+effort: high
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
 ---
 
 # Test-Driven Development Workflow
