@@ -1,0 +1,22 @@
+[
+  {"query": "build me a web app where an AI agent dynamically generates the HTML interface - I want to use HTMX for the frontend and MCP tools for data operations", "should_trigger": true},
+  {"query": "I want to create a recipe management app using the hexagonal agent pattern - the agent should generate the UI and call tools for CRUD operations", "should_trigger": true},
+  {"query": "set up a hexagonal agents project with FastAPI, HTMX, and Claude Agent SDK - I want the agent to be the UI layer that generates HTML responses", "should_trigger": true},
+  {"query": "build an AI-powered task manager where the agent generates cards, forms, and lists using Tailwind CSS and swaps them in with HTMX", "should_trigger": true},
+  {"query": "create a conversational app where the user types messages and the AI responds with dynamically generated HTML instead of plain text", "should_trigger": true},
+  {"query": "I want to build a ports-and-adapters style agent application - the agent sits at the center, tools handle data, and FastAPI handles HTTP", "should_trigger": true},
+  {"query": "scaffold a new hexagonal agent app for managing a book collection - use the init script to set up the project structure", "should_trigger": true},
+  {"query": "build a dashboard where an AI agent generates the entire UI dynamically based on user intent, using MCP tools for backend operations", "should_trigger": true},
+  {"query": "create a web application using the message-passing paradigm where the agent receives semantic messages and responds with HTML fragments", "should_trigger": true},
+  {"query": "I need a web frontend for my MCP tools - can you set up a hexagonal agent app where the AI generates the interface?", "should_trigger": true},
+  {"query": "build a REST API with FastAPI that has CRUD endpoints for user management with proper error handling", "should_trigger": false},
+  {"query": "create a React dashboard with Tailwind CSS for displaying analytics data", "should_trigger": false},
+  {"query": "set up a Claude Agent SDK application that processes documents and extracts key information", "should_trigger": false},
+  {"query": "build an HTMX-enhanced form that submits data to a FastAPI backend without JavaScript", "should_trigger": false},
+  {"query": "implement the checkout feature using TDD - write the failing test first", "should_trigger": false},
+  {"query": "help me write acceptance criteria for the notification system using BDD", "should_trigger": false},
+  {"query": "I'm debugging a CORS issue in my FastAPI app - the preflight requests are being rejected", "should_trigger": false},
+  {"query": "create MCP tools for my existing FastAPI application that expose the CRUD operations", "should_trigger": false},
+  {"query": "I want a simple static HTML page with Tailwind CSS styling - no AI agent involved", "should_trigger": false},
+  {"query": "set up a Streamlit dashboard for data visualization with interactive charts", "should_trigger": false}
+]

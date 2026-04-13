@@ -1,0 +1,22 @@
+[
+  {"query": "that worked! the fix was changing the connection pool size from 5 to 20 - turns out the default was too low for our concurrent request volume", "should_trigger": true},
+  {"query": "it's fixed - the issue was that we were importing from the wrong module. the error said ModuleNotFoundError but the real problem was a circular import", "should_trigger": true},
+  {"query": "problem solved - I had to add CORS middleware before the auth middleware, the order matters because preflight requests were getting rejected", "should_trigger": true},
+  {"query": "finally got it working after 2 hours of debugging. the SQLAlchemy session wasn't being closed properly in the async context manager, causing connection leaks", "should_trigger": true},
+  {"query": "capture this as a knowledge solution - when deploying to Fly.io with SQLite, you need to use Litestream for replication or you'll lose data on deploys", "should_trigger": true},
+  {"query": "/compound-knowledge - I want to document the pattern we discovered for handling webhook retries with exponential backoff and jitter", "should_trigger": true},
+  {"query": "I just realized something important about our architecture - we should always validate input at the API boundary and trust internal data. let me capture this as a principle", "should_trigger": true},
+  {"query": "we spent 3 hours finding this bug - the Redis connection was silently failing because the SSL cert expired. this needs to be documented so nobody else wastes time on it", "should_trigger": true},
+  {"query": "ok the tests are green now. the root cause was that pytest-asyncio needs mode='auto' in pyproject.toml or it silently skips async tests. capture this", "should_trigger": true},
+  {"query": "that approach of using SQLAlchemy events for audit logging works great - let's document this pattern for other projects", "should_trigger": true},
+  {"query": "I'm starting to debug a weird issue with the API returning stale data - have we seen anything like this before?", "should_trigger": false},
+  {"query": "search the knowledge base for any solutions related to Docker build caching issues", "should_trigger": false},
+  {"query": "check if we have any documented solutions for FastAPI dependency injection patterns", "should_trigger": false},
+  {"query": "I'm planning the database migration feature - are there any past solutions that might help?", "should_trigger": false},
+  {"query": "implement the file upload handler using TDD - write the failing test first", "should_trigger": false},
+  {"query": "help me define the acceptance criteria for the notification system", "should_trigger": false},
+  {"query": "run the verification pipeline and make sure all tests pass", "should_trigger": false},
+  {"query": "create a beads issue for the caching layer implementation", "should_trigger": false},
+  {"query": "write unit tests for the email service - cover both success and SMTP failure cases", "should_trigger": false},
+  {"query": "build a hexagonal agent app that manages a recipe collection with HTMX and MCP tools", "should_trigger": false}
+]

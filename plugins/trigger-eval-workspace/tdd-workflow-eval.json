@@ -1,0 +1,22 @@
+[
+  {"query": "implement the user registration endpoint using TDD - write the failing test first, then just enough code to make it pass", "should_trigger": true},
+  {"query": "I want to add a discount calculator to the checkout service. let's do it test-first - write a failing test for the basic case, then we'll implement", "should_trigger": true},
+  {"query": "follow the red-green-refactor cycle to build out the email validation logic - start with the simplest failing test", "should_trigger": true},
+  {"query": "write a failing test for the new caching layer, then implement the minimal code to make it green, then refactor", "should_trigger": true},
+  {"query": "let's TDD the API rate limiter - I want to drive the design through tests before writing any implementation code", "should_trigger": true},
+  {"query": "add a feature to the search service that supports fuzzy matching - use test-driven development, tests before code", "should_trigger": true},
+  {"query": "I need to fix a bug in the order processing pipeline - let's write a test that reproduces the bug first, then fix it", "should_trigger": true},
+  {"query": "implement the file upload handler test-first. start with a test for valid uploads, then add edge cases one at a time", "should_trigger": true},
+  {"query": "build the webhook retry mechanism using TDD - each retry should use exponential backoff", "should_trigger": true},
+  {"query": "red green refactor the data export feature - start with CSV format, then add JSON support", "should_trigger": true},
+  {"query": "write comprehensive unit tests for the PaymentProcessor class - cover success, failure, and timeout cases", "should_trigger": false},
+  {"query": "I have a failing test on line 87 of test_auth.py - can you figure out why it's failing and fix it?", "should_trigger": false},
+  {"query": "run all the tests and make sure they pass before I push my changes", "should_trigger": false},
+  {"query": "help me brainstorm the requirements for the new notification feature - what scenarios should we cover?", "should_trigger": false},
+  {"query": "generate the pytest-bdd feature files and step definitions from my acceptance criteria", "should_trigger": false},
+  {"query": "refactor the authentication module to use dependency injection - the tests should still pass after", "should_trigger": false},
+  {"query": "add pytest fixtures for database setup and teardown in conftest.py", "should_trigger": false},
+  {"query": "create a beads issue for the performance optimization work and set up the task dependencies", "should_trigger": false},
+  {"query": "I solved a tricky async issue in the queue consumer - capture this as knowledge for future reference", "should_trigger": false},
+  {"query": "build a web dashboard with HTMX where an AI agent generates the UI components dynamically", "should_trigger": false}
+]

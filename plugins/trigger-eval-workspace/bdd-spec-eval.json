@@ -1,0 +1,22 @@
+[
+  {"query": "I want to build a user registration system but I'm not sure about all the edge cases - can you help me think through what should happen in different scenarios?", "should_trigger": true},
+  {"query": "help me spec out the checkout flow for our e-commerce app. what should happen when a user's payment fails? what about expired coupons? let's write acceptance criteria", "should_trigger": true},
+  {"query": "let's define requirements for the notification service before anyone writes code. I want Given/When/Then style acceptance criteria", "should_trigger": true},
+  {"query": "what should happen when a user tries to reset their password but the token is expired? I need to think through all the edge cases for the password reset feature", "should_trigger": true},
+  {"query": "I have a vague idea for a file upload feature - users should be able to upload documents up to 10MB. help me explore the requirements and write acceptance criteria", "should_trigger": true},
+  {"query": "before we start implementing the API rate limiting, let's define the behavior - what are the acceptance tests for this feature?", "should_trigger": true},
+  {"query": "help me write acceptance criteria for the search functionality - I want behavior-driven specs that cover fuzzy matching, filters, and pagination", "should_trigger": true},
+  {"query": "let's brainstorm the requirements for our new admin dashboard. what should happen when an admin tries to delete a user who has active orders?", "should_trigger": true},
+  {"query": "I need to define requirements for the OAuth2 integration - can you help me spec this out with Given/When/Then scenarios?", "should_trigger": true},
+  {"query": "we're starting work on the inventory management module - help me think through all the scenarios before we code anything", "should_trigger": true},
+  {"query": "generate the pytest-bdd feature files and step definition stubs from the acceptance criteria I wrote last session", "should_trigger": false},
+  {"query": "scaffold the BDD test directory structure with .feature files and conftest.py for pytest-bdd", "should_trigger": false},
+  {"query": "implement the password reset feature using TDD - write a failing test first, then the code", "should_trigger": false},
+  {"query": "I have a bug in the login flow where users get a 500 error when they enter a username with special characters - can you debug it?", "should_trigger": false},
+  {"query": "write unit tests for the PaymentProcessor class covering successful payments, declined cards, and network timeouts", "should_trigger": false},
+  {"query": "run all the tests and lint checks to make sure everything passes before I merge this PR", "should_trigger": false},
+  {"query": "create a beads issue for the user management feature and break it down into subtasks with dependencies", "should_trigger": false},
+  {"query": "build me a web app where an AI agent generates the UI dynamically using HTMX and FastAPI", "should_trigger": false},
+  {"query": "I just fixed a tricky race condition in the queue processor - let me capture this as a knowledge solution", "should_trigger": false},
+  {"query": "read the codebase and help me understand how the authentication middleware works", "should_trigger": false}
+]

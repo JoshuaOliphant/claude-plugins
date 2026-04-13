@@ -1,0 +1,44 @@
+[
+  {
+    "eval_id": 1,
+    "eval_name": "feature-breakdown",
+    "prompt": "I need to break down a user authentication feature into trackable tasks. It needs: database schema, user model, auth middleware, and login/logout endpoints. Each depends on the previous one.",
+    "skill_context": "beads-workflow",
+    "assertions": [
+      "Uses bd create to create individual beads for each task (schema, model, middleware, endpoints)",
+      "Uses bd dep add to create dependency chains between beads",
+      "Dependency direction is correct: child depends on parent (bd dep add <child> <parent>)",
+      "Creates at least 4 beads matching the specified tasks",
+      "Uses --type and --priority flags on bd create commands",
+      "Shows the dependency chain flows: schema -> model -> middleware -> endpoints"
+    ]
+  },
+  {
+    "eval_id": 2,
+    "eval_name": "find-ready-work",
+    "prompt": "What's ready for me to work on? I want to pick up the next available task and start implementing.",
+    "skill_context": "beads-workflow",
+    "assertions": [
+      "Uses bd ready (not bd list) to find unblocked work",
+      "Follows the find-work pattern: check ready, then show task details",
+      "Suggests using bd show <bead-id> to inspect the ready task",
+      "Does not suggest bd list as the primary way to find work",
+      "Mentions or implies claiming work before starting implementation",
+      "References the workflow pattern: find ready -> claim -> implement -> close -> sync"
+    ]
+  },
+  {
+    "eval_id": 3,
+    "eval_name": "complete-and-advance",
+    "prompt": "I just finished implementing the database schema task (beads-abc). All tests pass. What do I do next?",
+    "skill_context": "beads-workflow",
+    "assertions": [
+      "Recommends git commit before bd close (commit first, then close)",
+      "Uses bd close beads-abc to mark the task complete",
+      "Uses bd sync to synchronize with remote after closing",
+      "Checks what got unblocked using bd ready after closing",
+      "Follows the correct order: commit -> close -> sync -> check ready",
+      "Mentions that closing beads-abc will unblock dependent tasks"
+    ]
+  }
+]

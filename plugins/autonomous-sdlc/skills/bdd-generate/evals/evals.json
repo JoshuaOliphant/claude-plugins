@@ -1,0 +1,50 @@
+{
+  "skill_name": "bdd-generate",
+  "evals": [
+    {
+      "id": 1,
+      "name": "well-structured-ac",
+      "prompt": "Generate BDD test scaffolding for the following acceptance criteria:\n\n## Acceptance Criteria: User Authentication\n\nAC-1: Successful login\n**Given** a registered user with email \"alice@example.com\" and a valid password\n**When** the user submits the login form with correct credentials\n**Then** the user is redirected to the dashboard\nand a session token is created\n\nAC-2: Failed login with wrong password\n**Given** a registered user with email \"alice@example.com\"\n**When** the user submits the login form with an incorrect password\n**Then** the system displays \"Invalid credentials\"\nand the user remains on the login page\nand the failed attempt is logged\n\nAC-3: Account lockout after repeated failures\n**Given** a registered user who has failed login 4 times\n**When** the user fails login a 5th time\n**Then** the account is locked for 15 minutes\nand the system displays \"Account locked. Try again in 15 minutes.\"\n\nAC-4: Password reset flow\n**Given** a registered user on the login page\n**When** the user clicks \"Forgot Password\" and enters their email\n**Then** a password reset email is sent\nand the system displays \"Check your email for reset instructions\"\n\nEdge cases:\n- Empty email field submission\n- SQL injection attempts in email field\n- Concurrent login from multiple devices",
+      "expected_output": "A complete BDD test scaffold including: tests/bdd/features/user_authentication.feature with Gherkin scenarios mapping to AC-1 through AC-4, tests/bdd/steps/test_user_authentication.py with step definition stubs, conftest.py files, and @ac-N tags for traceability.",
+      "files": [],
+      "expectations": [
+        "Output includes a .feature file with Feature: User Authentication header",
+        "Each scenario is tagged with @ac-N matching the AC number",
+        "Step definitions file uses scenarios() to auto-bind feature file",
+        "Step stubs use parsers.parse() for parameterized steps",
+        "Step stubs raise NotImplementedError with TODO markers",
+        "Directory structure follows tests/bdd/features/ and tests/bdd/steps/ pattern"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "missing-prerequisites",
+      "prompt": "Generate BDD test scaffolding for our new notification system. We want to send push notifications, email digests, and in-app alerts.",
+      "expected_output": "The skill detects that no structured acceptance criteria in Given/When/Then format were provided. It stops generation and reports the missing prerequisites, suggesting the user run bdd-spec first or provide acceptance criteria directly.",
+      "files": [],
+      "expectations": [
+        "The agent stops and does NOT generate any .feature files",
+        "The response mentions that acceptance criteria are missing or not found",
+        "The response suggests running bdd-spec or providing Given/When/Then criteria",
+        "No step definition files are generated",
+        "No directory structure (tests/bdd/) is created",
+        "The response is helpful rather than generating placeholder/generic tests"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "parameterized-scenarios",
+      "prompt": "Generate BDD test scaffolding for the following acceptance criteria:\n\n## Acceptance Criteria: Form Validation\n\nAC-1: Valid form submission\n**Given** a user on the registration form\n**When** the user fills in all required fields with valid data\n**Then** the form submits successfully\nand the user sees a confirmation message\n\nAC-2: Required field validation\n**Given** a user on the registration form\n**When** the user submits the form with <field> left empty\n**Then** the system displays <error_message> next to <field>\n\nExamples:\n| field      | error_message              |\n| email      | Email is required          |\n| password   | Password is required       |\n| first_name | First name is required     |\n| last_name  | Last name is required      |\n\nAC-3: Password strength validation\n**Given** a user on the registration form\n**When** the user enters <password> in the password field\n**Then** the strength indicator shows <strength_level>\nand the system displays <feedback>\n\nExamples:\n| password    | strength_level | feedback                        |\n| abc         | weak           | Must be at least 8 characters   |\n| abcdefgh    | medium         | Add numbers or special chars    |\n| Abc1!defgh  | strong         | Password meets all requirements |\n\nAC-4: Email format validation\n**Given** a user on the registration form\n**When** the user enters <email_input> in the email field\n**Then** the system <validation_result>\n\nExamples:\n| email_input       | validation_result             |\n| user@example.com  | accepts the input             |\n| not-an-email      | displays \"Invalid email format\" |\n| @missing-local    | displays \"Invalid email format\" |\n| user@             | displays \"Invalid email format\" |",
+      "expected_output": "Feature file with Scenario Outline blocks for AC-2, AC-3, and AC-4 that include Examples tables with correct column headers and data rows. Step definitions should use parsers.parse() for the parameterized values.",
+      "files": [],
+      "expectations": [
+        "Feature file contains Scenario Outline (not plain Scenario) for AC-2, AC-3, and AC-4",
+        "Examples tables in the feature file preserve the column headers from the input",
+        "Examples tables contain all data rows from the input (4 rows for AC-2, 3 for AC-3, 4 for AC-4)",
+        "AC-1 is a regular Scenario (not Scenario Outline) since it has no parameters",
+        "Step definitions use parsers.parse() with angle-bracket parameters",
+        "Each scenario is tagged with @ac-N for traceability"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+[
+  {"query": "create a beads issue for the user authentication feature and set up dependencies so the tests task is blocked by the implementation task", "should_trigger": true},
+  {"query": "what issues do I have ready to work on? show me the tasks that aren't blocked by anything", "should_trigger": true},
+  {"query": "I need to track this refactoring work - create a bd issue with priority P1 and mark it as in_progress since I'm starting now", "should_trigger": true},
+  {"query": "show me the blocked issues - I want to see what's holding up progress on the API migration", "should_trigger": true},
+  {"query": "close issues beads-abc and beads-def, they're both done. then check what else is ready to pick up", "should_trigger": true},
+  {"query": "bd create a feature issue for adding webhook support, then create two subtasks for it - one for the endpoint and one for the retry logic - and wire up the dependencies", "should_trigger": true},
+  {"query": "update beads-xyz to in_progress and add a note about the approach I'm taking for the database migration", "should_trigger": true},
+  {"query": "run bd stats to check project health - how many open vs closed issues do we have?", "should_trigger": true},
+  {"query": "I need to decompose this epic into smaller tasks with proper blocking relationships using beads", "should_trigger": true},
+  {"query": "push the beads database to the dolt remote so my team can see the latest issue updates", "should_trigger": true},
+  {"query": "write unit tests for the checkout service using pytest", "should_trigger": false},
+  {"query": "I want to define acceptance criteria for the search feature - help me think through the scenarios", "should_trigger": false},
+  {"query": "create a GitHub issue for the bug I found in the payment processing module", "should_trigger": false},
+  {"query": "set up a Jira board for our sprint planning with epics and stories", "should_trigger": false},
+  {"query": "add a TODO comment in the code where we need to come back and optimize the query", "should_trigger": false},
+  {"query": "run the linter and type checker to make sure the code is clean before I commit", "should_trigger": false},
+  {"query": "help me write a project management script that tracks tasks in a SQLite database", "should_trigger": false},
+  {"query": "commit my changes and push to the remote - use conventional commit format", "should_trigger": false},
+  {"query": "I just solved a tricky deployment issue - capture this as a knowledge solution for future reference", "should_trigger": false},
+  {"query": "scaffold the pytest-bdd feature files from the acceptance criteria in the spec document", "should_trigger": false}
+]

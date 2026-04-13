@@ -1,0 +1,22 @@
+[
+  {"query": "I have acceptance criteria written in Given/When/Then format from our last planning session - can you generate the pytest-bdd feature files and step definition stubs for them?", "should_trigger": true},
+  {"query": "ok so I ran /bdd-spec earlier and got a bunch of acceptance criteria for the user registration flow. now I need to actually scaffold the tests from those criteria, including the .feature files and the conftest setup for pytest-bdd", "should_trigger": true},
+  {"query": "convert these acceptance criteria to Gherkin feature files:\n- Given a user is on the login page\n- When they enter invalid credentials\n- Then they see an error message", "should_trigger": true},
+  {"query": "I need step definitions for my BDD scenarios - the feature files exist but the step_defs/ directory is empty and I need the Python stubs wired up", "should_trigger": true},
+  {"query": "take the acceptance criteria from specs/checkout-plan.md and generate runnable pytest-bdd scaffolding including the feature file, step definitions, and conftest.py", "should_trigger": true},
+  {"query": "scaffold bdd tests for the payment processing module - I already have the scenarios documented in the plan", "should_trigger": true},
+  {"query": "wire up pytest-bdd in my project - I need the directory structure, conftest setup, and example feature file to get started", "should_trigger": true},
+  {"query": "make these acceptance criteria runnable: users should be able to reset their password via email, including edge cases for expired tokens and rate limiting", "should_trigger": true},
+  {"query": "generate the Gherkin .feature files from the Given/When/Then blocks I wrote in the design doc", "should_trigger": true},
+  {"query": "create step definition stubs for all the scenarios in features/user_management.feature", "should_trigger": true},
+  {"query": "help me brainstorm what the checkout flow should look like - what edge cases should we consider for payment processing?", "should_trigger": false},
+  {"query": "I want to define the requirements for our new notification system before we start coding - let's think through what should happen in different scenarios", "should_trigger": false},
+  {"query": "write unit tests for the UserService class using pytest - focus on the create_user and delete_user methods", "should_trigger": false},
+  {"query": "can you help me write a pytest fixture that sets up a test database with seed data?", "should_trigger": false},
+  {"query": "I'm getting a failing test in test_checkout.py line 45 - the assertion error says expected 200 but got 422. can you debug this?", "should_trigger": false},
+  {"query": "run the verification pipeline and make sure all tests pass before I push this branch", "should_trigger": false},
+  {"query": "refactor the tests in tests/integration/ to use parametrize instead of copying the same test 5 times", "should_trigger": false},
+  {"query": "what's the difference between pytest-bdd and behave? which one should I use for my FastAPI project?", "should_trigger": false},
+  {"query": "implement the password reset feature following TDD - write the failing test first, then the minimal code to make it pass", "should_trigger": false},
+  {"query": "I need to track this feature as a beads issue and set up dependencies between the subtasks", "should_trigger": false}
+]

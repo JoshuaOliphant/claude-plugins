@@ -1,0 +1,51 @@
+{
+  "skill_name": "verification-stack",
+  "evals": [
+    {
+      "id": 1,
+      "name": "full-pipeline-run",
+      "prompt": "I just finished implementing a new API endpoint for user profiles, make sure everything is clean before I commit.",
+      "expected_output": "The agent runs the full verification pipeline in the correct order: format (ruff format) -> lint (ruff check) -> type check (mypy) -> tests (pytest). Uses uv run prefix for all Python tool commands. Treats verification as a gate that must pass before the user can proceed.",
+      "files": [],
+      "expectations": [
+        "Commands run in correct order: format before lint before type-check before tests",
+        "Uses 'uv run' prefix for Python tool commands (ruff, mypy, pytest)",
+        "Runs ruff format as the first step",
+        "Runs ruff check (lint) as the second step",
+        "Runs mypy for type checking as the third step",
+        "Runs pytest as the final verification step",
+        "Treats verification as a gate (pass/fail framing, not a suggestion)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "fix-failing-tests",
+      "prompt": "My tests are failing after I refactored the authentication module, help me debug.",
+      "expected_output": "The agent runs verification to see failures, reads actual error output from the test runner, analyzes specific failures rather than guessing, makes targeted fixes, and re-runs verification to confirm fixes. Fast-fail behavior is used (stops at first failure stage).",
+      "files": [],
+      "expectations": [
+        "Runs verification pipeline (at minimum pytest) to see actual failures",
+        "Reads and analyzes actual error output rather than guessing at problems",
+        "Makes targeted fixes based on specific error messages",
+        "Re-runs verification after making fixes to confirm they work",
+        "Uses 'uv run' prefix for Python tool commands",
+        "Fast-fail behavior: stops at first failure stage rather than running all stages"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "setup-verify-script",
+      "prompt": "Set up a one-command verification script for my Python project that uses uv, ruff, mypy, and pytest.",
+      "expected_output": "The agent creates a scripts/verify.sh file with the correct pipeline order (format -> lint -> type check -> tests), uses set -e for fast-fail behavior, uses uv run prefix for all commands, and includes descriptive echo statements between stages.",
+      "files": [],
+      "expectations": [
+        "Creates a scripts/verify.sh file (or equivalent one-command script)",
+        "Script uses set -e (or equivalent) for fast-fail behavior",
+        "Script runs commands in correct order: format -> lint -> type check -> tests",
+        "Script uses 'uv run' prefix for ruff, mypy, and pytest commands",
+        "Script includes echo/print statements labeling each stage",
+        "Script is executable or instructions to make it executable are provided"
+      ]
+    }
+  ]
+}

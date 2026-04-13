@@ -1,0 +1,44 @@
+[
+  {
+    "eval_id": 1,
+    "eval_name": "email-validation-feature",
+    "prompt": "I need to add email validation to our user registration. Emails should be validated for proper format, checked for uniqueness against existing users, and rejected if they use a disposable email domain.",
+    "skill_path": "plugins/autonomous-sdlc/skills/tdd-workflow/SKILL.md",
+    "assertions": [
+      "A test file is written BEFORE any implementation code",
+      "The test is run and confirmed to FAIL (RED step) before implementation begins",
+      "Only minimal code is written to make the failing test pass (GREEN step)",
+      "The test is run again and confirmed to PASS after implementation",
+      "Refactoring occurs only after tests are green (REFACTOR step)",
+      "Additional test cycles cover edge cases (empty email, missing @, disposable domains)"
+    ]
+  },
+  {
+    "eval_id": 2,
+    "eval_name": "duplicate-username-bug",
+    "prompt": "Fix this bug where duplicate usernames are allowed in user registration. Currently the system accepts duplicate usernames without any error, which causes data integrity issues.",
+    "skill_path": "plugins/autonomous-sdlc/skills/tdd-workflow/SKILL.md",
+    "assertions": [
+      "A test is written that reproduces the bug BEFORE attempting a fix",
+      "The reproducing test is run and confirmed to FAIL (proving the bug exists)",
+      "The fix is minimal and targeted to make the failing test pass",
+      "The test is run again and confirmed to PASS after the fix",
+      "Existing tests are run to ensure no regressions",
+      "Additional edge case tests are written (case sensitivity, whitespace, empty username)"
+    ]
+  },
+  {
+    "eval_id": 3,
+    "eval_name": "discount-calculation",
+    "prompt": "Add a discount calculation feature that applies percentage and fixed discounts. A cart should support applying a percentage discount (e.g., 10% off) or a fixed amount discount (e.g., $5 off), and the total should never go below zero.",
+    "skill_path": "plugins/autonomous-sdlc/skills/tdd-workflow/SKILL.md",
+    "assertions": [
+      "Tests are written BEFORE implementation code for each discount type",
+      "Each test is run to confirm it FAILS before writing implementation (RED step)",
+      "Minimal implementation is written to pass each test (GREEN step)",
+      "Multiple red-green-refactor cycles are visible (not a single big-bang implementation)",
+      "Refactoring happens only when tests are green",
+      "Edge case tests are added: zero discount, discount exceeding total, negative prices, combining discounts"
+    ]
+  }
+]

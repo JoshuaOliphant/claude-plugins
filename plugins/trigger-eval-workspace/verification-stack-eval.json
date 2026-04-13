@@ -1,0 +1,22 @@
+[
+  {"query": "run the full verification pipeline - tests, linting, and type checking - and tell me if anything fails before I push", "should_trigger": true},
+  {"query": "make sure all quality gates pass before I merge this PR - run pytest, ruff, and mypy", "should_trigger": true},
+  {"query": "check the test and lint status of the codebase - I want to know if we're green across the board", "should_trigger": true},
+  {"query": "I'm about to submit this PR - run all the verification checks (tests, lint, types) and give me a pass/fail summary", "should_trigger": true},
+  {"query": "the CI pipeline failed on the type checking step - can you run the verification stack locally so I can see what's wrong?", "should_trigger": true},
+  {"query": "run ruff check and ruff format on the whole project, then run pytest to make sure nothing broke", "should_trigger": true},
+  {"query": "before I close this beads issue, verify that all tests pass and there are no lint violations", "should_trigger": true},
+  {"query": "ensure code quality gates pass - I need to check tests, formatting, linting, and types before completing this task", "should_trigger": true},
+  {"query": "run the full test suite with coverage and check if we're above the 80% threshold", "should_trigger": true},
+  {"query": "I just finished the refactor - run all checks to make sure I didn't break anything", "should_trigger": true},
+  {"query": "implement the user login feature using test-driven development - write the failing test first", "should_trigger": false},
+  {"query": "help me write acceptance criteria for the search feature using Given/When/Then format", "should_trigger": false},
+  {"query": "I have a bug where the API returns 500 on certain inputs - can you debug it?", "should_trigger": false},
+  {"query": "create a beads issue for the database migration and set up task dependencies", "should_trigger": false},
+  {"query": "set up a pre-commit hook that runs ruff and pytest automatically", "should_trigger": false},
+  {"query": "write a GitHub Actions workflow that runs tests and linting on every PR", "should_trigger": false},
+  {"query": "add type hints to all the functions in the utils module", "should_trigger": false},
+  {"query": "refactor the test fixtures in conftest.py to be more reusable across test modules", "should_trigger": false},
+  {"query": "build a web app with HTMX and FastAPI where the AI generates the frontend dynamically", "should_trigger": false},
+  {"query": "capture this debugging session as a knowledge solution - the fix for the async race condition was non-obvious", "should_trigger": false}
+]

@@ -1,0 +1,22 @@
+[
+  {"query": "I just read a chapter on distributed systems - help me create Mochi flashcards for the key concepts like CAP theorem, eventual consistency, and partition tolerance", "should_trigger": true},
+  {"query": "create spaced repetition cards from this article about Kubernetes networking - I want to remember the difference between ClusterIP, NodePort, and LoadBalancer services", "should_trigger": true},
+  {"query": "I need to study for my AWS Solutions Architect exam - make flashcards covering VPC, subnets, security groups, and NACLs", "should_trigger": true},
+  {"query": "turn these meeting notes about our API design decisions into Anki-style cards so I remember the rationale behind each choice", "should_trigger": true},
+  {"query": "create a deck of flashcards for learning Python decorators - include examples of @property, @staticmethod, and custom decorators", "should_trigger": true},
+  {"query": "I want to memorize the HTTP status codes and their meanings - create cards that test both directions (code->meaning and meaning->code)", "should_trigger": true},
+  {"query": "help me create study materials for the OAuth 2.0 authorization flows - I keep mixing up authorization code, implicit, and client credentials", "should_trigger": true},
+  {"query": "make SRS cards from this technical blog post about database indexing strategies - focus on B-trees, hash indexes, and when to use each", "should_trigger": true},
+  {"query": "I'm learning Rust and want to create flashcards about ownership, borrowing, and lifetimes - use the focused/precise/tractable principles", "should_trigger": true},
+  {"query": "create knowledge retention cards for the design patterns I learned this week - factory, observer, and strategy patterns with Python examples", "should_trigger": true},
+  {"query": "write documentation for our API endpoints using OpenAPI/Swagger format", "should_trigger": false},
+  {"query": "create a study guide document for the team about our microservices architecture", "should_trigger": false},
+  {"query": "help me understand how the authentication middleware works in this codebase", "should_trigger": false},
+  {"query": "generate a cheat sheet PDF for common git commands", "should_trigger": false},
+  {"query": "build a quiz app with FastAPI and HTMX that tests programming knowledge", "should_trigger": false},
+  {"query": "I need to remember to update the database schema - add a TODO in the code", "should_trigger": false},
+  {"query": "capture this debugging solution in the knowledge base for future reference", "should_trigger": false},
+  {"query": "write unit tests for the card validation logic in the flashcard module", "should_trigger": false},
+  {"query": "I need to take notes on this Python conference talk - can you summarize the key points?", "should_trigger": false},
+  {"query": "create a markdown file with a table of all the design patterns and their use cases", "should_trigger": false}
+]

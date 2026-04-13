@@ -1,0 +1,47 @@
+{
+  "skill_name": "bdd-spec",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I want to add a shopping cart to my e-commerce app. Users should be able to add items, remove them, and check out.",
+      "expected_output": "Structured acceptance criteria in Given/When/Then format covering happy path (add item, remove item, checkout), edge cases (empty cart checkout, out-of-stock items, quantity limits), and clarifying questions about payment, inventory, and session persistence.",
+      "files": [],
+      "expectations": [
+        "Output contains at least 3 numbered AC blocks (AC-1, AC-2, AC-3)",
+        "Each AC block has bold Given/When/Then structure",
+        "The skill asks clarifying questions before producing final AC",
+        "Edge cases section is present with at least 2 edge cases",
+        "Output does not contain implementation details like database schemas or API endpoints",
+        "Each When clause contains only a single action"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I need to implement a Redis cache with TTL-based expiration for our API responses. When a GET request comes in, check Redis first, if it's there serve it, otherwise hit the database and cache the result with a 5 minute TTL.",
+      "expected_output": "The skill detects implementation-heavy language, redirects toward behavior-level acceptance criteria, and produces AC blocks focused on observable behavior (fast responses, stale data handling, cache invalidation) rather than Redis-specific implementation.",
+      "files": [],
+      "expectations": [
+        "The skill identifies and redirects implementation language toward behavior",
+        "Output reframes in terms of user-observable behavior, not Redis internals",
+        "Acceptance criteria focus on response time, data freshness, or cache miss behavior",
+        "The skill asks what behavior the user/system should observe, not how to implement caching",
+        "Output contains Given/When/Then structure",
+        "Edge cases address cache invalidation, stale data, or cache failure scenarios"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "We need role-based access control for our project management tool. Admins can do everything, managers can edit projects and view reports, members can only view projects they're assigned to, and guests can only see public projects.",
+      "expected_output": "Structured acceptance criteria that recognize the permission matrix pattern and use a Scenario Outline table with roles, actions, and expected results. Should cover happy paths for each role plus edge cases like role escalation and unauthorized access attempts.",
+      "files": [],
+      "expectations": [
+        "Output contains a Scenario Outline or parameterized table for role permissions",
+        "The table includes columns for role, action, and expected result",
+        "All 4 roles (admin, manager, member, guest) appear in the criteria",
+        "Edge cases cover unauthorized access attempts or role boundary scenarios",
+        "Output uses Given/When/Then format",
+        "The skill asks clarifying questions about role assignment, inheritance, or edge cases"
+      ]
+    }
+  ]
+}

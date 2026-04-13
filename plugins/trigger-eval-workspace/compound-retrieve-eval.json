@@ -1,0 +1,22 @@
+[
+  {"query": "I'm about to debug a connection timeout issue with Redis - have we seen this before? check the knowledge base", "should_trigger": true},
+  {"query": "search for any past solutions related to Docker volume permission errors on macOS", "should_trigger": true},
+  {"query": "I'm starting work on the caching layer - check if we have any documented patterns or principles that might help", "should_trigger": true},
+  {"query": "we're getting ModuleNotFoundError in the deployment pipeline - search the knowledge base for similar issues", "should_trigger": true},
+  {"query": "before I implement the webhook system, check if we have any relevant past solutions or architectural principles", "should_trigger": true},
+  {"query": "I'm seeing a race condition in the queue consumer - have we encountered anything similar before?", "should_trigger": true},
+  {"query": "check knowledge for any documented solutions about SQLAlchemy async session management", "should_trigger": true},
+  {"query": "I'm working in an unfamiliar codebase - search for any past solutions or principles related to FastAPI middleware patterns", "should_trigger": true},
+  {"query": "this CORS error looks familiar - search our solutions for anything related to CORS middleware ordering in FastAPI", "should_trigger": true},
+  {"query": "I need to make a design decision about how to structure the event system - do we have any relevant architectural principles documented?", "should_trigger": true},
+  {"query": "that worked! the fix was bumping the connection pool size. capture this as a solution", "should_trigger": false},
+  {"query": "problem solved - document this as a knowledge solution so we don't waste time on it again", "should_trigger": false},
+  {"query": "I just discovered a useful pattern for handling retries - let me capture this as a principle", "should_trigger": false},
+  {"query": "/compound-knowledge - I want to save this debugging fix for future reference", "should_trigger": false},
+  {"query": "implement the search endpoint using TDD - write a failing test first", "should_trigger": false},
+  {"query": "create a beads issue for the performance optimization work", "should_trigger": false},
+  {"query": "help me spec out the requirements for the admin dashboard feature", "should_trigger": false},
+  {"query": "run pytest and ruff to make sure all quality gates pass before I merge", "should_trigger": false},
+  {"query": "generate pytest-bdd feature files from these acceptance criteria", "should_trigger": false},
+  {"query": "build a web dashboard where an AI agent generates dynamic HTML components", "should_trigger": false}
+]
