@@ -52,11 +52,11 @@ These are your tools — a menu, not a sequence. Read each agent's `.md` for ful
 | Pattern | Agent File | Model | When to Use |
 |---------|-----------|-------|-------------|
 | **Architect** | `agents/architect.md` | opus | Planning: codebase exploration, plan documents, task decomposition |
-| **Builder** | `agents/builder.md` | sonnet | Implementation: TDD, PostToolUse hooks for lint/types |
+| **Builder** | `agents/builder.md` | opus | Implementation: TDD, PostToolUse hooks for lint/types |
 | **Validator** | `agents/validator.md` | sonnet | Verification: read-only checks against acceptance criteria |
 | **Integrator** | `agents/integrator.md` | sonnet | Optional: branch merging when dedicated merge attention needed |
 | **Documenter** | `agents/documenter.md` | haiku | Docs: ABOUTME comments, docstrings, README updates |
-| **PR-Creator** | `agents/pr-creator.md` | sonnet | Shipping: push branch, create PR with rich description |
+| **PR-Creator** | `agents/pr-creator.md` | haiku | Shipping: push branch, create PR with rich description |
 
 Reference patterns (not spawnable):
 | Pattern | File | Purpose |

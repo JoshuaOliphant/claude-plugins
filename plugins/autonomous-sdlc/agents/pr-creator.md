@@ -1,6 +1,6 @@
 ---
 name: pr-creator
-model: sonnet
+model: haiku
 description: Creates pull/merge requests with rich descriptions generated from plan documents, supporting both GitHub and GitLab
 whenToUse: >-
   Use after all implementation and documentation is complete to create a PR/MR

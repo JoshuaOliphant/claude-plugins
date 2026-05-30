@@ -182,10 +182,19 @@ class Agent:
     def __init__(self):
         self.tools_server = create_tools_server()
         self._allowed_tools = ["mcp__app_tools__list_items", ...]
+        self.client = None
 
     async def _ensure_connected(self):
+        # Connect once and reuse the client. The skill file is large and
+        # static, so the SDK serves it (plus the tool definitions) from
+        # prompt cache on every subsequent turn. Recreating the client or
+        # re-reading the skill file per request defeats caching and discards
+        # the conversation so far.
+        if self.client is not None:
+            return
         skill_content = SKILL_PATH.read_text()
         options = ClaudeAgentOptions(
+            model="claude-sonnet-4-6",  # Opus 4.8 also works; Sonnet keeps per-turn UI generation cheap
             system_prompt=skill_content,
             mcp_servers={"app_tools": self.tools_server},
             allowed_tools=self._allowed_tools,

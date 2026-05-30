@@ -130,7 +130,7 @@ mcp_server = create_sdk_mcp_server(list_items, create_item, ...)
 
 # Client must use "app" as the key
 client = ClaudeSDKClient(
-    model="claude-sonnet-4-20250514",
+    model="claude-sonnet-4-6",
     system=SKILL_CONTENT,
     mcp_servers={"app": mcp_server},  # ← "app" is the server name
     allowed_tools=[

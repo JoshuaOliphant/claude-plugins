@@ -119,7 +119,7 @@ async def run_agent_task(
 
     # Run agent
     client = ClaudeSDKClient(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         system=_build_system_prompt(),
         mcp_servers={"app_tools": mcp_server},
         allowed_tools=[f"mcp__app_tools__{t}" for t in mcp_server.tools.keys()],
@@ -328,7 +328,7 @@ UIAppropriatenessJudge = LLMJudge(
     - Critical interactive elements are missing
     - Raw data dump instead of formatted UI
     """,
-    model="claude-haiku-3-5-20241022",
+    model="claude-haiku-4-5",
 )
 
 
@@ -347,7 +347,7 @@ HTMLValidityJudge = LLMJudge(
     - Wrapped in markdown code fences
     - Contains raw JSON or error traces
     """,
-    model="claude-haiku-3-5-20241022",
+    model="claude-haiku-4-5",
 )
 ```
 

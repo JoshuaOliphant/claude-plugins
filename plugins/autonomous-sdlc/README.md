@@ -68,11 +68,11 @@ Done! PR ready for human review
 | Agent | Model | Purpose | Key Feature |
 |-------|-------|---------|-------------|
 | **Architect** | Opus | Creates feature branch + plan + tasks | Plan-first |
-| **Builder** | Sonnet | Implements one task with TDD | PostToolUse hooks |
+| **Builder** | Opus | Implements one task with TDD | PostToolUse hooks |
 | **Validator** | Sonnet | Verifies implementation (read-only) | Direct builder feedback |
 | **Integrator** | Sonnet | Merges task branches (optional) | Conflict resolution |
 | **Documenter** | Haiku | Updates docs | Fast, efficient |
-| **PR-Creator** | Sonnet | Creates PR/MR | GitHub + GitLab |
+| **PR-Creator** | Haiku | Creates PR/MR | GitHub + GitLab |
 
 Reference patterns (not spawnable):
 | Pattern | Purpose |
