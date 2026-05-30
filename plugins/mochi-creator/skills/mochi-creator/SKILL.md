@@ -79,20 +79,11 @@ For full cognitive science background, knowledge-type strategies (factual, conce
 
 ### Step 0: Load Stored Feedback
 
-Load any stored feedback preferences before starting:
+Run this and apply any returned preferences (card_quality, difficulty, formatting, deck_organization, topics, batch_size, general) throughout card creation:
 
 ```bash
 python ${PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator show-feedback
 ```
-
-If feedback entries exist, apply them throughout card creation:
-- **card_quality** → adjust the bar for what cards get created
-- **difficulty** → calibrate tractability — how challenging cards should be
-- **formatting** → shape card format (Q&A vs cloze, markdown style)
-- **deck_organization** → guide deck/subdeck structure and tagging
-- **topics** → inform current study focus and priority areas
-- **batch_size** → limit how many cards are created per session
-- **general** → apply to all aspects of card creation
 
 ### Step 1: Establish Context
 
@@ -127,48 +118,14 @@ deck_id = deck["id"]
 
 Apply knowledge-type appropriate strategies. Always follow the "More Than You Think" rule: write 3-5 focused prompts instead of 1 comprehensive prompt.
 
-**For factual knowledge** — Break into atomic units:
-```python
-# Instead of one card listing all ingredients, create focused cards:
-facts = [
-    ("What is the primary dry ingredient in chocolate chip cookies?", "Flour"),
-    ("What fat is used in chocolate chip cookies?", "Butter"),
-    ("What two sweeteners are used?", "White sugar and brown sugar"),
-]
-```
+Apply the strategy for the knowledge type (one example each; full Python helpers live in the reference below):
 
-**For conceptual knowledge** — Use multiple lenses (attributes, similarities, parts, causes, significance):
-```python
-# Approach a concept from 5 angles for robust understanding
-cards = [
-    ("What is the core attribute of dependency injection?",
-     "Dependencies are provided from outside rather than created internally"),
-    ("How does dependency injection differ from service locator?",
-     "DI pushes dependencies in, service locator pulls them out"),
-    ("What problem does dependency injection solve?",
-     "Makes code testable by allowing mock dependencies to be injected"),
-]
-```
-
-**For procedural knowledge** — Focus on transitions, rationale, and timing (not rote steps):
-```python
-# Focus on WHY and WHEN, not step numbers
-cards = [
-    ("Why do you autolyse before adding salt?",
-     "Salt inhibits gluten development; autolyse allows gluten to form first"),
-    ("What indicates sourdough is ready for shaping?",
-     "50-100% volume increase, jiggly texture, small bubbles on surface"),
-]
-```
-
-**For salience prompts** — Context-based application for behavioral change:
-```python
-# Answers may vary — experimental, less well-researched
-cards = [
-    ("What's one situation this week where you could apply first principles thinking?",
-     "(Give an answer specific to your current work context)"),
-]
-```
+| Type | Strategy | Example prompt → answer |
+|---|---|---|
+| **Factual** | Break into atomic units | "What fat is used in chocolate chip cookies?" → "Butter" |
+| **Conceptual** | Probe multiple lenses (attribute, contrast, cause, significance) | "What problem does dependency injection solve?" → "Lets mock dependencies be injected, making code testable" |
+| **Procedural** | Target rationale and timing, not rote steps | "Why autolyse before adding salt?" → "Salt inhibits gluten development; autolyse lets gluten form first" |
+| **Salience** | Context-based application (answers may vary; experimental) | "Where this week could you apply first-principles thinking?" → "(answer specific to your work)" |
 
 For detailed cognitive science strategies per knowledge type, consult:
 
@@ -271,41 +228,9 @@ After reporting results, offer refinement:
 Cards are created directly in the user's Mochi.cards account via the API. The deliverable is:
 
 - **Flashcards** in the specified deck, tagged and organized
-- **Decks/subdecks** created as needed for organization
+- **Decks/subdecks** created as needed (hierarchical: Subject → Topic → Subtopic via `parent_id`)
 - **Templates** created if structured card formats were used
 
-### Card Content Format
-
-Cards use markdown with `---` to separate sides:
-```markdown
-# Question text
----
-Answer text with **formatting**
-```
-
-### Deck Organization
-
-Use hierarchical structures: Subject → Topic → Subtopic
-```python
-parent = api.create_deck(name="Programming")
-child = api.create_deck(name="Python", parent_id=parent["id"])
-```
-
-### Additional API Operations
-
-**Soft delete** (preferred, reversible):
-```python
-from datetime import datetime
-api.update_card(card_id, trashed=datetime.utcnow().isoformat())
-```
-
-**Pagination** for large collections:
-```python
-result = api.list_cards(deck_id=deck_id, limit=100)
-if result.get("bookmark"):
-    next_page = api.list_cards(deck_id=deck_id, limit=100, bookmark=result["bookmark"])
-```
-
-For complete API details, field types, and edge cases, consult:
+For the card markdown format, hierarchical decks, soft delete (preferred over hard delete), pagination, field types, and edge cases, consult:
 
 → **`references/mochi_api_reference.md`**

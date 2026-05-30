@@ -48,11 +48,6 @@ Tools (MCP Server)
     │ Pure data operations → JSON
 ```
 
-- **Browser** — Displays static shell + agent-generated HTML, uses HTMX for partial updates
-- **FastAPI** — Receives HTTP, passes messages to agent, returns HTML
-- **Agent** — Receives messages, calls tools for data, generates HTML responses
-- **Tools** — Pure data operations (CRUD) returning structured JSON
-
 ### Key Principles
 
 1. **Semantic Late Binding** — Agent interprets user intent at runtime, choosing tools and UI dynamically
@@ -107,20 +102,11 @@ For detailed hexagonal architecture explanation and SDK API details:
 
 ### Step 0: Load Stored Feedback
 
-Load any stored feedback preferences before starting:
+Run this and apply any returned preferences (architecture, tools, skill_file, ui_components, styling, agent_behavior, general) throughout app scaffolding:
 
 ```bash
 python ${PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents show-feedback
 ```
-
-If feedback entries exist, apply them throughout app scaffolding:
-- **architecture** → adjust project structure and module organization
-- **tools** → guide MCP tool design patterns
-- **skill_file** → shape agent skill file content and examples
-- **ui_components** → adjust component selection and structure
-- **styling** → calibrate Tailwind theme and design system defaults
-- **agent_behavior** → strengthen or adjust agent instructions
-- **general** → apply to all aspects of app generation
 
 ### Step 1: Initialize Project Structure
 

@@ -8,6 +8,7 @@ description: >
   iterative improvement with a scalar metric. Generates program.md + immutable runner script
   (auto/run.sh) with tiered quality gates and
   structured METRIC output, ready to run with claude --dangerously-skip-permissions.
+effort: high
 allowed-tools: [Read, Write, Glob, Grep, Bash, Agent]
 ---
 
@@ -110,14 +111,7 @@ Load any stored feedback preferences before starting:
 python ${PLUGIN_ROOT}/scripts/feedback_manager.py autoloop show-feedback
 ```
 
-If feedback entries exist, apply them throughout loop design:
-- **loop_design** → adjust overall loop structure and iteration strategy
-- **metrics** → guide metric selection and direction
-- **quality_gates** → ensure preferred gates are included or excluded
-- **runner_script** → adjust runner script generation
-- **time_budget** → calibrate experiment duration and timeout settings
-- **change_strategy** → shape allowed change types in program.md
-- **general** → apply to all aspects of loop design
+If feedback entries exist, apply the returned preferences (loop_design, metrics, quality_gates, runner_script, time_budget, change_strategy, general) throughout loop design.
 
 ### Step 1: Scout the Project
 
@@ -138,7 +132,7 @@ When results come back, summarize in 3-5 bullet points. Don't dump the raw outpu
 
 ### Step 2: Design the Loop
 
-Using the scout results AND the user's stated goal, design all seven components. Think carefully — wrong choices here waste hours of autonomous runtime.
+**Think hard before committing to the design.** This is the highest-leverage decision in the skill: a wrong artifact, metric, or gate wastes hours of unattended runtime. Reason explicitly through the trade-offs of each component — and how they interact — before presenting anything. Using the scout results AND the user's stated goal, design all seven components.
 
 **2a. Infer the mutable artifact** — Use the selection table from Context. If the answer isn't obvious, present 2-3 options with trade-offs.
 
