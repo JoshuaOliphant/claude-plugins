@@ -47,8 +47,10 @@ edits the file read every session, so it is high-trust: always propose before ap
    proposed diff and get confirmation. **Never edit wiki files here** — promote *reads* theses;
    only `wiki-ingest` *writes* the wiki.
 
-5. **Apply confirmed edits** with `Edit`. Elevate broadly-useful patterns into
-   `{write_path}/critical-patterns.md`.
+5. **Apply confirmed edits** with `Edit`. The propose-before-apply gate above is for the
+   living context (`CLAUDE.md` / `AGENTS.md`). Elevating a broadly-useful pattern into
+   `{write_path}/critical-patterns.md` is lower-trust and may be applied directly, then
+   reported — see `references/promote-workflow.md`.
 
 6. **Verify each promotion:** ask *"would the system catch this automatically next session now
    that it lives in the always-loaded context?"* If not, refine the edit.

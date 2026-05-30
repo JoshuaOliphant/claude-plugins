@@ -1,7 +1,7 @@
 {
   "name": "compound-knowledge",
   "version": "0.8.0",
-  "description": "Capture solved problems and retrieve past solutions as structured YAML-frontmatter files. Split into compound-capture (post-solve documentation) and compound-retrieve (pre-work knowledge search) for precise triggering.",
+  "description": "Capture solved problems, retrieve past solutions, and graduate accumulated knowledge into living context. Skills: compound-capture (post-solve documentation), compound-retrieve (pre-work knowledge search), compound-graduate (promote lessons into CLAUDE.md/AGENTS.md).",
   "license": "MIT",
   "author": {
     "name": "Joshua Oliphant"
