@@ -148,6 +148,12 @@ New task → Read registry → Extract keywords → Parallel grep → Score cand
 7. **Cross-project search** — if <3 primary hits, search other registered knowledge bases (with -1 score penalty)
 8. **Return** top 2-5 solutions with key insights, labeled by source KB
 
+## Skills
+
+- **compound-capture** — Capture solved problems as structured YAML-frontmatter solution files. Runs after solving a non-trivial problem to extract title, component, severity, symptoms, and root cause.
+- **compound-retrieve** — Search registered knowledge bases for past solutions before starting a new task. Searches project-level solutions first, then cross-project via registry if <3 hits found.
+- **compound-graduate** — Promote accumulated knowledge (especially synthesized wiki theses) into the always-loaded living context (`CLAUDE.md` / `AGENTS.md`). The "improve" stroke: proposes concrete, evergreen edits and verifies the system would catch the pattern next session.
+
 ## Directory Structure
 
 ```
