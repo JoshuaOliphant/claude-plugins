@@ -37,8 +37,8 @@ def _find_config(project_root: Path, home: Path):
 
 
 def _norm(path: str) -> str:
-    """Normalize a directory path to a single trailing slash."""
-    return path.rstrip("/") + "/"
+    """Normalize a directory path: expand ~ and ensure a single trailing slash."""
+    return str(Path(path).expanduser()).rstrip("/") + "/"
 
 
 def resolve(project_root: Path, home: Path) -> dict:
@@ -53,12 +53,12 @@ def resolve(project_root: Path, home: Path) -> dict:
     else:
         write_path = _norm(str(project_root / "knowledge" / "solutions"))
 
-    # read_paths: explicit comma list, else empty; write_path always included first
+    # read_paths: explicit comma list, else empty; write_path is always first (deduped)
     read_paths = []
     if "read_paths" in settings:
         read_paths = [_norm(p.strip()) for p in settings["read_paths"].split(",") if p.strip()]
-    if write_path not in read_paths:
-        read_paths.insert(0, write_path)
+    read_paths = [p for p in read_paths if p != write_path]
+    read_paths.insert(0, write_path)
 
     vault_root = settings.get("vault_root")
     if vault_root:

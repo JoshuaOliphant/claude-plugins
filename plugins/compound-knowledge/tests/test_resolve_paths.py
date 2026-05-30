@@ -79,3 +79,20 @@ def test_vault_root_parsed(tmp_path):
     _write_cfg(proj, "solutions_path: /vault/knowledge/solutions/\nvault_root: /vault\n")
     result = resolve_paths.resolve(proj, home)
     assert result["vault_root"] == "/vault/"
+
+
+def test_tilde_path_expanded(tmp_path):
+    home = tmp_path / "home"; home.mkdir()
+    proj = tmp_path / "proj"; proj.mkdir()
+    _write_cfg(proj, "solutions_path: ~/knowledge/solutions/\n")
+    result = resolve_paths.resolve(proj, home)
+    assert not result["write_path"].startswith("~")
+    assert result["write_path"].startswith("/")
+
+
+def test_read_paths_write_forced_first(tmp_path):
+    home = tmp_path / "home"; home.mkdir()
+    proj = tmp_path / "proj"; proj.mkdir()
+    _write_cfg(proj, "write_path: /vault/solutions/\nread_paths: /vault/wiki/, /vault/solutions/\n")
+    result = resolve_paths.resolve(proj, home)
+    assert result["read_paths"] == ["/vault/solutions/", "/vault/wiki/"]
