@@ -1,6 +1,6 @@
 {
   "name": "compound-knowledge",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Capture solved problems and retrieve past solutions as structured YAML-frontmatter files. Split into compound-capture (post-solve documentation) and compound-retrieve (pre-work knowledge search) for precise triggering.",
   "license": "MIT",
   "author": {
