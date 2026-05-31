@@ -4,15 +4,32 @@ Detailed procedure for the `compound-graduate` promote face.
 
 ## Candidate selection (priority order)
 
-1. **Wiki theses** (`wiki/theses/**`) marked `[solid]` — distilled, high-confidence positions.
-   These are the best fuel: already synthesized, unlike individual lessons.
-2. **Wiki theses marked `[evolving]`** — promote only the stable core, phrased provisionally.
+1. **Wiki theses** (`wiki/theses/**`) with **frontmatter** `confidence: solid` — distilled,
+   high-confidence positions. These are the best fuel: already synthesized, unlike individual
+   lessons. Read the YAML frontmatter `confidence:` field; do NOT grep for an inline `[solid]`
+   marker (that is a different convention — see "Confidence is encoded two ways" below).
+2. **Wiki theses with `confidence: evolving`** — promote only the stable core, phrased
+   provisionally.
 3. **`critical-patterns.md`** entries in any read path.
 4. **Solution files** with frontmatter `severity: critical` or `severity: high`.
 5. Recurring patterns: the same lesson appearing across 3+ solution files is itself a signal.
 
-Skip: `[hypothesis]` / `[questioning]` theses, low-severity one-offs, anything project-specific
-that would not generalize to the target context file.
+Skip: theses with `confidence: hypothesis` or `confidence: questioning`, low-severity one-offs,
+anything project-specific that would not generalize to the target context file. Treat any
+out-of-enum confidence value (e.g. `synthesized`) conservatively — surface it but do not
+auto-prioritize it as `solid`.
+
+### Confidence is encoded two ways
+
+The vault uses two distinct confidence conventions; promote must read the right one per source:
+
+- **Wiki pages** (`wiki/**`) encode confidence in **YAML frontmatter**:
+  `confidence: solid | evolving | hypothesis | questioning`. Parse the frontmatter field.
+- **Journal entries, decision docs, and principle files** use **inline** body markers:
+  `[solid]`, `[evolving]`, `[hypothesis]`, `[questioning]`.
+
+Grepping for inline `[solid]` matches the second set and silently misses every wiki thesis — the
+highest-value promote fuel. Always read frontmatter for `wiki/**` sources.
 
 ## Propose-then-apply protocol
 
