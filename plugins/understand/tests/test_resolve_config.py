@@ -21,7 +21,7 @@ def test_defaults_when_no_config(tmp_path):
     proj = tmp_path / "proj"; proj.mkdir()
     result = resolve_config.resolve(proj, home)
     assert result["mochi_deck"] == ""
-    assert result["session_dir"] == "understand-sessions/"
+    assert result["session_dir"] == str(proj / "understand-sessions") + "/"
     assert result["follow_references"] is True
     assert result["strictness"] == "struggle-then-teach"
     assert result["card_cap"] == 10
@@ -80,3 +80,20 @@ def test_session_dir_tilde_expanded(tmp_path):
     result = resolve_config.resolve(proj, home)
     assert not result["session_dir"].startswith("~")
     assert result["session_dir"].endswith("/")
+
+
+def test_relative_session_dir_anchored_to_project(tmp_path):
+    home = tmp_path / "home"; home.mkdir()
+    proj = tmp_path / "proj"; proj.mkdir()
+    _write_cfg(proj, "session_dir: my-sessions/\n")
+    result = resolve_config.resolve(proj, home)
+    assert result["session_dir"] == str(proj / "my-sessions") + "/"
+
+
+def test_user_only_config(tmp_path):
+    home = tmp_path / "home"; home.mkdir()
+    proj = tmp_path / "proj"; proj.mkdir()
+    _write_cfg(home, "mochi_deck: UserDeck\n")
+    result = resolve_config.resolve(proj, home)
+    assert result["mochi_deck"] == "UserDeck"
+    assert result["config_source"] == "user"

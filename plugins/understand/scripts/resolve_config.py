@@ -55,7 +55,11 @@ def resolve(project_root: Path, home: Path) -> dict:
     merged = dict(DEFAULTS)
     merged.update({k: v for k, v in settings.items() if k in DEFAULTS})
 
-    session_dir = str(Path(merged["session_dir"]).expanduser()).rstrip("/") + "/"
+    expanded = Path(merged["session_dir"]).expanduser()
+    if expanded.is_absolute():
+        session_dir = str(expanded).rstrip("/") + "/"
+    else:
+        session_dir = str(project_root / expanded).rstrip("/") + "/"
 
     try:
         card_cap = int(merged["card_cap"])
