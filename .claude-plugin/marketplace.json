@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by Joshua Oliphant for productivity and learning workflows",
-    "version": "1.0.5"
+    "version": "1.0.6"
   },
   "plugins": [
     {
@@ -100,6 +100,24 @@
         "agentic"
       ],
       "category": "development",
+      "license": "MIT"
+    },
+    {
+      "name": "understand",
+      "source": "./plugins/understand",
+      "description": "Process information for real understanding with the explain-back skill: explain from memory, grade against the real source, struggle-then-teach per gap, output Mochi cards and a resumable session record. An antidote to the illusion of clarity.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Joshua Oliphant"
+      },
+      "keywords": [
+        "learning",
+        "understanding",
+        "spaced-repetition",
+        "mochi",
+        "metacognition"
+      ],
+      "category": "productivity",
       "license": "MIT"
     }
   ]

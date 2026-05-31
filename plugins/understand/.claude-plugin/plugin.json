@@ -1,0 +1,20 @@
+{
+  "name": "understand",
+  "version": "0.1.0",
+  "description": "Process information for real understanding. The explain-back skill makes you explain from memory, grades against the real source, teaches only after you attempt, and outputs Mochi cards plus a resumable session record. An antidote to the illusion of clarity.",
+  "license": "MIT",
+  "author": {
+    "name": "Joshua Oliphant"
+  },
+  "homepage": "https://github.com/joshuaoliphant/claude-plugins",
+  "repository": "https://github.com/joshuaoliphant/claude-plugins",
+  "keywords": [
+    "learning",
+    "understanding",
+    "spaced-repetition",
+    "mochi",
+    "feynman",
+    "active-recall",
+    "metacognition"
+  ]
+}
