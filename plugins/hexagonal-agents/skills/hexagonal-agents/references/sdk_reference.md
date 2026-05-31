@@ -13,7 +13,7 @@ pip install claude-agent-sdk
 # With uv
 uv add claude-agent-sdk
 
-# Current version (as of January 2025): 0.1.22
+# Pin a recent release; run `pip show claude-agent-sdk` to see the installed version.
 ```
 
 **Prerequisites:**
@@ -33,6 +33,7 @@ The main client for interacting with Claude.
 from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
 
 options = ClaudeAgentOptions(
+    model="claude-sonnet-4-6",  # or "claude-opus-4-8" for harder reasoning
     system_prompt="Your skill file content here",
     mcp_servers={"server_name": mcp_server},
     allowed_tools=["mcp__server_name__tool_name"],
@@ -43,6 +44,25 @@ client = ClaudeSDKClient(options=options)
 await client.connect()
 ```
 
+### Prompt caching
+
+The skill file (the system prompt) and the tool definitions are large and
+**static** — identical on every turn. The SDK applies prompt caching to this
+prefix automatically, so the cost you pay to teach the agent the entire UI
+vocabulary is incurred once, then read from cache on every following turn.
+
+To actually benefit:
+
+- **Connect once, reuse the client.** Build `ClaudeAgentOptions` and call
+  `connect()` a single time, then route every request through the same client.
+  Recreating the client per request re-sends the full prefix uncached and throws
+  away the conversation context.
+- **Keep the prefix stable.** Don't rebuild or mutate `system_prompt` between
+  turns. A single changed byte near the start invalidates the cache.
+- **Scaling note:** one shared client means one shared conversation. For a
+  multi-user app, hold one connected client *per session* rather than one
+  globally — each session still gets cache hits on the shared static prefix.
+
 **ClaudeAgentOptions parameters:**
 
 | Parameter | Type | Description |
@@ -51,7 +71,7 @@ await client.connect()
 | `mcp_servers` | `dict[str, MCPServer]` | MCP servers keyed by name |
 | `allowed_tools` | `list[str]` | Tool names the agent can call |
 | `permission_mode` | `str` | `"acceptEdits"` auto-approves tool calls |
-| `model` | `str` | Model to use (default: claude-sonnet-4-20250514) |
+| `model` | `str` | Model to use (default: claude-sonnet-4-6) |
 
 **Methods:**
 

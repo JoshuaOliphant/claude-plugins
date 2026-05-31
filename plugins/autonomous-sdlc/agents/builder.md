@@ -1,6 +1,6 @@
 ---
 name: builder
-model: sonnet
+model: opus
 description: Focused execution agent that implements ONE task at a time with PostToolUse validation hooks for automatic quality enforcement
 whenToUse: >-
   Use when a task is ready to implement. The builder follows TDD, has automatic

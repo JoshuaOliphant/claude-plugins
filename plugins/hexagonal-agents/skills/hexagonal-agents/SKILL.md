@@ -48,11 +48,6 @@ Tools (MCP Server)
     │ Pure data operations → JSON
 ```
 
-- **Browser** — Displays static shell + agent-generated HTML, uses HTMX for partial updates
-- **FastAPI** — Receives HTTP, passes messages to agent, returns HTML
-- **Agent** — Receives messages, calls tools for data, generates HTML responses
-- **Tools** — Pure data operations (CRUD) returning structured JSON
-
 ### Key Principles
 
 1. **Semantic Late Binding** — Agent interprets user intent at runtime, choosing tools and UI dynamically
@@ -107,20 +102,11 @@ For detailed hexagonal architecture explanation and SDK API details:
 
 ### Step 0: Load Stored Feedback
 
-Load any stored feedback preferences before starting:
+Run this and apply any returned preferences (architecture, tools, skill_file, ui_components, styling, agent_behavior, general) throughout app scaffolding:
 
 ```bash
 python ${PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents show-feedback
 ```
-
-If feedback entries exist, apply them throughout app scaffolding:
-- **architecture** → adjust project structure and module organization
-- **tools** → guide MCP tool design patterns
-- **skill_file** → shape agent skill file content and examples
-- **ui_components** → adjust component selection and structure
-- **styling** → calibrate Tailwind theme and design system defaults
-- **agent_behavior** → strengthen or adjust agent instructions
-- **general** → apply to all aspects of app generation
 
 ### Step 1: Initialize Project Structure
 
@@ -182,10 +168,19 @@ class Agent:
     def __init__(self):
         self.tools_server = create_tools_server()
         self._allowed_tools = ["mcp__app_tools__list_items", ...]
+        self.client = None
 
     async def _ensure_connected(self):
+        # Connect once and reuse the client. The skill file is large and
+        # static, so the SDK serves it (plus the tool definitions) from
+        # prompt cache on every subsequent turn. Recreating the client or
+        # re-reading the skill file per request defeats caching and discards
+        # the conversation so far.
+        if self.client is not None:
+            return
         skill_content = SKILL_PATH.read_text()
         options = ClaudeAgentOptions(
+            model="claude-sonnet-4-6",  # Opus 4.8 also works; Sonnet keeps per-turn UI generation cheap
             system_prompt=skill_content,
             mcp_servers={"app_tools": self.tools_server},
             allowed_tools=self._allowed_tools,

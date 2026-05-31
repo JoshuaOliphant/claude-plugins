@@ -7,7 +7,7 @@ description: >
   happen when", "edge cases", "define requirements", or any pre-implementation requirements discussion
   where the output should be runnable scenarios, not just a design doc. Produces Gherkin-ready
   acceptance criteria. Not for generating test code — use bdd-generate after this.
-version: 1.0.0
+version: 1.1.0
 effort: high
 allowed-tools:
   - Bash
@@ -126,6 +126,8 @@ Coach the Given/When/Then for the primary success scenario:
 Write it. Read it back. Ask: "Does this capture what you mean?"
 
 ### Step 3: Probe for Error Scenarios
+
+Think hard about how this behavior can fail before asking — the failure modes you miss here become the bugs that ship. Reason through the categories in the checklist rather than picking the obvious ones.
 
 Consult `references/edge-case-checklist.md` for structured probing questions.
 

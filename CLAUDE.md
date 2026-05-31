@@ -4,152 +4,150 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Claude Code plugin marketplace repository. It contains plugins that extend Claude Code's capabilities with specialized skills and tools. The primary plugin is `mochi-creator`, which enables creation and management of Mochi.cards flashcards through the Mochi API.
+This is a Claude Code plugin marketplace (`oliphant-plugins`). It distributes five plugins that extend Claude Code with specialized skills, subagents, commands, and hooks. Each plugin is self-contained under `plugins/` and registered in `.claude-plugin/marketplace.json`.
 
 ## Repository Structure
 
 ```
 claude-plugins/
+├── .claude-plugin/
+│   └── marketplace.json            # Catalog of all published plugins (registry)
 ├── plugins/
-│   └── mochi-creator/              # Mochi.cards flashcard creation plugin
-│       ├── .claude-plugin/
-│       │   ├── plugin.json         # Plugin metadata and configuration
-│       │   └── skills/             # Symlink to skills directory
-│       └── skills/
-│           └── mochi-creator/
-│               ├── SKILL.md        # Skill documentation and usage guide
-│               ├── scripts/
-│               │   └── mochi_api.py  # Python client for Mochi API
-│               └── references/
-│                   └── mochi_api_reference.md  # API reference docs
+│   ├── mochi-creator/              # Evidence-based spaced-repetition flashcards (Mochi API)
+│   ├── autonomous-sdlc/            # Agent-team SDLC: TDD, BDD, Beads, verification, worktrees
+│   ├── hexagonal-agents/           # Agent-driven HTML-UI web apps (Agent SDK + FastAPI + HTMX)
+│   ├── compound-knowledge/         # Capture / retrieve / graduate engineering knowledge
+│   └── autoloop/                   # Generate autonomous experiment-optimization loops
+├── scripts/
+│   └── check_marketplace_versions.py  # Asserts marketplace.json matches each plugin.json
+├── ai_docs/                        # Background research/reference docs (not shipped in plugins)
+├── docs/                           # Planning and specifications
 ├── README.md                       # Marketplace installation instructions
 └── CLAUDE.md                       # This file
 ```
+
+## Plugin Inventory
+
+Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json` (the source of truth).
+
+| Plugin | Purpose | Notable pieces |
+|---|---|---|
+| **mochi-creator** | Create cognitive-science-based flashcards via the Mochi API | `scripts/mochi_api.py` (module + CLI), prompt-quality validation, knowledge-type references |
+| **autonomous-sdlc** | Adaptive autonomous SDLC with an agent team | 6 skills (tdd/bdd/beads/verification/feedback), 7 subagents, 4 commands, PostToolUse/Stop hooks |
+| **hexagonal-agents** | Web apps where an agent generates HTML UI | Ports-and-adapters arch, MCP tools, Claude Agent SDK, extensive `references/` |
+| **compound-knowledge** | Institutional memory: capture → retrieve → graduate | YAML-frontmatter solution files, grep-based retrieval, `knowledge-researcher` subagent |
+| **autoloop** | Generate Karpathy-style optimization loops | Produces `program.md` + immutable `auto/run.sh`, `codebase-scout` subagent |
+
+Every plugin also ships a `feedback` skill backed by `scripts/feedback_manager.py` to persist user preferences across sessions.
 
 ## Key Architectural Concepts
 
 ### Plugin System Structure
 
-Each plugin follows a specific directory structure:
-- `.claude-plugin/plugin.json`: Contains plugin metadata (name, description, version, author, keywords)
-- `skills/`: Contains one or more skills that implement the plugin's functionality
-- Each skill has a `SKILL.md` file that serves as the prompt/instruction set for Claude Code
+Each plugin follows a consistent layout:
+- `.claude-plugin/plugin.json` — metadata (name, version, description, author, keywords)
+- `skills/<skill>/SKILL.md` — the instruction set / trigger surface for each skill; deep content lives in adjacent `references/*.md` rather than inline
+- `agents/*.md` — subagent definitions (frontmatter sets `model`, `tools`, `hooks`, `skills`)
+- `commands/*.md` — slash-command entry points
+- `hooks/` + `hooks.json` — event-driven validators (e.g. ruff/type checks on Write/Edit)
+- `scripts/` — Python helpers, importable and/or CLI-executable
+
+### Subagent Model Tiering (autonomous-sdlc)
+
+The agent team assigns models by the kind of work, optimized for the Opus 4.8 era:
+- **Opus** for generative reasoning: **Architect** (planning), **Builder** (implementation/TDD)
+- **Sonnet** for verification: **Validator** (read-only checks), **Integrator** (merges)
+- **Haiku** for mechanical work: **Documenter** (docs), **PR-Creator** (PR descriptions)
+
+When changing an agent's role significantly, keep the model column in `README.md` and `commands/sdlc.md` in sync with the agent frontmatter.
 
 ### Mochi API Client Architecture
 
-The `mochi_api.py` script (plugins/mochi-creator/skills/mochi-creator/scripts/mochi_api.py:1) is designed as both:
-1. A Python module that can be imported: `from scripts.mochi_api import MochiAPI`
-2. A standalone CLI tool: `python scripts/mochi_api.py list-decks`
+`plugins/mochi-creator/skills/mochi-creator/scripts/mochi_api.py` works as both:
+1. An importable module: `from scripts.mochi_api import MochiAPI`
+2. A standalone CLI: `python scripts/mochi_api.py list-decks`
 
-The client uses:
-- HTTP Basic Auth with the API key as username
-- Request/response pattern with custom `MochiAPIError` exception
-- Automatic translation between Python naming (snake_case) and Mochi API naming (kebab-case with ? suffixes for booleans)
+It uses HTTP Basic Auth (API key as username), a custom `MochiAPIError`, automatic snake_case ↔ Mochi kebab-case/`?`-suffix translation, and bookmark-based pagination.
 
-### Authentication
+### Hexagonal Agents + the Agent SDK
 
-All Mochi API operations require an API key stored in the `MOCHI_API_KEY` environment variable. The client will raise `MochiAPIError` if the key is not found.
+`hexagonal-agents` scaffolds apps where a `ClaudeSDKClient` is the UI layer: its system prompt is a large, static "skill file" teaching the entire UI vocabulary. Because that prefix is identical every turn, connect the client **once and reuse it** so the SDK serves the system prompt and tool definitions from prompt cache. Default model `claude-sonnet-4-6` (use `claude-opus-4-8` for harder reasoning). See `skills/hexagonal-agents/references/sdk_reference.md`.
+
+### Model IDs
+
+Use the current family in examples and generated code: `claude-opus-4-8`, `claude-sonnet-4-6`, `claude-haiku-4-5`. Subagent frontmatter uses the aliases `opus` / `sonnet` / `haiku`.
 
 ## Development Commands
 
-### Testing the Mochi API Client
+### Mochi API client
 
 ```bash
-# Set API key
 export MOCHI_API_KEY="your_api_key_here"
-
-# List all decks
 python plugins/mochi-creator/skills/mochi-creator/scripts/mochi_api.py list-decks
-
-# Create a new deck
 python plugins/mochi-creator/skills/mochi-creator/scripts/mochi_api.py create-deck "Test Deck"
-
-# List cards in a deck
 python plugins/mochi-creator/skills/mochi-creator/scripts/mochi_api.py list-cards <deck-id>
-
-# Create a card
-python plugins/mochi-creator/skills/mochi-creator/scripts/mochi_api.py create-card <deck-id> "# Question\\n---\\nAnswer"
+python plugins/mochi-creator/skills/mochi-creator/scripts/mochi_api.py create-card <deck-id> "# Question\n---\nAnswer"
 ```
 
-### Using the Python Module
+Importable usage:
 
 ```python
-from scripts.mochi_api import MochiAPI
+from scripts.mochi_api import MochiAPI, MochiAPIError
 
-# Initialize (reads MOCHI_API_KEY from environment)
-api = MochiAPI()
-
-# Create a deck
+api = MochiAPI()                                  # reads MOCHI_API_KEY
 deck = api.create_deck(name="Python Programming")
-
-# Create a simple flashcard
 card = api.create_card(
     content="# What is a decorator?\n---\nA function that modifies another function",
     deck_id=deck["id"],
-    manual_tags=["python", "decorators"]
+    manual_tags=["python", "decorators"],
 )
+```
 
-# Create template-based cards
-template = api.create_template(
-    name="Vocabulary",
-    content="# << Word >>\n\n**Definition:** << Definition >>\n\n**Example:** << Example >>",
-    fields={
-        "word": {"id": "word", "name": "Word", "type": "text", "pos": "a"},
-        "definition": {"id": "definition", "name": "Definition", "type": "text", "pos": "b"},
-        "example": {"id": "example", "name": "Example", "type": "text", "pos": "c"}
-    }
-)
+### Version sync check
 
-card = api.create_card(
-    content="",
-    deck_id=deck["id"],
-    template_id=template["id"],
-    fields={
-        "word": {"id": "word", "value": "ephemeral"},
-        "definition": {"id": "definition", "value": "Lasting for a very short time"},
-        "example": {"id": "example", "value": "Cherry blossoms are ephemeral"}
-    }
-)
+```bash
+python scripts/check_marketplace_versions.py   # exits non-zero on any drift
 ```
 
 ## Important Implementation Details
 
 ### Card Content Format
 
-Cards use markdown with `---` to separate sides:
+Cards use markdown with `---` separating sides:
 ```markdown
 # Question text
 ---
 Answer text with **formatting**
 ```
 
-### Field Naming Convention
+### Field Naming Convention (Mochi / Clojure-style)
 
-The Mochi API uses Clojure-style naming:
 - Kebab-case: `deck-id`, `template-id`, `parent-id`
 - Boolean suffixes: `archived?`, `trashed?`, `review-reverse?`
-- The Python client handles this conversion automatically
 
-### Pagination
-
-List operations return a `bookmark` field for pagination:
-```python
-result = api.list_cards(deck_id=deck_id, limit=100)
-cards = result["docs"]
-if result.get("bookmark"):
-    next_page = api.list_cards(deck_id=deck_id, limit=100, bookmark=result["bookmark"])
-```
+The Python client handles this conversion automatically.
 
 ### Soft vs Hard Delete
 
-- Soft delete (reversible): `api.update_card(card_id, trashed=datetime.utcnow().isoformat())`
-- Hard delete (permanent): `api.delete_card(card_id)`
+- Soft (reversible, preferred): `api.update_card(card_id, trashed=datetime.utcnow().isoformat())`
+- Hard (permanent): `api.delete_card(card_id)`
 
-Always prefer soft deletion for safety.
+## Versioning
+
+Two version scopes must stay in sync:
+
+- **`plugin.json`** (per-plugin) is the **source of truth** for each plugin's version. Bump it whenever the plugin changes.
+- **`marketplace.json`** has two version fields:
+  - `metadata.version` (top-level): the marketplace catalog version. Only bump when adding/removing plugins or changing marketplace structure.
+  - Per-plugin `version`: must be **copied from the plugin's `plugin.json`** at publication time. Never maintained independently.
+
+When changing a plugin:
+1. Bump the version in `plugins/{name}/.claude-plugin/plugin.json`
+2. Copy that version into the matching entry in `.claude-plugin/marketplace.json`
+3. Only bump `metadata.version` if the marketplace itself changed (plugin added/removed)
+4. Run `python scripts/check_marketplace_versions.py` to confirm they match
 
 ## Plugin Installation
-
-Users install plugins from this marketplace using:
 
 ```bash
 # Add the marketplace
@@ -161,7 +159,7 @@ Users install plugins from this marketplace using:
 
 ## Error Handling
 
-All API operations can raise `MochiAPIError`. Always wrap API calls in try-except blocks:
+All Mochi API operations can raise `MochiAPIError`; wrap calls in try/except:
 
 ```python
 from scripts.mochi_api import MochiAPIError
@@ -172,25 +170,11 @@ except MochiAPIError as e:
     print(f"Failed to create card: {e}")
 ```
 
-## Versioning
-
-This repository has two version scopes that must stay in sync:
-
-- **`plugin.json`** (per-plugin) is the **source of truth** for each plugin's version. Bump it whenever the plugin changes.
-- **`marketplace.json`** has two version fields:
-  - `metadata.version` (top-level): the marketplace catalog version. Only bump when adding/removing plugins or changing marketplace structure.
-  - Per-plugin `version`: must be **copied from the plugin's `plugin.json`** at publication time. Never maintain independently.
-
-When changing a plugin:
-1. Bump the version in `plugins/{name}/.claude-plugin/plugin.json`
-2. Copy that version into the corresponding entry in `.claude-plugin/marketplace.json`
-3. Only bump `metadata.version` if the marketplace itself changed (new plugin added/removed)
-
 ## Testing and Development
 
-When developing new plugins or modifying existing ones:
-1. Test the Python API client independently before integrating with Claude Code
-2. Verify the skill description in `SKILL.md` accurately reflects capabilities
-3. Ensure `plugin.json` metadata is complete and accurate
+When developing or modifying plugins:
+1. Test Python helpers (`mochi_api.py`, `resolve_paths.py`, validators) independently first
+2. Verify each `SKILL.md` description accurately reflects capabilities and triggers
+3. Ensure `plugin.json` metadata is complete, then re-sync `marketplace.json` and run the version check
 4. Test installation from the marketplace structure
-
+5. Keep subagent model assignments consistent across agent frontmatter, `README.md`, and command docs
