@@ -7,7 +7,7 @@ description: >
   it", or after building/reading something they want to internalize. Makes the user explain from
   memory, grades against the real source, and teaches only after they attempt. Not for writing
   content for the user — this withholds answers on purpose.
-allowed-tools: [Read, Write, Edit, Grep, Glob, Bash, mcp__mochi-donut__list_decks, mcp__mochi-donut__create_cards]
+allowed-tools: [Read, Write, Edit, Grep, Glob, Bash, mcp__plugin_understand_mochi-donut__list_decks, mcp__plugin_understand_mochi-donut__create_cards]
 ---
 
 # Explain-Back
@@ -55,10 +55,11 @@ attempt gate is the entire point. Breaking it re-creates the illusion this skill
      again. Do not teach.
 
 7. **Outputs.**
-   - **Mochi cards:** for each closed/confirmed gap (up to `card_cap`), write a card via the Mochi
-     MCP into `mochi_deck`. List decks with `mcp__mochi-donut__list_decks` first; if `mochi_deck`
-     is empty, ask which deck. If the Mochi MCP is unavailable, skip cards and say so — do not fail
-     the session.
+   - **Mochi cards:** for each closed/confirmed gap (up to `card_cap`), write a card with
+     `mcp__plugin_understand_mochi-donut__create_cards` into `mochi_deck`. List decks with
+     `mcp__plugin_understand_mochi-donut__list_decks` first; if `mochi_deck` is empty, ask which
+     deck. The plugin bundles the mochi-donut MCP via `.mcp.json`; if it is unavailable (e.g.
+     `MOCHI_API_KEY` unset), skip cards and say so — do not fail the session.
    - **Session record:** write a resumable record to `{session_dir}` using
      `assets/session-record-template.md`, filling topic, source, the user's explanation, gaps,
      what was taught, confirmed understanding, and still-open gaps.

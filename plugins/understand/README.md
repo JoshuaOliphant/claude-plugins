@@ -34,8 +34,15 @@ Defaults: `session_dir` `understand-sessions/`, `follow_references` true, `stric
 
 ## Requirements
 
-- Mochi MCP (`MOCHI_API_KEY`) for card output. Without it, the ritual still runs; cards are skipped.
+The plugin **bundles** the [`mochi-donut`](https://github.com/JoshuaOliphant/mochi_donut) MCP
+server via `.mcp.json`, so installing the plugin registers it automatically. You need:
+
+- **`uv`** installed — the server is launched with `uvx` from the public repo.
+- **`MOCHI_API_KEY`** set in your environment — the mochi-donut server reads it to call the Mochi API.
+
+Without `MOCHI_API_KEY`, the explain-back ritual still runs; only the card-writing step is skipped.
 
 ```bash
 /plugin install understand@oliphant-plugins
+export MOCHI_API_KEY="your_api_key_here"
 ```
