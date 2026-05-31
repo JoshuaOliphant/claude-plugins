@@ -1,0 +1,9 @@
+{
+  "mochi-donut": {
+    "command": "uvx",
+    "args": ["--from", "git+https://github.com/JoshuaOliphant/mochi_donut", "mochi-donut"],
+    "env": {
+      "MOCHI_API_KEY": "${MOCHI_API_KEY}"
+    }
+  }
+}
