@@ -34,11 +34,14 @@ edits the file read every session, so it is high-trust: always propose before ap
    Use `read_paths` as the scan corpus and `vault_root` (if set) for semantic queries.
 
 2. **Gather candidates** (prefer the most synthesized layer first):
-   - `[solid]` and `[evolving]` theses under any `wiki/theses/` directory in `read_paths`.
+   - Theses with frontmatter `confidence: solid` (then `evolving`) under any `wiki/theses/`
+     directory in `read_paths`. Read the YAML `confidence:` field — do NOT grep for inline
+     `[solid]` markers; wiki pages encode confidence in frontmatter, not the body.
    - High-severity solution files (`severity: critical` or `severity: high`) and any
      `critical-patterns.md` in `read_paths`.
    - Use `Grep` for keywords; when `vault_root` is set, use the `vault-recommender` MCP for
-     topic clusters keyword search would miss.
+     topic clusters keyword search would miss. See `references/promote-workflow.md` for the
+     two confidence conventions and full candidate heuristics.
 
 3. **Identify the target.** Use `CLAUDE.md` at the project root if present, else `AGENTS.md`.
 
