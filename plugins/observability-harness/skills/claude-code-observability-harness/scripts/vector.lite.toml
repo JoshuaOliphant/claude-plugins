@@ -1,0 +1,34 @@
+# Vector pipeline — LITE mode: OTLP source → dated JSONL file sinks only.
+# No backends, no transforms. Inspect raw OTLP shape via `jq` over data/jsonl/.
+# Sink paths are relative to the working dir set by start.sh (the harness dir).
+
+[api]
+enabled = true
+address = "127.0.0.1:8686"
+
+[sources.otlp]
+type = "opentelemetry"
+
+[sources.otlp.grpc]
+address = "127.0.0.1:4317"
+
+[sources.otlp.http]
+address = "127.0.0.1:4318"
+
+[sinks.logs_jsonl]
+type = "file"
+inputs = ["otlp.logs"]
+path = "data/jsonl/logs/%Y-%m-%d.jsonl"
+encoding.codec = "json"
+
+[sinks.traces_jsonl]
+type = "file"
+inputs = ["otlp.traces"]
+path = "data/jsonl/traces/%Y-%m-%d.jsonl"
+encoding.codec = "json"
+
+[sinks.metrics_jsonl]
+type = "file"
+inputs = ["otlp.metrics"]
+path = "data/jsonl/metrics/%Y-%m-%d.jsonl"
+encoding.codec = "json"

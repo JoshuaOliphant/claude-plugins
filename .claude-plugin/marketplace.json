@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by Joshua Oliphant for productivity and learning workflows",
-    "version": "1.0.6"
+    "version": "1.0.7"
   },
   "plugins": [
     {
@@ -98,6 +98,28 @@
         "experiment-loop",
         "optimization",
         "agentic"
+      ],
+      "category": "development",
+      "license": "MIT"
+    },
+    {
+      "name": "observability-harness",
+      "source": "./plugins/observability-harness",
+      "description": "Install a local, Docker-free OTLP observability stack (OpenTelemetry → Vector → JSONL, optionally VictoriaLogs + VictoriaMetrics) into a project and instrument the code, with a scan-and-propose step for domain-appropriate spans and metrics.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Joshua Oliphant"
+      },
+      "keywords": [
+        "observability",
+        "opentelemetry",
+        "otel",
+        "vector",
+        "victoriametrics",
+        "victorialogs",
+        "telemetry",
+        "tracing",
+        "metrics"
       ],
       "category": "development",
       "license": "MIT"

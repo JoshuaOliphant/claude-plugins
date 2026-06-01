@@ -1,0 +1,91 @@
+# Vector pipeline — FULL mode: OTLP source → VictoriaLogs + VictoriaMetrics + JSONL.
+# {{SERVICE_NAME}} is rendered at scaffold time (it labels the VictoriaLogs streams).
+# Sink paths are relative to the working dir set by start.sh (the harness dir).
+
+[api]
+enabled = true
+address = "127.0.0.1:8686"
+
+[sources.otlp]
+type = "opentelemetry"
+
+[sources.otlp.grpc]
+address = "127.0.0.1:4317"
+
+[sources.otlp.http]
+address = "127.0.0.1:4318"
+
+# --- Transforms: reshape for VictoriaLogs' /insert/jsonline (auto-detects _time/_msg) ---
+
+[transforms.reshape_logs]
+type = "remap"
+inputs = ["otlp.logs"]
+source = '''
+._time = del(.timestamp)
+._msg = del(.message)
+._stream = "{{SERVICE_NAME}}"
+'''
+
+[transforms.reshape_traces]
+type = "remap"
+inputs = ["otlp.traces"]
+source = '''
+._time = del(.start_timestamp)
+._msg = del(.name)
+._stream = "{{SERVICE_NAME}}-traces"
+'''
+
+# --- Sinks: VictoriaLogs (logs + traces-as-loglines) ---
+
+[sinks.victoria_logs]
+type = "http"
+inputs = ["reshape_logs"]
+uri = "http://127.0.0.1:9428/insert/jsonline"
+encoding.codec = "json"
+framing.method = "newline_delimited"
+
+[sinks.victoria_logs.buffer]
+max_size = 104857600  # 100MB — drop newest if VictoriaLogs is down
+when_full = "drop_newest"
+
+[sinks.traces_to_vlogs]
+type = "http"
+inputs = ["reshape_traces"]
+uri = "http://127.0.0.1:9428/insert/jsonline"
+encoding.codec = "json"
+framing.method = "newline_delimited"
+
+[sinks.traces_to_vlogs.buffer]
+max_size = 104857600
+when_full = "drop_newest"
+
+# --- Sinks: VictoriaMetrics ---
+
+[sinks.victoria_metrics]
+type = "prometheus_remote_write"
+inputs = ["otlp.metrics"]
+endpoint = "http://127.0.0.1:8428/api/v1/write"
+
+[sinks.victoria_metrics.buffer]
+max_size = 52428800  # 50MB
+when_full = "drop_newest"
+
+# --- Sinks: JSONL files (raw OTLP, dog-food / offline inspection) ---
+
+[sinks.logs_jsonl]
+type = "file"
+inputs = ["otlp.logs"]
+path = "data/jsonl/logs/%Y-%m-%d.jsonl"
+encoding.codec = "json"
+
+[sinks.traces_jsonl]
+type = "file"
+inputs = ["otlp.traces"]
+path = "data/jsonl/traces/%Y-%m-%d.jsonl"
+encoding.codec = "json"
+
+[sinks.metrics_jsonl]
+type = "file"
+inputs = ["otlp.metrics"]
+path = "data/jsonl/metrics/%Y-%m-%d.jsonl"
+encoding.codec = "json"

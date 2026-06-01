@@ -1,0 +1,45 @@
+---
+paths:
+  - ".claude/harness/observability/**"
+  - "{{OTEL_MODULE_PATH}}"
+---
+
+## Observability Stack ({{SERVICE_NAME}}, {{OBS_MODE}} mode)
+
+Local telemetry: app (OTel SDK) → Vector → {{SINK_SUMMARY}}.
+
+### Control
+
+```bash
+bash .claude/harness/observability/status.sh   # UP/DOWN per service
+bash .claude/harness/observability/start.sh     # idempotent (also auto-runs on SessionStart)
+bash .claude/harness/observability/stop.sh
+```
+
+### Querying
+
+See the harness skill's `references/querying.md` for full recipes. Quick start:
+
+```bash
+# Lite (jq over JSONL):
+JSONL=.claude/harness/observability/data/jsonl; DAY=$(date +%F)
+jq -r '.name // empty' "$JSONL/traces/$DAY.jsonl" | sort | uniq -c
+
+# Full (VictoriaMetrics PromQL / VictoriaLogs LogsQL):
+# Metric __name__ is the bare instrument name (service is a label), and prometheus_remote_write
+# may rewrite dots→underscores — so list what's actually stored, then query by real name/label.
+curl -s 'http://127.0.0.1:8428/api/v1/label/__name__/values' | jq .
+curl -s 'http://127.0.0.1:8428/api/v1/query' --data-urlencode 'query={service_name="{{SERVICE_NAME}}"}' | jq .
+curl -s 'http://127.0.0.1:9428/select/logsql/query' --data-urlencode 'query=_stream:{_stream="{{SERVICE_NAME}}"}' --data-urlencode 'limit=20' | jq .
+```
+
+### Instruments
+
+Defined in `{{OTEL_MODULE_PATH}}` (`_build_instruments()`). Call `otel.configure()` once at
+startup. The module is a no-op when the OTel SDK isn't installed.
+
+### When to query
+
+After running tests (did instrumented paths fire?), when verifying a logging fix (search
+for the message), during performance work (`rate(...)`, latency spread), or to confirm the
+pipeline is alive (JSONL files exist and grew after exercising the app).
