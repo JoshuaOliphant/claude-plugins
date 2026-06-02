@@ -1,6 +1,6 @@
 {
   "name": "compound-knowledge",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Capture solved problems, retrieve past solutions, and graduate accumulated knowledge into living context. Skills: compound-capture (post-solve documentation), compound-retrieve (pre-work knowledge search), compound-graduate (promote lessons into CLAUDE.md/AGENTS.md).",
   "license": "MIT",
   "author": {

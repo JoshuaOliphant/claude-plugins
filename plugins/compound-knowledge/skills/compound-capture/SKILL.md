@@ -97,7 +97,7 @@ For cross-project registry schema:
 Run this and apply any returned preferences (capture_format, categorization, triviality_threshold, cross_references, principle_style, general) throughout the capture process:
 
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show-feedback
 ```
 
 ### Step 1: Resolve Solutions Path

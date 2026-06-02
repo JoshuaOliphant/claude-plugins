@@ -39,7 +39,7 @@ You also know about a **cross-project registry** at `~/.claude/compound-knowledg
 Before searching, check for feedback that shapes your behavior:
 
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show-feedback
 ```
 
 Apply **retrieval_depth** and **general** feedback to how many results you surface and how you present them.

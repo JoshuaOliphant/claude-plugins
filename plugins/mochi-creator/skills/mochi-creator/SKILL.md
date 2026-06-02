@@ -82,7 +82,7 @@ For full cognitive science background, knowledge-type strategies (factual, conce
 Run this and apply any returned preferences (card_quality, difficulty, formatting, deck_organization, topics, batch_size, general) throughout card creation:
 
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator show-feedback
 ```
 
 ### Step 1: Establish Context

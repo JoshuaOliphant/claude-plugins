@@ -118,6 +118,13 @@ These are flexible phases, not a fixed sequence. You may skip, reorder, or combi
 ### 1. Orient
 Understand the codebase. Read relevant files, check patterns, find integration points.
 
+**Retrieve before you plan (optional).** If the `compound-retrieve` skill is available in this
+session (the `compound-knowledge` plugin is installed), invoke it now — *before* the Architect
+runs — to surface past solutions, gotchas, and critical patterns for this feature. Fold what it
+returns into the Architect's prompt so the plan starts from institutional memory instead of a
+blank slate. If the plugin is not installed, skip this silently — it is a soft dependency, never
+a blocker.
+
 ### 2. Plan
 Create a feature branch and plan document. For simple tasks, the plan may be mental. For moderate+, use the Architect pattern or plan it yourself.
 
@@ -160,6 +167,13 @@ Merge completed work:
 
 ### 7. Document
 Update docs. Use the Documenter pattern or do it yourself for small changes.
+
+**Capture what you learned (optional).** Once verification is green and the work is committed, if
+the `compound-capture` skill is available, invoke it to record any non-trivial solution, gotcha, or
+pattern this feature produced — so the next SDLC run retrieves it in phase 1. Capture solutions,
+not trivia (the skill's triviality filter handles the bar). After a run of captures, consider
+`compound-graduate` to promote recurring lessons into `CLAUDE.md`. Skip silently if the plugin is
+not installed.
 
 ### 8. Ship
 Create the PR. Use the PR-Creator pattern or `gh pr create` yourself.
@@ -284,6 +298,21 @@ If `bd` is available:
 If `bd` is unavailable:
 - Use `TaskCreate` / `TaskUpdate` for task tracking with dependency support
 - Use `TaskList` to check status and find ready work
+
+## Knowledge Integration (optional, cross-plugin)
+
+The SDLC workflow composes with the `compound-knowledge` plugin when it is installed, forming a
+learning loop across runs. This is a **soft dependency** — every step degrades gracefully to a
+no-op when the plugin is absent, so `autonomous-sdlc` stays self-contained.
+
+| When | Skill | Why |
+|------|-------|-----|
+| Phase 1 (Orient), before the Architect plans | `compound-retrieve` | Start planning from past solutions and critical-pattern warnings instead of a blank slate |
+| Phase 7 (Document), after verification is green | `compound-capture` | Record the non-trivial solution so the next run retrieves it |
+| After a run of captures | `compound-graduate` | Promote recurring lessons into `CLAUDE.md` / `AGENTS.md` |
+
+The loop: **retrieve → plan → build → verify → capture → (periodically) graduate.** Detect
+availability by whether these skills appear in the session; never block the workflow on them.
 
 ## Branch Strategy
 

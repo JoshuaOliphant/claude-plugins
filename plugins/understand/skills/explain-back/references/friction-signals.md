@@ -40,9 +40,12 @@ and explains again. Never teach in this mode.
 
 - One card per closed/confirmed gap, up to `card_cap`. If gaps exceed the cap, choose the most
   load-bearing and say which were dropped.
-- Follow effective-prompt principles: focused (one idea), precise, effortful (the answer should
-  require recall, not recognition). Prefer mechanism questions ("why does X cause Y?") over
-  fact-lookup.
+- Apply the five properties of effective prompts — **focused, precise, consistent, tractable,
+  effortful** — and reject the anti-patterns (binary yes/no, pattern-matching, unfocused, vague,
+  trivial). These are the same cognitive-science rules `mochi-creator` uses; the full background
+  (with the per-card quality checklist and knowledge-type strategies) lives in the shared
+  `references/prompt_design_principles.md`. Prefer mechanism questions ("why does X cause Y?")
+  over fact-lookup — a closed gap is almost always a mechanism, which makes for an effortful card.
 - Write into `mochi_deck`. If empty, ask which deck (list via the Mochi MCP). If the MCP is
   unavailable, skip and report — never fail the session over cards.
 
