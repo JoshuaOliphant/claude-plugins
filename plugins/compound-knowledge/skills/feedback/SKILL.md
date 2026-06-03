@@ -26,7 +26,7 @@ When the user provides feedback on capture or retrieval behavior, save it:
 
 ```bash
 echo '{"category": "<category>", "feedback": "<what the user said>", "context": "<optional context>"}' | \
-  python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge save-feedback
+  python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge save-feedback
 ```
 
 **Categories**: capture_format, categorization, triviality_threshold, cross_references, retrieval_depth, principle_style, general
@@ -43,7 +43,7 @@ echo '{"category": "<category>", "feedback": "<what the user said>", "context": 
 Display all stored feedback:
 
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show-feedback
 ```
 
 Present as a readable list grouped by category.
@@ -54,10 +54,10 @@ Clear all feedback or feedback for a specific category:
 
 ```bash
 # Clear all
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge clear-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge clear-feedback
 
 # Clear only categorization feedback
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge clear-feedback categorization
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge clear-feedback categorization
 ```
 
 ### Consolidate Feedback
@@ -72,12 +72,12 @@ Claude-driven operation — no script needed.
 
 1. Load all stored feedback:
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show-feedback
 ```
 
 2. Read the target SKILL.md files that the feedback applies to:
-   - `${PLUGIN_ROOT}/skills/compound-capture/SKILL.md`
-   - `${PLUGIN_ROOT}/skills/compound-retrieve/SKILL.md`
+   - `${CLAUDE_PLUGIN_ROOT}/skills/compound-capture/SKILL.md`
+   - `${CLAUDE_PLUGIN_ROOT}/skills/compound-retrieve/SKILL.md`
 
 3. For each feedback entry, determine if it should be consolidated:
    - **Consolidate**: Universal preferences, repeated corrections, style rules that always apply
@@ -100,7 +100,7 @@ python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show-feedba
    - Edit the target SKILL.md files using the Edit tool
    - Clear only the graduated feedback entries:
    ```bash
-   python ${PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge clear-feedback <category>
+   python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge clear-feedback <category>
    ```
    - Keep non-graduated entries untouched
 

@@ -36,6 +36,10 @@ Think hard before you write the plan. Reason through dependencies, integration p
 - **Beads workflow**: If `bd` is available, create tasks with `bd create` and set dependencies with `bd dep add`
 - **Plan documents**: Your primary output is a structured plan at `specs/{feature-slug}-plan.md`
 - **Feature branches**: You create the integration target branch
+- **Past solutions (optional)**: If the lead passed you findings from `compound-retrieve`, or that
+  skill is available to you, consult institutional memory *before* committing to an approach. Fold
+  relevant past solutions, gotchas, and critical patterns into your Solution Approach and Notes.
+  This is a soft dependency — proceed normally if no such knowledge exists.
 
 ## Your Responsibilities
 

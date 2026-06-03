@@ -105,7 +105,7 @@ For detailed hexagonal architecture explanation and SDK API details:
 Run this and apply any returned preferences (architecture, tools, skill_file, ui_components, styling, agent_behavior, general) throughout app scaffolding:
 
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents show-feedback
 ```
 
 ### Step 1: Initialize Project Structure

@@ -55,7 +55,10 @@ attempt gate is the entire point. Breaking it re-creates the illusion this skill
      again. Do not teach.
 
 7. **Outputs.**
-   - **Mochi cards:** for each closed/confirmed gap (up to `card_cap`), write a card with
+   - **Mochi cards:** for each closed/confirmed gap (up to `card_cap`), write a card that obeys the
+     five properties of effective prompts (focused, precise, consistent, tractable, effortful) —
+     see `references/prompt_design_principles.md`, the shared cognitive-science core also used by
+     `mochi-creator`. Create cards with
      `mcp__plugin_understand_mochi-donut__create_cards` into `mochi_deck`. List decks with
      `mcp__plugin_understand_mochi-donut__list_decks` first; if `mochi_deck` is empty, ask which
      deck. The plugin bundles the mochi-donut MCP via `.mcp.json`; if it is unavailable (e.g.
@@ -80,4 +83,6 @@ See `references/friction-signals.md` for grading heuristics, answer-key construc
 
 - `scripts/resolve_config.py` — resolves plugin settings.
 - `references/friction-signals.md` — grading heuristics and protocol.
+- `references/prompt_design_principles.md` — shared cognitive-science core for effective prompts
+  (synced from one canonical source; also used by `mochi-creator`). Apply it when writing cards.
 - `assets/session-record-template.md` — resumable session-record template.

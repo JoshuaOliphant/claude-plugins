@@ -26,7 +26,7 @@ When the user provides feedback on loop design or execution, save it:
 
 ```bash
 echo '{"category": "<category>", "feedback": "<what the user said>", "context": "<optional context>"}' | \
-  python ${PLUGIN_ROOT}/scripts/feedback_manager.py autoloop save-feedback
+  python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autoloop save-feedback
 ```
 
 **Categories**: loop_design, metrics, quality_gates, runner_script, time_budget, change_strategy, general
@@ -43,7 +43,7 @@ echo '{"category": "<category>", "feedback": "<what the user said>", "context": 
 Display all stored feedback:
 
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py autoloop show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autoloop show-feedback
 ```
 
 Present as a readable list grouped by category.
@@ -54,10 +54,10 @@ Clear all feedback or feedback for a specific category:
 
 ```bash
 # Clear all
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py autoloop clear-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autoloop clear-feedback
 
 # Clear only metrics feedback
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py autoloop clear-feedback metrics
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autoloop clear-feedback metrics
 ```
 
 ### Consolidate Feedback
@@ -72,11 +72,11 @@ Claude-driven operation — no script needed.
 
 1. Load all stored feedback:
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py autoloop show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autoloop show-feedback
 ```
 
 2. Read the target SKILL.md file:
-   - `${PLUGIN_ROOT}/skills/autoloop/SKILL.md`
+   - `${CLAUDE_PLUGIN_ROOT}/skills/autoloop/SKILL.md`
 
 3. For each feedback entry, determine if it should be consolidated:
    - **Consolidate**: Universal preferences, repeated corrections, style rules that always apply
@@ -99,7 +99,7 @@ python ${PLUGIN_ROOT}/scripts/feedback_manager.py autoloop show-feedback
    - Edit the target SKILL.md files using the Edit tool
    - Clear only the graduated feedback entries:
    ```bash
-   python ${PLUGIN_ROOT}/scripts/feedback_manager.py autoloop clear-feedback <category>
+   python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autoloop clear-feedback <category>
    ```
    - Keep non-graduated entries untouched
 

@@ -108,7 +108,7 @@ For detailed allowed change types per domain (ML, test coverage, performance, li
 Load any stored feedback preferences before starting:
 
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py autoloop show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autoloop show-feedback
 ```
 
 If feedback entries exist, apply the returned preferences (loop_design, metrics, quality_gates, runner_script, time_budget, change_strategy, general) throughout loop design.

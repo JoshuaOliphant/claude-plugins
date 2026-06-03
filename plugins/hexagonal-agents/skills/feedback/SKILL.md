@@ -26,7 +26,7 @@ When the user provides feedback on generated apps, save it:
 
 ```bash
 echo '{"category": "<category>", "feedback": "<what the user said>", "context": "<optional context>"}' | \
-  python ${PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents save-feedback
+  python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents save-feedback
 ```
 
 **Categories**: architecture, tools, skill_file, ui_components, styling, agent_behavior, general
@@ -43,7 +43,7 @@ echo '{"category": "<category>", "feedback": "<what the user said>", "context": 
 Display all stored feedback:
 
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents show-feedback
 ```
 
 Present as a readable list grouped by category.
@@ -54,10 +54,10 @@ Clear all feedback or feedback for a specific category:
 
 ```bash
 # Clear all
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents clear-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents clear-feedback
 
 # Clear only styling feedback
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents clear-feedback styling
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents clear-feedback styling
 ```
 
 ### Consolidate Feedback
@@ -72,11 +72,11 @@ Claude-driven operation — no script needed.
 
 1. Load all stored feedback:
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents show-feedback
 ```
 
 2. Read the target SKILL.md file:
-   - `${PLUGIN_ROOT}/skills/hexagonal-agents/SKILL.md`
+   - `${CLAUDE_PLUGIN_ROOT}/skills/hexagonal-agents/SKILL.md`
 
 3. For each feedback entry, determine if it should be consolidated:
    - **Consolidate**: Universal preferences, repeated corrections, style rules that always apply
@@ -99,7 +99,7 @@ python ${PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents show-feedback
    - Edit the target SKILL.md files using the Edit tool
    - Clear only the graduated feedback entries:
    ```bash
-   python ${PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents clear-feedback <category>
+   python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents clear-feedback <category>
    ```
    - Keep non-graduated entries untouched
 

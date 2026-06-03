@@ -151,6 +151,13 @@ TaskUpdate(taskId="{task-id}", status="completed")
 - Code follows existing codebase patterns
 - New files have ABOUTME comments
 
+## Capturing What You Learned
+
+If you hit a non-trivial solution, a surprising gotcha, or a pattern worth remembering, note it in
+your report so the lead can record it via `compound-capture` in the Document phase. Knowledge
+capture happens once at the feature level — don't invoke it per task, and don't capture trivia.
+This is optional and only applies when the `compound-knowledge` plugin is installed.
+
 ## Communication
 
 **As a subagent**: Your commit and task status are your report. The lead reads the results.

@@ -19,7 +19,9 @@ claude-plugins/
 │   ├── compound-knowledge/         # Capture / retrieve / graduate engineering knowledge
 │   └── autoloop/                   # Generate autonomous experiment-optimization loops
 ├── scripts/
-│   └── check_marketplace_versions.py  # Asserts marketplace.json matches each plugin.json
+│   ├── check_marketplace_versions.py  # Asserts marketplace.json matches each plugin.json
+│   ├── sync_shared.py                 # Asserts/regenerates per-plugin copies of shared artifacts
+│   └── shared/                        # Canonical sources for artifacts duplicated across plugins
 ├── ai_docs/                        # Background research/reference docs (not shipped in plugins)
 ├── docs/                           # Planning and specifications
 ├── README.md                       # Marketplace installation instructions
@@ -108,6 +110,21 @@ card = api.create_card(
 ```bash
 python scripts/check_marketplace_versions.py   # exits non-zero on any drift
 ```
+
+### Shared-source sync (generate from one source)
+
+Some artifacts must be physically present in multiple self-contained plugins but should never
+diverge — e.g. `feedback_manager.py` (shipped by 5 plugins) and `prompt_design_principles.md`
+(shared by `mochi-creator` and `understand`). The canonical copy lives under `scripts/shared/`;
+each plugin's copy is generated from it.
+
+```bash
+python scripts/sync_shared.py            # check for drift (exits non-zero on mismatch)
+python scripts/sync_shared.py --write     # regenerate every copy from its canonical source
+```
+
+Edit only the canonical file in `scripts/shared/`, then run `--write`. Register a new shared
+artifact by appending to `SHARED_ARTIFACTS` in `scripts/sync_shared.py`.
 
 ## Important Implementation Details
 

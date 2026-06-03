@@ -27,7 +27,7 @@ When the user provides feedback on card creation, save it:
 
 ```bash
 echo '{"category": "<category>", "feedback": "<what the user said>", "context": "<optional context>"}' | \
-  python ${PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator save-feedback
+  python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator save-feedback
 ```
 
 **Categories**: card_quality, difficulty, formatting, deck_organization, topics, batch_size, general
@@ -45,7 +45,7 @@ echo '{"category": "<category>", "feedback": "<what the user said>", "context": 
 Display all stored feedback:
 
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator show-feedback
 ```
 
 Present as a readable list grouped by category.
@@ -56,10 +56,10 @@ Clear all feedback or feedback for a specific category:
 
 ```bash
 # Clear all
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator clear-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator clear-feedback
 
 # Clear only difficulty feedback
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator clear-feedback difficulty
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator clear-feedback difficulty
 ```
 
 ### Consolidate Feedback
@@ -74,11 +74,11 @@ Claude-driven operation — no script needed.
 
 1. Load all stored feedback:
 ```bash
-python ${PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator show-feedback
+python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator show-feedback
 ```
 
 2. Read the target SKILL.md file:
-   - `${PLUGIN_ROOT}/skills/mochi-creator/SKILL.md`
+   - `${CLAUDE_PLUGIN_ROOT}/skills/mochi-creator/SKILL.md`
 
 3. For each feedback entry, determine if it should be consolidated:
    - **Consolidate**: Universal preferences, repeated corrections, style rules that always apply
@@ -101,7 +101,7 @@ python ${PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator show-feedback
    - Edit the target SKILL.md files using the Edit tool
    - Clear only the graduated feedback entries:
    ```bash
-   python ${PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator clear-feedback <category>
+   python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py mochi-creator clear-feedback <category>
    ```
    - Keep non-graduated entries untouched
 

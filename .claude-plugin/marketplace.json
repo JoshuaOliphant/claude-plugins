@@ -13,7 +13,7 @@
       "name": "mochi-creator",
       "source": "./plugins/mochi-creator",
       "description": "Create evidence-based spaced repetition flashcards using cognitive science principles. Applies the 5 properties of effective prompts for long-term retention.",
-      "version": "1.4.1",
+      "version": "1.4.2",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -30,7 +30,7 @@
       "name": "autonomous-sdlc",
       "source": "./plugins/autonomous-sdlc",
       "description": "Adaptive autonomous SDLC with agent teams, native worktree isolation, TDD, BDD, Beads issue tracking, and verification pipelines",
-      "version": "1.3.1",
+      "version": "1.3.2",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -51,7 +51,7 @@
       "name": "hexagonal-agents",
       "source": "./plugins/hexagonal-agents",
       "description": "Build web apps where an AI agent dynamically generates HTML UI using hexagonal architecture with HTMX",
-      "version": "1.4.1",
+      "version": "1.4.2",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -71,7 +71,7 @@
       "name": "compound-knowledge",
       "source": "./plugins/compound-knowledge",
       "description": "Capture solved problems, retrieve past solutions, and graduate accumulated knowledge into living context. Skills: compound-capture, compound-retrieve, compound-graduate.",
-      "version": "0.8.1",
+      "version": "0.8.2",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -88,7 +88,7 @@
       "name": "autoloop",
       "source": "./plugins/autoloop",
       "description": "Generate autonomous experiment loops with immutable runner scripts, tiered quality gates, secondary metrics, and structured METRIC output.",
-      "version": "0.6.0",
+      "version": "0.6.1",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -105,7 +105,7 @@
     {
       "name": "observability-harness",
       "source": "./plugins/observability-harness",
-      "description": "Install a local, Docker-free OTLP observability stack (OpenTelemetry → Vector → JSONL, optionally VictoriaLogs + VictoriaMetrics) into a project and instrument the code, with a scan-and-propose step for domain-appropriate spans and metrics.",
+      "description": "Install a local, Docker-free OTLP observability stack (OpenTelemetry \u2192 Vector \u2192 JSONL, optionally VictoriaLogs + VictoriaMetrics) into a project and instrument the code, with a scan-and-propose step for domain-appropriate spans and metrics.",
       "version": "0.1.0",
       "author": {
         "name": "Joshua Oliphant"
@@ -128,7 +128,7 @@
       "name": "understand",
       "source": "./plugins/understand",
       "description": "Process information for real understanding with the explain-back skill: explain from memory, grade against the real source, struggle-then-teach per gap, output Mochi cards and a resumable session record. An antidote to the illusion of clarity.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "Joshua Oliphant"
       },
