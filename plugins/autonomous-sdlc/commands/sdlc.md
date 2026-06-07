@@ -381,8 +381,9 @@ pass checks" (deterministic, per task). The review gate answers "is the code act
 Any transform must be followed by a full verification-stack re-run — never let a step that
 mutates code be the last thing before Ship.
 
-Detect availability by whether these agent types are spawnable in the session; never block
-the workflow on them.
+**Availability check**: before spawning, confirm these `subagent_type`s appear in your
+available agent list. If they don't, skip the phase silently — do not attempt the Task call
+(it would hard-fail rather than no-op). Never block the workflow on them.
 
 ## Branch Strategy
 
