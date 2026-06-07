@@ -52,8 +52,10 @@ Agent teams preferred (if available). Teammates self-coordinate, builders and va
 │  3. Decompose — break into tasks            │
 │  4. Build — solo, subagents, or team        │
 │  5. Verify — validators check work          │
+│     ↳ Refine — simplify + re-verify (opt.)  │
 │  6. Integrate — merge if using worktrees    │
 │  7. Document — update docs                  │
+│     ↳ Review Gate — semantic review (opt.)  │
 │  8. Ship — create PR                        │
 │                                             │
 │  Phases are flexible, not sequential.       │
