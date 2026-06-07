@@ -159,6 +159,25 @@ Validate the work:
 - **Subagent validators**: `Task(subagent_type="autonomous-sdlc:validator", ...)`
 - **Team validators**: Validators message builders with feedback directly
 
+### 5.5 Refine (optional, soft dependency)
+If the `pr-review-toolkit` plugin is installed AND the user opted into refinement, run the
+code simplifier over the verified work:
+
+```python
+Task(
+    subagent_type="pr-review-toolkit:code-simplifier",
+    description="Simplify verified implementation",
+    prompt="Simplify the code changed on this feature branch for clarity and maintainability. Preserve all functionality. Match the style of surrounding code. Never remove comments."
+)
+```
+
+**This is a transform, not a gate** — it mutates code. Two hard rules:
+1. Only run it on a **green** verification state (after phase 5 passes).
+2. **Re-run the full verification stack after it finishes.** A refinement that breaks the build gets reverted, not shipped.
+
+Skip silently if the plugin is absent. Skip by default in fully autonomous runs unless the
+user asked for refinement — a generic simplifier can fight local conventions.
+
 ### 6. Integrate
 Merge completed work:
 - **No worktrees**: Nothing to merge — work is already on the branch
@@ -174,6 +193,33 @@ pattern this feature produced — so the next SDLC run retrieves it in phase 1. 
 not trivia (the skill's triviality filter handles the bar). After a run of captures, consider
 `compound-graduate` to promote recurring lessons into `CLAUDE.md`. Skip silently if the plugin is
 not installed.
+
+### 7.5 Review Gate (optional, soft dependency)
+If the `pr-review-toolkit` plugin is installed, run a semantic review gate before shipping.
+This catches what the deterministic stack can't: logic errors, silently swallowed failures,
+convention drift, over-engineering. Run once per feature (not per task) to keep cost sane.
+
+```python
+# Both reviewers are read-only — safe to run in parallel
+Task(
+    subagent_type="pr-review-toolkit:code-reviewer",
+    description="Review feature branch changes",
+    prompt="Review the diff of this feature branch against main for bugs, logic errors, and adherence to project conventions. Report only high-confidence issues."
+)
+Task(
+    subagent_type="pr-review-toolkit:silent-failure-hunter",
+    description="Hunt silent failures in feature changes",
+    prompt="Examine the diff of this feature branch against main for silent failures: swallowed exceptions, inadequate error handling, inappropriate fallback behavior."
+)
+```
+
+**Pass criterion**: zero high-confidence findings from either reviewer.
+
+**On findings**: route them back to a builder (subagent or teammate) as a fix task, re-run
+the verification stack, then re-run the gate. Low-confidence or stylistic suggestions don't
+block — note them in the PR description instead.
+
+Skip this gate silently if the plugin is absent — it is a soft dependency, never a blocker.
 
 ### 8. Ship
 Create the PR. Use the PR-Creator pattern or `gh pr create` yourself.
@@ -314,6 +360,31 @@ no-op when the plugin is absent, so `autonomous-sdlc` stays self-contained.
 The loop: **retrieve → plan → build → verify → capture → (periodically) graduate.** Detect
 availability by whether these skills appear in the session; never block the workflow on them.
 
+## Review Integration (optional, cross-plugin)
+
+The SDLC workflow also composes with the `pr-review-toolkit` plugin when it is installed,
+adding semantic review on top of the deterministic verification stack. Like the knowledge
+integration, this is a **soft dependency** — every step degrades gracefully to a no-op when
+the plugin is absent.
+
+| When | Agent | Role | Why |
+|------|-------|------|-----|
+| Phase 5.5 (Refine), only after verification is green | `pr-review-toolkit:code-simplifier` | **Transform** — mutates code, requires re-verification | Clarity and maintainability pass before review |
+| Phase 7.5 (Review Gate), before Ship | `pr-review-toolkit:code-reviewer` | **Gate** — read-only, blocks on high-confidence findings | Catches logic errors and convention drift linters can't |
+| Phase 7.5 (Review Gate), before Ship | `pr-review-toolkit:silent-failure-hunter` | **Gate** — read-only, blocks on high-confidence findings | Swallowed errors are exactly what an unattended loop won't notice |
+
+**Division of labor with the Validator**: the Validator answers "does it meet the spec and
+pass checks" (deterministic, per task). The review gate answers "is the code actually good"
+(semantic, once per feature). They are complementary, not redundant.
+
+**Gates vs. transforms**: a gate is read-only and emits findings; a transform edits code.
+Any transform must be followed by a full verification-stack re-run — never let a step that
+mutates code be the last thing before Ship.
+
+**Availability check**: before spawning, confirm these `subagent_type`s appear in your
+available agent list. If they don't, skip the phase silently — do not attempt the Task call
+(it would hard-fail rather than no-op). Never block the workflow on them.
+
 ## Branch Strategy
 
 ```
@@ -372,8 +443,10 @@ When complete, provide:
 | Plan | ✅ | {Architect subagent | Lead} |
 | Build | ✅ | {N builders | Lead | Team} |
 | Verify | ✅ | {N validators | Lead | Team} |
+| Refine | {✅ | skipped} | {code-simplifier + re-verify | N/A} |
 | Integrate | ✅ | {Integrator | Lead | N/A} |
 | Document | ✅ | {Documenter | Lead} |
+| Review Gate | {✅ | skipped} | {code-reviewer + silent-failure-hunter | N/A} |
 | Ship | ✅ | {PR-Creator | Lead} |
 
 ### Pull Request
