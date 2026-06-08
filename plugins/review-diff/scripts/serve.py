@@ -60,6 +60,9 @@ class ReviewHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _send_json_error(self, code, exc):
+        self._send(code, json.dumps({"error": str(exc)}).encode(), "application/json")
+
     def do_GET(self):
         if self.path in ("/", "/index.html"):
             self._send(200, render_html(self.diff_data), "text/html; charset=utf-8")
@@ -75,10 +78,18 @@ class ReviewHandler(BaseHTTPRequestHandler):
             body = self.rfile.read(length)
             try:
                 data = validate_review(json.loads(body))
-                self.review_path.write_text(json.dumps(data, indent=2) + "\n")
-                self._send(200, b'{"ok":true}', "application/json")
             except (json.JSONDecodeError, ValueError) as exc:
-                self._send(400, json.dumps({"error": str(exc)}).encode(), "application/json")
+                self._send_json_error(400, exc)
+                return
+            try:
+                self.review_path.write_text(json.dumps(data, indent=2) + "\n")
+            except OSError as exc:
+                # The review can't be persisted (disk full, permissions, missing
+                # dir). Answer 500 so the client falls back to a local download
+                # instead of losing the user's comments.
+                self._send_json_error(500, exc)
+                return
+            self._send(200, b'{"ok":true}', "application/json")
         else:
             self.send_error(404)
 

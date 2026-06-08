@@ -1,6 +1,6 @@
 {
   "name": "review-diff",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Local web-based diff review — comment on your working-tree or committed-branch diff in the browser and feed the comments back to Claude Code",
   "author": {
     "name": "Joshua Oliphant"

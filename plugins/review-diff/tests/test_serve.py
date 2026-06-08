@@ -3,6 +3,7 @@ import subprocess
 import threading
 import urllib.error
 import urllib.request
+from contextlib import contextmanager
 
 import pytest
 
@@ -54,16 +55,23 @@ def test_validate_review_rejects_missing_comments():
 _DIFF = {"repo": "demo", "files": [], "has_changes": True}
 
 
+@contextmanager
+def spawn_server(review_path):
+    """Run a ReviewHandler server on a free port for the duration of the block."""
+    server = start_server(_DIFF, review_path, 0)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        yield f"http://127.0.0.1:{server.server_address[1]}"
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
 @pytest.fixture
 def running_server(tmp_path):
     review_path = tmp_path / "review.json"
-    server = start_server(_DIFF, review_path, 0)
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
-    thread.start()
-    base = f"http://127.0.0.1:{server.server_address[1]}"
-    yield base, review_path
-    server.shutdown()
-    server.server_close()
+    with spawn_server(review_path) as base:
+        yield base, review_path
 
 
 def test_get_index_returns_html(running_server):
@@ -95,6 +103,42 @@ def test_get_review_empty_when_missing(running_server):
     base, _ = running_server
     body = urllib.request.urlopen(base + "/api/review").read().decode()
     assert json.loads(body) == {}
+
+
+def test_review_roundtrip_through_server(running_server):
+    # The real user loop: POST a review to the running server, then GET it back
+    # from the SAME server and confirm it matches. Exercises the write and read
+    # halves against each other, not just against the filesystem.
+    base, _ = running_server
+    payload = {
+        "summary": "looks good",
+        "comments": [{"file": "a.py", "line": 3, "side": "new", "body": "nit"}],
+    }
+    req = urllib.request.Request(
+        base + "/api/review",
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert urllib.request.urlopen(req).status == 200
+    got = json.loads(urllib.request.urlopen(base + "/api/review").read().decode())
+    assert got["summary"] == "looks good"
+    assert got["comments"] == payload["comments"]
+
+
+def test_post_review_returns_500_on_write_failure(tmp_path):
+    # If review.json can't be written (here: its parent dir doesn't exist) the
+    # server must answer 500 so the client can fall back to a local download,
+    # rather than crashing or silently losing the review.
+    bad_path = tmp_path / "missing-dir" / "review.json"
+    with spawn_server(bad_path) as base:
+        req = urllib.request.Request(
+            base + "/api/review",
+            data=json.dumps({"summary": "s", "comments": []}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with pytest.raises(urllib.error.HTTPError) as exc:
+            urllib.request.urlopen(req)
+        assert exc.value.code == 500
 
 
 def test_post_invalid_json_returns_400(running_server):

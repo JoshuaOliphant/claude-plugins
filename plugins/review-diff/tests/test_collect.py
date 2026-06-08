@@ -95,6 +95,61 @@ def test_parse_deleted():
     assert files[0]["hunks"][0]["lines"][0]["side"] == "old"
 
 
+BINARY_MODIFIED_DIFF = """diff --git logo.png logo.png
+index 0000000..1111111 100644
+Binary files logo.png and logo.png differ
+"""
+
+BINARY_ADDED_DIFF = """diff --git logo.png logo.png
+new file mode 100644
+index 0000000..1111111
+Binary files /dev/null and logo.png differ
+"""
+
+BINARY_DELETED_DIFF = """diff --git logo.png logo.png
+deleted file mode 100644
+index 1111111..0000000
+Binary files logo.png and /dev/null differ
+"""
+
+
+def test_parse_binary_modified():
+    # Binary files have no ---/+++/@@ lines; the path must come from the
+    # "Binary files" line so the entry never carries path=None.
+    files = parse_unified_diff(BINARY_MODIFIED_DIFF)
+    assert files[0]["path"] == "logo.png"
+    assert files[0]["old_path"] == "logo.png"
+    assert files[0]["status"] == "binary"
+    assert files[0]["hunks"] == []
+
+
+def test_parse_binary_added():
+    files = parse_unified_diff(BINARY_ADDED_DIFF)
+    assert files[0]["path"] == "logo.png"
+    assert files[0]["old_path"] is None
+    assert files[0]["status"] == "binary"
+
+
+def test_parse_binary_deleted():
+    files = parse_unified_diff(BINARY_DELETED_DIFF)
+    assert files[0]["path"] == "logo.png"
+    assert files[0]["old_path"] == "logo.png"
+    assert files[0]["status"] == "binary"
+
+
+def test_collect_diff_binary_file_has_path(tmp_path):
+    # End-to-end: a real staged binary change must surface with a path, not None.
+    _init_repo(tmp_path)
+    _commit_initial(tmp_path)
+    (tmp_path / "blob.bin").write_bytes(bytes(range(256)))
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True, capture_output=True)
+    data = collect_diff(str(tmp_path))
+    binary = [f for f in data["files"] if f["path"] == "blob.bin"]
+    assert len(binary) == 1
+    assert binary[0]["status"] in ("binary", "untracked")
+    assert None not in [f["path"] for f in data["files"]]
+
+
 def test_parse_empty():
     assert parse_unified_diff("") == []
 

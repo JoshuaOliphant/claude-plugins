@@ -50,6 +50,7 @@
   .badge.modified{background:#15263a;color:var(--accent);}
   .badge.deleted{background:var(--del);color:var(--del-text);}
   .badge.untracked{background:#2a2410;color:#d29922;}
+  .badge.binary{background:#262c36;color:#8b949e;}
   table{width:100%;border-collapse:collapse;font-family:ui-monospace,monospace;font-size:12px;}
   td.gutter{width:44px;text-align:right;padding:0 8px;color:var(--muted);user-select:none;border-right:1px solid var(--border);}
   td.code{padding:0 10px;white-space:pre-wrap;word-break:break-word;}
@@ -332,25 +333,41 @@ async function restore(){
   } catch (e) { /* static mode: no server */ }
 }
 
+function downloadReview(payload){
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'review.json'; a.click();
+}
+
 document.getElementById('submit').addEventListener('click', async () => {
   const payload = {
     summary: document.getElementById('summary').value.trim(),
     comments: Array.from(comments.values()),
   };
   const toast = document.getElementById('toast');
+  const show = (msg) => {
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 6000);
+  };
   try {
     const r = await fetch('/api/review', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(payload),
     });
-    toast.textContent = r.ok ? 'Review submitted — return to Claude and say you are done.' : 'Error saving review.';
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 6000);
+    if (r.ok) {
+      show('Review submitted — return to Claude and say you are done.');
+    } else {
+      // Server reachable but couldn't save (e.g. 500 on a write failure).
+      // Don't lose the review — hand it back as a file.
+      downloadReview(payload);
+      show('Server could not save the review — downloaded review.json instead. Give that file to Claude.');
+    }
   } catch (e) {
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = 'review.json'; a.click();
+    // No server (static mode or connection dropped) — fall back to a download.
+    downloadReview(payload);
+    show('No server connection — downloaded review.json instead. Give that file to Claude.');
   }
 });
 

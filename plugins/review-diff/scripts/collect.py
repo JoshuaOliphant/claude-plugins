@@ -143,6 +143,15 @@ def parse_unified_diff(diff_text: str) -> list[FileDiff]:
                 current_file["path"] = current_file["old_path"]
             else:
                 current_file["path"] = new[2:] if new.startswith("b/") else new
+        elif line.startswith("Binary files "):
+            # Binary files have no ---/+++/@@ lines, so derive the path here and
+            # mark the status so the viewer can label it instead of rendering a
+            # path-less "modified" entry. Format: "Binary files OLD and NEW differ".
+            old_p, _, new_p = line[len("Binary files ") :].removesuffix(" differ").partition(" and ")
+            current_file["status"] = "binary"
+            current_file["path"] = new_p if new_p != "/dev/null" else old_p
+            if old_p != "/dev/null":
+                current_file["old_path"] = old_p
         elif line.startswith("@@"):
             match = _HUNK_RE.match(line)
             if match is None:
