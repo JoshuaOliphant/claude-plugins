@@ -42,7 +42,9 @@ The scripts are stdlib-only — run them with `python3` directly, no venv needed
 
    - If the log shows `NO_CHANGES`, tell the user there are no changes to review (no
      uncommitted changes and no commits ahead of the base) and stop.
-   - If it shows `Error: ... is not a git repository`, tell the user and stop.
+   - If it shows any `Error:` line (e.g. `... is not a git repository`, or a git
+     failure like a bad `--base` ref or a repo with no commits), relay that message
+     to the user and stop — do not treat it as "no changes."
    - Otherwise read the `Mode:` line (so you can tell the user what's being shown),
      and the `Review file:` path and `PID:` value, and remember them for steps 3 and 5.
 

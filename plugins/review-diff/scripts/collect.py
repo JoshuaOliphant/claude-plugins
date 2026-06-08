@@ -10,8 +10,24 @@ class NotAGitRepo(Exception):
     """Raised when the target path is not inside a git work tree."""
 
 
-def _run_git(args, cwd):
-    return subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True)
+class GitCommandError(Exception):
+    """Raised when a git command that must succeed exits non-zero.
+
+    Carries the git stderr so callers can surface a real message instead of
+    treating an empty stdout (a failed command) as "no changes".
+    """
+
+    def __init__(self, args, stderr):
+        self.args = list(args)
+        self.stderr = stderr.strip()
+        super().__init__(f"git {' '.join(self.args)} failed: {self.stderr}")
+
+
+def _run_git(args, cwd, check=False):
+    result = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True)
+    if check and result.returncode != 0:
+        raise GitCommandError(args, result.stderr)
+    return result
 
 
 def is_git_repo(path):
@@ -88,11 +104,11 @@ def collect_diff(path: str = ".", base: str | None = None) -> dict:
         # Branch-review mode: show what HEAD adds over its merge-base with `base`
         # (three-dot), matching what a GitLab/GitHub MR displays. Untracked files
         # are not part of the committed branch, so they are excluded here.
-        diff_text = _run_git(["diff", "--no-prefix", f"{base}...HEAD"], path).stdout
+        diff_text = _run_git(["diff", "--no-prefix", f"{base}...HEAD"], path, check=True).stdout
         files = parse_unified_diff(diff_text)
     else:
         root = _run_git(["rev-parse", "--show-toplevel"], path).stdout.strip() or path
-        diff_text = _run_git(["diff", "--no-prefix", "HEAD"], path).stdout
+        diff_text = _run_git(["diff", "--no-prefix", "HEAD"], path, check=True).stdout
         files = parse_unified_diff(diff_text)
         for rel in get_untracked_files(path):
             files.append(build_untracked_file(rel, root))

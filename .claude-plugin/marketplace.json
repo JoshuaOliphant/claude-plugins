@@ -146,7 +146,7 @@
       "name": "review-diff",
       "source": "./plugins/review-diff",
       "description": "Local web-based diff review — comment on your working-tree or committed-branch diff in the browser and feed the comments back to Claude Code",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "author": {
         "name": "Joshua Oliphant"
       },

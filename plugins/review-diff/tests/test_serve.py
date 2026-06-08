@@ -303,3 +303,19 @@ def test_main_no_changes_even_after_fallback(monkeypatch, capsys):
     rc = serve.main(["--path", "."])
     assert rc == 0
     assert "NO_CHANGES" in capsys.readouterr().out
+
+
+def test_main_git_error_surfaces(monkeypatch, capsys):
+    # A git failure (e.g. a bad --base ref) must print a real error and exit
+    # non-zero, never a silent NO_CHANGES.
+    from collect import GitCommandError
+
+    def fake_collect(path, base=None):
+        raise GitCommandError(["diff", f"{base}...HEAD"], "fatal: bad revision")
+
+    monkeypatch.setattr(serve, "collect_diff", fake_collect)
+    rc = serve.main(["--path", ".", "--base", "nope"])
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "fatal: bad revision" in captured.err
+    assert "NO_CHANGES" not in captured.out

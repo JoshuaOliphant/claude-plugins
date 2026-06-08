@@ -14,7 +14,7 @@ from functools import partial
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
-from collect import NotAGitRepo, collect_diff, resolve_base
+from collect import GitCommandError, NotAGitRepo, collect_diff, resolve_base
 
 _TEMPLATE = Path(__file__).parent / "viewer.html"
 _PLACEHOLDER = "/*__EMBEDDED_DATA__*/"
@@ -152,6 +152,9 @@ def main(argv=None):
                         mode = f"branch vs {base}"
     except NotAGitRepo:
         print(f"Error: {args.path} is not a git repository", file=sys.stderr)
+        return 1
+    except GitCommandError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
         return 1
 
     if not diff_data["has_changes"]:

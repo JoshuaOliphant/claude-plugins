@@ -215,3 +215,43 @@ def test_collect_diff_base_mode_excludes_untracked(tmp_path):
     data = collect_diff(str(tmp_path), base="main")
     paths = [f["path"] for f in data["files"]]
     assert "untracked.txt" not in paths
+
+
+def test_collect_diff_base_mode_excludes_base_only_commits(tmp_path):
+    # Three-dot (merge-base) semantics: a commit that exists only on `main`
+    # after the branch diverged must NOT appear in the branch's diff. A
+    # regression to two-dot `base..HEAD` would surface it and fail this test.
+    _make_branch_with_commit(tmp_path)
+    subprocess.run(["git", "checkout", "main"], cwd=tmp_path, check=True, capture_output=True)
+    (tmp_path / "main_only.txt").write_text("base-only change\n")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "main only"], cwd=tmp_path, check=True, capture_output=True
+    )
+    subprocess.run(["git", "checkout", "feat"], cwd=tmp_path, check=True, capture_output=True)
+    data = collect_diff(str(tmp_path), base="main")
+    paths = [f["path"] for f in data["files"]]
+    assert "tracked.txt" in paths  # the branch's own change is present
+    assert "main_only.txt" not in paths  # base-only change excluded (merge-base)
+
+
+def test_collect_diff_invalid_base_raises(tmp_path):
+    # A bad --base ref must surface as an error, not a silent empty diff that
+    # masquerades as "no changes vs the base".
+    from collect import GitCommandError
+
+    _make_branch_with_commit(tmp_path)
+    with pytest.raises(GitCommandError):
+        collect_diff(str(tmp_path), base="does-not-exist")
+
+
+def test_collect_diff_no_commits_raises(tmp_path):
+    # In a repo with no commits HEAD is unresolvable; staged work must not be
+    # silently dropped as "no changes".
+    from collect import GitCommandError
+
+    _init_repo(tmp_path)
+    (tmp_path / "staged.txt").write_text("hello\n")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True, capture_output=True)
+    with pytest.raises(GitCommandError):
+        collect_diff(str(tmp_path))
