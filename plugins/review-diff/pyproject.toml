@@ -1,0 +1,23 @@
+[project]
+name = "review-diff-dev"
+version = "0.1.0"
+description = "Dev tooling for the review-diff plugin (runtime is stdlib-only)"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "ty"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=collect --cov=serve --cov-report=term-missing"
+testpaths = ["tests"]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+
+[tool.ruff]
+line-length = 100

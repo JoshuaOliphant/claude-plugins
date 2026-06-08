@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diff Review</title>
+<style>
+  :root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;
+        --add:#12261c;--add-text:#3fb950;--del:#2a1418;--del-text:#f85149;--accent:#388bfd;--green:#3fb950;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);
+       font-size:13px;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+  header{flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);
+         padding:12px 20px;display:flex;justify-content:space-between;align-items:center;}
+  header h1{font-size:15px;}
+  header .meta{color:var(--muted);font-size:12px;margin-top:2px;}
+  header .actions{display:flex;gap:8px;align-items:center;}
+  button{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:8px 16px;font-size:13px;cursor:pointer;}
+  button.secondary{background:transparent;border:1px solid var(--border);color:var(--text);padding:6px 12px;font-size:12px;}
+
+  /* app-shell: header on top, sidebar + main scroll independently */
+  .layout{flex:1;display:flex;min-height:0;}
+  .sidebar{width:280px;flex-shrink:0;overflow:auto;border-right:1px solid var(--border);padding:10px 6px;}
+  main{flex:1;min-width:0;overflow:auto;padding:20px;}
+
+  /* sidebar file tree */
+  .tree-row,.tree-file{display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:4px;cursor:pointer;
+                       font-family:ui-monospace,monospace;font-size:12px;}
+  .tree-row:hover,.tree-file:hover{background:#1c2331;}
+  .tree-file.active{background:#15263a;}
+  .tree-children{margin-left:11px;border-left:1px solid var(--border);padding-left:4px;}
+  .chev{display:inline-block;width:12px;color:var(--muted);font-size:10px;flex-shrink:0;}
+  .tree-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tree-file .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .dot.added,.dot.untracked{background:var(--add-text);}
+  .dot.modified{background:var(--accent);}
+  .dot.deleted{background:var(--del-text);}
+  .tree-file .stats{margin-left:auto;font-size:10px;white-space:nowrap;padding-left:6px;}
+  .tree-file .stats .add{color:var(--add-text);}
+  .tree-file .stats .del{color:var(--del-text);}
+  .tree-file .cbadge{background:var(--accent);color:#fff;border-radius:9px;font-size:9px;padding:0 5px;flex-shrink:0;}
+
+  .file{border:1px solid var(--border);border-radius:6px;margin-bottom:20px;overflow:hidden;scroll-margin-top:10px;}
+  .file.flash{outline:2px solid var(--accent);}
+  .file-head{background:var(--surface);padding:8px 12px;font-family:ui-monospace,monospace;font-size:12px;
+             display:flex;gap:8px;align-items:center;cursor:pointer;}
+  .badge{font-size:10px;padding:1px 6px;border-radius:10px;text-transform:uppercase;}
+  .badge.added{background:var(--add);color:var(--add-text);}
+  .badge.modified{background:#15263a;color:var(--accent);}
+  .badge.deleted{background:var(--del);color:var(--del-text);}
+  .badge.untracked{background:#2a2410;color:#d29922;}
+  .badge.binary{background:#262c36;color:#8b949e;}
+  table{width:100%;border-collapse:collapse;font-family:ui-monospace,monospace;font-size:12px;}
+  td.gutter{width:44px;text-align:right;padding:0 8px;color:var(--muted);user-select:none;border-right:1px solid var(--border);}
+  td.code{padding:0 10px;white-space:pre-wrap;word-break:break-word;}
+  tr.add td.code{background:var(--add);}
+  tr.del td.code{background:var(--del);}
+  tr.line:hover td.code{outline:1px solid var(--accent);cursor:pointer;}
+  tr.hunkhead td{color:var(--muted);background:#0b1929;padding:2px 10px;}
+
+  /* comment editor + saved display share a padded box; flex lives on an inner div
+     (NOT the <td>) so table-cell width is computed correctly and text wraps. */
+  .cmtbox{background:#0b1929;border-left:3px solid var(--accent);padding:8px 12px;}
+  .cmtbox textarea{width:100%;background:var(--surface);color:var(--text);border:1px solid var(--border);
+                   border-radius:4px;padding:6px;font-family:inherit;font-size:12px;min-height:50px;resize:vertical;}
+  .cmtbox.saved-cell{border-left-color:var(--green);cursor:pointer;}
+  .cmtbox.saved-cell:hover{background:#10233d;}
+  .saved{display:flex;gap:10px;align-items:flex-start;}
+  .saved .tag{color:var(--add-text);font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0;}
+  .saved .body{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;
+               font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:13px;}
+  .saved .hint{color:var(--muted);font-size:11px;white-space:nowrap;flex-shrink:0;}
+  @keyframes savedflash{from{background:#1f3a28;}to{background:#0b1929;}}
+  .cmtbox.saved-cell.flash{animation:savedflash 1.1s ease-out;}
+
+  .summary{margin-bottom:20px;}
+  .summary textarea{width:100%;background:var(--surface);color:var(--text);border:1px solid var(--border);
+                    border-radius:6px;padding:10px;min-height:70px;font-family:inherit;font-size:13px;}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--add);color:var(--add-text);
+         padding:12px 18px;border-radius:6px;display:none;}
+  label.lbl{display:block;color:var(--muted);margin-bottom:6px;font-size:12px;}
+</style>
+</head>
+<body>
+<header>
+  <div><h1 id="repo"></h1><div class="meta" id="meta"></div></div>
+  <div class="actions">
+    <button id="collapse-all" class="secondary">Collapse all</button>
+    <button id="submit">Submit review</button>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar"><div id="tree"></div></aside>
+  <main>
+    <div class="summary">
+      <label class="lbl">Overall summary (optional)</label>
+      <textarea id="summary" placeholder="Overall thoughts..."></textarea>
+    </div>
+    <div id="files"></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+/*__EMBEDDED_DATA__*/
+const comments = new Map();      // key -> {file, line, side, code, body}
+const lineRows = new Map();      // key -> the diff line <tr>
+const fileSections = new Map();  // path -> {section, table, chev, add, del, status, treeRow, cbadge}
+let fileCount = 0;
+function key(f, s, l){ return f + '|' + s + '|' + l; }
+
+function updateMeta(){
+  const n = comments.size;
+  document.getElementById('meta').textContent =
+    fileCount + ' file(s) changed' + (n ? ' · ' + n + ' comment' + (n === 1 ? '' : 's') : '');
+}
+
+// Recompute per-file comment badges in the sidebar, plus the header count.
+function refreshCounts(){
+  const counts = {};
+  comments.forEach(c => { counts[c.file] = (counts[c.file] || 0) + 1; });
+  fileSections.forEach((f, path) => {
+    if (!f.cbadge) return;
+    const n = counts[path] || 0;
+    f.cbadge.textContent = n;
+    f.cbadge.style.display = n ? '' : 'none';
+  });
+  updateMeta();
+}
+
+function render(){
+  document.getElementById('repo').textContent = EMBEDDED_DATA.repo;
+  fileCount = EMBEDDED_DATA.files.length;
+  const container = document.getElementById('files');
+  EMBEDDED_DATA.files.forEach(file => {
+    const fd = document.createElement('div'); fd.className = 'file'; fd.dataset.path = file.path;
+    const head = document.createElement('div'); head.className = 'file-head';
+    const chev = document.createElement('span'); chev.className = 'chev'; chev.textContent = '▾';
+    const badge = document.createElement('span'); badge.className = 'badge ' + file.status; badge.textContent = file.status;
+    const name = document.createElement('span'); name.textContent = file.path;
+    head.appendChild(chev); head.appendChild(badge); head.appendChild(name);
+    const table = document.createElement('table');
+    head.addEventListener('click', () => setCollapsed(file.path, table.style.display !== 'none'));
+    fd.appendChild(head); fd.appendChild(table);
+    let add = 0, del = 0;
+    file.hunks.forEach(hunk => {
+      const hr = document.createElement('tr'); hr.className = 'hunkhead';
+      const hc = document.createElement('td'); hc.colSpan = 3; hc.textContent = hunk.header;
+      hr.appendChild(hc); table.appendChild(hr);
+      hunk.lines.forEach(line => {
+        if (line.side === 'new') add++; else if (line.side === 'old') del++;
+        const tr = document.createElement('tr');
+        tr.className = 'line ' + (line.side === 'new' ? 'add' : line.side === 'old' ? 'del' : '');
+        const og = document.createElement('td'); og.className = 'gutter'; og.textContent = line.old_line || '';
+        const ng = document.createElement('td'); ng.className = 'gutter'; ng.textContent = line.new_line || '';
+        const code = document.createElement('td'); code.className = 'code';
+        const sign = line.side === 'new' ? '+' : line.side === 'old' ? '-' : ' ';
+        code.textContent = sign + line.text;
+        tr.appendChild(og); tr.appendChild(ng); tr.appendChild(code);
+        table.appendChild(tr);
+        const cside = line.side === 'old' ? 'old' : 'new';
+        const cline = line.side === 'old' ? line.old_line : line.new_line;
+        lineRows.set(key(file.path, cside, cline), tr);
+        tr.addEventListener('click', () => onLineClick(tr, file.path, cside, cline, line.text));
+      });
+    });
+    container.appendChild(fd);
+    fileSections.set(file.path, {section: fd, table, chev, add, del, status: file.status});
+  });
+  buildSidebar();
+  setupScrollSpy();
+  updateMeta();
+}
+
+function setCollapsed(path, collapsed){
+  const f = fileSections.get(path);
+  if (!f) return;
+  f.table.style.display = collapsed ? 'none' : '';
+  f.chev.textContent = collapsed ? '▸' : '▾';
+}
+
+function buildSidebar(){
+  const root = {dirs: {}, files: []};
+  fileSections.forEach((f, path) => {
+    const parts = path.split('/');
+    let node = root;
+    for (let i = 0; i < parts.length - 1; i++) {
+      node.dirs[parts[i]] = node.dirs[parts[i]] || {dirs: {}, files: []};
+      node = node.dirs[parts[i]];
+    }
+    node.files.push(path);
+  });
+  renderTree(root, document.getElementById('tree'));
+}
+
+function renderTree(node, parent){
+  Object.keys(node.dirs).sort().forEach(nm => {
+    const row = document.createElement('div'); row.className = 'tree-row';
+    const chev = document.createElement('span'); chev.className = 'chev'; chev.textContent = '▾';
+    const nameEl = document.createElement('span'); nameEl.className = 'tree-name'; nameEl.textContent = nm + '/';
+    row.appendChild(chev); row.appendChild(nameEl);
+    const kids = document.createElement('div'); kids.className = 'tree-children';
+    row.addEventListener('click', () => {
+      const hide = kids.style.display !== 'none';
+      kids.style.display = hide ? 'none' : '';
+      chev.textContent = hide ? '▸' : '▾';
+    });
+    parent.appendChild(row); parent.appendChild(kids);
+    renderTree(node.dirs[nm], kids);
+  });
+  node.files.sort().forEach(path => {
+    const f = fileSections.get(path);
+    const row = document.createElement('div'); row.className = 'tree-file'; row.dataset.path = path;
+    const dot = document.createElement('span'); dot.className = 'dot ' + f.status;
+    const nameEl = document.createElement('span'); nameEl.className = 'tree-name'; nameEl.textContent = path.split('/').pop();
+    const stats = document.createElement('span'); stats.className = 'stats';
+    const a = document.createElement('span'); a.className = 'add'; a.textContent = '+' + f.add;
+    const d = document.createElement('span'); d.className = 'del'; d.textContent = ' −' + f.del;
+    stats.appendChild(a); stats.appendChild(d);
+    const cbadge = document.createElement('span'); cbadge.className = 'cbadge'; cbadge.style.display = 'none';
+    row.appendChild(dot); row.appendChild(nameEl); row.appendChild(stats); row.appendChild(cbadge);
+    row.addEventListener('click', () => {
+      setCollapsed(path, false);
+      f.section.scrollIntoView({behavior: 'smooth', block: 'start'});
+      f.section.classList.add('flash');
+      setTimeout(() => f.section.classList.remove('flash'), 900);
+    });
+    f.treeRow = row; f.cbadge = cbadge;
+    parent.appendChild(row);
+  });
+}
+
+function setupScrollSpy(){
+  const root = document.querySelector('main');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const path = e.target.dataset.path;
+      fileSections.forEach(f => {
+        if (f.treeRow) f.treeRow.classList.toggle('active', f.section.dataset.path === path);
+      });
+    });
+  }, {root, rootMargin: '0px 0px -70% 0px', threshold: 0});
+  fileSections.forEach(f => obs.observe(f.section));
+}
+
+let allCollapsed = false;
+document.getElementById('collapse-all').addEventListener('click', () => {
+  allCollapsed = !allCollapsed;
+  fileSections.forEach((f, path) => setCollapsed(path, allCollapsed));
+  document.getElementById('collapse-all').textContent = allCollapsed ? 'Expand all' : 'Collapse all';
+});
+
+// The single row beneath a line is either an editor (.comment-row) or a saved display (.saved-row).
+function rowBelow(lineRow){
+  const n = lineRow.nextElementSibling;
+  return n && (n.classList.contains('comment-row') || n.classList.contains('saved-row')) ? n : null;
+}
+
+function onLineClick(lineRow, file, side, line, code){
+  const below = rowBelow(lineRow);
+  if (below && below.classList.contains('comment-row')) {
+    below.remove();
+    if (comments.has(key(file, side, line))) paintSaved(lineRow, comments.get(key(file, side, line)), false);
+    return;
+  }
+  openEditor(lineRow, file, side, line, code);
+}
+
+function openEditor(lineRow, file, side, line, code){
+  const k = key(file, side, line);
+  const below = rowBelow(lineRow);
+  if (below) below.remove();
+  const tr = document.createElement('tr'); tr.className = 'comment-row';
+  const td = document.createElement('td'); td.colSpan = 3; td.className = 'cmtbox';
+  const ta = document.createElement('textarea');
+  ta.value = comments.has(k) ? comments.get(k).body : '';
+  ta.placeholder = 'Comment on this line...';
+  const save = document.createElement('button'); save.className = 'secondary'; save.textContent = 'Save';
+  save.style.cssText = 'margin-right:6px;margin-top:6px;';
+  const cancel = document.createElement('button'); cancel.className = 'secondary'; cancel.textContent = 'Cancel';
+  cancel.style.cssText = 'margin-right:6px;margin-top:6px;';
+  const del = document.createElement('button'); del.className = 'secondary'; del.textContent = 'Remove';
+  del.style.marginTop = '6px';
+  save.addEventListener('click', () => {
+    const body = ta.value.trim();
+    tr.remove();
+    if (body) { const c = {file, line, side, code, body}; comments.set(k, c); paintSaved(lineRow, c, true); }
+    else { comments.delete(k); }
+    refreshCounts();
+  });
+  cancel.addEventListener('click', () => {
+    tr.remove();
+    if (comments.has(k)) paintSaved(lineRow, comments.get(k), false);
+  });
+  del.addEventListener('click', () => { comments.delete(k); tr.remove(); refreshCounts(); });
+  td.appendChild(ta); td.appendChild(document.createElement('br'));
+  td.appendChild(save); td.appendChild(cancel);
+  if (comments.has(k)) td.appendChild(del);
+  tr.appendChild(td);
+  lineRow.parentNode.insertBefore(tr, lineRow.nextElementSibling);
+  ta.focus();
+}
+
+function paintSaved(lineRow, c, flash){
+  const below = rowBelow(lineRow);
+  if (below) below.remove();
+  const tr = document.createElement('tr'); tr.className = 'saved-row';
+  const td = document.createElement('td'); td.colSpan = 3; td.className = 'cmtbox saved-cell' + (flash ? ' flash' : '');
+  const box = document.createElement('div'); box.className = 'saved';
+  const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = '✓ Saved';
+  const body = document.createElement('span'); body.className = 'body'; body.textContent = c.body;
+  const hint = document.createElement('span'); hint.className = 'hint'; hint.textContent = 'click to edit';
+  box.appendChild(tag); box.appendChild(body); box.appendChild(hint);
+  td.appendChild(box);
+  td.addEventListener('click', () => openEditor(lineRow, c.file, c.side, c.line, c.code));
+  tr.appendChild(td);
+  lineRow.parentNode.insertBefore(tr, lineRow.nextElementSibling);
+}
+
+async function restore(){
+  try {
+    const r = await fetch('/api/review');
+    const data = await r.json();
+    if (data.summary) document.getElementById('summary').value = data.summary;
+    (data.comments || []).forEach(c => {
+      const k = key(c.file, c.side, c.line);
+      comments.set(k, c);
+      const lineRow = lineRows.get(k);
+      if (lineRow) paintSaved(lineRow, c, false);
+    });
+    refreshCounts();
+  } catch (e) { /* static mode: no server */ }
+}
+
+function downloadReview(payload){
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'review.json'; a.click();
+}
+
+document.getElementById('submit').addEventListener('click', async () => {
+  const payload = {
+    summary: document.getElementById('summary').value.trim(),
+    comments: Array.from(comments.values()),
+  };
+  const toast = document.getElementById('toast');
+  const show = (msg) => {
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 6000);
+  };
+  try {
+    const r = await fetch('/api/review', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (r.ok) {
+      show('Review submitted — return to Claude and say you are done.');
+    } else {
+      // Server reachable but couldn't save (e.g. 500 on a write failure).
+      // Don't lose the review — hand it back as a file.
+      downloadReview(payload);
+      show('Server could not save the review — downloaded review.json instead. Give that file to Claude.');
+    }
+  } catch (e) {
+    // No server (static mode or connection dropped) — fall back to a download.
+    downloadReview(payload);
+    show('No server connection — downloaded review.json instead. Give that file to Claude.');
+  }
+});
+
+render();
+restore();
+</script>
+</body>
+</html>
