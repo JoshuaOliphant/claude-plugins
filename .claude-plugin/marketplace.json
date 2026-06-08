@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by Joshua Oliphant for productivity and learning workflows",
-    "version": "1.0.7"
+    "version": "1.0.8"
   },
   "plugins": [
     {
@@ -140,6 +140,24 @@
         "metacognition"
       ],
       "category": "productivity",
+      "license": "MIT"
+    },
+    {
+      "name": "review-diff",
+      "source": "./plugins/review-diff",
+      "description": "Local web-based diff review — comment on your working-tree or committed-branch diff in the browser and feed the comments back to Claude Code",
+      "version": "0.3.0",
+      "author": {
+        "name": "Joshua Oliphant"
+      },
+      "keywords": [
+        "diff",
+        "review",
+        "code-review",
+        "developer-productivity",
+        "local"
+      ],
+      "category": "development",
       "license": "MIT"
     }
   ]
