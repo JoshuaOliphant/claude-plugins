@@ -60,6 +60,8 @@ These are your tools — a menu, not a sequence. Read each agent's `.md` for ful
 | **Documenter** | `agents/documenter.md` | haiku | Docs: ABOUTME comments, docstrings, README updates |
 | **PR-Creator** | `agents/pr-creator.md` | haiku | Shipping: push branch, create PR with rich description |
 
+The model column is each agent's default, not a hard pin — the Task tool's `model` parameter overrides agent frontmatter. If a spawn fails because the model is unavailable (404/403 from the API), respawn with a `model` override one tier down: fable → opus → sonnet.
+
 Reference patterns (not spawnable):
 | Pattern | File | Purpose |
 |---------|------|---------|

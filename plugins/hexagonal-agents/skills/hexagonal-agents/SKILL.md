@@ -180,7 +180,9 @@ class Agent:
             return
         skill_content = SKILL_PATH.read_text()
         options = ClaudeAgentOptions(
-            model="claude-sonnet-4-6",  # Opus 4.8 / Fable 5 also work; Sonnet keeps per-turn UI generation cheap
+            # Sonnet keeps per-turn UI generation cheap; Opus 4.8 / Fable 5 also work.
+            # The env var lets a deployment repoint the model without a code change.
+            model=os.environ.get("HEXAGONAL_MODEL", "claude-sonnet-4-6"),
             system_prompt=skill_content,
             mcp_servers={"app_tools": self.tools_server},
             allowed_tools=self._allowed_tools,

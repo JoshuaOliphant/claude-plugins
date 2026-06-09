@@ -30,10 +30,12 @@ uv add claude-agent-sdk
 The main client for interacting with Claude.
 
 ```python
+import os
+
 from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
 
 options = ClaudeAgentOptions(
-    model="claude-sonnet-4-6",  # "claude-opus-4-8" or "claude-fable-5" for harder reasoning
+    model=os.environ.get("HEXAGONAL_MODEL", "claude-sonnet-4-6"),  # "claude-opus-4-8" or "claude-fable-5" for harder reasoning
     system_prompt="Your skill file content here",
     mcp_servers={"server_name": mcp_server},
     allowed_tools=["mcp__server_name__tool_name"],
@@ -43,6 +45,12 @@ options = ClaudeAgentOptions(
 client = ClaudeSDKClient(options=options)
 await client.connect()
 ```
+
+> **Model availability:** the `HEXAGONAL_MODEL` env var lets a deployment
+> repoint the model without a code change — if the pinned ID is ever retired
+> the API returns a 404 `not_found_error` on the first request, and the fix is
+> an env change rather than a redeploy. Undated aliases like
+> `claude-sonnet-4-6` stay valid until that minor version retires.
 
 > **Design note for Opus 4.8 / Fable 5:** these models have a persistent default
 > visual house style (cream backgrounds, serif display type, terracotta accents)
