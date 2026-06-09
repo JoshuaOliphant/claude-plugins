@@ -44,6 +44,13 @@ client = ClaudeSDKClient(options=options)
 await client.connect()
 ```
 
+> **Design note for Opus 4.8 / Fable 5:** these models have a persistent default
+> visual house style (cream backgrounds, serif display type, terracotta accents)
+> that will dominate generated HTML unless the skill file specifies a concrete
+> design system — exact palette, typefaces, and layout constraints. Sonnet 4.6
+> does not need this. If you upgrade the model, make sure the skill file pins
+> the design, not just the component vocabulary.
+
 ### Prompt caching
 
 The skill file (the system prompt) and the tool definitions are large and
