@@ -56,8 +56,9 @@ Each plugin follows a consistent layout:
 
 ### Subagent Model Tiering (autonomous-sdlc)
 
-The agent team assigns models by the kind of work, optimized for the Opus 4.8 era:
-- **Opus** for generative reasoning: **Architect** (planning), **Builder** (implementation/TDD)
+The agent team assigns models by the kind of work, optimized for the Fable 5 era:
+- **Fable** for the highest-leverage reasoning: **Architect** (planning) — runs once per feature, token-light, and plan quality compounds across every parallel builder downstream
+- **Opus** for generative volume work: **Builder** (implementation/TDD) — many parallel, token-heavy instances; Opus 4.8 is the price/performance sweet spot
 - **Sonnet** for verification: **Validator** (read-only checks), **Integrator** (merges)
 - **Haiku** for mechanical work: **Documenter** (docs), **PR-Creator** (PR descriptions)
 
@@ -73,11 +74,11 @@ It uses HTTP Basic Auth (API key as username), a custom `MochiAPIError`, automat
 
 ### Hexagonal Agents + the Agent SDK
 
-`hexagonal-agents` scaffolds apps where a `ClaudeSDKClient` is the UI layer: its system prompt is a large, static "skill file" teaching the entire UI vocabulary. Because that prefix is identical every turn, connect the client **once and reuse it** so the SDK serves the system prompt and tool definitions from prompt cache. Default model `claude-sonnet-4-6` (use `claude-opus-4-8` for harder reasoning). See `skills/hexagonal-agents/references/sdk_reference.md`.
+`hexagonal-agents` scaffolds apps where a `ClaudeSDKClient` is the UI layer: its system prompt is a large, static "skill file" teaching the entire UI vocabulary. Because that prefix is identical every turn, connect the client **once and reuse it** so the SDK serves the system prompt and tool definitions from prompt cache. Default model `claude-sonnet-4-6` (use `claude-opus-4-8` or `claude-fable-5` for harder reasoning). See `skills/hexagonal-agents/references/sdk_reference.md`.
 
 ### Model IDs
 
-Use the current family in examples and generated code: `claude-opus-4-8`, `claude-sonnet-4-6`, `claude-haiku-4-5`. Subagent frontmatter uses the aliases `opus` / `sonnet` / `haiku`.
+Use the current family in examples and generated code: `claude-fable-5`, `claude-opus-4-8`, `claude-sonnet-4-6`, `claude-haiku-4-5`. Subagent frontmatter uses the aliases `fable` / `opus` / `sonnet` / `haiku`. Fable 5 is the tier above Opus ($10/$50 per MTok vs $5/$25) with the same API surface as Opus 4.7/4.8 — adaptive thinking only (`thinking: {type: "adaptive"}`), no sampling parameters, and never send an explicit `thinking: {type: "disabled"}` (omit the field instead; Fable returns a 400).
 
 ## Development Commands
 

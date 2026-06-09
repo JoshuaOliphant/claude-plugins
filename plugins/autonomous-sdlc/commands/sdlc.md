@@ -51,7 +51,7 @@ These are your tools — a menu, not a sequence. Read each agent's `.md` for ful
 
 | Pattern | Agent File | Model | When to Use |
 |---------|-----------|-------|-------------|
-| **Architect** | `agents/architect.md` | opus | Planning: codebase exploration, plan documents, task decomposition |
+| **Architect** | `agents/architect.md` | fable | Planning: codebase exploration, plan documents, task decomposition |
 | **Builder** | `agents/builder.md` | opus | Implementation: TDD, PostToolUse hooks for lint/types |
 | **Validator** | `agents/validator.md` | sonnet | Verification: read-only checks against acceptance criteria |
 | **Integrator** | `agents/integrator.md` | sonnet | Optional: branch merging when dedicated merge attention needed |

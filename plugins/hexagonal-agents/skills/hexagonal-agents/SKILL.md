@@ -180,7 +180,7 @@ class Agent:
             return
         skill_content = SKILL_PATH.read_text()
         options = ClaudeAgentOptions(
-            model="claude-sonnet-4-6",  # Opus 4.8 also works; Sonnet keeps per-turn UI generation cheap
+            model="claude-sonnet-4-6",  # Opus 4.8 / Fable 5 also work; Sonnet keeps per-turn UI generation cheap
             system_prompt=skill_content,
             mcp_servers={"app_tools": self.tools_server},
             allowed_tools=self._allowed_tools,

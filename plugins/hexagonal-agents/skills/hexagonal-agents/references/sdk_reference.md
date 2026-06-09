@@ -33,7 +33,7 @@ The main client for interacting with Claude.
 from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
 
 options = ClaudeAgentOptions(
-    model="claude-sonnet-4-6",  # or "claude-opus-4-8" for harder reasoning
+    model="claude-sonnet-4-6",  # "claude-opus-4-8" or "claude-fable-5" for harder reasoning
     system_prompt="Your skill file content here",
     mcp_servers={"server_name": mcp_server},
     allowed_tools=["mcp__server_name__tool_name"],

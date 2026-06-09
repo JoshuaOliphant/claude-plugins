@@ -30,7 +30,7 @@
       "name": "autonomous-sdlc",
       "source": "./plugins/autonomous-sdlc",
       "description": "Adaptive autonomous SDLC with agent teams, native worktree isolation, TDD, BDD, Beads issue tracking, and verification pipelines",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -51,7 +51,7 @@
       "name": "hexagonal-agents",
       "source": "./plugins/hexagonal-agents",
       "description": "Build web apps where an AI agent dynamically generates HTML UI using hexagonal architecture with HTMX",
-      "version": "1.4.2",
+      "version": "1.4.3",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -105,7 +105,7 @@
     {
       "name": "observability-harness",
       "source": "./plugins/observability-harness",
-      "description": "Install a local, Docker-free OTLP observability stack (OpenTelemetry \u2192 Vector \u2192 JSONL, optionally VictoriaLogs + VictoriaMetrics) into a project and instrument the code, with a scan-and-propose step for domain-appropriate spans and metrics.",
+      "description": "Install a local, Docker-free OTLP observability stack (OpenTelemetry → Vector → JSONL, optionally VictoriaLogs + VictoriaMetrics) into a project and instrument the code, with a scan-and-propose step for domain-appropriate spans and metrics.",
       "version": "0.1.0",
       "author": {
         "name": "Joshua Oliphant"

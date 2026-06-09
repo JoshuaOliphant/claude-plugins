@@ -1,6 +1,6 @@
 ---
 name: architect
-model: opus
+model: fable
 description: Strategic architect that explores codebases, creates plan documents, and decomposes work into tasks with dependencies
 whenToUse: >-
   Use when starting a new SDLC workflow to create a comprehensive plan,

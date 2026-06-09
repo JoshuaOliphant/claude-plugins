@@ -45,7 +45,7 @@ Agent teams preferred (if available). Teammates self-coordinate, builders and va
 /sdlc "Add user authentication"
     ↓
 ┌───────────────────────────────────────────┐
-│ LEAD ORCHESTRATOR (Opus)                    │
+│ LEAD ORCHESTRATOR (Fable or Opus)           │
 │                                             │
 │  1. Orient — understand codebase            │
 │  2. Plan — feature branch + plan doc        │
@@ -69,7 +69,7 @@ Done! PR ready for human review
 
 | Agent | Model | Purpose | Key Feature |
 |-------|-------|---------|-------------|
-| **Architect** | Opus | Creates feature branch + plan + tasks | Plan-first |
+| **Architect** | Fable | Creates feature branch + plan + tasks | Plan-first |
 | **Builder** | Opus | Implements one task with TDD | PostToolUse hooks |
 | **Validator** | Sonnet | Verifies implementation (read-only) | Direct builder feedback |
 | **Integrator** | Sonnet | Merges task branches (optional) | Conflict resolution |
