@@ -12,10 +12,14 @@ Usage:
     sdlc_state.py init --feature user-auth --request "Add auth" [--max-iterations 50]
     sdlc_state.py state                    # prints just the state name (for evaluators)
     sdlc_state.py status                   # human-readable summary
-    sdlc_state.py tick                     # start an iteration: bump counter, enforce budgets
+    sdlc_state.py tick                     # start a WORK iteration: bump counter, enforce budgets
+    sdlc_state.py tick --waiting           # a wait-check on in-flight agents: free, not budgeted
     sdlc_state.py transition BUILD --reason "plan committed, 6 tasks ready"
-    sdlc_state.py task bd-a1b2             # set current task
+    sdlc_state.py task bd-a1b2             # mark a task in flight (multiple allowed)
+    sdlc_state.py task bd-a1b2 --done      # remove it from the in-flight set
     sdlc_state.py attempt bd-a1b2          # count an attempt; exit 1 when budget exceeded
+    sdlc_state.py set-budget --max-iterations 120   # adjust budgets mid-loop (log a decision too)
+    sdlc_state.py set-driver goal          # record the loop driver after probing /goal
     sdlc_state.py decide --decision "JWT RS256 over HS256" --why "..." [--irreversible]
     sdlc_state.py note-progress --what "closed bd-a1b2"
 """
@@ -108,8 +112,10 @@ def cmd_init(args: argparse.Namespace) -> None:
         "budgets": {
             "max_iterations": args.max_iterations,
             "max_attempts_per_task": args.max_attempts,
+            "max_wait_ticks": args.max_wait_ticks,
         },
-        "current_task": None,
+        "in_flight": [],
+        "wait_ticks": 0,
         "attempts": {},
         "last_progress_iteration": 0,
         "history": [{"at": now(), "to": "INIT", "reason": "initialized"}],
@@ -134,7 +140,11 @@ def cmd_status(_args: argparse.Namespace) -> None:
     print(f"STATE={s['state']}")
     print(f"feature: {s['feature']}")
     print(f"iteration: {s['iteration']}/{b['max_iterations']}")
-    print(f"current task: {s['current_task'] or '-'}")
+    print(f"wait ticks: {s.get('wait_ticks', 0)}/{b.get('max_wait_ticks', '-')}")
+    in_flight = s.get("in_flight") or (
+        [s["current_task"]] if s.get("current_task") else []
+    )
+    print(f"in flight: {', '.join(in_flight) or '-'}")
     print(f"last progress: iteration {s['last_progress_iteration']}")
     decisions = (
         len(DECISIONS_FILE.read_text().splitlines()) if DECISIONS_FILE.exists() else 0
@@ -152,10 +162,26 @@ def block(state: dict, reason: str) -> None:
     print(f"BLOCKED {reason}")
 
 
-def cmd_tick(_args: argparse.Namespace) -> None:
+def cmd_tick(args: argparse.Namespace) -> None:
     s = load()
     if s["state"] in ("DONE", "BLOCKED"):
         print(s["state"])
+        return
+    if args.waiting:
+        # A wait-check on in-flight background agents is not a unit of work:
+        # it consumes neither the iteration budget nor the idle allowance.
+        # It has its own (generous) ceiling so a loop that only ever waits
+        # still terminates.
+        s["wait_ticks"] = s.get("wait_ticks", 0) + 1
+        limit = s["budgets"].get("max_wait_ticks", 200)
+        if s["wait_ticks"] > limit:
+            block(s, f"budget: max_wait_ticks={limit} exhausted while waiting")
+            sys.exit(1)
+        save(s)
+        in_flight = ", ".join(s.get("in_flight", [])) or "-"
+        print(
+            f"WAITING {s['wait_ticks']}/{limit} STATE={s['state']} in_flight={in_flight}"
+        )
         return
     s["iteration"] += 1
     if s["iteration"] > s["budgets"]["max_iterations"]:
@@ -188,9 +214,16 @@ def cmd_transition(args: argparse.Namespace) -> None:
 
 def cmd_task(args: argparse.Namespace) -> None:
     s = load()
-    s["current_task"] = args.task_id
+    in_flight = s.get("in_flight", [])
+    if args.done:
+        if args.task_id in in_flight:
+            in_flight.remove(args.task_id)
+    elif args.task_id not in in_flight:
+        in_flight.append(args.task_id)
+    s["in_flight"] = in_flight
+    s.pop("current_task", None)  # superseded by in_flight (v2.1)
     save(s)
-    print(f"OK current_task={args.task_id}")
+    print(f"OK in_flight=[{', '.join(in_flight) or '-'}]")
 
 
 def cmd_attempt(args: argparse.Namespace) -> None:
@@ -223,6 +256,32 @@ def cmd_decide(args: argparse.Namespace) -> None:
     print("OK decision logged")
 
 
+def cmd_set_budget(args: argparse.Namespace) -> None:
+    s = load()
+    b = s["budgets"]
+    changed = []
+    for key, value in (
+        ("max_iterations", args.max_iterations),
+        ("max_attempts_per_task", args.max_attempts),
+        ("max_wait_ticks", args.max_wait_ticks),
+    ):
+        if value is not None:
+            b[key] = value
+            changed.append(f"{key}={value}")
+    if not changed:
+        sys.exit("Nothing to set — pass at least one --max-* flag.")
+    save(s)
+    append_progress(f"budgets adjusted: {', '.join(changed)}")
+    print(f"OK {', '.join(changed)}")
+
+
+def cmd_set_driver(args: argparse.Namespace) -> None:
+    s = load()
+    s["driver"] = args.driver
+    save(s)
+    print(f"OK driver={args.driver}")
+
+
 def cmd_note_progress(args: argparse.Namespace) -> None:
     s = load()
     s["last_progress_iteration"] = s["iteration"]
@@ -240,7 +299,10 @@ def main() -> None:
     sp.add_argument("--request", default="")
     sp.add_argument("--max-iterations", type=int, default=50)
     sp.add_argument("--max-attempts", type=int, default=3)
-    sp.add_argument("--driver", choices=["goal", "stop-hook"], default="goal")
+    sp.add_argument("--max-wait-ticks", type=int, default=200)
+    # auto: the /sdlc command probes /goal, then records the result via set-driver.
+    # The fallback Stop hook drives whenever the driver is not "goal".
+    sp.add_argument("--driver", choices=["auto", "goal", "stop-hook"], default="auto")
     sp.set_defaults(func=cmd_init)
 
     sub.add_parser("state", help="print just the state name").set_defaults(
@@ -249,18 +311,33 @@ def main() -> None:
     sub.add_parser("status", help="human-readable summary").set_defaults(
         func=cmd_status
     )
-    sub.add_parser("tick", help="start an iteration; enforce budgets").set_defaults(
-        func=cmd_tick
+    sp = sub.add_parser("tick", help="start an iteration; enforce budgets")
+    sp.add_argument(
+        "--waiting",
+        action="store_true",
+        help="wait-check on in-flight agents: not counted against iteration/idle budgets",
     )
+    sp.set_defaults(func=cmd_tick)
 
     sp = sub.add_parser("transition", help="move to a new state")
     sp.add_argument("target")
     sp.add_argument("--reason", required=True)
     sp.set_defaults(func=cmd_transition)
 
-    sp = sub.add_parser("task", help="set the current task")
+    sp = sub.add_parser("task", help="mark a task in flight (or done with --done)")
     sp.add_argument("task_id")
+    sp.add_argument("--done", action="store_true")
     sp.set_defaults(func=cmd_task)
+
+    sp = sub.add_parser("set-budget", help="adjust budgets mid-loop")
+    sp.add_argument("--max-iterations", type=int)
+    sp.add_argument("--max-attempts", type=int)
+    sp.add_argument("--max-wait-ticks", type=int)
+    sp.set_defaults(func=cmd_set_budget)
+
+    sp = sub.add_parser("set-driver", help="record the loop driver")
+    sp.add_argument("driver", choices=["auto", "goal", "stop-hook"])
+    sp.set_defaults(func=cmd_set_driver)
 
     sp = sub.add_parser("attempt", help="count an attempt on a task")
     sp.add_argument("task_id")
