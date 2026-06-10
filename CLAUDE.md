@@ -39,6 +39,7 @@ Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json` (the
 | **hexagonal-agents** | Web apps where an agent generates HTML UI | Ports-and-adapters arch, MCP tools, Claude Agent SDK, extensive `references/` |
 | **compound-knowledge** | Institutional memory: capture → retrieve → graduate | YAML-frontmatter solution files, grep-based retrieval, `knowledge-researcher` subagent |
 | **autoloop** | Generate Karpathy-style optimization loops | Produces `program.md` + immutable `auto/run.sh`, `codebase-scout` subagent |
+| **observability-harness** | Local Docker-free OTLP stack (OTel → Vector → JSONL/Victoria*) + instrumentation | setup skill with scan-and-propose, `observability-query` skill, `status.sh --json` detection contract, scripted `verify.sh`; composed by autonomous-sdlc as a soft dependency |
 
 Every plugin also ships a `feedback` skill backed by `scripts/feedback_manager.py` to persist user preferences across sessions.
 
