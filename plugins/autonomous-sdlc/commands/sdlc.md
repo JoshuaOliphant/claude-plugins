@@ -41,10 +41,12 @@ python3 $STATE init --feature {slug} --request "$ARGUMENTS" \
 
 ## 2. Arm the loop driver
 
-**Goal driver** — set the goal exactly like this:
+**Goal driver** — set the goal exactly like this, substituting the **absolute path** of
+`${CLAUDE_PLUGIN_ROOT}/scripts/sdlc_state.py` (resolve it now — the goal evaluator
+cannot expand variables or placeholders):
 
 ```
-/goal The SDLC loop for {slug} is finished: `python3 {plugin-root}/scripts/sdlc_state.py state`
+/goal The SDLC loop for {slug} is finished: `python3 /absolute/path/to/scripts/sdlc_state.py state`
 prints DONE or BLOCKED, demonstrated in the transcript. Or stop after 50 turns.
 ```
 

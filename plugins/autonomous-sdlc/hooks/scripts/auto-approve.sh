@@ -4,23 +4,33 @@
 
 INPUT=$(cat)
 
-# No active loop → defer to the user's normal permission flow.
-if [ ! -f ".sdlc/state.json" ] && [ ! -d ".sdlc" ]; then
-    echo '{}'
-    exit 0
-fi
-
 python3 - "$INPUT" <<'PYEOF'
-# Denylist: operations an unattended loop must never perform. Denied with a
-# reason so the agent can pick a safe alternative and keep the loop moving.
+# Active loop (state.json exists, state not terminal) → allow routine work but
+# hard-deny the denylist, with a reason so the agent picks a safe alternative.
+# Anything else (no loop, finished loop, unreadable input) → defer to the
+# user's normal permission flow.
 import json
 import re
 import sys
 
-event = json.loads(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1] else {}
-tool = event.get("tool_name", "")
+def defer():
+    print("{}")
+    sys.exit(0)
+
+try:
+    state = json.load(open(".sdlc/state.json"))
+except (OSError, ValueError):
+    defer()
+if state.get("state") in ("DONE", "BLOCKED"):
+    defer()
+
+try:
+    event = json.loads(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1] else {}
+except ValueError:
+    defer()
+
 cmd = ""
-if tool == "Bash":
+if event.get("tool_name") == "Bash":
     cmd = event.get("tool_input", {}).get("command", "")
 
 DENY = [

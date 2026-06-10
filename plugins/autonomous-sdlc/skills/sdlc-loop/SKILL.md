@@ -34,7 +34,10 @@ Every iteration, in order, no exceptions:
    budgets. If it prints `DONE` or `BLOCKED`, stop immediately: the loop is over.
 2. **Orient**: `python3 $STATE status`, read the tail of `.sdlc/progress.md`, run
    `git log --oneline -10`, and read `.sdlc/signs.md` if it exists (guardrails from
-   past mistakes — they override your instincts).
+   past mistakes — they override your instincts). On your first iteration in a session,
+   also load stored preferences:
+   `python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback`
+   — apply `loop_behavior`, `verification`, and `general` entries.
 3. **Work**: do **one unit of work** for the current state (dispatch table below).
 4. **Record**: commit the work, then `python3 $STATE note-progress --what "..."` or
    `python3 $STATE transition <NEXT> --reason "..."`. A transition counts as progress;
@@ -58,7 +61,9 @@ log each with `$STATE decide`). Write `specs/{slug}-spec.md` with numbered AC. C
 Escalate **only** if the request is self-contradictory — not merely vague.
 
 ### PLAN → BUILD
-Run the Architect pattern (`agents/architect.md`): plan document at
+If the `compound-retrieve` skill is available (compound-knowledge plugin), invoke it
+first and fold past solutions and gotchas into the Architect's prompt; skip silently if
+absent. Run the Architect pattern (`agents/architect.md`): plan document at
 `specs/{slug}-plan.md`, tasks decomposed into Beads (`bd create` + deps) or TaskCreate.
 Every AC must map to at least one task; add a doc-update task and (if the project has
 user-facing surface) a docs task — there is no separate Documenter. Commit. One re-plan
@@ -72,16 +77,24 @@ is allowed (`PLAN → PLAN`); a second planning failure escalates.
    validators, and Stop-hook completion gate are unchanged. For 3+ *independent* ready
    tasks, spawn builders in parallel with `isolation: "worktree"` and merge their
    branches before transitioning; on Claude Code ≥ 2.1.154 a dynamic workflow may hold
-   that fan-out instead.
+   that fan-out instead. **After any merge, run the test suite before continuing** — a
+   merge is a change like any other; a red post-merge suite means `transition REPAIR`.
 3. Tasks remaining → stay in BUILD (`transition BUILD --reason "closed <id>, N left"`).
    No ready tasks and none in flight → `transition VERIFY`.
    All remaining tasks blocked → escalate with the list.
 
 ### VERIFY (→ REVIEW, ⇄ BUILD)
-Run the built-in **verify** skill if available, else the project's own stack (tests,
-lint, types — read `.sdlc/verify.yaml` if the project defines commands). Green →
-`transition REVIEW`. Red → create a fix task in the tracker, `transition BUILD`. Merge
-conflicts or a broken branch that isn't one task's fault → `transition REPAIR`.
+Two checks, both required:
+1. **Mechanical**: the built-in **verify** skill if available, else the project's own
+   stack (tests, lint, types).
+2. **Spec compliance**: walk `specs/{slug}-spec.md` AC by AC and confirm each is
+   demonstrably met — by its `@ac-N`-tagged test where bdd-generate scaffolding exists,
+   by reading the code and exercising behavior where it doesn't. Tests passing is not
+   the same as the spec being satisfied.
+
+Both green → `transition REVIEW`. Either red → create a fix task naming the failing
+check or AC, `transition BUILD`. Merge conflicts or a broken branch that isn't one
+task's fault → `transition REPAIR`.
 
 ### REVIEW (→ SHIP, ⇄ BUILD)
 Once per feature, not per task:
@@ -97,6 +110,8 @@ Once per feature, not per task:
    low-confidence findings in the PR body. `transition SHIP`.
 
 ### SHIP → DONE
+If the `compound-capture` skill is available, record any non-trivial solution or gotcha
+this feature produced (once, at feature level); skip silently if absent.
 Push the branch (`git push -u origin feature/{slug}`). Create the PR yourself
 (`gh pr create` / `glab mr create`) with: summary from the plan doc, AC checklist from
 the spec, and a **"Decisions made autonomously"** section rendered from

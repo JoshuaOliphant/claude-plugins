@@ -74,7 +74,13 @@ def now() -> str:
 def load() -> dict:
     if not STATE_FILE.exists():
         sys.exit("No .sdlc/state.json — run `sdlc_state.py init` first.")
-    return json.loads(STATE_FILE.read_text())
+    try:
+        return json.loads(STATE_FILE.read_text())
+    except ValueError as e:
+        sys.exit(
+            f"CORRUPT {STATE_FILE}: {e}. Restore it from git "
+            f"(git checkout -- {STATE_FILE}) or re-run init after removing it."
+        )
 
 
 def save(state: dict) -> None:
