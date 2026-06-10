@@ -1,94 +1,41 @@
 ---
 name: sdlc-cancel
-description: Cancel an active SDLC workflow and clean up resources
+description: Stop an active SDLC loop cleanly — sets BLOCKED(cancelled) so the driver releases, then cleans up
 allowed-tools:
   - Bash
   - Read
 ---
 
-# Cancel SDLC Workflow
+# Cancel SDLC Loop
 
-Safely cancel an active SDLC workflow and clean up resources.
+Cancelling means transitioning the state machine, not deleting it — the driver
+(`/goal` evaluator or Stop hook) releases as soon as the state is terminal, and the
+loop stays resumable.
 
-## Cancellation Process
-
-### 1. Confirm Active Workflow
+## 1. Stop the loop
 
 ```bash
-if [ ! -d ".sdlc" ]; then
-    echo "No active SDLC workflow to cancel"
-    exit 0
-fi
-
-echo "Active workflow found"
-cat .sdlc/description 2>/dev/null
-cat .sdlc/mode 2>/dev/null
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/sdlc_state.py transition BLOCKED --reason "cancelled by user"
 ```
 
-### 2. List Active Resources
+If the goal driver is active, also run `/goal clear`.
+
+## 2. Clean up parallel work (if any)
 
 ```bash
-echo "=== Active Worktrees ==="
-git worktree list | grep trees/
-
-echo ""
-echo "=== Open Beads ==="
-bd list --status=open | head -20
-
-echo ""
-echo "=== Coordination Mode ==="
-cat .sdlc/mode 2>/dev/null || echo "unknown"
-```
-
-### 3. Clean Up Worktrees
-
-```bash
-# Remove all SDLC worktrees
-for worktree in $(git worktree list --porcelain | grep "worktree.*trees/" | cut -d' ' -f2); do
-    echo "Removing worktree: $worktree"
-    git worktree remove "$worktree" --force 2>/dev/null || true
-done
-
-# Prune stale references
+git worktree list                 # remove any task worktrees the loop created
 git worktree prune
+git branch | grep "feature/.*/"   # delete leftover task branches (not the feature branch)
 ```
 
-### 4. Clean Up Branches
+Beads stay open — close them manually if the work is truly abandoned
+(`bd close <id> --reason="cancelled"`).
 
-```bash
-# Delete task branches that were created
-for branch in $(git branch | grep "feature/.*beads-"); do
-    branch=$(echo "$branch" | sed 's/^[* ]*//')
-    echo "Deleting branch: $branch"
-    git branch -D "$branch" 2>/dev/null || true
-done
-```
+## 3. Keep or discard state
 
-### 5. Remove SDLC Marker
+- **Keep `.sdlc/`** (default): re-running `/sdlc` later resumes from where it stopped.
+- **Discard**: `rm -rf .sdlc` only if the user explicitly wants a fresh start; the
+  decision journal goes with it.
 
-```bash
-rm -rf .sdlc
-echo "SDLC workflow cancelled"
-```
-
-### 6. Beads Cleanup (Optional)
-
-The Beads themselves are NOT automatically deleted. You may want to:
-
-```bash
-# View what was created
-bd list --status=open
-
-# Manually close abandoned Beads
-# bd close <bead-id> --reason="Cancelled"
-```
-
-## Post-Cancellation
-
-After cancellation:
-- Worktrees are removed
-- Task branches are deleted
-- SDLC marker is removed
-- Beads remain open (manual cleanup if needed)
-
-The repository is returned to a clean state.
+Report what was stopped: feature, state at cancellation, iterations used, and whether
+state was kept for resume.
