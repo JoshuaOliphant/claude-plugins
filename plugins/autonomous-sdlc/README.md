@@ -47,13 +47,15 @@ compaction, session death, and restarts.
 
 ## Loop Drivers
 
-- **`/goal` (preferred, Claude Code ≥ v2.1.139)**: `/sdlc` arms a goal whose condition
-  is `sdlc_state.py state prints DONE or BLOCKED`. The built-in evaluator (a separate
-  small model) re-prompts after every turn — completion is judged by a model that
+- **Stop hook (default)**: `loop-stop-hook.sh` blocks session exit and re-injects the
+  iteration ritual until the state is terminal. Drives while `.sdlc/state.json` has
+  `"driver": "auto"` (the init default) or `"stop-hook"`.
+- **`/goal` (optional upgrade, user-armed, Claude Code ≥ v2.1.139)**: `/goal` is a
+  user-only slash command — Claude cannot invoke it. `/sdlc`'s kickoff message shows
+  the exact goal to run (condition: `sdlc_state.py state` prints DONE or BLOCKED); if
+  you arm it, say so and Claude records `set-driver goal`, standing the Stop hook down.
+  The goal evaluator (a separate small model) then judges completion — a model that
   didn't do the work.
-- **Stop hook (fallback)**: `loop-stop-hook.sh` blocks session exit and re-injects the
-  iteration ritual until the state is terminal. Activates only when
-  `.sdlc/state.json` has `"driver": "stop-hook"`.
 
 Budgets guard both: max iterations (default 50), max attempts per task (default 3),
 and no-progress detection (2 idle iterations force `BLOCKED`).
@@ -134,7 +136,7 @@ status, state).
 
 ## Prerequisites
 
-- Claude Code ≥ v2.1.139 for the `/goal` driver (older versions use the Stop-hook fallback)
+- Optional: Claude Code ≥ v2.1.139 if you want to arm the `/goal` driver yourself (the Stop hook needs nothing)
 - Git, `gh` or `glab` CLI, `uv` for Python projects
 - Optional: Beads CLI (`bd`) for the task graph; TaskCreate is the fallback
 
@@ -148,21 +150,27 @@ Keeps Claude Code's plan mode output in the same `specs/` directory the Architec
 
 ## Version History
 
-### v2.1.0 (Current)
+### v2.1.1 (Current)
+- **Driver correction**: `/goal` is a user-only slash command — Claude cannot arm it.
+  The Stop hook is now documented as the default driver; `/sdlc`'s kickoff message
+  offers the exact `/goal` for the user to arm optionally (`set-driver goal` stands the
+  hook down once they say they did)
+
+### v2.1.0
 - **Wait-aware budgets** (from the first field run, where ~60% of ticks were
   wait-checks on background builders): `tick --waiting` is free — separate
   `max_wait_ticks` ceiling instead of burning the iteration budget
 - In-flight task **set** (`task <id>` / `task <id> --done`) replaces the single
   current-task slot, matching the parallelism the skill recommends
 - `set-budget` for explicit mid-loop budget changes; `set-driver` + `--driver auto`
-  (default): the fallback hook drives until `/sdlc` proves `/goal` works and records it
+  (default): the Stop hook drives unless the user arms `/goal` and it's recorded
 - **Observability integration** (soft dependency on `observability-harness`): harness
   detection in INIT, feature-scoped instrumentation tasks in PLAN, a telemetry check in
   VERIFY, telemetry-first diagnosis in REPAIR
 
 ### v2.0.0
 - **Pipeline → loop**: state machine on disk (`.sdlc/state.json`) with backward
-  transitions, driven by `/goal` (Stop-hook fallback); `/sdlc` is an idempotent
+  transitions, driven by a Stop-hook loop (or a user-armed `/goal`); `/sdlc` is an idempotent
   initializer/resumer
 - `sdlc_state.py` state CLI: validated transitions, iteration/attempt budgets,
   no-progress detection, decision journal

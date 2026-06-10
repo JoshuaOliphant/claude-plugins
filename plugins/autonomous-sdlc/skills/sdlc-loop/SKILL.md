@@ -46,7 +46,7 @@ Every iteration, in order, no exceptions:
    `python3 $STATE transition <NEXT> --reason "..."`. A transition counts as progress;
    an iteration with neither a commit nor a transition counts toward the no-progress
    limit (2), after which the loop force-blocks.
-5. **Stop.** The loop driver (the `/goal` evaluator, or the fallback Stop hook) decides
+5. **Stop.** The loop driver (the plugin's Stop hook, or a user-armed `/goal` evaluator) decides
    whether another iteration runs. Never try to "finish the whole feature" in one
    iteration — small verified steps survive context loss; heroics don't.
 

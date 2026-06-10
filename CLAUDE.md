@@ -58,8 +58,8 @@ Each plugin follows a consistent layout:
 ### The SDLC Loop (autonomous-sdlc)
 
 v2 replaced the agent-team pipeline with a state machine on disk (`.sdlc/state.json`,
-owned by `scripts/sdlc_state.py`) driven by the built-in `/goal` mechanism (Stop-hook
-fallback for older Claude Code). States: INIT → SPEC → PLAN → BUILD ⇄ VERIFY → REVIEW →
+owned by `scripts/sdlc_state.py`) driven by the plugin's Stop-hook loop (`/goal` is a
+user-only command — users may arm it as an alternative driver; Claude cannot). States: INIT → SPEC → PLAN → BUILD ⇄ VERIFY → REVIEW →
 SHIP → DONE, plus REPAIR and BLOCKED. Two agents remain, both **Opus**: **Architect**
 (PLAN state) and **Builder** (BUILD state, keeps its PostToolUse validators and
 Stop-hook completion gate). VERIFY/REVIEW are states that call Claude Code's built-in
