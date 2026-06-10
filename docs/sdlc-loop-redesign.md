@@ -115,6 +115,13 @@ loop**, with smaller convergence loops nested inside each state.
 
 ### 3.1 The outer loop: `/goal` as the driver, Stop hook as fallback
 
+> **Correction (post-implementation, v2.1.1):** `/goal` turned out to be a **user-only
+> slash command** — Claude cannot invoke it. The shipped design therefore inverts this
+> section's preference: the plugin's Stop hook is the default driver, and `/goal` is an
+> optional upgrade the *user* arms (the `/sdlc` kickoff message shows the exact goal to
+> run; `set-driver goal` then stands the hook down). The rest of this section's
+> reasoning about the evaluator still applies when the user arms it.
+
 `/sdlc "<request>"` no longer *is* the orchestrator. It is the **loop initializer**:
 
 1. Create `.sdlc/state.json`, `.sdlc/progress.md`, feature branch, budgets.

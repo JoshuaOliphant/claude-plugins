@@ -9,7 +9,7 @@ allowed-tools:
 # Cancel SDLC Loop
 
 Cancelling means transitioning the state machine, not deleting it — the driver
-(`/goal` evaluator or Stop hook) releases as soon as the state is terminal, and the
+(Stop hook, or a user-armed `/goal` evaluator) releases as soon as the state is terminal, and the
 loop stays resumable.
 
 ## 1. Stop the loop
@@ -18,7 +18,8 @@ loop stays resumable.
 python3 ${CLAUDE_PLUGIN_ROOT}/scripts/sdlc_state.py transition BLOCKED --reason "cancelled by user"
 ```
 
-If the goal driver is active, also run `/goal clear`.
+If the driver is `goal` (the user armed one), ask them to run `/goal clear` — it is a
+user-only command you cannot invoke.
 
 ## 2. Clean up parallel work (if any)
 

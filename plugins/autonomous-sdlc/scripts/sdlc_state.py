@@ -4,8 +4,9 @@
 """SDLC loop state machine.
 
 Every loop iteration starts by calling `tick` and ends by calling
-`transition` or `note-progress`. The goal evaluator (or the fallback Stop
-hook) calls `state` to decide whether the loop may exit. All state lives in
+`transition` or `note-progress`. The loop driver (the plugin's Stop hook,
+or a user-armed /goal evaluator) reads `state` to decide whether the loop
+may exit. All state lives in
 .sdlc/ in the current working directory so any fresh context can resume.
 
 Usage:
@@ -19,7 +20,7 @@ Usage:
     sdlc_state.py task bd-a1b2 --done      # remove it from the in-flight set
     sdlc_state.py attempt bd-a1b2          # count an attempt; exit 1 when budget exceeded
     sdlc_state.py set-budget --max-iterations 120   # adjust budgets mid-loop (log a decision too)
-    sdlc_state.py set-driver goal          # record the loop driver after probing /goal
+    sdlc_state.py set-driver goal          # record that the user armed /goal (stands the hook down)
     sdlc_state.py decide --decision "JWT RS256 over HS256" --why "..." [--irreversible]
     sdlc_state.py note-progress --what "closed bd-a1b2"
 """
@@ -300,8 +301,9 @@ def main() -> None:
     sp.add_argument("--max-iterations", type=int, default=50)
     sp.add_argument("--max-attempts", type=int, default=3)
     sp.add_argument("--max-wait-ticks", type=int, default=200)
-    # auto: the /sdlc command probes /goal, then records the result via set-driver.
-    # The fallback Stop hook drives whenever the driver is not "goal".
+    # auto: the Stop hook drives. /goal is user-only — if the user arms it and
+    # says so, set-driver goal stands the hook down. The hook drives whenever the
+    # driver is not "goal".
     sp.add_argument("--driver", choices=["auto", "goal", "stop-hook"], default="auto")
     sp.set_defaults(func=cmd_init)
 

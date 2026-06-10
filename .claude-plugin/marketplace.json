@@ -30,7 +30,7 @@
       "name": "autonomous-sdlc",
       "source": "./plugins/autonomous-sdlc",
       "description": "Autonomous SDLC as a state machine on disk driven by a /goal loop \u2014 one verified unit of work per iteration, decide-log-proceed autonomy, built-in verify/code-review/simplify gates",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "author": {
         "name": "Joshua Oliphant"
       },
