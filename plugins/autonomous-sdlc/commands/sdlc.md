@@ -26,7 +26,7 @@ The user has requested: $ARGUMENTS
 
 ```bash
 python3 $STATE init --feature {slug} --request "$ARGUMENTS" \
-  --max-iterations 50 --max-attempts 3 --driver {goal|stop-hook}
+  --max-iterations 50 --max-attempts 3
 ```
 
 - Derive `{slug}` from the request ("Add user authentication" → `user-auth`).
@@ -36,8 +36,8 @@ python3 $STATE init --feature {slug} --request "$ARGUMENTS" \
   If resuming from `BLOCKED`, read `.sdlc/escalation.md`, apply whatever the user
   changed or answered, transition back to the appropriate active state with a reason,
   then continue.
-- Driver selection: use `goal` (preferred). Fall back to `stop-hook` only when `/goal`
-  is unavailable (Claude Code < v2.1.139, or hooks disabled — the command tells you).
+- The driver starts as `auto`: the fallback Stop hook drives until step 2 proves
+  `/goal` works and records it. You never need to guess driver availability.
 
 ## 2. Arm the loop driver
 
@@ -50,14 +50,18 @@ cannot expand variables or placeholders):
 prints DONE or BLOCKED, demonstrated in the transcript. Or stop after 50 turns.
 ```
 
-The built-in evaluator (a separate small model) now re-prompts after every turn until
-the state machine itself says the loop is over. Completion is judged by a model that
-didn't do the work.
+Then **record the outcome** — this is how `auto` resolves, no version guessing:
 
-**Stop-hook driver (fallback)** — the plugin's `loop-stop-hook.sh` is already
-registered; it activates because `.sdlc/state.json` exists with
-`"driver": "stop-hook"`. It blocks every stop and re-injects the iteration ritual until
-state is DONE or BLOCKED. No goal needed.
+- `/goal` was accepted (the goal is active): `python3 $STATE set-driver goal` — this
+  stands the fallback Stop hook down so only the evaluator drives.
+- `/goal` errored or doesn't exist (Claude Code < v2.1.139, or hooks disabled):
+  `python3 $STATE set-driver stop-hook` — the plugin's `loop-stop-hook.sh` (already
+  registered, and already driving while the driver is `auto`) blocks every stop and
+  re-injects the iteration ritual until state is DONE or BLOCKED.
+
+The built-in evaluator (a separate small model) re-prompts after every turn until the
+state machine itself says the loop is over. Completion is judged by a model that didn't
+do the work.
 
 ## 3. Run the first iteration
 

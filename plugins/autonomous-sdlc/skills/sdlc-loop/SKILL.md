@@ -32,6 +32,9 @@ Every iteration, in order, no exceptions:
 
 1. **Tick**: `python3 $STATE tick` — increments the iteration counter and enforces
    budgets. If it prints `DONE` or `BLOCKED`, stop immediately: the loop is over.
+   **Exception**: if this iteration exists only to check on in-flight background
+   builders (no other ready work), use `python3 $STATE tick --waiting` instead — wait
+   checks are free, not budgeted units of work (see "Waiting on builders" below).
 2. **Orient**: `python3 $STATE status`, read the tail of `.sdlc/progress.md`, run
    `git log --oneline -10`, and read `.sdlc/signs.md` if it exists (guardrails from
    past mistakes — they override your instincts). On your first iteration in a session,
@@ -70,9 +73,11 @@ user-facing surface) a docs task — there is no separate Documenter. Commit. On
 is allowed (`PLAN → PLAN`); a second planning failure escalates.
 
 ### BUILD (⇄ BUILD, → VERIFY)
-1. `bd ready` (or TaskList) → pick **one** task. `python3 $STATE task <id>` and
-   `python3 $STATE attempt <id>` — if attempt prints `EXCEEDED`, mark the task blocked
-   in the tracker, log a decision, and pick the next ready task instead.
+1. `bd ready` (or TaskList) → pick **one** task (or several independent ones for
+   parallel builders). For each: `python3 $STATE task <id>` (adds to the in-flight set;
+   `task <id> --done` when it closes) and `python3 $STATE attempt <id>` — if attempt
+   prints `EXCEEDED`, mark the task blocked in the tracker, log a decision, and pick
+   the next ready task instead.
 2. Spawn a Builder (`agents/builder.md`) for the task — its TDD discipline, PostToolUse
    validators, and Stop-hook completion gate are unchanged. For 3+ *independent* ready
    tasks, spawn builders in parallel with `isolation: "worktree"` and merge their
@@ -82,6 +87,17 @@ is allowed (`PLAN → PLAN`); a second planning failure escalates.
 3. Tasks remaining → stay in BUILD (`transition BUILD --reason "closed <id>, N left"`).
    No ready tasks and none in flight → `transition VERIFY`.
    All remaining tasks blocked → escalate with the list.
+
+**Waiting on builders.** Background builders take minutes; the loop driver re-prompts in
+seconds. When an iteration finds builders in flight and nothing else ready, do not burn
+a work tick on it:
+- `python3 $STATE tick --waiting` (free; bounded by its own `max_wait_ticks` ceiling).
+- Then either **block in the foreground on the builder's artifacts** — e.g.
+  `until [ -f <expected-output> ] || ! kill -0 <pid> 2>/dev/null; do :; done` style
+  checks on the result the builder commits (bare `sleep` is blocked by the harness) —
+  or simply stop and let the builder's completion notification re-enter the loop.
+- When a builder finishes: `python3 $STATE task <id> --done`, verify its work, and
+  take a normal work tick for whatever you do with it.
 
 ### VERIFY (→ REVIEW, ⇄ BUILD)
 Two checks, both required:
@@ -140,6 +156,11 @@ python3 $STATE decide --decision "what you chose" --why "one-line rationale"
 
 The human reviews all decisions in batch in the PR. A wrong-but-logged decision costs a
 review comment; a question costs the whole loop.
+
+**Budgets are adjustable, not sacred.** If a legitimate loop is about to exhaust a
+budget for structural reasons (many parallel waves, a large plan), raise it explicitly —
+`python3 $STATE set-budget --max-iterations N` — and log the decision with the reason.
+Never hand-edit `state.json` for this; the wrong key is silently ignored.
 
 **Escalate only for** (the complete list):
 1. Destructive or irreversible operations outside the feature branch.
