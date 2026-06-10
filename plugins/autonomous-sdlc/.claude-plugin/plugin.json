@@ -1,23 +1,22 @@
 {
   "name": "autonomous-sdlc",
-  "version": "1.4.0",
-  "description": "Adaptive autonomous SDLC with agent teams, native worktree isolation, task management, prompt-based hooks, and prompt objects",
+  "version": "2.0.0",
+  "description": "Autonomous SDLC as a state machine on disk driven by a /goal loop \u2014 one verified unit of work per iteration, decide-log-proceed autonomy, built-in verify/code-review/simplify gates",
   "author": {
     "name": "Joshua Oliphant",
     "email": "joshuaoliphant@gmail.com"
   },
   "keywords": [
     "sdlc",
+    "loop",
+    "state-machine",
+    "goal",
     "tdd",
     "bdd",
-    "acceptance-criteria",
-    "gherkin",
-    "pytest-bdd",
-    "agent-teams",
-    "adaptive-orchestration",
-    "prompt-objects",
     "beads",
-    "autonomous"
+    "autonomous",
+    "ralph-wiggum",
+    "decision-journal"
   ],
   "repository": "https://github.com/JoshuaOliphant/claude-plugins"
 }

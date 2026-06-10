@@ -76,7 +76,7 @@ Tag each scenario with `@ac-N` for traceability.
 
 - **BDD** (this skill) — Outer loop. Acceptance-level tests verifying user-perspective behavior.
 - **TDD** (`tdd-workflow`) — Inner loop. Unit-level tests verifying component internals.
-- **Verification** (`verification-stack`) — `uv run pytest tests/ -x` auto-discovers BDD tests. No config changes needed.
+- **Verification** (sdlc-loop VERIFY state, or the built-in verify skill) — `uv run pytest tests/ -x` auto-discovers BDD tests. No config changes needed.
 
 For detailed pytest-bdd syntax, parser types, and step decorator patterns:
 

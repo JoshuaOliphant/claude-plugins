@@ -5,8 +5,9 @@ description: >
   generate tests like that", "always use this pattern", "that's not how I want specs written") or
   confirms a non-obvious approach worked ("yes exactly", "perfect"). Also trigger on explicit requests:
   "save this feedback", "show my feedback", "clear feedback", "workflow preferences", "sdlc settings",
-  "consolidate feedback", "bake in my preferences". Feedback persists across sessions and is loaded
-  by BDD, TDD, beads, and verification skills.
+  "consolidate feedback", "bake in my preferences". Also the graduation target for durable loop
+  signs from .sdlc/signs.md. Feedback persists across sessions and is loaded by the sdlc-loop,
+  BDD, TDD, and beads skills.
 args:
   - name: action
     description: "Action to take: save, show, clear, or consolidate"
@@ -22,7 +23,7 @@ allowed-tools:
 # Autonomous SDLC Feedback Manager
 
 Persist feedback about SDLC workflow preferences across sessions. Stored feedback is automatically
-loaded by BDD, TDD, beads, and verification skills, ensuring workflow preferences carry forward.
+loaded by the sdlc-loop, BDD, TDD, and beads skills, ensuring workflow preferences carry forward.
 
 ## Actions
 
@@ -35,7 +36,7 @@ echo '{"category": "<category>", "feedback": "<what the user said>", "context": 
   python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc save-feedback
 ```
 
-**Categories**: spec_writing, test_generation, tdd_workflow, bdd_workflow, verification, beads_workflow, general
+**Categories**: spec_writing, test_generation, tdd_workflow, bdd_workflow, verification, beads_workflow, loop_behavior, general
 
 **Examples**:
 - "BDD specs should use business language, not technical" → `{"category": "spec_writing", "feedback": "Write BDD scenarios in business domain language — avoid implementation details like class names or API endpoints"}`
@@ -83,10 +84,10 @@ python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-fe
 ```
 
 2. Read the target SKILL.md files:
+   - `${CLAUDE_PLUGIN_ROOT}/skills/sdlc-loop/SKILL.md`
    - `${CLAUDE_PLUGIN_ROOT}/skills/bdd-spec/SKILL.md`
    - `${CLAUDE_PLUGIN_ROOT}/skills/bdd-generate/SKILL.md`
    - `${CLAUDE_PLUGIN_ROOT}/skills/tdd-workflow/SKILL.md`
-   - `${CLAUDE_PLUGIN_ROOT}/skills/verification-stack/SKILL.md`
    - `${CLAUDE_PLUGIN_ROOT}/skills/beads-workflow/SKILL.md`
 
 3. For each feedback entry, determine if it should be consolidated:
@@ -124,8 +125,25 @@ When autonomous-sdlc skills run, they load relevant feedback entries:
 - **test_generation** feedback → loaded by bdd-generate to shape test output
 - **tdd_workflow** feedback → loaded by tdd-workflow to adjust cycle size and patterns
 - **bdd_workflow** feedback → loaded by bdd-spec and bdd-generate for process preferences
-- **verification** feedback → loaded by verification-stack to adjust gate strictness
+- **verification** feedback → loaded by the sdlc-loop VERIFY state to adjust gate strictness
 - **beads_workflow** feedback → loaded by beads-workflow for issue management style
+- **loop_behavior** feedback → loaded by sdlc-loop every iteration (budgets, escalation taste, decision style)
 - **general** feedback → applied to all SDLC skills
 
 This ensures the user never has to repeat the same workflow preference twice.
+
+## Signs: Loop Guardrails
+
+During a loop, recurring mistakes are recorded as one-line **signs** in the project's
+`.sdlc/signs.md` ("Sign: don't assume the helper exists — grep first"). Signs are
+project-local and replayed at every iteration's orient step.
+
+When a sign is durable and project-independent, graduate it here:
+
+```bash
+echo '{"category": "loop_behavior", "feedback": "<the sign, generalized>"}' | \
+  python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc save-feedback
+```
+
+Signs follow the same lifecycle as other feedback: accumulate → recur → consolidate
+into SKILL.md.

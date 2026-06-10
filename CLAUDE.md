@@ -14,7 +14,7 @@ claude-plugins/
 │   └── marketplace.json            # Catalog of all published plugins (registry)
 ├── plugins/
 │   ├── mochi-creator/              # Evidence-based spaced-repetition flashcards (Mochi API)
-│   ├── autonomous-sdlc/            # Agent-team SDLC: TDD, BDD, Beads, verification, worktrees
+│   ├── autonomous-sdlc/            # SDLC as a /goal-driven state-machine loop: TDD, BDD, Beads
 │   ├── hexagonal-agents/           # Agent-driven HTML-UI web apps (Agent SDK + FastAPI + HTMX)
 │   ├── compound-knowledge/         # Capture / retrieve / graduate engineering knowledge
 │   └── autoloop/                   # Generate autonomous experiment-optimization loops
@@ -35,7 +35,7 @@ Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json` (the
 | Plugin | Purpose | Notable pieces |
 |---|---|---|
 | **mochi-creator** | Create cognitive-science-based flashcards via the Mochi API | `scripts/mochi_api.py` (module + CLI), prompt-quality validation, knowledge-type references |
-| **autonomous-sdlc** | Adaptive autonomous SDLC with an agent team | 6 skills (tdd/bdd/beads/verification/feedback), 7 subagents, 4 commands, PostToolUse/Stop hooks |
+| **autonomous-sdlc** | Autonomous SDLC as a state machine on disk driven by a loop | `sdlc-loop` skill + `sdlc_state.py` state CLI, 6 skills, 2 subagents (Architect/Builder), loop Stop hook + denylisted auto-approve |
 | **hexagonal-agents** | Web apps where an agent generates HTML UI | Ports-and-adapters arch, MCP tools, Claude Agent SDK, extensive `references/` |
 | **compound-knowledge** | Institutional memory: capture → retrieve → graduate | YAML-frontmatter solution files, grep-based retrieval, `knowledge-researcher` subagent |
 | **autoloop** | Generate Karpathy-style optimization loops | Produces `program.md` + immutable `auto/run.sh`, `codebase-scout` subagent |
@@ -54,14 +54,21 @@ Each plugin follows a consistent layout:
 - `hooks/` + `hooks.json` — event-driven validators (e.g. ruff/type checks on Write/Edit)
 - `scripts/` — Python helpers, importable and/or CLI-executable
 
-### Subagent Model Tiering (autonomous-sdlc)
+### The SDLC Loop (autonomous-sdlc)
 
-The agent team assigns models by the kind of work, optimized for the Opus 4.8 era:
-- **Opus** for generative reasoning: **Architect** (planning), **Builder** (implementation/TDD)
-- **Sonnet** for verification: **Validator** (read-only checks), **Integrator** (merges)
-- **Haiku** for mechanical work: **Documenter** (docs), **PR-Creator** (PR descriptions)
+v2 replaced the agent-team pipeline with a state machine on disk (`.sdlc/state.json`,
+owned by `scripts/sdlc_state.py`) driven by the built-in `/goal` mechanism (Stop-hook
+fallback for older Claude Code). States: INIT → SPEC → PLAN → BUILD ⇄ VERIFY → REVIEW →
+SHIP → DONE, plus REPAIR and BLOCKED. Two agents remain, both **Opus**: **Architect**
+(PLAN state) and **Builder** (BUILD state, keeps its PostToolUse validators and
+Stop-hook completion gate). VERIFY/REVIEW are states that call Claude Code's built-in
+verify/code-review/simplify/security-review skills — don't reintroduce custom
+equivalents. Agents follow decide-log-proceed (`sdlc_state.py decide`); questions to
+the human only exist as the BLOCKED state. Design rationale:
+`docs/sdlc-loop-redesign.md`.
 
-When changing an agent's role significantly, keep the model column in `README.md` and `commands/sdlc.md` in sync with the agent frontmatter.
+When changing an agent's role significantly, keep `README.md` and the `sdlc-loop`
+skill's dispatch table in sync with the agent frontmatter.
 
 ### Mochi API Client Architecture
 
