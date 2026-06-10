@@ -27,14 +27,16 @@ Create evidence-based spaced repetition flashcards using cognitive science princ
 export MOCHI_API_KEY="your_api_key_here"
 ```
 
-### autonomous-sdlc (v1.0.0)
+### autonomous-sdlc (v2.0.0)
 
-Adaptive autonomous SDLC with 5 skills covering the full development lifecycle:
+Autonomous SDLC as a state machine on disk driven by a `/goal` loop — one verified,
+committed unit of work per iteration until the PR is open or a written escalation stops
+the loop:
 
-- **bdd-spec** — Co-author acceptance criteria in Given/When/Then format before code exists
+- **sdlc-loop** — The state machine: iteration ritual, per-state dispatch, decide-log-proceed autonomy, signs
+- **bdd-spec** — Acceptance criteria in Given/When/Then; interactive with a human, autonomous inside a loop
 - **bdd-generate** — Scaffold pytest-bdd feature files and step definitions from acceptance criteria
 - **tdd-workflow** — Enforce red-green-refactor discipline with test-first development
-- **verification-stack** — Run automated quality gates (format, lint, type check, test) as deterministic verification
 - **beads-workflow** — Track work items with the Beads CLI (`bd` commands) with explicit dependencies
 
 ```bash
