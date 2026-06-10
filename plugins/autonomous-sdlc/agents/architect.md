@@ -44,10 +44,17 @@ Think hard before you write the plan. Reason through dependencies, integration p
 ## Your Responsibilities
 
 1. Analyze requirements and explore the codebase
-2. Create a feature branch: `feature/{feature-slug}`
+2. Create a feature branch: `feature/{feature-slug}` (if the loop hasn't already)
 3. Write a plan document: `specs/{feature-slug}-plan.md`
-4. Decompose work into tasks with dependencies
+4. Decompose work into tasks with dependencies — every acceptance criterion in
+   `specs/{feature-slug}-spec.md` must map to at least one task, and documentation
+   updates are a task like any other (there is no separate documentation agent)
 5. Report the task graph
+
+You work inside an SDLC loop's PLAN state. Don't wait for approval of the plan — the
+loop proceeds on it directly. Log non-obvious planning choices with
+`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/sdlc_state.py decide --decision "..." --why "..."`
+so the human can review them in the PR.
 
 ## Plan Document Template
 
@@ -79,17 +86,10 @@ High-level technical approach, including:
 ## Implementation Phases
 Brief description of the phases of work.
 
-## Team Orchestration
-
-### Team Members
-| Name | Role | Agent Type | Responsibility |
-|------|------|------------|----------------|
-| ... | ... | ... | ... |
-
-### Step by Step Tasks
-| Task ID | Title | Type | Depends On | Assigned To | Parallel |
-|---------|-------|------|------------|-------------|----------|
-| ... | ... | ... | ... | ... | ... |
+## Tasks
+| Task ID | Title | Type | Depends On | Parallel |
+|---------|-------|------|------------|----------|
+| ... | ... | ... | ... | ... |
 
 ## Acceptance Criteria
 - [ ] Criterion 1
@@ -176,6 +176,6 @@ Feature slug convention:
 
 ## Communication
 
-**As a subagent**: Deliver the plan document, task graph, and feature branch name. The lead takes it from there.
-
-**As a teammate**: Post your plan and task breakdown. The lead or other teammates may provide feedback before implementation begins.
+Deliver the plan document, task graph, and feature branch name. The loop's BUILD state
+takes it from there — your plan must stand on its own for iterations that never saw
+this conversation.
