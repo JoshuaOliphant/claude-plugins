@@ -57,6 +57,14 @@ Confirm the environment: feature branch exists (create `feature/{slug}` if not),
 files committed, tooling detected (`bd`, `gh`/`glab`, test runner). Transition to SPEC.
 On unfixable environment problems (no git repo, no write access): escalate.
 
+**Observability check (soft dependency).** Detect a project harness:
+`bash .claude/harness/observability/status.sh --json` (file absent → none). Note the
+result in `progress.md`. If there is **no** harness, the `claude-code-observability-harness`
+skill is available, and the project is a long-running app or service (not a library or
+one-shot CLI): log a decision and carry "set up observability harness (lite)" into PLAN
+as an early task — it goes through normal build/verify and lands as its own reviewable
+commit. Skip silently when the skill is absent or the project shape doesn't warrant it.
+
 ### SPEC → PLAN
 Derive acceptance criteria from `.sdlc/state.json`'s `request` field using the
 `bdd-spec` skill in autonomous mode (decide-don't-ask: resolve ambiguities yourself and
@@ -69,8 +77,11 @@ first and fold past solutions and gotchas into the Architect's prompt; skip sile
 absent. Run the Architect pattern (`agents/architect.md`): plan document at
 `specs/{slug}-plan.md`, tasks decomposed into Beads (`bd create` + deps) or TaskCreate.
 Every AC must map to at least one task; add a doc-update task and (if the project has
-user-facing surface) a docs task — there is no separate Documenter. Commit. One re-plan
-is allowed (`PLAN → PLAN`); a second planning failure escalates.
+user-facing surface) a docs task — there is no separate Documenter. If the project has
+(or INIT decided to add) an observability harness, include an instrumentation task for
+the feature's new surface — scan-and-propose scoped to this feature, autonomous mode —
+so new code paths don't become the unobserved ones. Commit. One re-plan is allowed
+(`PLAN → PLAN`); a second planning failure escalates.
 
 ### BUILD (⇄ BUILD, → VERIFY)
 1. `bd ready` (or TaskList) → pick **one** task (or several independent ones for
@@ -100,15 +111,21 @@ a work tick on it:
   take a normal work tick for whatever you do with it.
 
 ### VERIFY (→ REVIEW, ⇄ BUILD)
-Two checks, both required:
+Required checks:
 1. **Mechanical**: the built-in **verify** skill if available, else the project's own
    stack (tests, lint, types).
 2. **Spec compliance**: walk `specs/{slug}-spec.md` AC by AC and confirm each is
    demonstrably met — by its `@ac-N`-tagged test where bdd-generate scaffolding exists,
    by reading the code and exercising behavior where it doesn't. Tests passing is not
    the same as the spec being satisfied.
+3. **Telemetry (only when the project has an observability harness)**: exercise the
+   feature once for real and use the `observability-query` skill to confirm the
+   feature's instrumented paths fired with real labels — tests can pass while the wired
+   app never runs the new path. If the sinks look dry, run the harness `verify.sh`
+   first: distinguish "pipeline broken" from "code path never executed" before filing
+   either as a failure.
 
-Both green → `transition REVIEW`. Either red → create a fix task naming the failing
+All green → `transition REVIEW`. Any red → create a fix task naming the failing
 check or AC, `transition BUILD`. Merge conflicts or a broken branch that isn't one
 task's fault → `transition REPAIR`.
 
@@ -137,9 +154,11 @@ babysitting (`/loop 10m check PR CI and address review comments`). Auth failures
 escalate — never store or guess credentials.
 
 ### REPAIR (→ BUILD | VERIFY)
-The branch is broken in a way no single task owns. Diagnose; fix forward if the cause
-is clear, otherwise `git revert` the offending commit (log the decision). Green again →
-back to VERIFY (or BUILD if reverting reopened a task).
+The branch is broken in a way no single task owns. Diagnose — if the project has an
+observability harness, the first diagnostic is the `observability-query` skill (recent
+error logs and failed spans in the breakage window) before reading code. Fix forward if
+the cause is clear, otherwise `git revert` the offending commit (log the decision).
+Green again → back to VERIFY (or BUILD if reverting reopened a task).
 
 ### BLOCKED (terminal)
 Reached via escalation or forced by budgets. See protocol below.
