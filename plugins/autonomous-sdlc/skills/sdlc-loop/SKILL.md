@@ -32,6 +32,9 @@ Every iteration, in order, no exceptions:
 
 1. **Tick**: `python3 $STATE tick` — increments the iteration counter and enforces
    budgets. If it prints `DONE` or `BLOCKED`, stop immediately: the loop is over.
+   **Exception**: if this iteration exists only to check on in-flight background
+   builders (no other ready work), use `python3 $STATE tick --waiting` instead — wait
+   checks are free, not budgeted units of work (see "Waiting on builders" below).
 2. **Orient**: `python3 $STATE status`, read the tail of `.sdlc/progress.md`, run
    `git log --oneline -10`, and read `.sdlc/signs.md` if it exists (guardrails from
    past mistakes — they override your instincts). On your first iteration in a session,
@@ -54,6 +57,14 @@ Confirm the environment: feature branch exists (create `feature/{slug}` if not),
 files committed, tooling detected (`bd`, `gh`/`glab`, test runner). Transition to SPEC.
 On unfixable environment problems (no git repo, no write access): escalate.
 
+**Observability check (soft dependency).** Detect a project harness:
+`bash .claude/harness/observability/status.sh --json` (file absent → none). Note the
+result in `progress.md`. If there is **no** harness, the `claude-code-observability-harness`
+skill is available, and the project is a long-running app or service (not a library or
+one-shot CLI): log a decision and carry "set up observability harness (lite)" into PLAN
+as an early task — it goes through normal build/verify and lands as its own reviewable
+commit. Skip silently when the skill is absent or the project shape doesn't warrant it.
+
 ### SPEC → PLAN
 Derive acceptance criteria from `.sdlc/state.json`'s `request` field using the
 `bdd-spec` skill in autonomous mode (decide-don't-ask: resolve ambiguities yourself and
@@ -66,13 +77,18 @@ first and fold past solutions and gotchas into the Architect's prompt; skip sile
 absent. Run the Architect pattern (`agents/architect.md`): plan document at
 `specs/{slug}-plan.md`, tasks decomposed into Beads (`bd create` + deps) or TaskCreate.
 Every AC must map to at least one task; add a doc-update task and (if the project has
-user-facing surface) a docs task — there is no separate Documenter. Commit. One re-plan
-is allowed (`PLAN → PLAN`); a second planning failure escalates.
+user-facing surface) a docs task — there is no separate Documenter. If the project has
+(or INIT decided to add) an observability harness, include an instrumentation task for
+the feature's new surface — scan-and-propose scoped to this feature, autonomous mode —
+so new code paths don't become the unobserved ones. Commit. One re-plan is allowed
+(`PLAN → PLAN`); a second planning failure escalates.
 
 ### BUILD (⇄ BUILD, → VERIFY)
-1. `bd ready` (or TaskList) → pick **one** task. `python3 $STATE task <id>` and
-   `python3 $STATE attempt <id>` — if attempt prints `EXCEEDED`, mark the task blocked
-   in the tracker, log a decision, and pick the next ready task instead.
+1. `bd ready` (or TaskList) → pick **one** task (or several independent ones for
+   parallel builders). For each: `python3 $STATE task <id>` (adds to the in-flight set;
+   `task <id> --done` when it closes) and `python3 $STATE attempt <id>` — if attempt
+   prints `EXCEEDED`, mark the task blocked in the tracker, log a decision, and pick
+   the next ready task instead.
 2. Spawn a Builder (`agents/builder.md`) for the task — its TDD discipline, PostToolUse
    validators, and Stop-hook completion gate are unchanged. For 3+ *independent* ready
    tasks, spawn builders in parallel with `isolation: "worktree"` and merge their
@@ -83,16 +99,33 @@ is allowed (`PLAN → PLAN`); a second planning failure escalates.
    No ready tasks and none in flight → `transition VERIFY`.
    All remaining tasks blocked → escalate with the list.
 
+**Waiting on builders.** Background builders take minutes; the loop driver re-prompts in
+seconds. When an iteration finds builders in flight and nothing else ready, do not burn
+a work tick on it:
+- `python3 $STATE tick --waiting` (free; bounded by its own `max_wait_ticks` ceiling).
+- Then either **block in the foreground on the builder's artifacts** — e.g.
+  `until [ -f <expected-output> ] || ! kill -0 <pid> 2>/dev/null; do :; done` style
+  checks on the result the builder commits (bare `sleep` is blocked by the harness) —
+  or simply stop and let the builder's completion notification re-enter the loop.
+- When a builder finishes: `python3 $STATE task <id> --done`, verify its work, and
+  take a normal work tick for whatever you do with it.
+
 ### VERIFY (→ REVIEW, ⇄ BUILD)
-Two checks, both required:
+Required checks:
 1. **Mechanical**: the built-in **verify** skill if available, else the project's own
    stack (tests, lint, types).
 2. **Spec compliance**: walk `specs/{slug}-spec.md` AC by AC and confirm each is
    demonstrably met — by its `@ac-N`-tagged test where bdd-generate scaffolding exists,
    by reading the code and exercising behavior where it doesn't. Tests passing is not
    the same as the spec being satisfied.
+3. **Telemetry (only when the project has an observability harness)**: exercise the
+   feature once for real and use the `observability-query` skill to confirm the
+   feature's instrumented paths fired with real labels — tests can pass while the wired
+   app never runs the new path. If the sinks look dry, run the harness `verify.sh`
+   first: distinguish "pipeline broken" from "code path never executed" before filing
+   either as a failure.
 
-Both green → `transition REVIEW`. Either red → create a fix task naming the failing
+All green → `transition REVIEW`. Any red → create a fix task naming the failing
 check or AC, `transition BUILD`. Merge conflicts or a broken branch that isn't one
 task's fault → `transition REPAIR`.
 
@@ -121,9 +154,11 @@ babysitting (`/loop 10m check PR CI and address review comments`). Auth failures
 escalate — never store or guess credentials.
 
 ### REPAIR (→ BUILD | VERIFY)
-The branch is broken in a way no single task owns. Diagnose; fix forward if the cause
-is clear, otherwise `git revert` the offending commit (log the decision). Green again →
-back to VERIFY (or BUILD if reverting reopened a task).
+The branch is broken in a way no single task owns. Diagnose — if the project has an
+observability harness, the first diagnostic is the `observability-query` skill (recent
+error logs and failed spans in the breakage window) before reading code. Fix forward if
+the cause is clear, otherwise `git revert` the offending commit (log the decision).
+Green again → back to VERIFY (or BUILD if reverting reopened a task).
 
 ### BLOCKED (terminal)
 Reached via escalation or forced by budgets. See protocol below.
@@ -140,6 +175,11 @@ python3 $STATE decide --decision "what you chose" --why "one-line rationale"
 
 The human reviews all decisions in batch in the PR. A wrong-but-logged decision costs a
 review comment; a question costs the whole loop.
+
+**Budgets are adjustable, not sacred.** If a legitimate loop is about to exhaust a
+budget for structural reasons (many parallel waves, a large plan), raise it explicitly —
+`python3 $STATE set-budget --max-iterations N` — and log the decision with the reason.
+Never hand-edit `state.json` for this; the wrong key is silently ignored.
 
 **Escalate only for** (the complete list):
 1. Destructive or irreversible operations outside the feature branch.

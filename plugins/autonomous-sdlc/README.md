@@ -37,7 +37,7 @@ from `BLOCKED`, after you've answered the escalation.
 | INIT | Branch, state files, tooling detection | committed |
 | SPEC | Acceptance criteria via `bdd-spec` (autonomous mode) | `specs/{slug}-spec.md` committed |
 | BUILD | **One task** via the Builder (TDD + hook gates); parallel builders with `isolation: "worktree"` when tasks are independent | `bd ready` is empty |
-| VERIFY | Built-in **verify** skill / project test stack | green (red → fix task → BUILD) |
+| VERIFY | Built-in **verify** skill / project test stack + spec compliance (AC by AC) + telemetry check when an observability harness exists | green (red → fix task → BUILD) |
 | REVIEW | Built-in **code-review**, optional **security-review**, then **simplify** + re-verify | no high-confidence findings (max 2 round-trips) |
 | SHIP | Push + `gh pr create` with the decision journal in the PR body | PR URL recorded |
 | REPAIR | Fix or revert a broken branch | green again |
@@ -118,8 +118,19 @@ specs/{slug}-spec.md  # acceptance criteria
 specs/{slug}-plan.md  # architect plan
 ```
 
-`python3 scripts/sdlc_state.py --help` documents the state CLI (init, tick, transition,
-task, attempt, decide, note-progress, status, state).
+`python3 scripts/sdlc_state.py --help` documents the state CLI (init, tick [--waiting],
+transition, task [--done], attempt, decide, note-progress, set-budget, set-driver,
+status, state).
+
+## Composes With (soft dependencies — skipped silently when absent)
+
+- **compound-knowledge**: `compound-retrieve` feeds the Architect in PLAN;
+  `compound-capture` records lessons before SHIP.
+- **observability-harness**: INIT detects a project harness via
+  `status.sh --json` (and may queue lite setup as a reviewable plan task for apps);
+  PLAN adds a feature-scoped instrumentation task; VERIFY confirms the feature's
+  instrumented paths actually fired (`observability-query`); REPAIR queries error
+  logs/spans first.
 
 ## Prerequisites
 
@@ -137,7 +148,19 @@ Keeps Claude Code's plan mode output in the same `specs/` directory the Architec
 
 ## Version History
 
-### v2.0.0 (Current)
+### v2.1.0 (Current)
+- **Wait-aware budgets** (from the first field run, where ~60% of ticks were
+  wait-checks on background builders): `tick --waiting` is free — separate
+  `max_wait_ticks` ceiling instead of burning the iteration budget
+- In-flight task **set** (`task <id>` / `task <id> --done`) replaces the single
+  current-task slot, matching the parallelism the skill recommends
+- `set-budget` for explicit mid-loop budget changes; `set-driver` + `--driver auto`
+  (default): the fallback hook drives until `/sdlc` proves `/goal` works and records it
+- **Observability integration** (soft dependency on `observability-harness`): harness
+  detection in INIT, feature-scoped instrumentation tasks in PLAN, a telemetry check in
+  VERIFY, telemetry-first diagnosis in REPAIR
+
+### v2.0.0
 - **Pipeline → loop**: state machine on disk (`.sdlc/state.json`) with backward
   transitions, driven by `/goal` (Stop-hook fallback); `/sdlc` is an idempotent
   initializer/resumer

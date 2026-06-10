@@ -1,0 +1,35 @@
+# ABOUTME: One-shot telemetry probe for {{SERVICE_NAME}} — proves the OTLP pipeline end-to-end.
+# ABOUTME: Run via harness verify.sh; exits non-zero with the cause when the pipeline is broken.
+
+"""Emit one span, one metric point, and one log line, then force-flush.
+
+Exit codes:
+  0 — telemetry emitted and flushed (check sinks next; verify.sh does this)
+  1 — configure() returned False: the OTel SDK is not installed (the #1 cause of
+      "empty data dirs" — fix with `uv sync --group otel`, not by debugging Vector)
+"""
+
+import logging
+import sys
+
+import {{MODULE_IMPORT}} as otel
+
+if not otel.configure():
+    sys.exit("PROBE FAIL: configure() returned False — OTel SDK not installed. Run: uv sync --group otel")
+
+with otel.span("harness.probe", probe="true"):
+    logging.getLogger("{{SERVICE_NAME}}").info("harness probe log line")
+    # A synthetic instrument so the metrics sink gets a point even before any
+    # domain instruments exist.
+    otel.meter.create_counter("harness.probe.count").add(1, {"probe": "true"})
+
+# Batch processors export on their own schedule (metrics every 5s); force-flush so
+# verify.sh can check the sinks immediately instead of sleeping past the intervals.
+from opentelemetry import metrics, trace
+from opentelemetry._logs import get_logger_provider
+
+trace.get_tracer_provider().force_flush()
+metrics.get_meter_provider().force_flush()
+get_logger_provider().force_flush()
+
+print("PROBE OK — span, metric, and log emitted and flushed")

@@ -9,14 +9,19 @@
 PLUGIN_ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 STATE_CLI="$PLUGIN_ROOT/scripts/sdlc_state.py"
 
-# One read: only drive the loop when it chose the stop-hook driver.
+# One read: drive the loop unless the native /goal driver owns it. "auto" means
+# /sdlc hasn't recorded a successful /goal arm (set-driver goal) yet, so the
+# fallback must drive — otherwise a failed probe would leave no driver at all.
 read -r DRIVER STATE <<<"$(python3 -c "
 import json
 s = json.load(open('.sdlc/state.json'))
 print(s.get('driver', ''), s.get('state', ''))
 " 2>/dev/null)"
 
-[ "$DRIVER" = "stop-hook" ] || exit 0
+case "$DRIVER" in
+    stop-hook|auto) ;;
+    *) exit 0 ;;
+esac
 
 # Terminal states release the loop.
 if [ -z "$STATE" ] || [ "$STATE" = "DONE" ] || [ "$STATE" = "BLOCKED" ]; then

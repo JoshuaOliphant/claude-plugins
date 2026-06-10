@@ -30,7 +30,7 @@
       "name": "autonomous-sdlc",
       "source": "./plugins/autonomous-sdlc",
       "description": "Autonomous SDLC as a state machine on disk driven by a /goal loop \u2014 one verified unit of work per iteration, decide-log-proceed autonomy, built-in verify/code-review/simplify gates",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -105,8 +105,8 @@
     {
       "name": "observability-harness",
       "source": "./plugins/observability-harness",
-      "description": "Install a local, Docker-free OTLP observability stack (OpenTelemetry \u2192 Vector \u2192 JSONL, optionally VictoriaLogs + VictoriaMetrics) into a project and instrument the code, with a scan-and-propose step for domain-appropriate spans and metrics.",
-      "version": "0.1.0",
+      "description": "Install a local, Docker-free OTLP observability stack (OpenTelemetry \u2192 Vector \u2192 JSONL, optionally VictoriaLogs + VictoriaMetrics) into a project and instrument the code, with a scan-and-propose step for domain-appropriate spans and metrics \u2014 then query that telemetry as a development feedback signal (observability-query skill, status --json contract, scripted end-to-end verify).",
+      "version": "0.2.0",
       "author": {
         "name": "Joshua Oliphant"
       },
