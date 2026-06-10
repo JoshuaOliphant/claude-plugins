@@ -30,7 +30,13 @@ The current plugin (v1.2.0) describes itself as autonomous, but structurally it 
 
 ## 2. What the Research Says
 
-Three converging bodies of practice informed this design:
+> **Origin note**: this redesign was prompted by the video
+> ["How the Top 1% Actually Run Claude Code Now"](https://www.youtube.com/watch?v=2-0lxK2wgJ8),
+> whose thesis matches the philosophy attributed to the Head of Claude Code: *"I don't
+> prompt Claude anymore. I have loops running. They're the ones prompting Claude...
+> My job is to write loops."* The pipeline-vs-loop framing below follows from that.
+
+Four converging bodies of practice informed this design:
 
 **The Ralph Wiggum loop** (Geoffrey Huntley; now an official plugin in
 `anthropics/claude-code`): a dumb `while true` that re-feeds one prompt beats clever
@@ -62,8 +68,25 @@ and disappear, and a merge-queue role. Also a widely-echoed warning (Chris Parso
 context is the first thing to break; keep the control loop dumb and external, keep the
 intelligence inside the iterations.
 
+**Claude Code's native loop primitives** (docs: [`/goal`](https://code.claude.com/docs/en/goal),
+[workflows](https://code.claude.com/docs/en/workflows)): the harness now ships the loop
+machinery itself.
+- **`/goal <condition>`** (v2.1.139+) keeps a session working until a condition holds.
+  It is documented as *"a wrapper around a session-scoped prompt-based Stop hook"*: after
+  every turn a small fast model (Haiku) judges the condition against the transcript;
+  "no" re-prompts Claude with the reason, "yes" ends the loop. Conditions support
+  in-condition budgets ("or stop after 20 turns"), survive `--resume`, and run headless
+  via `claude -p "/goal ..."`. This is *exactly* the Ralph mechanism, productized.
+- **`/loop`** re-runs a prompt on a clock — progress-driven vs time-driven: `/goal`
+  pushes work to a finish line; `/loop` watches for change.
+- **Dynamic workflows** (v2.1.154+): Claude writes a JavaScript orchestration script the
+  runtime executes in the background — the script holds the loop and intermediate state,
+  not the context window; resumable; **no mid-run user input by design**; up to 1000
+  agents/run. The docs explicitly invite porting hand-built orchestrators to workflows.
+
 The common shape: **a dumb, durable outer loop; smart, ephemeral inner work; all state on
-disk; objective gates between states.**
+disk; objective gates between states.** And critically for this plugin: the outer loop no
+longer needs to be hand-built.
 
 ## 3. Design Overview
 
@@ -90,16 +113,31 @@ loop**, with smaller convergence loops nested inside each state.
    Any state ─► BLOCKED (escalation: the only exit that asks the human)
 ```
 
-### 3.1 The outer loop: Stop-hook re-entry
+### 3.1 The outer loop: `/goal` as the driver, Stop hook as fallback
 
 `/sdlc "<request>"` no longer *is* the orchestrator. It is the **loop initializer**:
 
 1. Create `.sdlc/state.json`, `.sdlc/progress.md`, feature branch, budgets.
-2. Register the loop: a **Stop hook** (Ralph-style) that, on every attempted stop,
-   reads `state.json` and either:
+2. Arm the loop by setting a **native goal**:
+
+   ```
+   /goal The SDLC state machine for feature {slug} is finished:
+   `python scripts/sdlc_state.py status` prints DONE or BLOCKED,
+   and the last turn committed its work. Or stop after {max_iterations} turns.
+   ```
+
+   The built-in goal evaluator (a fresh Haiku judge, separate from the model doing the
+   work) then re-prompts after every turn until the condition holds — completion decided
+   by a model that *didn't* do the work, which is the read-only-Validator idea reborn at
+   the loop level. On Claude Code < v2.1.139 (or when hooks are disabled, which also
+   disables `/goal`), the plugin falls back to its own `loop-stop-hook.sh` doing the same
+   thing: on every attempted stop, read `state.json` and either:
    - state is `DONE` or `BLOCKED` → allow exit (loop ends), or
    - budget exhausted → set `BLOCKED(budget)`, allow exit, or
    - otherwise → **block the stop** and re-inject the iteration prompt.
+
+   Headless/CI runs use the same mechanism: `claude -p "/sdlc '<request>'"` arms the
+   goal and runs the loop to completion in one invocation.
 
 Every iteration is the same short prompt (the "iteration ritual"):
 
@@ -177,6 +215,8 @@ Key differences from v1 phases:
 | Review gate (`pr-review-toolkit:code-reviewer` + `silent-failure-hunter`) | Built-in **`/code-review`** at high effort (covers silent-failure hunting), optional `--fix` | Replace; drop the soft dependency entirely |
 | (no security coverage) | Built-in **`/security-review`** in REVIEW before SHIP | Add (opt-in flag) |
 | Lead's manual PR monitoring | Built-in **`/loop`** (e.g. `/loop 10m check PR CI and address review comments`) | Add as documented post-SHIP option |
+| Custom outer-loop Stop hook | Built-in **`/goal`** (a productized session-scoped Stop hook with a separate Haiku evaluator) | Prefer; keep custom hook only as a pre-v2.1.139 fallback |
+| Lead's in-context wave orchestration | **Dynamic workflows** — PLAN can emit a workflow script for large parallel BUILD waves (script holds the loop and results, not context; no mid-run user input by design) | Add as the parallelism mechanism for 6+ independent tasks |
 | Plan mode alignment | Keep `plansDirectory: "specs"` recommendation | Keep |
 | Worktree-manager reference | Native `isolation: "worktree"` | Already aligned; fold doc into the loop skill |
 
@@ -257,8 +297,10 @@ plugins/autonomous-sdlc/
 │   └── feedback/              # kept, extended: signs.md accumulation
 ├── hooks/
 │   ├── hooks.json
-│   ├── loop-stop-hook.sh      # NEW: the outer loop (block exit unless DONE/BLOCKED,
-│   │                          #      budgets, no-progress detection)
+│   ├── loop-stop-hook.sh      # NEW: fallback outer loop for Claude Code < v2.1.139
+│   │                          #      (primary driver is native /goal; this replicates
+│   │                          #      it: block exit unless DONE/BLOCKED, budgets,
+│   │                          #      no-progress detection)
 │   ├── auto-approve.sh        # tightened: denylist, branch-confinement
 │   └── validators/            # kept (ruff, mypy PostToolUse)
 └── scripts/
@@ -272,9 +314,10 @@ Deleted: `validator.md`, `integrator.md`, `documenter.md`, `pr-creator.md`,
 
 ## 5. Migration Plan
 
-1. **v2.0.0-alpha** — Add `sdlc_state.py` + `loop-stop-hook.sh` + `sdlc-loop` skill;
-   rewrite `/sdlc` as initializer/resumer. Keep old agents in place (loop dispatches to
-   them) so behavior is comparable.
+1. **v2.0.0-alpha** — Add `sdlc_state.py` + the `sdlc-loop` skill; rewrite `/sdlc` as
+   initializer/resumer that arms a native `/goal` (with `loop-stop-hook.sh` as the
+   pre-v2.1.139 fallback). Keep old agents in place (loop dispatches to them) so
+   behavior is comparable.
 2. **v2.0.0-beta** — Swap VERIFY/REVIEW states to built-in `/verify`, `/code-review`,
    `/simplify`, `/security-review`. Delete `verification-stack` and the
    `pr-review-toolkit` soft dependency.
@@ -299,6 +342,11 @@ Deleted: `validator.md`, `integrator.md`, `documenter.md`, `pr-creator.md`,
 
 ## Sources
 
+- [How the Top 1% Actually Run Claude Code Now (video that prompted this redesign)](https://www.youtube.com/watch?v=2-0lxK2wgJ8)
+- [Claude Code docs — Keep Claude working toward a goal (`/goal`)](https://code.claude.com/docs/en/goal)
+- [Claude Code docs — Orchestrate subagents at scale with dynamic workflows](https://code.claude.com/docs/en/workflows)
+- [Claude Code docs — Scheduled tasks and `/loop`](https://code.claude.com/docs/en/scheduled-tasks)
+- [Stop Prompting AI and Start Building Loops (on the Head of Claude Code's workflow)](https://www.productmarketfit.tech/p/stop-prompting-ai-and-start-building)
 - [Ralph Wiggum plugin (official, anthropics/claude-code)](https://github.com/anthropics/claude-code/tree/main/plugins/ralph-wiggum)
 - [Geoffrey Huntley — Ralph Wiggum as a "software engineer"](https://ghuntley.com/ralph/) and [everything is a ralph loop](https://ghuntley.com/loop/)
 - [Inventing the Ralph Wiggum Loop — Dev Interrupted interview](https://devinterrupted.substack.com/p/inventing-the-ralph-wiggum-loop-creator)
