@@ -29,8 +29,8 @@
     {
       "name": "autonomous-sdlc",
       "source": "./plugins/autonomous-sdlc",
-      "description": "Adaptive autonomous SDLC with agent teams, native worktree isolation, TDD, BDD, Beads issue tracking, and verification pipelines",
-      "version": "1.4.0",
+      "description": "Autonomous SDLC as a state machine on disk driven by a /goal loop \u2014 one verified unit of work per iteration, decide-log-proceed autonomy, built-in verify/code-review/simplify gates",
+      "version": "2.0.0",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -145,7 +145,7 @@
     {
       "name": "review-diff",
       "source": "./plugins/review-diff",
-      "description": "Local web-based diff review — comment on your working-tree or committed-branch diff in the browser and feed the comments back to Claude Code",
+      "description": "Local web-based diff review \u2014 comment on your working-tree or committed-branch diff in the browser and feed the comments back to Claude Code",
       "version": "0.3.2",
       "author": {
         "name": "Joshua Oliphant"

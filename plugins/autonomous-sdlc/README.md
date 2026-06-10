@@ -1,205 +1,156 @@
 # Autonomous SDLC Plugin
 
-Adaptive autonomous software development lifecycle for Claude Code. The lead orchestrator chooses the right coordination mode — solo, subagents, or agent teams — based on task complexity.
+Autonomous software development as a **state machine on disk driven by a loop**, not a
+pipeline. `/sdlc "<request>"` initializes `.sdlc/state.json`, arms a loop driver, and
+then iterates — one verified, committed unit of work per turn — until the state machine
+says `DONE` (PR open) or `BLOCKED` (one written escalation). No questions in between.
 
-## Key Features
-
-- **Adaptive Orchestration**: Lead decides coordination mode per-task (solo, subagents, agent teams)
-- **Agent Teams Support**: Teammates message each other directly when `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
-- **Prompt Objects**: Agents use identity/context/success-criteria instead of step-by-step scripts
-- **Optional Worktrees**: Parallel isolation when needed, shared directory when not
-- **Plan-First Architecture**: Comprehensive plan documents before implementation
-- **Builder/Validator Pairs**: Separate implementation and verification with direct feedback
-- **Automatic Validation Hooks**: Ruff + type checking on every edit
-- **Graceful Degradation**: Works without agent teams, without Beads, without worktrees
+Design rationale: [`docs/sdlc-loop-redesign.md`](../../docs/sdlc-loop-redesign.md) in
+this repository.
 
 ## Quick Start
 
 ```bash
-# Start an SDLC workflow
-/autonomous-sdlc:sdlc "Add user authentication with JWT tokens"
-
-# Check status
-/autonomous-sdlc:sdlc-status
-
-# Cancel workflow (if needed)
-/autonomous-sdlc:sdlc-cancel
+/autonomous-sdlc:sdlc "Add user authentication with JWT tokens"   # start (or resume)
+/autonomous-sdlc:sdlc-status                                      # render loop state
+/autonomous-sdlc:sdlc-cancel                                      # stop cleanly (resumable)
 ```
 
-## How It Works
+Re-running `/sdlc` is always safe: if `.sdlc/state.json` exists, it resumes — including
+from `BLOCKED`, after you've answered the escalation.
 
-The lead orchestrator assesses your request and picks a coordination mode:
-
-### Simple Tasks (1-2 tasks)
-Lead does it directly or uses a single subagent. No worktrees needed.
-
-### Moderate Tasks (3-5 tasks)
-Subagents with optional worktrees. Architect plans, builders implement, validators verify.
-
-### Complex Tasks (6+ tasks)
-Agent teams preferred (if available). Teammates self-coordinate, builders and validators communicate directly.
-
-## Workflow Phases
+## The State Machine
 
 ```
-/sdlc "Add user authentication"
-    ↓
-┌───────────────────────────────────────────┐
-│ LEAD ORCHESTRATOR (Opus)                    │
-│                                             │
-│  1. Orient — understand codebase            │
-│  2. Plan — feature branch + plan doc        │
-│  3. Decompose — break into tasks            │
-│  4. Build — solo, subagents, or team        │
-│  5. Verify — validators check work          │
-│     ↳ Refine — simplify + re-verify (opt.)  │
-│  6. Integrate — merge if using worktrees    │
-│  7. Document — update docs                  │
-│     ↳ Review Gate — semantic review (opt.)  │
-│  8. Ship — create PR                        │
-│                                             │
-│  Phases are flexible, not sequential.       │
-│  Lead may skip, reorder, or combine.        │
-└───────────────────────────────────────────┘
-    ↓
-Done! PR ready for human review
+                     ┌────────────◄────────────┐
+                     │      (review findings)  │
+ INIT ─► SPEC ─► PLAN ─► BUILD ⇄ VERIFY ─► REVIEW ─► SHIP ─► DONE
+                     ▲      │                  │
+                     │      ▼                  ▼
+                     └── REPAIR ◄── (broken branch / regression)
+
+ Any state ─► BLOCKED (escalation — the only exit that involves the human)
 ```
+
+| State | One iteration does | Moves on when |
+|---|---|---|
+| INIT | Branch, state files, tooling detection | committed |
+| SPEC | Acceptance criteria via `bdd-spec` (autonomous mode) | `specs/{slug}-spec.md` committed |
+| BUILD | **One task** via the Builder (TDD + hook gates); parallel builders with `isolation: "worktree"` when tasks are independent | `bd ready` is empty |
+| VERIFY | Built-in **verify** skill / project test stack | green (red → fix task → BUILD) |
+| REVIEW | Built-in **code-review**, optional **security-review**, then **simplify** + re-verify | no high-confidence findings (max 2 round-trips) |
+| SHIP | Push + `gh pr create` with the decision journal in the PR body | PR URL recorded |
+| REPAIR | Fix or revert a broken branch | green again |
+
+All state lives on disk (`.sdlc/`, git, Beads), so the loop survives context
+compaction, session death, and restarts.
+
+## Loop Drivers
+
+- **`/goal` (preferred, Claude Code ≥ v2.1.139)**: `/sdlc` arms a goal whose condition
+  is `sdlc_state.py state prints DONE or BLOCKED`. The built-in evaluator (a separate
+  small model) re-prompts after every turn — completion is judged by a model that
+  didn't do the work.
+- **Stop hook (fallback)**: `loop-stop-hook.sh` blocks session exit and re-injects the
+  iteration ritual until the state is terminal. Activates only when
+  `.sdlc/state.json` has `"driver": "stop-hook"`.
+
+Budgets guard both: max iterations (default 50), max attempts per task (default 3),
+and no-progress detection (2 idle iterations force `BLOCKED`).
+
+## Autonomy: Decide, Log, Proceed
+
+Agents never ask questions mid-loop. Ambiguities are resolved by project convention and
+logged to `.sdlc/decisions.jsonl`; SHIP renders them into a **"Decisions made
+autonomously"** section of the PR for batch review. Escalation (`BLOCKED` +
+`.sdlc/escalation.md`) is reserved for: destructive operations outside the feature
+branch, credential/security boundaries, genuine requirement contradictions, and budget
+exhaustion.
+
+Safety rails for unattended operation:
+- The permission hook **denylists** force-push, pushing/deleting `main`, hard resets to
+  remote, recursive deletes outside the worktree, package publishing, and repo deletion
+  — and auto-approves routine work.
+- Builders cannot stop until a completion verifier confirms tests pass, code is
+  committed, hooks are clean, and the task is closed.
 
 ## Agents
 
-| Agent | Model | Purpose | Key Feature |
-|-------|-------|---------|-------------|
-| **Architect** | Opus | Creates feature branch + plan + tasks | Plan-first |
-| **Builder** | Opus | Implements one task with TDD | PostToolUse hooks |
-| **Validator** | Sonnet | Verifies implementation (read-only) | Direct builder feedback |
-| **Integrator** | Sonnet | Merges task branches (optional) | Conflict resolution |
-| **Documenter** | Haiku | Updates docs | Fast, efficient |
-| **PR-Creator** | Haiku | Creates PR/MR | GitHub + GitLab |
+| Agent | Model | State | Purpose |
+|-------|-------|-------|---------|
+| **Architect** | Opus | PLAN | Plan document + task decomposition (docs are tasks too) |
+| **Builder** | Opus | BUILD | One task with TDD; PostToolUse validators + Stop-hook completion gate |
 
-Reference patterns (not spawnable):
-| Pattern | Purpose |
-|---------|---------|
-| **Worktree/Wave Guide** | Worktree creation, wave processing, integration loops |
+Verification and review are **states that call built-in skills** (verify, code-review,
+security-review, simplify), not agents. Merging is the REPAIR state plus native
+worktree isolation. PR creation is one `gh pr create` call.
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `/autonomous-sdlc:sdlc <description>` | Start autonomous workflow |
-| `/autonomous-sdlc:sdlc-status` | Check workflow progress |
-| `/autonomous-sdlc:sdlc-cancel` | Cancel active workflow |
-| `/autonomous-sdlc:prime` | Orient to codebase |
+| `/autonomous-sdlc:sdlc <description>` | Start or resume the loop |
+| `/autonomous-sdlc:sdlc-status` | Render `.sdlc/state.json` + progress |
+| `/autonomous-sdlc:sdlc-cancel` | Transition to BLOCKED(cancelled); state kept for resume |
+| `/autonomous-sdlc:prime` | Orient to a codebase (outside the loop) |
 
 ## Skills
 
 | Skill | Purpose |
 |-------|---------|
-| `beads-workflow` | Beads CLI commands |
-| `verification-stack` | Full verification pipeline |
-| `tdd-workflow` | Test-driven development |
-| `bdd-spec` | Acceptance criteria co-authoring |
-| `bdd-generate` | BDD test scaffolding with pytest-bdd |
+| `sdlc-loop` | **The state machine**: iteration ritual, dispatch table, autonomy protocol, signs |
+| `bdd-spec` | Acceptance criteria — interactive with a human, decide-log-proceed inside a loop |
+| `bdd-generate` | pytest-bdd scaffolding from acceptance criteria |
+| `tdd-workflow` | Red-green-refactor inner loop |
+| `beads-workflow` | Beads task graph — the loop's work queue (`bd ready` is the wave) |
+| `feedback` | Cross-session preferences + graduation target for loop signs |
 
-## Coordination Modes
-
-### Subagent Mode (Default)
-Wave-based processing with background subagents. The lead spawns builders in parallel, validators after, integrates between waves.
-
-### Agent Teams Mode
-Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`. Teammates communicate directly — validators message builders with feedback instead of creating fix tasks. Faster iteration cycles.
-
-### Solo Mode
-For simple tasks, the lead just does the work directly.
-
-## Branch Strategy
+## State Files (in the target project)
 
 ```
-main
- └── feature/user-auth                    ← Feature branch
-      ├── feature/user-auth/beads-abc     ← Task branch (if using worktrees)
-      ├── feature/user-auth/beads-def     ← Task branch (if using worktrees)
-      └── feature/user-auth/beads-ghi     ← Task branch (if using worktrees)
+.sdlc/
+├── state.json        # single source of truth: state, iteration, budgets, attempts
+├── progress.md       # append-only log every iteration orients from
+├── decisions.jsonl   # autonomous decisions, rendered into the PR
+├── signs.md          # guardrails accumulated from observed mistakes
+└── escalation.md     # written only on BLOCKED
+specs/{slug}-spec.md  # acceptance criteria
+specs/{slug}-plan.md  # architect plan
 ```
 
-Without worktrees, all work happens directly on the feature branch.
-
-## Validation Hooks
-
-Builders have PostToolUse hooks that run automatically:
-
-| Hook | Purpose |
-|------|---------|
-| `ruff_validator.py` | Lint Python files |
-| `type_validator.py` | Type check Python files |
-
-Issues are reported immediately so builders fix them inline.
-
-## Recommended Settings
-
-Add the following to your project's `.claude/settings.json` to align Claude Code's built-in `/plan` mode with the `specs/` convention used by the Architect agent:
-
-```json
-{
-  "plansDirectory": "specs"
-}
-```
-
-**Why this matters**: The Architect agent writes plan documents to `specs/{feature-slug}-plan.md`. Claude Code v2.1.9+ also has a `/plan` mode that stores plan files — but by default it stores them in a different location. Setting `plansDirectory: "specs"` ensures that `/plan` mode output and Architect-generated plans land in the same directory, so the full team (lead, builders, validators) always finds plans where they expect them.
+`python3 scripts/sdlc_state.py --help` documents the state CLI (init, tick, transition,
+task, attempt, decide, note-progress, status, state).
 
 ## Prerequisites
 
-- Claude Code v2.1.0+
-- Git
-- `gh` CLI (GitHub) or `glab` CLI (GitLab)
-- `uv` for Python package management
-- Optional: Beads CLI (`bd` command) for task tracking
-- Optional: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` for agent teams
+- Claude Code ≥ v2.1.139 for the `/goal` driver (older versions use the Stop-hook fallback)
+- Git, `gh` or `glab` CLI, `uv` for Python projects
+- Optional: Beads CLI (`bd`) for the task graph; TaskCreate is the fallback
 
-## Verification Stack
+## Recommended Settings
 
-```
-Tests (pytest) → Lint (ruff) → Types (mypy) → Build
+```json
+{ "plansDirectory": "specs" }
 ```
 
-If any gate fails, the agent communicates the issue and fixes it.
+Keeps Claude Code's plan mode output in the same `specs/` directory the Architect uses.
 
 ## Version History
 
-### v1.2.0 (Current)
-- Added `effort` and `allowed-tools` frontmatter to all 6 SKILL.md files
-- Fixed invalid `permissionMode: "none"` on all 6 agents (now correctly set per agent role)
-- Added `background: true` to builder for default parallel wave execution
-- Added `if: "Write(*.py)|Edit(*.py)"` condition to builder PostToolUse hooks (prevents subprocess spawning on non-Python files)
-- Added PostCompact hook: re-injects in-progress Beads context after context compaction
-- Added WorktreeCreate/WorktreeRemove hooks: lifecycle logging + systemMessage injection
-- Added StopFailure hook: logs API errors and surfaces them as systemMessage alerts
+### v2.0.0 (Current)
+- **Pipeline → loop**: state machine on disk (`.sdlc/state.json`) with backward
+  transitions, driven by `/goal` (Stop-hook fallback); `/sdlc` is an idempotent
+  initializer/resumer
+- `sdlc_state.py` state CLI: validated transitions, iteration/attempt budgets,
+  no-progress detection, decision journal
+- Built-in skills replace custom machinery: verify (was `verification-stack`),
+  code-review + simplify + security-review (was the `pr-review-toolkit` soft
+  dependency), loop for post-SHIP PR babysitting
+- Agents reduced 7 → 2 (Architect, Builder); decide-log-proceed autonomy protocol;
+  escalation is a terminal state with a four-item trigger list
+- Auto-approve hook tightened from blanket approval to a destructive-operation denylist
+- Removed wave-transition and post-compact hooks — resume-from-disk obsoletes them
 
-### v1.1.0
-- Eval suites for all 5 skills (bdd-spec, bdd-generate, tdd-workflow, verification-stack, beads-workflow)
-- Beads project configuration (.beads/ directory with config.yaml)
-- Git attributes for Beads JSONL merge strategy
-
-### v0.4.0
-- Adaptive orchestration — lead chooses coordination mode per-task
-- Agent teams support with direct builder-validator communication
-- Prompt objects replace procedural step-by-step instructions
-- Worktrees are optional, not required
-- Worktree-manager absorbed into lead (now a reference pattern)
-- Removed legacy implementer agent
-- Graceful degradation without agent teams, Beads, or worktrees
-
-### v0.3.0
-- Added feature branch strategy
-- Added wave-based integration (inter-wave merging)
-- Added Integrator agent for branch merging
-- Added PR-Creator agent for GitHub/GitLab PRs
-- Task branches now created from feature branch
-
-### v0.2.0
-- Added Builder/Validator agent pairs
-- Added PostToolUse validation hooks
-- Added Documenter agent
-- Removed Reviewer (PR review in CI/CD)
-
-### v0.1.0
-- Initial release with Architect, Implementer, Worktree Manager, Reviewer
+### v1.4.0 and earlier
+Adaptive pipeline orchestration with 7 agents, wave-based subagent processing, agent
+teams mode, and the verification-stack skill. See git history for details.
