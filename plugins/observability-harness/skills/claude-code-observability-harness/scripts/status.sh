@@ -60,9 +60,12 @@ if $JSON_MODE; then
     else
         [ "$VECTOR" = "UP" ] && RUNNING=true
     fi
+    # JSON-escape the one value that comes from user config
+    SVC=${SERVICE_NAME//\\/\\\\}
+    SVC=${SVC//\"/\\\"}
     SERVICES="\"vector\": \"$VECTOR\""
     [ -n "$VLOGS" ] && SERVICES="$SERVICES, \"victoria-logs\": \"$VLOGS\", \"victoria-metrics\": \"$VMETRICS\""
-    echo "{\"installed\": true, \"running\": $RUNNING, \"mode\": \"$OBS_MODE\", \"service\": \"$SERVICE_NAME\", \"services\": {$SERVICES}}"
+    echo "{\"installed\": true, \"running\": $RUNNING, \"mode\": \"$OBS_MODE\", \"service\": \"$SVC\", \"services\": {$SERVICES}}"
 else
     echo "=== Observability Stack Status (${OBS_MODE}) ==="
     print_service vector 4318 "$VECTOR"

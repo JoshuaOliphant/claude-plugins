@@ -25,7 +25,7 @@ fi
 check_sink() {
     local kind="$1" needle="$2" file="$JSONL/$kind/$DAY.jsonl"
     for _ in $(seq 1 15); do
-        [ -f "$file" ] && grep -q "$needle" "$file" && return 0
+        [ -f "$file" ] && grep -qF "$needle" "$file" && return 0
         sleep 1
     done
     echo "VERIFY FAIL: no '$needle' in $file after 15s — transport OK but the $kind sink is dry. Check vector status and logs/." >&2
