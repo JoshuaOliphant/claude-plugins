@@ -17,7 +17,7 @@ allowed-tools:
 
 ## Goal
 
-Co-author acceptance criteria with the user before code exists. Produce structured Given/When/Then specs that define *what* "done" means — the source of truth that feeds the SDLC pipeline (architect plans, builder TDD targets, validator reports, bdd-generate scaffolding).
+Co-author acceptance criteria with the user before code exists. Produce structured Given/When/Then specs that define *what* "done" means — the source of truth that feeds the SDLC loop (architect plans, builder TDD targets, the VERIFY/REVIEW gates, bdd-generate scaffolding).
 
 Stance: assume the user is learning BDD. Guide, don't lecture. Ask questions, don't assert assumptions.
 
@@ -142,7 +142,7 @@ For each confirmed edge case, write a full AC block or add to an existing AC's e
 
 When 3+ edge cases follow the same behavioral pattern, consolidate into a parameterized table. Signs: "It should reject empty, too-long, and malformed input" or "Different roles have different permissions."
 
-### Human Checkpoint: Review and Refine
+### Checkpoint: Review and Refine
 
 Read back all acceptance criteria, then:
 
@@ -153,7 +153,15 @@ Read back all acceptance criteria, then:
 
 Mark deferred items with "V2:" prefix in a Notes section.
 
-**Wait for user confirmation before considering the spec complete.**
+**Interactive mode** (a human asked for a spec in conversation): wait for user
+confirmation before considering the spec complete.
+
+**Autonomous mode** (an SDLC loop is active — `.sdlc/state.json` exists): there is no
+one to confirm with. Answer the four checks yourself conservatively (smallest
+defensible V1 scope), log each non-obvious call with
+`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/sdlc_state.py decide --decision "..." --why "..."`,
+and proceed. Escalate only a genuine contradiction between requirements — never mere
+vagueness.
 
 ## Output
 
