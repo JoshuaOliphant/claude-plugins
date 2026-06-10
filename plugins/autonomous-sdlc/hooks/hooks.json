@@ -6,40 +6,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-approve-all.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-approve.sh",
             "timeout": 5
           }
         ]
       }
     ],
-    "TaskCompleted": [
+    "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/wave-transition-check.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "TeammateIdle": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/wave-transition-check.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "PostCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/post-compact.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/loop-stop-hook.sh",
             "timeout": 10
           }
         ]
