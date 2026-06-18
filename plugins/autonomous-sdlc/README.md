@@ -135,9 +135,46 @@ task, attempt, decide, note-progress, status, state).
 
 Keeps Claude Code's plan mode output in the same `specs/` directory the Architect uses.
 
+## Configuring the Review Gate
+
+The REVIEW state is configurable per-project. Two `init` flags persist into
+`.sdlc/state.json` under a `"review"` block, and the `sdlc-loop` skill reads them every
+REVIEW iteration:
+
+| Flag | Values | Default | Effect |
+|---|---|---|---|
+| `--reviewers` | comma-separated reviewer names | `code-review` | Ordered list run at REVIEW |
+| `--review-mode` | `block` \| `annotate` | `block` | Whether findings block SHIP or just annotate the PR |
+
+```bash
+# Default — equivalent to omitting both flags (preserves v2.0.0 behavior):
+python3 $STATE init --feature x --reviewers code-review --review-mode block
+
+# Security-sensitive feature, still blocking:
+python3 $STATE init --feature x --reviewers code-review,security-review
+
+# Heavier gate using pr-review-toolkit agents, advisory only:
+python3 $STATE init --feature x \
+  --reviewers code-review,pr-test-analyzer,type-design-analyzer \
+  --review-mode annotate
+```
+
+Recognized reviewer names: `code-review` and `security-review` map to Claude Code's
+built-in skills; any other name (e.g. `pr-test-analyzer`, `type-design-analyzer`,
+`comment-analyzer`, `silent-failure-hunter`) is dispatched as a `pr-review-toolkit`
+agent when that plugin is installed and skipped with a logged decision otherwise. In
+`annotate` mode, findings are collected into the PR body and never send the loop back to
+BUILD. A blank `--reviewers` value falls back to the default so the gate is never empty.
+
 ## Version History
 
-### v2.0.0 (Current)
+### v2.1.0 (Current)
+- **Per-project review gate**: `init --reviewers` / `--review-mode` write a `"review"`
+  block to `.sdlc/state.json`; the REVIEW state reads it to choose which reviewers run
+  and whether findings block SHIP (`block`) or only annotate the PR (`annotate`). Default
+  (`code-review` / `block`) preserves v2.0.0 behavior exactly. Closes claude-plugins-du3.
+
+### v2.0.0
 - **Pipeline → loop**: state machine on disk (`.sdlc/state.json`) with backward
   transitions, driven by `/goal` (Stop-hook fallback); `/sdlc` is an idempotent
   initializer/resumer
