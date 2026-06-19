@@ -130,17 +130,35 @@ check or AC, `transition BUILD`. Merge conflicts or a broken branch that isn't o
 task's fault → `transition REPAIR`.
 
 ### REVIEW (→ SHIP, ⇄ BUILD)
-Once per feature, not per task:
-1. Built-in **code-review** skill at high effort over the branch diff (it covers
-   silent-failure hunting). Apply trivial findings directly (`--fix` where supported);
-   real bugs become fix tasks → `transition BUILD`.
-2. If `.sdlc/state.json` was initialized with security review enabled: built-in
-   **security-review** skill; findings are fix tasks → BUILD.
-3. Clean (or only low-confidence notes): built-in **simplify** skill, then re-run
-   VERIFY's checks — a transform is never the last step before shipping. If simplify
-   broke something, revert its changes rather than debugging them.
-4. Budget: after 2 REVIEW→BUILD round-trips, ship anyway and list the remaining
-   low-confidence findings in the PR body. `transition SHIP`.
+Once per feature, not per task. **Read the gate config first** — it is per-project and
+lives in `.sdlc/state.json` under `"review"`:
+
+```bash
+python3 -c "import json;r=json.load(open('.sdlc/state.json')).get('review',{'reviewers':['code-review'],'mode':'block'});print(r['mode']);[print(x) for x in r['reviewers']]"
+```
+
+`reviewers` is the ordered list to run; `mode` is `block` or `annotate`. The default
+(`{"reviewers": ["code-review"], "mode": "block"}`) reproduces prior behavior, so a loop
+initialized without the new flags reviews exactly as before.
+
+1. Run each entry in `reviewers` in order over the branch diff:
+   - `code-review` → built-in **code-review** skill at high effort (covers
+     silent-failure hunting). Apply trivial findings directly (`--fix` where supported).
+   - `security-review` → built-in **security-review** skill.
+   - Any other name (e.g. `pr-test-analyzer`, `type-design-analyzer`, `comment-analyzer`,
+     `silent-failure-hunter`) → dispatch the matching `pr-review-toolkit` agent via the
+     Task tool if that plugin is installed; skip with a logged decision if it is absent.
+2. Handle findings per `mode`:
+   - **block** (default): real bugs become fix tasks → `transition BUILD`. The gate
+     holds SHIP until the branch is clean (subject to the round-trip budget below).
+   - **annotate**: never transition back to BUILD for findings. Collect every finding
+     into a "Review findings (annotate mode)" block to paste into the PR body, then
+     proceed straight to step 3.
+3. Clean (or only low-confidence notes, or annotate mode): built-in **simplify** skill,
+   then re-run VERIFY's checks — a transform is never the last step before shipping. If
+   simplify broke something, revert its changes rather than debugging them.
+4. Budget (block mode only): after 2 REVIEW→BUILD round-trips, ship anyway and list the
+   remaining low-confidence findings in the PR body. `transition SHIP`.
 
 ### SHIP → DONE
 If the `compound-capture` skill is available, record any non-trivial solution or gotcha

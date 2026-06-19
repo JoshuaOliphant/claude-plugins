@@ -11,6 +11,7 @@ may exit. All state lives in
 
 Usage:
     sdlc_state.py init --feature user-auth --request "Add auth" [--max-iterations 50]
+                       [--reviewers code-review,security-review] [--review-mode block]
     sdlc_state.py state                    # prints just the state name (for evaluators)
     sdlc_state.py status                   # human-readable summary
     sdlc_state.py tick                     # start a WORK iteration: bump counter, enforce budgets
@@ -71,6 +72,34 @@ for _s in ACTIVE_STATES:
 
 NO_PROGRESS_LIMIT = 2  # idle iterations before forced BLOCKED
 
+# Per-project REVIEW-gate config. The default preserves v2.0.0 behavior: the
+# built-in code-review skill, blocking (findings become fix tasks → BUILD).
+DEFAULT_REVIEWERS = ["code-review"]
+REVIEW_MODES = ("block", "annotate")
+DEFAULT_REVIEW_MODE = "block"
+
+
+def build_review_config(reviewers: str | None, mode: str | None) -> dict:
+    """Parse the --reviewers/--review-mode init flags into a review config block.
+
+    reviewers: comma-separated reviewer names (skills or pr-review-toolkit
+    agents). Blank/None falls back to DEFAULT_REVIEWERS so the gate is never
+    empty. mode: "block" or "annotate"; None falls back to DEFAULT_REVIEW_MODE.
+    """
+    names = [r.strip() for r in (reviewers or "").split(",") if r.strip()]
+    if not names:
+        names = list(DEFAULT_REVIEWERS)
+    chosen_mode = mode or DEFAULT_REVIEW_MODE
+    # This function is the authoritative mode validator: it has non-CLI callers
+    # (the test suite, and the resume backfill above) that bypass argparse. The
+    # init parser's choices=list(REVIEW_MODES) is kept purely for CLI UX (a
+    # clean argparse error before we get here).
+    if chosen_mode not in REVIEW_MODES:
+        sys.exit(
+            f"Invalid --review-mode {chosen_mode!r}; choose one of {REVIEW_MODES}."
+        )
+    return {"reviewers": names, "mode": chosen_mode}
+
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -101,6 +130,13 @@ def append_progress(line: str) -> None:
 def cmd_init(args: argparse.Namespace) -> None:
     if STATE_FILE.exists():
         state = json.loads(STATE_FILE.read_text())
+        # Backfill the review gate for loops initialized before it existed
+        # (pre-2.1.0 state.json has no "review" key, which would KeyError the
+        # REVIEW-state reader). Only write when we actually added it, so resume
+        # of an already-current file is a no-op.
+        if "review" not in state:
+            state["review"] = build_review_config(None, None)
+            save(state)
         print(f"RESUME state={state['state']} iteration={state['iteration']}")
         return
     SDLC_DIR.mkdir(exist_ok=True)
@@ -118,6 +154,9 @@ def cmd_init(args: argparse.Namespace) -> None:
         "in_flight": [],
         "wait_ticks": 0,
         "attempts": {},
+        "review": build_review_config(
+            getattr(args, "reviewers", None), getattr(args, "review_mode", None)
+        ),
         "last_progress_iteration": 0,
         "history": [{"at": now(), "to": "INIT", "reason": "initialized"}],
         "started": now(),
@@ -146,6 +185,8 @@ def cmd_status(_args: argparse.Namespace) -> None:
         [s["current_task"]] if s.get("current_task") else []
     )
     print(f"in flight: {', '.join(in_flight) or '-'}")
+    review = s.get("review", build_review_config(None, None))
+    print(f"review gate: {', '.join(review['reviewers'])} (mode={review['mode']})")
     print(f"last progress: iteration {s['last_progress_iteration']}")
     decisions = (
         len(DECISIONS_FILE.read_text().splitlines()) if DECISIONS_FILE.exists() else 0
@@ -305,6 +346,23 @@ def main() -> None:
     # says so, set-driver goal stands the hook down. The hook drives whenever the
     # driver is not "goal".
     sp.add_argument("--driver", choices=["auto", "goal", "stop-hook"], default="auto")
+    sp.add_argument(
+        "--reviewers",
+        default=None,
+        help=(
+            "Comma-separated reviewers run at the REVIEW gate (skills or "
+            "pr-review-toolkit agents). Default: code-review."
+        ),
+    )
+    sp.add_argument(
+        "--review-mode",
+        choices=list(REVIEW_MODES),
+        default=None,
+        help=(
+            "block: findings become fix tasks → BUILD (default). "
+            "annotate: findings are listed in the PR body, never block SHIP."
+        ),
+    )
     sp.set_defaults(func=cmd_init)
 
     sub.add_parser("state", help="print just the state name").set_defaults(

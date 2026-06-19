@@ -26,10 +26,20 @@ The user has requested: $ARGUMENTS
 
 ```bash
 python3 $STATE init --feature {slug} --request "$ARGUMENTS" \
-  --max-iterations 50 --max-attempts 3
+  --max-iterations 50 --max-attempts 3 \
+  [--reviewers code-review,security-review] [--review-mode block|annotate]
 ```
 
 - Derive `{slug}` from the request ("Add user authentication" → `user-auth`).
+- **Review gate (optional, per-project)**: `--reviewers` is a comma-separated, ordered
+  list of reviewers run at the REVIEW state; `--review-mode` is `block` (findings become
+  fix tasks → BUILD) or `annotate` (findings only listed in the PR body). Omit both to
+  keep the default `code-review` / `block` (current behavior). Add `security-review` for
+  security-sensitive work, or pr-review-toolkit agents (`pr-test-analyzer`,
+  `type-design-analyzer`, `comment-analyzer`, `silent-failure-hunter`) when that plugin
+  is installed. A project that prefers a non-blocking advisory gate uses `--review-mode
+  annotate`. The config is persisted in `.sdlc/state.json` and the `sdlc-loop` skill
+  reads it every REVIEW iteration; it survives resume.
 - `init` is **idempotent**: if `.sdlc/state.json` exists it prints
   `RESUME state=... iteration=...` and changes nothing. On resume, skip to step 3 —
   do not re-plan, do not recreate branches; the disk already knows where you are.
