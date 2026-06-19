@@ -101,7 +101,7 @@ Once per feature, not per task. **Read the gate config first** — it is per-pro
 lives in `.sdlc/state.json` under `"review"`:
 
 ```bash
-python3 -c "import json;r=json.load(open('.sdlc/state.json'))['review'];print(r['mode']);[print(x) for x in r['reviewers']]"
+python3 -c "import json;r=json.load(open('.sdlc/state.json')).get('review',{'reviewers':['code-review'],'mode':'block'});print(r['mode']);[print(x) for x in r['reviewers']]"
 ```
 
 `reviewers` is the ordered list to run; `mode` is `block` or `annotate`. The default

@@ -78,6 +78,65 @@ def test_blank_reviewers_falls_back_to_default(tmp_path):
     assert state["review"]["reviewers"] == ["code-review"]
 
 
+def test_resume_backfills_missing_review_block(tmp_path):
+    # A state.json written under v2.0.0 has no "review" key. Resuming through
+    # init must backfill the default block and persist it, so the REVIEW gate
+    # reader never KeyErrors.
+    state = _init(tmp_path)  # establishes the temp dir + module paths
+    legacy = dict(state)
+    del legacy["review"]
+
+    cwd = Path.cwd()
+    os.chdir(tmp_path)
+    try:
+        sdlc_state.STATE_FILE.write_text(json.dumps(legacy, indent=2) + "\n")
+        args = sdlc_state.argparse.Namespace(
+            feature="demo",
+            request="do a thing",
+            max_iterations=50,
+            max_attempts=3,
+            driver="goal",
+            reviewers=None,
+            review_mode=None,
+        )
+        sdlc_state.cmd_init(args)
+        persisted = json.loads(sdlc_state.STATE_FILE.read_text())
+    finally:
+        os.chdir(cwd)
+
+    assert persisted["review"] == {"reviewers": ["code-review"], "mode": "block"}
+
+
+def test_resume_preserves_existing_review_block(tmp_path):
+    # An already-current state.json must not be rewritten on resume — the
+    # custom review config survives untouched (idempotency).
+    state = _init(
+        tmp_path, reviewers="security-review", review_mode="annotate"
+    )
+
+    cwd = Path.cwd()
+    os.chdir(tmp_path)
+    try:
+        before = sdlc_state.STATE_FILE.read_text()
+        args = sdlc_state.argparse.Namespace(
+            feature="demo",
+            request="do a thing",
+            max_iterations=50,
+            max_attempts=3,
+            driver="goal",
+            reviewers=None,
+            review_mode=None,
+        )
+        sdlc_state.cmd_init(args)
+        after = sdlc_state.STATE_FILE.read_text()
+    finally:
+        os.chdir(cwd)
+
+    assert state["review"] == {"reviewers": ["security-review"], "mode": "annotate"}
+    # Byte-identical: resume of a current file must not touch disk.
+    assert after == before
+
+
 if __name__ == "__main__":
     # Minimal fallback runner so the suite works without pytest installed.
     import tempfile
@@ -87,6 +146,8 @@ if __name__ == "__main__":
         test_default_review_config_preserves_current_behavior,
         test_custom_reviewers_are_recorded,
         test_blank_reviewers_falls_back_to_default,
+        test_resume_backfills_missing_review_block,
+        test_resume_preserves_existing_review_block,
     ]
     # The pytest.raises test needs pytest; skip it in fallback mode.
     failures = 0

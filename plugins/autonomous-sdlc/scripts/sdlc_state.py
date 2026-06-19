@@ -85,6 +85,10 @@ def build_review_config(reviewers: str | None, mode: str | None) -> dict:
     if not names:
         names = list(DEFAULT_REVIEWERS)
     chosen_mode = mode or DEFAULT_REVIEW_MODE
+    # This function is the authoritative mode validator: it has non-CLI callers
+    # (the test suite, and the resume backfill above) that bypass argparse. The
+    # init parser's choices=list(REVIEW_MODES) is kept purely for CLI UX (a
+    # clean argparse error before we get here).
     if chosen_mode not in REVIEW_MODES:
         sys.exit(
             f"Invalid --review-mode {chosen_mode!r}; choose one of {REVIEW_MODES}."
@@ -121,6 +125,13 @@ def append_progress(line: str) -> None:
 def cmd_init(args: argparse.Namespace) -> None:
     if STATE_FILE.exists():
         state = json.loads(STATE_FILE.read_text())
+        # Backfill the review gate for loops initialized before it existed
+        # (pre-2.1.0 state.json has no "review" key, which would KeyError the
+        # REVIEW-state reader). Only write when we actually added it, so resume
+        # of an already-current file is a no-op.
+        if "review" not in state:
+            state["review"] = build_review_config(None, None)
+            save(state)
         print(f"RESUME state={state['state']} iteration={state['iteration']}")
         return
     SDLC_DIR.mkdir(exist_ok=True)
@@ -163,6 +174,8 @@ def cmd_status(_args: argparse.Namespace) -> None:
     print(f"feature: {s['feature']}")
     print(f"iteration: {s['iteration']}/{b['max_iterations']}")
     print(f"current task: {s['current_task'] or '-'}")
+    review = s.get("review", build_review_config(None, None))
+    print(f"review gate: {', '.join(review['reviewers'])} (mode={review['mode']})")
     print(f"last progress: iteration {s['last_progress_iteration']}")
     decisions = (
         len(DECISIONS_FILE.read_text().splitlines()) if DECISIONS_FILE.exists() else 0
