@@ -1,6 +1,6 @@
 ---
 name: sdlc
-description: Start (or resume) an autonomous SDLC loop — a state machine on disk driven by /goal, working without questions until DONE or BLOCKED
+description: Start (or resume) an autonomous SDLC loop — a state machine on disk driven by a Stop-hook loop (optionally a user-armed /goal), working without questions until DONE or BLOCKED
 allowed-tools:
   - Read
   - Glob
@@ -26,7 +26,7 @@ The user has requested: $ARGUMENTS
 
 ```bash
 python3 $STATE init --feature {slug} --request "$ARGUMENTS" \
-  --max-iterations 50 --max-attempts 3 --driver {goal|stop-hook} \
+  --max-iterations 50 --max-attempts 3 \
   [--reviewers code-review,security-review] [--review-mode block|annotate]
 ```
 
@@ -46,28 +46,33 @@ python3 $STATE init --feature {slug} --request "$ARGUMENTS" \
   If resuming from `BLOCKED`, read `.sdlc/escalation.md`, apply whatever the user
   changed or answered, transition back to the appropriate active state with a reason,
   then continue.
-- Driver selection: use `goal` (preferred). Fall back to `stop-hook` only when `/goal`
-  is unavailable (Claude Code < v2.1.139, or hooks disabled — the command tells you).
+- The driver starts as `auto`, which means the plugin's Stop hook drives — see step 2.
 
-## 2. Arm the loop driver
+## 2. The loop driver
 
-**Goal driver** — set the goal exactly like this, substituting the **absolute path** of
-`${CLAUDE_PLUGIN_ROOT}/scripts/sdlc_state.py` (resolve it now — the goal evaluator
-cannot expand variables or placeholders):
+**The Stop hook drives by default.** `/goal` is a **user-only slash command** — you
+cannot invoke it. The plugin's `loop-stop-hook.sh` (already registered, active while
+the driver is `auto` or `stop-hook`) blocks every stop and re-injects the iteration
+ritual until the state is DONE or BLOCKED. There is nothing for you to arm.
+
+**Offer the /goal upgrade once, in your kickoff message** (interactive sessions only —
+this is information, not a blocking question). Print the goal **ready to copy-paste**:
+one fenced block, every placeholder resolved (real slug, real absolute path, the actual
+max-iterations budget), nothing for the user to edit:
 
 ```
-/goal The SDLC loop for {slug} is finished: `python3 /absolute/path/to/scripts/sdlc_state.py state`
-prints DONE or BLOCKED, demonstrated in the transcript. Or stop after 50 turns.
+/goal The SDLC loop for {slug} is finished: `python3 {resolved absolute path to scripts/sdlc_state.py} state`
+prints DONE or BLOCKED, demonstrated in the transcript. Or stop after {max_iterations} turns.
 ```
 
-The built-in evaluator (a separate small model) now re-prompts after every turn until
-the state machine itself says the loop is over. Completion is judged by a model that
-didn't do the work.
+and that its evaluator (a separate small model judging completion — a model that didn't
+do the work) then drives instead. **If the user says they armed it** (now or any time
+later), run `python3 $STATE set-driver goal` to stand the Stop hook down so the two
+drivers don't both re-prompt. Until they say so, assume the Stop hook drives; never
+wait for an answer.
 
-**Stop-hook driver (fallback)** — the plugin's `loop-stop-hook.sh` is already
-registered; it activates because `.sdlc/state.json` exists with
-`"driver": "stop-hook"`. It blocks every stop and re-injects the iteration ritual until
-state is DONE or BLOCKED. No goal needed.
+Headless runs can arm it at launch (also user-side):
+`claude -p "/goal <condition as above>"` after a prior session initialized `.sdlc/`.
 
 ## 3. Run the first iteration
 

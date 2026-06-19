@@ -55,19 +55,27 @@ the reason this skill exists.
 
 ### 1. Confirm mode and detect the project shape
 
-- Decide lite vs full (above). If unsure, ask the user in one line.
+- Decide lite vs full (above). **Interactive sessions**: if unsure, ask the user in one
+  line. **Autonomous sessions** (an SDLC loop is active — `.sdlc/state.json` exists):
+  never ask; default to lite and log the choice
+  (`sdlc_state.py decide` if available).
 - Find the project root (`git rev-parse --show-toplevel`), the package manager (prefer
   `uv` if `pyproject.toml` exists), and the language. These templates target **Python**;
   for other languages, adapt the OTel SDK calls but keep the Vector/script layer verbatim
   (it is language-agnostic).
 - Pick a `SERVICE_NAME` (default: the repo/package name). This becomes the OTel
   `service.name` resource attribute and the log/metric stream label.
+- **Detection contract**: `bash .claude/harness/observability/status.sh --json` is how
+  any tool (including this skill on re-runs, and the autonomous-sdlc loop) checks for an
+  existing harness — it emits `{"installed", "running", "mode", "service", "services"}`.
+  File absent → no harness.
 
 ### 2. Scaffold the harness files
 
 Copy the bundled `scripts/` and rendered `assets/` into `.claude/harness/observability/`:
 
-- `install.sh`, `start.sh`, `stop.sh`, `status.sh` — copy verbatim (mode-aware via `harness.env`).
+- `install.sh`, `start.sh`, `stop.sh`, `status.sh`, `verify.sh` — copy verbatim
+  (mode-aware via `harness.env`).
 - `harness.env` — render from `assets/harness.env.template` with `SERVICE_NAME` and `OBS_MODE`.
 - `vector.toml` — for **lite**, copy `scripts/vector.lite.toml` verbatim. For **full**,
   render `scripts/vector.full.toml` (replace `{{SERVICE_NAME}}` — it labels the VictoriaLogs
@@ -82,6 +90,8 @@ Copy the bundled `scripts/` and rendered `assets/` into `.claude/harness/observa
 - For the Python app: render `assets/otel.py.template` to a real module (replace
   `{{SERVICE_NAME}}` and `{{MODULE_IMPORT}}`, e.g. `app.otel`). See step 3 for where it
   lives and what instruments to add.
+- Render `assets/probe.py.template` to `.claude/harness/observability/probe.py` (same
+  two placeholders) — `verify.sh` runs it in step 6.
 - Optionally render `assets/observability.rules.md.template` to `.claude/rules/observability.md`
   so future sessions get query recipes path-scoped to the harness. Substitute all four
   placeholders or raw `{{...}}` will leak into the doc: `{{SERVICE_NAME}}`, `{{OBS_MODE}}`,
@@ -100,6 +110,12 @@ call sites, dispatch/router sites, and LLM/agent result sites), then **present a
 structured proposal and wait for confirmation** before editing. Propose `service.name`,
 3–6 domain instruments, and the exact files/lines you'd touch. Apply only what the user
 confirms — patterns in this project may differ enough that a silent write would be wrong.
+
+**Autonomous sessions** (`.sdlc/state.json` exists): there is no one to confirm with.
+Apply the conservative core of the proposal — the 3–6 instruments with the clearest
+detection signals, never speculative ones — and log the full proposal (applied and
+skipped, with one-line rationale each) via `sdlc_state.py decide` so the human reviews
+it in the PR.
 
 The rendered `otel.py` ships with the no-op-when-absent pattern (zero cost when the OTel
 SDK isn't installed) and a stdlib-logging→OTLP bridge. Add the confirmed domain
@@ -139,20 +155,23 @@ nested paths:
 
 ### 6. Verify end-to-end (do not skip — empty data dirs are the #1 false "done")
 
-Running the stack proves nothing until telemetry actually lands. Verify in two cheap stages:
+Running the stack proves nothing until telemetry actually lands. Verify in two stages:
 
-1. **Transport**: a tiny probe that calls the app's `configure()` and emits one span +
-   the instruments, force-flushes, then confirm dated JSONL files appear under
-   `data/jsonl/{traces,metrics,logs}/`. **First assert `configure()` returned `True`** — a
-   `False` means the OTel SDK isn't installed (step 2) and everything is silently no-op, which
-   is the real cause behind most "empty dirs" before you reach for the gotcha below. (Logs only
-   appear if the log bridge is wired *and* the root logger level permits the record.)
+1. **Transport (scripted)**:
+   ```bash
+   bash .claude/harness/observability/verify.sh --py "uv run python"
+   ```
+   This runs the rendered `probe.py` (asserts `configure()==True` — a `False` means the
+   OTel SDK isn't installed and everything is silently no-op, the real cause behind most
+   "empty dirs"), force-flushes, then polls the JSONL sinks until the probe's span,
+   metric, and log all appear. Non-zero exit names the broken stage.
 2. **Real call sites**: exercise the app once (one request / one CLI run) and confirm the
    *domain* instruments fired with real labels (e.g. `tool.latency{tool=...}`), not just
-   the probe's synthetic ones.
+   the probe's synthetic ones — use the recipes in `references/querying.md`.
 
-Delete the probe afterward. In full mode, also confirm VictoriaLogs/VictoriaMetrics
-ingested via the query recipes in `references/querying.md`.
+Keep `probe.py` — it lives in the harness dir (committed, unlike the gitignored runtime
+artifacts) and `verify.sh` is re-runnable whenever the pipeline is in doubt. In full
+mode, also confirm VictoriaLogs/VictoriaMetrics ingested via `references/querying.md`.
 
 ## Gotchas (learned the hard way)
 
@@ -175,10 +194,12 @@ ingested via the query recipes in `references/querying.md`.
 
 ## Bundled resources
 
-- `scripts/` — the stack: `install.sh`, `start.sh`, `stop.sh`, `status.sh`, and both
-  `vector.*.toml` variants. Language-agnostic; copy verbatim.
+- `scripts/` — the stack: `install.sh`, `start.sh`, `stop.sh`, `status.sh` (with the
+  `--json` integration contract), `verify.sh`, and both `vector.*.toml` variants.
+  Language-agnostic; copy verbatim.
 - `assets/otel.py.template` — Python OTel module: no-op-when-absent, log bridge,
   `{{SERVICE_NAME}}` and a marked block for domain instruments.
+- `assets/probe.py.template` — one-shot pipeline probe run by `verify.sh`.
 - `assets/harness.env.template` — per-project `SERVICE_NAME` / `OBS_MODE`.
 - `assets/observability.rules.md.template` — path-scoped query recipes for future sessions.
 - `references/instrumentation-scanning.md` — **read before step 3.** Detection signals

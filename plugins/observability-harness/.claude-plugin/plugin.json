@@ -1,7 +1,7 @@
 {
   "name": "observability-harness",
-  "version": "0.1.0",
-  "description": "Install a local, Docker-free OTLP observability stack (OpenTelemetry → Vector → JSONL, optionally VictoriaLogs + VictoriaMetrics) into a project and instrument the code, with a scan-and-propose step for domain-appropriate spans and metrics.",
+  "version": "0.2.0",
+  "description": "Install a local, Docker-free OTLP observability stack (OpenTelemetry \u2192 Vector \u2192 JSONL, optionally VictoriaLogs + VictoriaMetrics) into a project and instrument the code, with a scan-and-propose step for domain-appropriate spans and metrics \u2014 then query that telemetry as a development feedback signal (observability-query skill, status --json contract, scripted end-to-end verify).",
   "license": "MIT",
   "author": {
     "name": "Joshua Oliphant"
