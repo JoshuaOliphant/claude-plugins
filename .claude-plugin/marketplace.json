@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by Joshua Oliphant for productivity and learning workflows",
-    "version": "1.0.8"
+    "version": "1.0.9"
   },
   "plugins": [
     {
@@ -156,6 +156,26 @@
         "code-review",
         "developer-productivity",
         "local"
+      ],
+      "category": "development",
+      "license": "MIT"
+    },
+    {
+      "name": "stick-shift",
+      "source": "./plugins/stick-shift",
+      "description": "Manually-driven (\"disassembled\") SDLC: the same .sdlc/ session format as autonomous-sdlc, but you drive each phase by hand via slash commands — /spec → /plan → /build (TDD) → /verify → /journal. Built for legible, narratable live demos.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Joshua Oliphant"
+      },
+      "keywords": [
+        "sdlc",
+        "tdd",
+        "manual",
+        "session",
+        "harness",
+        "developer-experience",
+        "demo"
       ],
       "category": "development",
       "license": "MIT"
