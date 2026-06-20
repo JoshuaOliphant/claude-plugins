@@ -55,7 +55,9 @@ agents.backup.*
 adws.backups.*
 .adw_backups/
 adws.backup.*
-specs
+# Ephemeral ADW/SDLC working specs at the repo root only — anchored so curated
+# design docs under docs/superpowers/specs/ stay tracked.
+/specs
 specs.backup.*
 
 # Worktree isolation
