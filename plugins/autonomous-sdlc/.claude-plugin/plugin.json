@@ -1,6 +1,6 @@
 {
   "name": "autonomous-sdlc",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "Autonomous SDLC as a state machine on disk driven by a /goal loop \u2014 one verified unit of work per iteration, decide-log-proceed autonomy, built-in verify/code-review/simplify gates",
   "author": {
     "name": "Joshua Oliphant",

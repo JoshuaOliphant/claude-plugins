@@ -49,7 +49,10 @@ compaction, session death, and restarts.
 
 - **Stop hook (default)**: `loop-stop-hook.sh` blocks session exit and re-injects the
   iteration ritual until the state is terminal. Drives while `.sdlc/state.json` has
-  `"driver": "auto"` (the init default) or `"stop-hook"`.
+  `"driver": "auto"` (the init default) or `"stop-hook"`. It is **wait-aware**: in BUILD
+  with builders in flight it allows the stop and lets the completion notification
+  re-enter the loop, so waiting on a multi-minute builder doesn't spin a re-prompt per
+  second (the skill's in-turn blocking wait is the first line of defense).
 - **`/goal` (optional upgrade, user-armed, Claude Code ≥ v2.1.139)**: `/goal` is a
   user-only slash command — Claude cannot invoke it. `/sdlc`'s kickoff message shows
   the exact goal to run (condition: `sdlc_state.py state` prints DONE or BLOCKED); if
@@ -181,7 +184,18 @@ BUILD. A blank `--reviewers` value falls back to the default so the gate is neve
 
 ## Version History
 
-### v2.1.2 (Current)
+### v2.2.0 (Current)
+- **Wait-aware loop driver** (cuts token burn while background builders run): the Stop
+  hook reads `in_flight` and, in BUILD with builders still running, **allows the stop**
+  instead of re-prompting — the builder's completion notification re-enters the loop
+  (one wake per completion, not one per second). The `sdlc-loop` skill now makes an
+  **in-turn blocking wait** (Monitor tool) the default so the loop holds a turn open
+  rather than stop-and-spin. The `>200` re-entry hard cap and `max_wait_ticks` ceiling
+  remain as backstops. Backward compatible: a loop with no `in_flight` (or a pre-2.1
+  `current_task`) drives exactly as before. New `test_loop_stop_hook.py` covers the
+  driver's decision contract.
+
+### v2.1.2
 - **Per-project review gate**: `init --reviewers` / `--review-mode` write a `"review"`
   block to `.sdlc/state.json`; the REVIEW state reads it to choose which reviewers run
   and whether findings block SHIP (`block`) or only annotate the PR (`annotate`). Default

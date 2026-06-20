@@ -9,13 +9,15 @@
 PLUGIN_ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 STATE_CLI="$PLUGIN_ROOT/scripts/sdlc_state.py"
 
-# One read: drive the loop unless the native /goal driver owns it. "auto" means
+# One read: driver, state, and how many tasks are in flight. "auto" means
 # /sdlc hasn't recorded a successful /goal arm (set-driver goal) yet, so the
 # fallback must drive — otherwise a failed probe would leave no driver at all.
-read -r DRIVER STATE <<<"$(python3 -c "
+# in_flight folds in the pre-2.1 single current_task slot for old loops.
+read -r DRIVER STATE INFLIGHT <<<"$(python3 -c "
 import json
 s = json.load(open('.sdlc/state.json'))
-print(s.get('driver', ''), s.get('state', ''))
+inflight = s.get('in_flight') or ([s['current_task']] if s.get('current_task') else [])
+print(s.get('driver', ''), s.get('state', ''), len(inflight))
 " 2>/dev/null)"
 
 case "$DRIVER" in
@@ -26,6 +28,19 @@ esac
 # Terminal states release the loop.
 if [ -z "$STATE" ] || [ "$STATE" = "DONE" ] || [ "$STATE" = "BLOCKED" ]; then
     rm -f .sdlc/.hook-blocks
+    echo '{}'
+    exit 0
+fi
+
+# Waiting on background builders: when BUILD has work in flight, the agent is
+# legitimately idle-waiting, not quitting with ready work left. Allow the stop
+# and let the builder's completion notification re-enter the loop, instead of
+# burning a full re-prompt per wait-check. The model-side default is an in-turn
+# blocking wait (see the sdlc-loop skill's "Waiting on builders"); this keeps a
+# stop cheap if the agent does hand control back. Scoped to BUILD on purpose —
+# any other state with in_flight set is unexpected and should still re-prompt.
+# No .hook-blocks increment here: a wait is the absence of a spin, not one.
+if [ "$STATE" = "BUILD" ] && [ "${INFLIGHT:-0}" -gt 0 ]; then
     echo '{}'
     exit 0
 fi

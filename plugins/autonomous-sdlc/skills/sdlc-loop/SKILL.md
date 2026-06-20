@@ -5,7 +5,7 @@ description: >
   what one unit of work the current state requires, how to verify it, and which
   transition to record. Trigger: an active `.sdlc/state.json` exists, or the /sdlc
   command invokes it. Not for ad-hoc use outside a loop.
-version: 2.0.0
+version: 2.1.0
 effort: high
 allowed-tools:
   - Bash
@@ -100,15 +100,28 @@ so new code paths don't become the unobserved ones. Commit. One re-plan is allow
    All remaining tasks blocked → escalate with the list.
 
 **Waiting on builders.** Background builders take minutes; the loop driver re-prompts in
-seconds. When an iteration finds builders in flight and nothing else ready, do not burn
-a work tick on it:
-- `python3 $STATE tick --waiting` (free; bounded by its own `max_wait_ticks` ceiling).
-- Then either **block in the foreground on the builder's artifacts** — e.g.
-  `until [ -f <expected-output> ] || ! kill -0 <pid> 2>/dev/null; do :; done` style
-  checks on the result the builder commits (bare `sleep` is blocked by the harness) —
-  or simply stop and let the builder's completion notification re-enter the loop.
-- When a builder finishes: `python3 $STATE task <id> --done`, verify its work, and
-  take a normal work tick for whatever you do with it.
+seconds. The trap is the *stop-and-wait* spin: stop with a builder still running, the
+Stop hook re-prompts you, you tick and find nothing ready, you stop again — and each of
+those wake-ups is a full-context turn that reloads this skill and re-orients. `tick
+--waiting` keeps that off the **iteration budget**, but not off the **token bill**.
+
+So when an iteration finds builders in flight and nothing else ready:
+
+1. `python3 $STATE tick --waiting` (free; bounded by its own `max_wait_ticks` ceiling).
+2. **Default — block in-turn, do not hand control back.** Hold this turn open with a
+   real blocking wait on the artifact the builder commits, so no re-prompt ever fires:
+   - Preferred: the **Monitor** tool (the harness's blocking-wait primitive) with an
+     until-condition on the builder's expected output or task closure.
+   - Fallback where Monitor is unavailable: a bounded foreground bash wait, e.g.
+     `until [ -f <expected-output> ] || ! kill -0 <pid> 2>/dev/null; do :; done`
+     (bare `sleep` is blocked by the harness; this busy-waits, so prefer Monitor).
+   A held-open turn costs no new tokens while it waits — the model is idle, not
+   re-orienting. This is strictly cheaper than stopping and being re-prompted.
+3. **Fallback — if you do stop**, you no longer spin: the Stop hook is wait-aware. With
+   builders in flight in BUILD it allows the stop, and the builder's completion
+   notification re-enters the loop once — one wake per completion, not one per second.
+4. When a builder finishes: `python3 $STATE task <id> --done`, verify its work, and
+   take a normal work tick for whatever you do with it.
 
 ### VERIFY (→ REVIEW, ⇄ BUILD)
 Required checks:
