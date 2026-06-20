@@ -1,0 +1,20 @@
+{
+  "name": "stick-shift",
+  "version": "0.1.0",
+  "description": "Manually-driven (\"disassembled\") SDLC: the same .sdlc/ session format as autonomous-sdlc, but you drive each phase by hand via slash commands — /spec → /plan → /build (TDD) → /verify → /journal. Built for legible, narratable live demos.",
+  "author": {
+    "name": "Joshua Oliphant",
+    "email": "joshuaoliphant@gmail.com"
+  },
+  "keywords": [
+    "sdlc",
+    "tdd",
+    "manual",
+    "session",
+    "harness",
+    "developer-experience",
+    "demo",
+    "decision-journal"
+  ],
+  "repository": "https://github.com/JoshuaOliphant/claude-plugins"
+}
