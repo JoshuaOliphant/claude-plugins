@@ -17,6 +17,8 @@ to you.
 | `/verify` | VERIFY | Runs the suite + the project's own checks, proves each criterion in code, applies pertinent review skills |
 | `/journal` | — | Renders the durable session record |
 
+`/spec` also creates a `stickshift/{slug}` feature branch if you aren't already on one.
+
 The `.sdlc/` directory (state.json, progress.md, decisions.jsonl) is the durable
 session — it survives context loss, and it is what a shared corpus (e.g.
 `compound-knowledge`) would ingest. The harness is disposable; the session survives.
