@@ -208,3 +208,19 @@ Two follow-ups so Stick Shift slots into an existing workflow:
 Note: stick-shift's `transition` only targets its own states (INIT/SPEC/PLAN/BUILD/
 VERIFY/DONE); it cannot move *into* autonomous-only states (REVIEW/SHIP/REPAIR/BLOCKED) —
 use autonomous's own CLI for those. Plugin version `0.2.0 → 0.3.0`.
+
+## Addendum (PR #16 review, verify.md): detect-and-use project validations
+
+Same detect-and-adapt principle extended to verification. `/verify` should not assume the
+gate is just the test runner — it discovers what this project and the installed skills
+offer and uses what's pertinent to the change (`references/validations.md`):
+
+- **Project-defined gates → detect and run** (they exist to be run): linters, type
+  checkers, `make`/`just` targets, `scripts/*verify*`, `pre-commit`, `package.json`
+  scripts; CI commands define "green".
+- **Review/quality skills → use what's pertinent, decide-log-proceed** (per La Boeuf:
+  the verifier may use available skills without asking, surfacing only when it genuinely
+  needs input — a gentle nudge, not a gate): `/code-review`, `vet`, `security-review`;
+  `/simplify` only after green, then re-verify (it mutates), revert if it broke something.
+
+Plugin version `0.3.0 → 0.4.0`.

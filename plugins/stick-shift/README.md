@@ -14,7 +14,7 @@ to you.
 | `/spec "<task>"` or `/spec <file>` | SPEC (+init) | Starts from a task or an existing spec/plan file; adopts any in-progress `.sdlc/` session; writes 3–5 Given/When/Then criteria |
 | `/plan` | PLAN | Decomposes into a task list; logs key decisions |
 | `/build [task]` | BUILD | TDD one task (red→green→refactor), then stops |
-| `/verify` | VERIFY | Runs the suite + walks each criterion |
+| `/verify` | VERIFY | Runs the suite + the project's own checks, proves each criterion in code, applies pertinent review skills |
 | `/journal` | — | Renders the durable session record |
 
 The `.sdlc/` directory (state.json, progress.md, decisions.jsonl) is the durable
