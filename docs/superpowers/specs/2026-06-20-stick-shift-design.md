@@ -184,3 +184,27 @@ arbitrary repos).
 
 This generalizes the plugin beyond Python and turns the test convention into part of the
 durable session. Plugin version `0.1.0 → 0.2.0`.
+
+## Addendum (workflow fit): upstream specs + session handoff
+
+Two follow-ups so Stick Shift slots into an existing workflow:
+
+- **`/spec` accepts an upstream spec file**, not just a free-text task. If `$ARGUMENTS` is
+  a path (a `/blueprint` plan or superpowers design doc), `/spec` ingests it, normalizes
+  its criteria into the testable Given/When/Then contract in `specs/{slug}-spec.md`, and
+  records a `Source:` pointer (point-in-time). Free-text input keeps the cold-start
+  behavior. Detection is by "is it an existing file path?" — no new flag.
+- **Clean takeover of an autonomous-sdlc session.** Both tools share `.sdlc/`, and
+  `session_state.py` round-trips the superset schema (verified: autonomous keys —
+  `driver`/`budgets`/`attempts`/`review` — survive a stick-shift `save()`). The one
+  conflict is the autonomous Stop hook, which drives whenever `driver` is `auto`/
+  `stop-hook`. New `session_state.py takeover` sets `driver` → `stick-shift` (any non-
+  `auto`/`stop-hook` value makes the autonomous hook exit), and `/spec` runs it when it
+  adopts such a session. This is the bidirectional "swap the harness over one durable
+  session" in practice. Reverse handoff (manual → autonomous) is deliberately explicit:
+  re-arm with `sdlc_state.py set-driver auto`, then `/sdlc`. (A symmetric `handoff`
+  command is a possible future enhancement C.)
+
+Note: stick-shift's `transition` only targets its own states (INIT/SPEC/PLAN/BUILD/
+VERIFY/DONE); it cannot move *into* autonomous-only states (REVIEW/SHIP/REPAIR/BLOCKED) —
+use autonomous's own CLI for those. Plugin version `0.2.0 → 0.3.0`.

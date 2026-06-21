@@ -138,3 +138,35 @@ def test_journal_renders_history_and_decisions(tmp_path, capsys):
     assert "cart-pricing" in out
     assert "→ SPEC: 3 criteria" in out
     assert "Decimal not float" in out
+
+
+def _inject_driver(tmp_path, driver):
+    cwd = Path.cwd()
+    os.chdir(tmp_path)
+    try:
+        s = json.loads(session_state.STATE_FILE.read_text())
+        s["driver"] = driver
+        session_state.STATE_FILE.write_text(json.dumps(s))
+    finally:
+        os.chdir(cwd)
+
+
+def test_takeover_stands_down_autonomous_driver(tmp_path):
+    _init(tmp_path)
+    _inject_driver(tmp_path, "auto")  # simulate an autonomous-sdlc session
+    _run(tmp_path, session_state.cmd_takeover)
+    assert _read_state(tmp_path)["driver"] == "stick-shift"
+
+
+def test_takeover_stands_down_stop_hook_driver(tmp_path):
+    _init(tmp_path)
+    _inject_driver(tmp_path, "stop-hook")
+    _run(tmp_path, session_state.cmd_takeover)
+    assert _read_state(tmp_path)["driver"] == "stick-shift"
+
+
+def test_takeover_is_noop_without_autonomous_driver(tmp_path):
+    _init(tmp_path)  # a stick-shift session has no driver key
+    _run(tmp_path, session_state.cmd_takeover)
+    # Nothing to stand down → do not fabricate a driver key.
+    assert "driver" not in _read_state(tmp_path)

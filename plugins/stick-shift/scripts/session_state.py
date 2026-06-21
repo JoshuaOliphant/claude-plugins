@@ -180,6 +180,22 @@ def cmd_journal(_args):
         print("- (none logged)")
 
 
+def cmd_takeover(_args):
+    # Adopt a session another harness was driving (e.g. autonomous-sdlc): stand its
+    # driver down so its Stop hook releases and stops fighting manual driving. The
+    # autonomous loop-stop-hook drives only when driver is "auto"/"stop-hook"; any
+    # other value makes it exit. No-op for a session with no foreign driver.
+    s = load()
+    prev = s.get("driver")
+    if prev in ("auto", "stop-hook"):
+        s["driver"] = "stick-shift"
+        save(s)
+        append_progress(f"takeover: stood down autonomous driver (was {prev})")
+        print(f"OK stood down driver (was {prev}) — stick-shift now owns the session")
+    else:
+        print(f"OK no autonomous driver to stand down (driver={prev or '-'})")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -219,6 +235,10 @@ def main():
     sub.add_parser("journal", help="render the durable session record").set_defaults(
         func=cmd_journal
     )
+
+    sub.add_parser(
+        "takeover", help="adopt a foreign-driven session: stand its driver down"
+    ).set_defaults(func=cmd_takeover)
 
     args = p.parse_args()
     args.func(args)

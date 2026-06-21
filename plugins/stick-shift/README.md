@@ -11,7 +11,7 @@ to you.
 
 | Command | Phase | Does |
 |---|---|---|
-| `/spec "<task>"` | SPEC (+init) | Inits `.sdlc/` + a branch; writes 3–5 Given/When/Then criteria |
+| `/spec "<task>"` or `/spec <file>` | SPEC (+init) | Starts from a task or an existing spec/plan file; adopts any in-progress `.sdlc/` session; writes 3–5 Given/When/Then criteria |
 | `/plan` | PLAN | Decomposes into a task list; logs key decisions |
 | `/build [task]` | BUILD | TDD one task (red→green→refactor), then stops |
 | `/verify` | VERIFY | Runs the suite + walks each criterion |
@@ -32,7 +32,20 @@ pytest-bdd → ask only if greenfield), records it in the session, and `/verify`
 every criterion to a passing test in that convention. See
 [`references/test-conventions.md`](references/test-conventions.md).
 
+## Adopting an existing session
+
+`/spec` is idempotent and resumes any `.sdlc/` already on disk — including one created by
+`autonomous-sdlc`, since both share the session format. If that session was being driven
+by the autonomous loop (its `driver` is `auto`/`stop-hook`), `/spec` runs
+`session_state.py takeover` to stand the autonomous driver down, so the two harnesses
+don't fight over one session. That's the "swap the harness over a durable session" move.
+To hand back the other way, re-arm the autonomous driver (`sdlc_state.py set-driver auto`)
+and run `/sdlc`.
+
+You can also seed `/spec` from an upstream plan — `/spec docs/.../my-plan.md` ingests it,
+normalizes its criteria into the testable contract, and records a `Source:` pointer.
+
 ## State CLI
 
 `python3 scripts/session_state.py --help` documents the manual operations: `init`,
-`state`, `status`, `transition`, `decide`, `note-progress`, `task`, `journal`.
+`state`, `status`, `transition`, `decide`, `note-progress`, `task`, `journal`, `takeover`.
