@@ -24,6 +24,14 @@ session — it survives context loss, and it is what a shared corpus (e.g.
 REVIEW is the built-in `/code-review` skill, run ad hoc. There is no SHIP — `/journal`
 is the close.
 
+## Executable spec compliance
+
+The Given/When/Then criteria are proven **in code**, not by reading. `/spec` picks the
+project's test convention once (adopt an existing pattern → default by stack, Python →
+pytest-bdd → ask only if greenfield), records it in the session, and `/verify` then maps
+every criterion to a passing test in that convention. See
+[`references/test-conventions.md`](references/test-conventions.md).
+
 ## State CLI
 
 `python3 scripts/session_state.py --help` documents the manual operations: `init`,

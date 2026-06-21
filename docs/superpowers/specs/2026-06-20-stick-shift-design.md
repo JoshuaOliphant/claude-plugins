@@ -163,3 +163,24 @@ lands.
 - **Ceremony creep.** The biggest failure mode is the workflow looking like process for
   its own sake. Every command must visibly earn its place during rehearsal; cut any that
   doesn't.
+
+## Addendum (PR #16 review): executable spec compliance + test-convention detection
+
+PR review raised that `/verify` checked the Given/When/Then criteria by *reading* — the
+"passing ≠ satisfied" gap done by hand. Resolution: make compliance **executable**, with
+the test framework **detected per project** rather than hardcoded (the plugin runs in
+arbitrary repos).
+
+- **Decide-log-proceed detection ladder** (in `references/test-conventions.md`), run once
+  at `/spec`: (1) adopt any existing test pattern — no question; (2) no tests but stack
+  clear → default by stack (Python → pytest-bdd) and log it — no question; (3) greenfield
+  and ambiguous → ask, with a recommendation. Avoids a config-wizard interruption mid-demo.
+- **Convention recorded once in the session** — in the spec header (`Test convention:
+  <name>`) and as a logged `decide` entry — so it appears in `/journal` and both `/build`
+  and `/verify` honor it. No `session_state.py` change required.
+- **`/build`** writes each test in that convention, tied to the criterion it covers
+  (pytest-bdd `Scenario` for AC-N, or `test_acN_*`). **`/verify`** maps every AC to a
+  passing test; an untested or failing criterion is unmet → back to BUILD.
+
+This generalizes the plugin beyond Python and turns the test convention into part of the
+durable session. Plugin version `0.1.0 → 0.2.0`.

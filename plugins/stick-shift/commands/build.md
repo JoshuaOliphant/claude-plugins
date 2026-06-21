@@ -19,8 +19,11 @@ Implement exactly ONE task with TDD, then stop.
 
 1. **Pick the task:** if $ARGUMENTS names one, use it; else take the next task from
    `specs/{slug}-plan.md`. Mark it in flight: `python3 $STATE task <id>`.
-2. **RED:** write a failing test that pins the behavior. Run it; confirm it fails for
-   the right reason.
+2. **RED:** write a failing test that pins the behavior, in the session's recorded test
+   convention (the `Test convention:` in `specs/{slug}-spec.md`; see
+   `${CLAUDE_PLUGIN_ROOT}/references/test-conventions.md`) and tied to the criterion it
+   covers — e.g. a pytest-bdd `Scenario` for AC-N, or a `test_acN_*` test — so `/verify`
+   can map it back. Run it; confirm it fails for the right reason.
 3. **GREEN:** write the minimal code to pass. Run the test; confirm green.
 4. **REFACTOR:** clean up while green. Run the full suite.
 5. **Record + commit:** `python3 $STATE task <id> --done`, `python3 $STATE note-progress
