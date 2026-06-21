@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Claude Code plugin marketplace (`oliphant-plugins`). It distributes five plugins that extend Claude Code with specialized skills, subagents, commands, and hooks. Each plugin is self-contained under `plugins/` and registered in `.claude-plugin/marketplace.json`.
+This is a Claude Code plugin marketplace (`oliphant-plugins`). It distributes nine plugins that extend Claude Code with specialized skills, subagents, commands, and hooks. Each plugin is self-contained under `plugins/` and registered in `.claude-plugin/marketplace.json`.
 
 ## Repository Structure
 
@@ -14,10 +14,14 @@ claude-plugins/
 │   └── marketplace.json            # Catalog of all published plugins (registry)
 ├── plugins/
 │   ├── mochi-creator/              # Evidence-based spaced-repetition flashcards (Mochi API)
-│   ├── autonomous-sdlc/            # SDLC as a /goal-driven state-machine loop: TDD, BDD, Beads
+│   ├── autonomous-sdlc/            # SDLC as a Stop-hook-driven state-machine loop: TDD, BDD, Beads
 │   ├── hexagonal-agents/           # Agent-driven HTML-UI web apps (Agent SDK + FastAPI + HTMX)
 │   ├── compound-knowledge/         # Capture / retrieve / graduate engineering knowledge
-│   └── autoloop/                   # Generate autonomous experiment-optimization loops
+│   ├── autoloop/                   # Generate autonomous experiment-optimization loops
+│   ├── observability-harness/      # Local Docker-free OTLP stack (OTel → Vector → JSONL/Victoria*)
+│   ├── understand/                 # Explain-back learning loop (graded recall → Mochi cards)
+│   ├── review-diff/                # Local web-based diff review fed back to Claude Code
+│   └── stick-shift/                # Manually-driven ("disassembled") SDLC via slash commands
 ├── scripts/
 │   ├── check_marketplace_versions.py  # Asserts marketplace.json matches each plugin.json
 │   ├── sync_shared.py                 # Asserts/regenerates per-plugin copies of shared artifacts
@@ -40,6 +44,9 @@ Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json` (the
 | **compound-knowledge** | Institutional memory: capture → retrieve → graduate | YAML-frontmatter solution files, grep-based retrieval, `knowledge-researcher` subagent |
 | **autoloop** | Generate Karpathy-style optimization loops | Produces `program.md` + immutable `auto/run.sh`, `codebase-scout` subagent |
 | **observability-harness** | Local Docker-free OTLP stack (OTel → Vector → JSONL/Victoria*) + instrumentation | setup skill with scan-and-propose, `observability-query` skill, `status.sh --json` detection contract, scripted `verify.sh`; composed by autonomous-sdlc as a soft dependency |
+| **understand** | Process information for real understanding (antidote to the illusion of clarity) | `explain-back` skill: graded recall, struggle-then-teach per gap, Mochi-card output, resumable session record |
+| **review-diff** | Local browser-based diff review fed back to Claude Code | web UI for commenting on working-tree/branch diffs |
+| **stick-shift** | Manually-driven ("disassembled") SDLC for legible live demos | 5 slash commands (`/spec` `/plan` `/build` `/verify` `/journal`) over a shared `.sdlc/` session; trimmed `session_state.py`; no loop/hooks |
 
 Every plugin also ships a `feedback` skill backed by `scripts/feedback_manager.py` to persist user preferences across sessions.
 
