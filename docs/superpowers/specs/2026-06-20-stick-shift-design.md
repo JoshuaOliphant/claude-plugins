@@ -163,3 +163,64 @@ lands.
 - **Ceremony creep.** The biggest failure mode is the workflow looking like process for
   its own sake. Every command must visibly earn its place during rehearsal; cut any that
   doesn't.
+
+## Addendum (PR #16 review): executable spec compliance + test-convention detection
+
+PR review raised that `/verify` checked the Given/When/Then criteria by *reading* — the
+"passing ≠ satisfied" gap done by hand. Resolution: make compliance **executable**, with
+the test framework **detected per project** rather than hardcoded (the plugin runs in
+arbitrary repos).
+
+- **Decide-log-proceed detection ladder** (in `references/test-conventions.md`), run once
+  at `/spec`: (1) adopt any existing test pattern — no question; (2) no tests but stack
+  clear → default by stack (Python → pytest-bdd) and log it — no question; (3) greenfield
+  and ambiguous → ask, with a recommendation. Avoids a config-wizard interruption mid-demo.
+- **Convention recorded once in the session** — in the spec header (`Test convention:
+  <name>`) and as a logged `decide` entry — so it appears in `/journal` and both `/build`
+  and `/verify` honor it. No `session_state.py` change required.
+- **`/build`** writes each test in that convention, tied to the criterion it covers
+  (pytest-bdd `Scenario` for AC-N, or `test_acN_*`). **`/verify`** maps every AC to a
+  passing test; an untested or failing criterion is unmet → back to BUILD.
+
+This generalizes the plugin beyond Python and turns the test convention into part of the
+durable session. Plugin version `0.1.0 → 0.2.0`.
+
+## Addendum (workflow fit): upstream specs + session handoff
+
+Two follow-ups so Stick Shift slots into an existing workflow:
+
+- **`/spec` accepts an upstream spec file**, not just a free-text task. If `$ARGUMENTS` is
+  a path (a `/blueprint` plan or superpowers design doc), `/spec` ingests it, normalizes
+  its criteria into the testable Given/When/Then contract in `specs/{slug}-spec.md`, and
+  records a `Source:` pointer (point-in-time). Free-text input keeps the cold-start
+  behavior. Detection is by "is it an existing file path?" — no new flag.
+- **Clean takeover of an autonomous-sdlc session.** Both tools share `.sdlc/`, and
+  `session_state.py` round-trips the superset schema (verified: autonomous keys —
+  `driver`/`budgets`/`attempts`/`review` — survive a stick-shift `save()`). The one
+  conflict is the autonomous Stop hook, which drives whenever `driver` is `auto`/
+  `stop-hook`. New `session_state.py takeover` sets `driver` → `stick-shift` (any non-
+  `auto`/`stop-hook` value makes the autonomous hook exit), and `/spec` runs it when it
+  adopts such a session. This is the bidirectional "swap the harness over one durable
+  session" in practice. Reverse handoff (manual → autonomous) is deliberately explicit:
+  re-arm with `sdlc_state.py set-driver auto`, then `/sdlc`. (A symmetric `handoff`
+  command is a possible future enhancement C.)
+
+Note: stick-shift's `transition` only targets its own states (INIT/SPEC/PLAN/BUILD/
+VERIFY/DONE); it cannot move *into* autonomous-only states (REVIEW/SHIP/REPAIR/BLOCKED) —
+use autonomous's own CLI for those. Plugin version `0.2.0 → 0.3.0`.
+
+## Addendum (PR #16 review, verify.md): detect-and-use project validations
+
+Same detect-and-adapt principle extended to verification. `/verify` should not assume the
+gate is just the test runner — it discovers what this project and the installed skills
+offer and uses what's pertinent to the change (`references/validations.md`):
+
+- **Project-defined gates → detect and run** (they exist to be run): linters, type
+  checkers, `make`/`just` targets, `scripts/*verify*`, `pre-commit`, `package.json`
+  scripts; CI commands define "green".
+- **Review/quality skills → use what's pertinent, decide-log-proceed** (per La Boeuf:
+  the verifier may use available skills without asking, surfacing only when it genuinely
+  needs input — a gentle nudge, not a gate): `/code-review`, `vet`, `security-review`;
+  `/simplify` only after green, then re-verify (it mutates), revert if it broke something.
+
+Plugin version `0.3.0 → 0.4.0`.
