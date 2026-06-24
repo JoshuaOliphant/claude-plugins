@@ -1,7 +1,25 @@
 [project]
 name = "claude-plugins"
 version = "0.1.0"
-description = "Add your description here"
+description = "Claude Code plugin marketplace (oliphant-plugins) and its dev/CI tooling."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+# Repo-wide dev tooling. Individual plugins that need more (e.g. review-diff's
+# coverage gate) declare their own dependency-group in their own pyproject.toml.
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.pytest.ini_options]
+# `uv run --group dev pytest` from the repo root discovers every plugin's tests.
+# review-diff's coverage-gated config lives in its own pyproject and only applies
+# when pytest is invoked from that directory; at the repo root those tests still
+# run (without the coverage gate), so nothing is excluded here.
+testpaths = ["plugins"]
+
+[tool.ruff]
+line-length = 100
