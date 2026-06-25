@@ -22,6 +22,7 @@ Usage:
 
 import argparse
 import json
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -47,6 +48,34 @@ NORMAL_EDGES = {
 
 def now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def _git(*args):
+    """Best-effort git query. Returns stripped stdout, or None outside a repo."""
+    try:
+        out = subprocess.run(["git", *args], capture_output=True, text=True, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return (out.stdout.strip() or None) if out.returncode == 0 else None
+
+
+def git_head():
+    """Short SHA of HEAD — the foreign key joining a record entry to its code.
+
+    Captured at write time, so it anchors the entry to the repo state it was
+    recorded against. Stick-shift commits a phase *after* transitioning, so an
+    entry's commit is the baseline the phase started from; the diff to the next
+    entry's commit is that phase's work. None outside a git repo.
+    """
+    return _git("rev-parse", "--short", "HEAD")
+
+
+def git_branch():
+    """Current branch name, or the short SHA on a detached HEAD. None if no repo."""
+    branch = _git("rev-parse", "--abbrev-ref", "HEAD")
+    if branch == "HEAD":
+        return git_head()
+    return branch
 
 
 def load():
@@ -78,8 +107,19 @@ def cmd_init(args):
         "feature": args.feature,
         "request": args.request,
         "state": "INIT",
+        "cycle": 1,
+        "branch": git_branch(),
         "in_flight": [],
-        "history": [{"at": now(), "to": "INIT", "reason": "initialized"}],
+        "increments": [],
+        "history": [
+            {
+                "at": now(),
+                "to": "INIT",
+                "reason": "initialized",
+                "commit": git_head(),
+                "cycle": 1,
+            }
+        ],
         "started": now(),
     }
     save(state)
@@ -97,16 +137,23 @@ def cmd_state(_args):
 
 def cmd_status(_args):
     s = load()
-    print(f"STATE={s['state']}")
+    print(f"STATE={s['state']} (cycle {s.get('cycle', 1)})")
     print(f"feature: {s['feature']}")
     print(f"request: {s['request']}")
+    if s.get("branch"):
+        print(f"branch: {s['branch']}")
+    prior = s.get("increments", [])
+    if prior:
+        names = ", ".join(f"{i['cycle']}:{i['feature']}" for i in prior)
+        print(f"prior increments: {names}")
     print(f"in flight: {', '.join(s.get('in_flight', [])) or '-'}")
     decisions = (
         len(DECISIONS_FILE.read_text().splitlines()) if DECISIONS_FILE.exists() else 0
     )
     print(f"decisions logged: {decisions}")
     for h in s["history"][-3:]:
-        print(f"  {h['at']} → {h['to']}: {h['reason']}")
+        commit = f" [{h['commit']}]" if h.get("commit") else ""
+        print(f"  {h['at']} → {h['to']}: {h['reason']}{commit}")
 
 
 def cmd_transition(args):
@@ -121,11 +168,59 @@ def cmd_transition(args):
             f"Recording {s['state']} → {target} anyway — you're driving.",
             file=sys.stderr,
         )
-    s["history"].append({"at": now(), "to": target, "reason": args.reason})
+    s["branch"] = git_branch() or s.get("branch")
+    s["history"].append(
+        {
+            "at": now(),
+            "to": target,
+            "reason": args.reason,
+            "commit": git_head(),
+            "cycle": s.get("cycle", 1),
+        }
+    )
     s["state"] = target
     save(s)
     append_progress(f"→ {target}: {args.reason}")
     print(f"OK {target}")
+
+
+def cmd_increment(args):
+    # First-class "feature done, start the next increment". DONE is a terminal
+    # sink in the edge graph and init is resume-only, so without this the only
+    # path to increment 2 is an off-graph DONE→SPEC nudge that leaves feature/
+    # request stale and the records undelimited. This archives the finished
+    # increment, retargets the session, bumps the cycle so records stay grouped,
+    # and resets to INIT so the normal INIT→SPEC edge applies with no nudge.
+    s = load()
+    prev_cycle = s.get("cycle", 1)
+    s.setdefault("increments", []).append(
+        {
+            "cycle": prev_cycle,
+            "feature": s["feature"],
+            "request": s["request"],
+            "ended_state": s["state"],
+            "at": now(),
+        }
+    )
+    new_cycle = prev_cycle + 1
+    s["cycle"] = new_cycle
+    s["feature"] = args.feature
+    s["request"] = args.request
+    s["state"] = "INIT"
+    s["in_flight"] = []
+    s["branch"] = git_branch() or s.get("branch")
+    s["history"].append(
+        {
+            "at": now(),
+            "to": "INIT",
+            "reason": f"increment {new_cycle}: {args.feature}",
+            "commit": git_head(),
+            "cycle": new_cycle,
+        }
+    )
+    save(s)
+    append_progress(f"━━ increment {new_cycle}: {args.feature} — {args.request}")
+    print(f"OK increment {new_cycle}: state INIT, feature={args.feature}")
 
 
 def cmd_decide(args):
@@ -134,9 +229,11 @@ def cmd_decide(args):
     entry = {
         "at": now(),
         "state": s["state"],
+        "cycle": s.get("cycle", 1),
         "decision": args.decision,
         "why": args.why,
         "reversible": not args.irreversible,
+        "commit": git_head(),
     }
     with DECISIONS_FILE.open("a") as f:
         f.write(json.dumps(entry) + "\n")
@@ -166,16 +263,28 @@ def cmd_journal(_args):
     s = load()
     print(f"# Session journal: {s['feature']}")
     print(f"Request: {s['request']}")
-    print(f"State: {s['state']}\n")
+    print(f"State: {s['state']} (cycle {s.get('cycle', 1)})\n")
     print("## Phase history")
+    last_cycle = None
     for h in s["history"]:
-        print(f"- {h['at']} → {h['to']}: {h['reason']}")
+        c = h.get("cycle", 1)
+        if c != last_cycle:
+            print(f"### increment {c}")
+            last_cycle = c
+        commit = f" [{h['commit']}]" if h.get("commit") else ""
+        print(f"- {h['at']} → {h['to']}: {h['reason']}{commit}")
     print("\n## Decisions")
     if DECISIONS_FILE.exists():
+        last_cycle = None
         for line in DECISIONS_FILE.read_text().splitlines():
             d = json.loads(line)
+            c = d.get("cycle", 1)
+            if c != last_cycle:
+                print(f"### increment {c}")
+                last_cycle = c
             tag = "" if d.get("reversible", True) else " (irreversible)"
-            print(f"- [{d['state']}] {d['decision']} — {d['why']}{tag}")
+            commit = f" [{d['commit']}]" if d.get("commit") else ""
+            print(f"- [{d['state']}] {d['decision']} — {d['why']}{tag}{commit}")
     else:
         print("- (none logged)")
 
@@ -216,6 +325,11 @@ def main():
     sp.add_argument("target")
     sp.add_argument("--reason", required=True)
     sp.set_defaults(func=cmd_transition)
+
+    sp = sub.add_parser("increment", help="finish this increment, start the next")
+    sp.add_argument("--feature", required=True)
+    sp.add_argument("--request", default="")
+    sp.set_defaults(func=cmd_increment)
 
     sp = sub.add_parser("decide", help="log a decision to decisions.jsonl")
     sp.add_argument("--decision", required=True)

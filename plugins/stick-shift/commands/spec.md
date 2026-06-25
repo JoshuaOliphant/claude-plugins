@@ -27,6 +27,13 @@ Do exactly one phase, then stop and hand control back.
      autonomous-sdlc), run `python3 $STATE takeover` to stand its loop down so it won't
      fight your manual driving; narrate it ("found an autonomous session — taking the
      wheel, standing down the autopilot").
+   - If `RESUME` shows a **finished stick-shift session** (`state.json` state `DONE`,
+     no autonomous `driver`) and `$ARGUMENTS` is a *new* piece of work, you are starting
+     the **next increment**, not resuming the old one. Run
+     `python3 $STATE increment --feature {new-slug} --request "<task>"` — it archives the
+     finished increment, retargets feature/request, bumps the cycle so the records stay
+     grouped, and resets to INIT so this `/spec` transitions on-graph (no nudge). Do NOT
+     hand-edit `state.json` or force an off-graph `DONE → SPEC`.
    - Create a branch if not on one: `git checkout -b stickshift/{slug}`.
 2. **Capture the acceptance criteria** into `specs/{slug}-spec.md`, numbered AC-1, AC-2,
    … in Given/When/Then form. Branch on the input type:
