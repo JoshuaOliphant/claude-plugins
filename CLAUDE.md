@@ -23,9 +23,11 @@ claude-plugins/
 │   ├── review-diff/                # Local web-based diff review fed back to Claude Code
 │   └── stick-shift/                # Manually-driven ("disassembled") SDLC via slash commands
 ├── scripts/
-│   ├── check_marketplace_versions.py  # Asserts marketplace.json matches each plugin.json
+│   ├── check_all.py                   # One-command repo health check (versions + sync + tests)
+│   ├── check_marketplace_versions.py  # Asserts marketplace.json ⇄ plugin.json (versions + registration)
 │   ├── sync_shared.py                 # Asserts/regenerates per-plugin copies of shared artifacts
 │   └── shared/                        # Canonical sources for artifacts duplicated across plugins
+├── evals/                          # Skill-trigger eval datasets (fixtures, not a plugin)
 ├── ai_docs/                        # Background research/reference docs (not shipped in plugins)
 ├── docs/                           # Planning and specifications
 ├── README.md                       # Marketplace installation instructions
@@ -129,9 +131,10 @@ python scripts/check_marketplace_versions.py   # exits non-zero on any drift
 ### Shared-source sync (generate from one source)
 
 Some artifacts must be physically present in multiple self-contained plugins but should never
-diverge — e.g. `feedback_manager.py` (shipped by 5 plugins) and `prompt_design_principles.md`
-(shared by `mochi-creator` and `understand`). The canonical copy lives under `scripts/shared/`;
-each plugin's copy is generated from it.
+diverge — e.g. `feedback_manager.py` (shipped by 5 plugins), `config_loader.py` (the
+`.claude/<name>.local.md` reader shared by `compound-knowledge` and `understand`), and
+`prompt_design_principles.md` (shared by `mochi-creator` and `understand`). The canonical copy
+lives under `scripts/shared/`; each plugin's copy is generated from it.
 
 ```bash
 python scripts/sync_shared.py            # check for drift (exits non-zero on mismatch)
@@ -177,7 +180,10 @@ When changing a plugin:
 1. Bump the version in `plugins/{name}/.claude-plugin/plugin.json`
 2. Copy that version into the matching entry in `.claude-plugin/marketplace.json`
 3. Only bump `metadata.version` if the marketplace itself changed (plugin added/removed)
-4. Run `python scripts/check_marketplace_versions.py` to confirm they match
+4. Run `python scripts/check_marketplace_versions.py` to confirm they match. This
+   check is bidirectional: it also fails if a directory under `plugins/` has no
+   marketplace entry, or if a non-plugin directory (no `.claude-plugin/plugin.json`)
+   is sitting under `plugins/`.
 
 ## Plugin Installation
 
