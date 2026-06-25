@@ -41,6 +41,14 @@ SHARED_ARTIFACTS: list[tuple[str, str, list[str]]] = [
         ],
     ),
     (
+        "config_loader.py",
+        "scripts/shared/config_loader.py",
+        [
+            "plugins/compound-knowledge/scripts/config_loader.py",
+            "plugins/understand/scripts/config_loader.py",
+        ],
+    ),
+    (
         "prompt_design_principles.md",
         "scripts/shared/prompt_design_principles.md",
         [

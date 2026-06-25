@@ -131,9 +131,10 @@ python scripts/check_marketplace_versions.py   # exits non-zero on any drift
 ### Shared-source sync (generate from one source)
 
 Some artifacts must be physically present in multiple self-contained plugins but should never
-diverge — e.g. `feedback_manager.py` (shipped by 5 plugins) and `prompt_design_principles.md`
-(shared by `mochi-creator` and `understand`). The canonical copy lives under `scripts/shared/`;
-each plugin's copy is generated from it.
+diverge — e.g. `feedback_manager.py` (shipped by 5 plugins), `config_loader.py` (the
+`.claude/<name>.local.md` reader shared by `compound-knowledge` and `understand`), and
+`prompt_design_principles.md` (shared by `mochi-creator` and `understand`). The canonical copy
+lives under `scripts/shared/`; each plugin's copy is generated from it.
 
 ```bash
 python scripts/sync_shared.py            # check for drift (exits non-zero on mismatch)
