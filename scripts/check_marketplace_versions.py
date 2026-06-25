@@ -20,10 +20,22 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 MARKETPLACE = REPO_ROOT / ".claude-plugin" / "marketplace.json"
 
 
+def _plugin_dirs() -> list[Path]:
+    """Direct children of plugins/ that aren't dotdirs or caches."""
+    plugins_dir = REPO_ROOT / "plugins"
+    return sorted(
+        child
+        for child in plugins_dir.iterdir()
+        if child.is_dir() and not child.name.startswith(".") and child.name != "__pycache__"
+    )
+
+
 def main() -> int:
     marketplace = json.loads(MARKETPLACE.read_text())
     mismatches: list[str] = []
     missing: list[str] = []
+
+    registered = {entry["name"] for entry in marketplace.get("plugins", [])}
 
     for entry in marketplace.get("plugins", []):
         name = entry["name"]
@@ -40,6 +52,18 @@ def main() -> int:
                 f"{name}: plugin.json={source_version} != marketplace.json={catalog_version}"
             )
 
+    # Reverse direction: every directory under plugins/ must be a registered
+    # plugin. Catches both a plugin that was added but never registered, and a
+    # non-plugin directory that doesn't belong under plugins/ at all.
+    unregistered: list[str] = []
+    non_plugin: list[str] = []
+    for child in _plugin_dirs():
+        has_manifest = (child / ".claude-plugin" / "plugin.json").exists()
+        if not has_manifest:
+            non_plugin.append(child.name)
+        elif child.name not in registered:
+            unregistered.append(child.name)
+
     if missing:
         print("Missing plugin.json files:")
         for line in missing:
@@ -48,8 +72,16 @@ def main() -> int:
         print("Version drift (plugin.json is source of truth — update marketplace.json):")
         for line in mismatches:
             print(f"  - {line}")
+    if unregistered:
+        print("Plugins not registered in marketplace.json (add a catalog entry):")
+        for name in unregistered:
+            print(f"  - {name}")
+    if non_plugin:
+        print("Directories under plugins/ that aren't plugins (move them out of plugins/):")
+        for name in non_plugin:
+            print(f"  - {name} (no .claude-plugin/plugin.json)")
 
-    if missing or mismatches:
+    if missing or mismatches or unregistered or non_plugin:
         return 1
 
     print(f"OK: {len(marketplace.get('plugins', []))} plugin versions in sync.")
