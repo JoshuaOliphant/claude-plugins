@@ -170,3 +170,82 @@ def test_takeover_is_noop_without_autonomous_driver(tmp_path):
     _run(tmp_path, session_state.cmd_takeover)
     # Nothing to stand down → do not fabricate a driver key.
     assert "driver" not in _read_state(tmp_path)
+
+
+# --- Finding A: record fidelity (commit SHA + branch + cycle per entry) ---
+
+
+def test_init_records_branch_and_cycle(tmp_path):
+    state = _init(tmp_path)
+    # cycle starts at 1; branch + commit keys are present (None outside a git repo).
+    assert state["cycle"] == 1
+    assert "branch" in state
+    assert state["history"][0]["cycle"] == 1
+    assert "commit" in state["history"][0]
+
+
+def test_transition_records_commit_and_cycle(tmp_path):
+    _init(tmp_path)
+    _run(tmp_path, session_state.cmd_transition, target="SPEC", reason="3 criteria")
+    entry = _read_state(tmp_path)["history"][-1]
+    assert "commit" in entry
+    assert entry["cycle"] == 1
+
+
+def test_decide_records_commit_and_cycle(tmp_path):
+    _init(tmp_path)
+    _run(
+        tmp_path,
+        session_state.cmd_decide,
+        decision="Decimal not float",
+        why="exact rounding",
+        irreversible=False,
+    )
+    cwd = Path.cwd()
+    os.chdir(tmp_path)
+    try:
+        entry = json.loads(session_state.DECISIONS_FILE.read_text().splitlines()[0])
+    finally:
+        os.chdir(cwd)
+    assert "commit" in entry
+    assert entry["cycle"] == 1
+
+
+# --- Finding B: the "next increment" lifecycle primitive ---
+
+
+def test_increment_starts_new_cycle_and_retargets(tmp_path):
+    _init(tmp_path)  # feature=cart-pricing, cycle 1
+    _run(tmp_path, session_state.cmd_transition, target="SPEC", reason="done-ish")
+    _run(
+        tmp_path,
+        session_state.cmd_increment,
+        feature="durability",
+        request="persist to JSONL",
+    )
+    state = _read_state(tmp_path)
+    assert state["cycle"] == 2
+    assert state["feature"] == "durability"  # feature retargeted, no stale lie
+    assert state["request"] == "persist to JSONL"
+    assert state["state"] == "INIT"  # new increment begins at INIT
+    assert state["in_flight"] == []
+    assert "increment 2" in state["history"][-1]["reason"]
+
+
+def test_increment_resets_to_INIT_so_spec_is_on_graph(tmp_path, capsys):
+    _init(tmp_path)
+    _run(tmp_path, session_state.cmd_increment, feature="durability", request="x")
+    capsys.readouterr()  # drain
+    # INIT → SPEC is a normal edge: starting increment 2's spec must NOT nudge.
+    _run(tmp_path, session_state.cmd_transition, target="SPEC", reason="inc2 spec")
+    assert "NUDGE" not in capsys.readouterr().err
+
+
+def test_increment_archives_prior_increment(tmp_path):
+    _init(tmp_path, feature="cart-pricing", request="Build a cart engine")
+    _run(tmp_path, session_state.cmd_increment, feature="durability", request="x")
+    archived = _read_state(tmp_path)["increments"]
+    assert len(archived) == 1
+    assert archived[0]["feature"] == "cart-pricing"
+    assert archived[0]["request"] == "Build a cart engine"
+    assert archived[0]["cycle"] == 1

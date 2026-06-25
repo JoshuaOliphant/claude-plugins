@@ -1,7 +1,7 @@
 {
   "name": "stick-shift",
-  "version": "0.4.0",
-  "description": "Manually-driven (\"disassembled\") SDLC: the same .sdlc/ session format as autonomous-sdlc, but you drive each phase by hand via slash commands — /spec → /plan → /build (TDD) → /verify → /journal. Built for legible, narratable live demos.",
+  "version": "0.5.0",
+  "description": "Manually-driven (\"disassembled\") SDLC: the same .sdlc/ session format as autonomous-sdlc, but you drive each phase by hand via slash commands \u2014 /spec \u2192 /plan \u2192 /build (TDD) \u2192 /verify \u2192 /journal. Built for legible, narratable live demos.",
   "author": {
     "name": "Joshua Oliphant",
     "email": "joshuaoliphant@gmail.com"

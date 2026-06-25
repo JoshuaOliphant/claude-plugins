@@ -47,7 +47,23 @@ and run `/sdlc`.
 You can also seed `/spec` from an upstream plan — `/spec docs/.../my-plan.md` ingests it,
 normalizes its criteria into the testable contract, and records a `Source:` pointer.
 
+## Next increment (after DONE)
+
+Work arrives in waves, so `DONE` is not the end of the road. When a finished
+(`state: DONE`) stick-shift session needs the *next* increment, `/spec` runs
+`session_state.py increment --feature <new> --request "<task>"`. It archives the finished
+increment into `increments[]`, retargets `feature`/`request` (so `status` never lies),
+bumps the `cycle` counter so the durable records stay grouped per increment, and resets
+to `INIT` — so the new `/spec` transitions on-graph with no nudge. This is the
+first-class path; never force an off-graph `DONE → SPEC` or hand-edit `state.json`.
+
 ## State CLI
 
 `python3 scripts/session_state.py --help` documents the manual operations: `init`,
-`state`, `status`, `transition`, `decide`, `note-progress`, `task`, `journal`, `takeover`.
+`state`, `status`, `transition`, `decide`, `increment`, `note-progress`, `task`,
+`journal`, `takeover`.
+
+Every `transition`, `decide`, and `increment` stamps the current short commit SHA and
+the increment `cycle` onto the record entry — a foreign key joining each entry to the
+code it describes (`git log <entry-sha>..<next-sha>` recovers a phase's work). `status`
+and `journal` surface the branch, cycle, and per-entry SHA.
