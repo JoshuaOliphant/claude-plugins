@@ -23,9 +23,11 @@ claude-plugins/
 │   ├── review-diff/                # Local web-based diff review fed back to Claude Code
 │   └── stick-shift/                # Manually-driven ("disassembled") SDLC via slash commands
 ├── scripts/
+│   ├── check_all.py                   # One-command repo health check (versions + sync + tests)
 │   ├── check_marketplace_versions.py  # Asserts marketplace.json matches each plugin.json
 │   ├── sync_shared.py                 # Asserts/regenerates per-plugin copies of shared artifacts
 │   └── shared/                        # Canonical sources for artifacts duplicated across plugins
+├── evals/                          # Skill-trigger eval datasets (fixtures, not a plugin)
 ├── ai_docs/                        # Background research/reference docs (not shipped in plugins)
 ├── docs/                           # Planning and specifications
 ├── README.md                       # Marketplace installation instructions
