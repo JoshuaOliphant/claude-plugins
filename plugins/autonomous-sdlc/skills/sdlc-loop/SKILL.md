@@ -204,6 +204,16 @@ most reasonable option by project convention and record it:
 python3 $STATE decide --decision "what you chose" --why "one-line rationale"
 ```
 
+**Prefer documented facts over guessed ones.** When a decision turns on *externally
+checkable* behavior — a library's API, a framework's defaults, a tool's flags, a version's
+breaking changes — check the current docs before you log it, rather than going on memory.
+`compound-retrieve` (if installed) for past in-house solutions; the `read-the-damn-docs`
+skill, the `context7` MCP, or a web search for third-party/official docs. This is a strong
+suggestion, not a gate — skip it for decisions that are pure project convention (naming,
+file placement) and don't stall a loop hunting for docs that don't exist. When you do
+verify, cite the source in the `--why` (e.g. `--why "httpx 0.27 timeout default is 5s per docs"`)
+so the PR shows the decision was grounded, not guessed.
+
 The human reviews all decisions in batch in the PR. A wrong-but-logged decision costs a
 review comment; a question costs the whole loop.
 

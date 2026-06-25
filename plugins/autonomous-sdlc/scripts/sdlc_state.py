@@ -17,6 +17,7 @@ Usage:
     sdlc_state.py tick                     # start a WORK iteration: bump counter, enforce budgets
     sdlc_state.py tick --waiting           # a wait-check on in-flight agents: free, not budgeted
     sdlc_state.py transition BUILD --reason "plan committed, 6 tasks ready"
+    sdlc_state.py increment --feature phase-2 --request "..."  # after DONE: start the next increment
     sdlc_state.py task bd-a1b2             # mark a task in flight (multiple allowed)
     sdlc_state.py task bd-a1b2 --done      # remove it from the in-flight set
     sdlc_state.py attempt bd-a1b2          # count an attempt; exit 1 when budget exceeded
@@ -137,6 +138,20 @@ def cmd_init(args: argparse.Namespace) -> None:
         if "review" not in state:
             state["review"] = build_review_config(None, None)
             save(state)
+        # A finished (DONE) loop re-invoked with a *new* feature is the next
+        # increment, not a resume: archive the finished increment and reset to
+        # INIT so a plain `/sdlc "new thing"` works in the same project instead
+        # of silently resuming DONE and dropping the new request. Same feature
+        # on DONE is a true no-op resume; a non-DONE state always resumes live
+        # work untouched (never increment over a loop still in flight).
+        if state["state"] == "DONE" and args.feature != state["feature"]:
+            apply_increment(state, args.feature, args.request)
+            save(state)
+            append_progress(
+                f"━━ increment {state['cycle']}: {args.feature} — {args.request}"
+            )
+            print(f"INCREMENT cycle={state['cycle']} feature={args.feature} state=INIT")
+            return
         print(f"RESUME state={state['state']} iteration={state['iteration']}")
         return
     SDLC_DIR.mkdir(exist_ok=True)
@@ -144,6 +159,7 @@ def cmd_init(args: argparse.Namespace) -> None:
         "feature": args.feature,
         "request": args.request,
         "state": "INIT",
+        "cycle": 1,
         "driver": args.driver,
         "iteration": 0,
         "budgets": {
@@ -152,13 +168,14 @@ def cmd_init(args: argparse.Namespace) -> None:
             "max_wait_ticks": args.max_wait_ticks,
         },
         "in_flight": [],
+        "increments": [],
         "wait_ticks": 0,
         "attempts": {},
         "review": build_review_config(
             getattr(args, "reviewers", None), getattr(args, "review_mode", None)
         ),
         "last_progress_iteration": 0,
-        "history": [{"at": now(), "to": "INIT", "reason": "initialized"}],
+        "history": [{"at": now(), "to": "INIT", "reason": "initialized", "cycle": 1}],
         "started": now(),
     }
     save(state)
@@ -177,8 +194,12 @@ def cmd_state(_args: argparse.Namespace) -> None:
 def cmd_status(_args: argparse.Namespace) -> None:
     s = load()
     b = s["budgets"]
-    print(f"STATE={s['state']}")
+    print(f"STATE={s['state']} (cycle {s.get('cycle', 1)})")
     print(f"feature: {s['feature']}")
+    prior = s.get("increments", [])
+    if prior:
+        names = ", ".join(f"{i['cycle']}:{i['feature']}" for i in prior)
+        print(f"prior increments: {names}")
     print(f"iteration: {s['iteration']}/{b['max_iterations']}")
     print(f"wait ticks: {s.get('wait_ticks', 0)}/{b.get('max_wait_ticks', '-')}")
     in_flight = s.get("in_flight") or (
@@ -202,6 +223,57 @@ def block(state: dict, reason: str) -> None:
     save(state)
     append_progress(f"BLOCKED: {reason}")
     print(f"BLOCKED {reason}")
+
+
+def apply_increment(state: dict, feature: str, request: str) -> None:
+    """Archive the current increment and reset the session onto the next one.
+
+    DONE is a terminal sink in the edge graph and init is resume-only, so
+    without this the only path to increment 2 is an off-graph DONE→SPEC nudge
+    that leaves feature/request stale. This archives the finished increment,
+    retargets the session, bumps the cycle so on-disk records stay grouped, and
+    resets to INIT so the normal INIT→SPEC edge applies with no nudge.
+
+    Per-run loop counters (iteration, wait_ticks, attempts, idle marker) reset —
+    a new increment earns a fresh budget. Per-project config (budgets, the review
+    gate, the driver) is preserved untouched.
+    """
+    prev_cycle = state.get("cycle", 1)
+    state.setdefault("increments", []).append(
+        {
+            "cycle": prev_cycle,
+            "feature": state["feature"],
+            "request": state["request"],
+            "ended_state": state["state"],
+            "at": now(),
+        }
+    )
+    new_cycle = prev_cycle + 1
+    state["cycle"] = new_cycle
+    state["feature"] = feature
+    state["request"] = request
+    state["state"] = "INIT"
+    state["in_flight"] = []
+    state["iteration"] = 0
+    state["wait_ticks"] = 0
+    state["attempts"] = {}
+    state["last_progress_iteration"] = 0
+    state["history"].append(
+        {
+            "at": now(),
+            "to": "INIT",
+            "reason": f"increment {new_cycle}: {feature}",
+            "cycle": new_cycle,
+        }
+    )
+
+
+def cmd_increment(args: argparse.Namespace) -> None:
+    s = load()
+    apply_increment(s, args.feature, args.request)
+    save(s)
+    append_progress(f"━━ increment {s['cycle']}: {args.feature} — {args.request}")
+    print(f"OK increment {s['cycle']}: state INIT, feature={args.feature}")
 
 
 def cmd_tick(args: argparse.Namespace) -> None:
@@ -383,6 +455,11 @@ def main() -> None:
     sp.add_argument("target")
     sp.add_argument("--reason", required=True)
     sp.set_defaults(func=cmd_transition)
+
+    sp = sub.add_parser("increment", help="finish this increment, start the next")
+    sp.add_argument("--feature", required=True)
+    sp.add_argument("--request", default="")
+    sp.set_defaults(func=cmd_increment)
 
     sp = sub.add_parser("task", help="mark a task in flight (or done with --done)")
     sp.add_argument("task_id")
