@@ -17,7 +17,11 @@ this repository.
 ```
 
 Re-running `/sdlc` is always safe: if `.sdlc/state.json` exists, it resumes — including
-from `BLOCKED`, after you've answered the escalation.
+from `BLOCKED`, after you've answered the escalation. Re-running on a **finished (`DONE`)**
+session with a *new* feature starts the **next increment**: the finished increment is
+archived, the `cycle` counter bumps, and the loop resets to `INIT` with the new request —
+so the same project can run successive features without hand-editing state. Same feature
+on `DONE` is a no-op resume; a loop still mid-flight always resumes its live work.
 
 ## The State Machine
 
@@ -124,8 +128,8 @@ specs/{slug}-plan.md  # architect plan
 ```
 
 `python3 scripts/sdlc_state.py --help` documents the state CLI (init, tick [--waiting],
-transition, task [--done], attempt, decide, note-progress, set-budget, set-driver,
-status, state).
+transition, increment, task [--done], attempt, decide, note-progress, set-budget,
+set-driver, status, state).
 
 ## Composes With (soft dependencies — skipped silently when absent)
 
@@ -184,7 +188,21 @@ BUILD. A blank `--reviewers` value falls back to the default so the gate is neve
 
 ## Version History
 
-### v2.2.0 (Current)
+### v2.3.0 (Current)
+- **Next-increment lifecycle** (the loop is no longer single-use per project): a finished
+  (`DONE`) session re-invoked with a new feature now starts increment 2 instead of silently
+  resuming `DONE` and dropping the request. New `increment` subcommand archives the finished
+  increment into `increments[]`, bumps a `cycle` counter, retargets `feature`/`request`, and
+  resets to `INIT`; `init` auto-increments on `DONE` + new feature so a plain `/sdlc "<new>"`
+  just works. Per-run loop counters (iteration, wait_ticks, attempts) reset; per-project
+  config (budgets, review gate, driver) is preserved. Brings the autonomous loop to parity
+  with stick-shift, which already had this. New tests cover the increment contract.
+- **Soft docs-research nudge** in decide-log-proceed: the `sdlc-loop` skill and the Architect
+  now *prefer* (not require) verifying externally-checkable decisions — library APIs, framework
+  defaults, version changes — against current docs (`read-the-damn-docs` / `context7` / web)
+  and citing the source in the decision rationale, rather than going on stale memory.
+
+### v2.2.0
 - **Wait-aware loop driver** (cuts token burn while background builders run): the Stop
   hook reads `in_flight` and, in BUILD with builders still running, **allows the stop**
   instead of re-prompting — the builder's completion notification re-enters the loop

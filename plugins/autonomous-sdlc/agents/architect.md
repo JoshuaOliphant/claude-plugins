@@ -40,6 +40,11 @@ Think hard before you write the plan. Reason through dependencies, integration p
   skill is available to you, consult institutional memory *before* committing to an approach. Fold
   relevant past solutions, gotchas, and critical patterns into your Solution Approach and Notes.
   This is a soft dependency — proceed normally if no such knowledge exists.
+- **Current docs (preferred, not required)**: When the plan turns on a library's API, a framework's
+  defaults, or a version's breaking changes, verify against current documentation before you commit
+  to it — `read-the-damn-docs` skill, the `context7` MCP, or a web search — rather than relying on
+  memory that may be stale. Cite what you found in the plan's Notes and in any `decide` rationale.
+  Skip it for pure project-convention choices; don't stall planning hunting for docs that don't exist.
 
 ## Your Responsibilities
 
