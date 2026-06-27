@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by Joshua Oliphant for productivity and learning workflows",
-    "version": "1.0.9"
+    "version": "1.0.10"
   },
   "plugins": [
     {
@@ -176,6 +176,25 @@
         "harness",
         "developer-experience",
         "demo"
+      ],
+      "category": "development",
+      "license": "MIT"
+    },
+    {
+      "name": "agent-skills",
+      "source": "./plugins/agent-skills",
+      "description": "Small, composable workflow skills for coding agents: docs-first discipline, autonomous execution, cross-agent watchdog and plan arbitration, efficient model orchestration, clear status recaps, usage-limit awareness, and local self-contained HTML visual plan/recap modes.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Joshua Oliphant"
+      },
+      "keywords": [
+        "skills",
+        "agent-workflows",
+        "planning",
+        "code-review",
+        "orchestration",
+        "developer-productivity"
       ],
       "category": "development",
       "license": "MIT"

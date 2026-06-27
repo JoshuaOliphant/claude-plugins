@@ -1,0 +1,16 @@
+{
+  "name": "agent-skills",
+  "version": "0.1.0",
+  "description": "Small, composable workflow skills for coding agents: docs-first discipline, autonomous execution, cross-agent watchdog and plan arbitration, efficient model orchestration, clear status recaps, usage-limit awareness, and local self-contained HTML visual plan/recap modes.",
+  "author": {
+    "name": "Joshua Oliphant"
+  },
+  "keywords": [
+    "skills",
+    "agent-workflows",
+    "planning",
+    "code-review",
+    "orchestration",
+    "developer-productivity"
+  ]
+}
