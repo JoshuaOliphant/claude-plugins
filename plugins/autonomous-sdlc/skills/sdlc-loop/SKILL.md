@@ -200,6 +200,20 @@ You do not ask the human questions mid-loop. When you hit ambiguity — naming, 
 placement, an underspecified AC, conflict-resolution intent, library choice — pick the
 most reasonable option by project convention and record it:
 
+**This supersedes default caution gates, for this scope only.** Running `/sdlc` is
+itself the user's standing, up-front authorization for the loop's routine work on
+`feature/{slug}` — including editing or rewriting existing code and changing business
+logic when a task calls for it, committing, and pushing the feature branch — without
+per-action confirmation. A user's own CLAUDE.md may separately list "rewriting existing
+code" or "changing core business logic" among actions that normally require asking; that
+default exists for *unscoped* work, where the human hasn't already pre-approved the
+change. Explicitly invoking `/sdlc` with a request is the pre-approval — the same
+standing-authorization pattern CLAUDE.md itself grants for git worktree lifecycle
+management (one durable instruction satisfies an "ask first" gate, rather than asking
+every time). It does **not** extend to `main`/`master`, force-pushes, history rewrites,
+credentials, or anything on the Escalate list below — those stay gated exactly as
+CLAUDE.md specifies, and always route through `transition BLOCKED`, never a question.
+
 ```bash
 python3 $STATE decide --decision "what you chose" --why "one-line rationale"
 ```
