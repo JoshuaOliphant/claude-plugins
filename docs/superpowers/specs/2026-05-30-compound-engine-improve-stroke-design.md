@@ -230,3 +230,18 @@ the unifying story.
   *output*. If promote mines `wiki/theses/` into `CLAUDE.md` while `wiki-ingest` keeps
   synthesizing the wiki, ensure the two don't double-synthesize or feed back on each other
   (e.g. promote reads theses but never writes them; only `wiki-ingest` writes the wiki).
+- **Eval-oracle gate for the improve stroke.** The improve stroke (compound-graduate)
+  currently has no way to verify that a promoted skill/pattern actually moved capability,
+  only that decomposition/promotion happened. A 2026-06-20 AINews-reported paper found that
+  clustering trajectories into high-purity skills via automated SKILL.md generation did not
+  reliably transfer to capability gains: skill-step accuracy improved only modestly (18.5% to
+  20.5%) and a broader benchmark (BrowseComp+) stayed flat. Good decomposition is not the
+  same as useful capability transfer. Before compound-graduate feeds a promoted pattern back
+  into plugins or CLAUDE.md, the improve stroke needs an explicit eval-oracle requirement,
+  some check that the promoted skill measurably moves capability, not just that it was
+  cleanly decomposed and written up. This satisfies the Oracle clause every loop in the
+  second_brain vault's loop contract (`.claude/rules/loops.md`) already requires: a generator
+  should not grade itself. Source: second_brain vault,
+  `journal/2026/06-june/week-24/2026-06-21.md` (signal-proposer entry, 15:08), graduated from
+  the week-26 harvest ripe-ideas list (`journal/2026/06-june/week-26/weekly-plan.md`) on
+  2026-07-06.
