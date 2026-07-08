@@ -1,10 +1,24 @@
 # Meta-Agent Search over Plugin Workflows (ADAS applied to oliphant-plugins)
 
 **Status**: Proposed design (not yet implemented)
-**Prompted by**: Automated Design of Agentic Systems (ADAS; Hu et al. 2025) — "meta-agent
-search", where a meta-agent proposes new agentic workflow designs, evaluates them, and
-archives the winners. Workflow design is a search problem; we should be able to find good
-designs by algorithm, not only by hand.
+**Prompted by**: two papers that formulate workflow design as a search problem —
+findable by algorithm, not only crafted by hand:
+
+- **ADAS** — Automated Design of Agentic Systems (Hu et al., arXiv 2408.08435):
+  "meta-agent search", where a meta-agent proposes new agentic workflow designs in code,
+  self-refines them for novelty and correctness, evaluates them, and grows an archive of
+  discoveries that seeds future proposals.
+- **AFlow** — Automating Agentic Workflow Generation (Zhang et al., arXiv 2410.10762,
+  ICLR 2025): reformulates the same problem as MCTS over code-represented workflows
+  (LLM-invoking nodes connected by edges), made sample-efficient by a small library of
+  reusable **operators**, per-node **experience backpropagation** ("this modification
+  helped / didn't"), soft mixed-probability selection, and execution feedback. Headline
+  result: searched workflows let much cheaper models beat GPT-4o at ~4.5% of its
+  inference cost.
+
+This design takes ADAS's outer shape (archive + meta-agent + self-refine) and grafts on
+AFlow's sample-efficiency mechanisms (operators, experience backprop, convergence stop),
+noted inline where each applies.
 
 ## 1. Thesis
 
@@ -58,7 +72,9 @@ meta/
 │   └── {candidate-id}/
 │       ├── genome/                  # the mutated files (mirror of plugin-relative paths)
 │       └── meta.json                # idea description, lineage, fitness per eval,
-│                                    # dev vs holdout scores, tokens spent
+│                                    # dev vs holdout scores, tokens spent, and the
+│                                    # experience record: which operator/modification
+│                                    # was applied to the parent and the fitness delta
 └── benchmarks/                      # tier-3 only: task suite definitions
 ```
 
@@ -70,8 +86,30 @@ Seeded with:
   diverse inspiration.
 
 Following ADAS, every candidate that passes the gates is archived *with its scores* —
-selection pressure is applied at proposal time (inspiration is sampled weighted by
-fitness), not by discarding losers. Failed ideas are cheap negative examples.
+selection pressure is applied at proposal time, not by discarding losers. Failed ideas
+are cheap negative examples. Selection uses AFlow's soft mix of a uniform distribution
+and score-weighted probability, rather than pure fitness-weighting — pure exploitation
+collapses the search onto one lineage early, which is exactly what the population
+buys us over autoloop's hill-climbing.
+
+### 3.1a Operators: constraining the mutation space (from AFlow)
+
+Free-form mutation wastes most samples on noise. AFlow's answer is a small library of
+named operators — meaningful, composable moves — and the optimizer mostly picks and
+wires operators rather than inventing from scratch. Per tier, ours would look like:
+
+| Tier | Example operators |
+|---|---|
+| 1 — descriptions | `add-trigger-phrases`, `add-negative-scope` ("do NOT use for…"), `state-semantic-scope` (describe the job, not keywords), `tighten-persona`, `shorten` |
+| 3 — SDLC workflow | `insert-state` (e.g. CRITIQUE between PLAN and BUILD), `merge-states`, `add-retry-edge` (REPAIR retries N before BLOCKED), `ensemble-verify` (run VERIFY twice, require agreement), `reorder-gates`, `rewrite-agent-prompt`, `downgrade-model` (see §3.4) |
+
+Each candidate's `meta.json` records which operator(s) it applied to its parent and the
+resulting fitness delta — AFlow's experience backpropagation. The proposal step reads
+its parents' experience records, so "adding trigger phrases stopped helping three
+generations ago" is visible context, not rediscovered by burning evaluations. The
+meta-agent may still propose an off-library mutation (ADAS's open-endedness), but must
+label it as such; operators that repeatedly produce positive deltas earn a place in the
+library.
 
 ### 3.2 The meta-agent loop
 
@@ -90,7 +128,10 @@ One iteration, mapping ADAS steps onto Claude Code mechanics:
      must call built-in skills, `/goal` stays user-only)?
 5. **Evaluate**: run the immutable runner (gates → fitness eval → `METRIC` lines).
 6. **Archive**: append to `index.jsonl` with scores; `git commit` the candidate dir.
-7. Repeat until `--max-iterations` or token budget.
+7. Repeat until `--max-iterations`, the token budget, or convergence — AFlow-style
+   early stop when the top-k of the archive hasn't changed for N consecutive
+   iterations. On a small eval set, a search that has stopped finding wins is done,
+   not warming up.
 
 This is autoloop's seven components with two deliberate deviations, which is why it is a
 sibling protocol rather than a stock autoloop `program.md`:
@@ -138,13 +179,22 @@ the full loop in a disposable git worktree (reuse `hooks/scripts/worktree-create
 `worktree-remove.sh`), headless, with a hard iteration ceiling and token budget.
 
 ```
-fitness = w1·success_rate − w2·norm(tokens) − w3·norm(wallclock)
+fitness = w1·success_rate − w2·norm(cost) − w3·norm(wallclock)
 secondary (tracked, not optimized): diff size, test count delta, BLOCKED rate
 ```
 
-This is the true ADAS regime and the expensive one — hours per candidate. It is phase 3
-for a reason: the tier-1 pilot debugs the archive/meta-agent/runner machinery for cents
-before any candidate costs hours.
+Note `cost`, not `tokens`: AFlow's most striking result is not raw accuracy but
+accuracy-per-dollar — searched workflows let far cheaper models beat GPT-4o at ~4.5%
+of its cost. That translates here into a concrete, falsifiable search objective:
+**Architect and Builder are both pinned to Opus today. Can a searched workflow variant
+running them on Sonnet (or Haiku Builder + Sonnet Architect) match the incumbent's
+success rate?** `downgrade-model` is therefore a first-class operator, and cost is
+dollar-weighted so a Sonnet win at equal success rate scores strictly higher than the
+Opus incumbent. This is the single most likely place the search pays for itself.
+
+This is the true meta-search regime and the expensive one — hours per candidate. It is
+phase 3 for a reason: the tier-1 pilot debugs the archive/meta-agent/runner machinery
+for cents before any candidate costs hours.
 
 ## 4. Goodhart defenses
 
@@ -200,8 +250,9 @@ but should not be attempted until phases 1–2 have shaken out the archive mecha
   there is none, the move is *growing the eval set* (also a candidate meta-agent task,
   but adversarially — one agent proposes hard cases, the fitness judge stays frozen).
 - **Tier-3 nondeterminism.** Agentic runs are noisy; one benchmark run per candidate
-  will mis-rank. Budget ≥2 runs per candidate and rank on mean; accept that tier 3 is
-  a coarse signal.
+  will mis-rank. AFlow evaluates each candidate ~5 times on validation; we should
+  budget ≥2–3 runs per candidate and rank on mean, and accept that tier 3 is a coarse
+  signal either way.
 - **Cost ceiling.** The loop must carry a hard token budget per run (autoloop's time
   budget generalizes); tier 3 especially, where a pathological candidate can loop in
   REPAIR. The benchmark harness kills a candidate at N iterations and scores it failed.
