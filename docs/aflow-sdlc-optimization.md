@@ -3,7 +3,10 @@
 
 # Learning From Every Run: Feeding SDLC Traces Back Into the Skill
 
-**Status**: Proposed design (not yet implemented)
+**Status**: Proof of concept implemented in autonomous-sdlc v2.4.0 — capture + score
+(`sdlc_state.py score` / archive-on-terminal-transition), retro tooling
+(`sdlc_retro.py digest|mark`), and the `/sdlc-retro` skill. The measure loop (§6)
+activates once real ledger data accumulates.
 **Target**: autonomous-sdlc (post-v2.1)
 **Companion**: `docs/sdlc-loop-redesign.md` (the loop being improved),
 `docs/compound-engineering-roadmap.md` (this is the "compound" step applied to the loop itself)

@@ -5,7 +5,7 @@ description: >
   what one unit of work the current state requires, how to verify it, and which
   transition to record. Trigger: an active `.sdlc/state.json` exists, or the /sdlc
   command invokes it. Not for ad-hoc use outside a loop.
-version: 2.1.0
+version: 2.2.0
 effort: high
 allowed-tools:
   - Bash
@@ -180,8 +180,12 @@ Push the branch (`git push -u origin feature/{slug}`). Create the PR yourself
 (`gh pr create` / `glab mr create`) with: summary from the plan doc, AC checklist from
 the spec, and a **"Decisions made autonomously"** section rendered from
 `.sdlc/decisions.jsonl`. Append the PR URL to `.sdlc/progress.md`. `transition DONE
---reason "<pr-url>"`. Optionally suggest the built-in **loop** skill to the user for PR
-babysitting (`/loop 10m check PR CI and address review comments`). Auth failures
+--reason "<pr-url>"` — the terminal transition automatically archives the run's trace
+and score to `~/.claude/autonomous-sdlc/` (the /sdlc-retro ledger; BLOCKED archives
+too). Optionally suggest the built-in **loop** skill to the user for PR
+babysitting (`/loop 10m check PR CI and address review comments`), and if
+`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/sdlc_retro.py digest` shows 10+ runs since the
+last retro, suggest `/sdlc-retro` in your final summary. Auth failures
 escalate — never store or guess credentials.
 
 ### REPAIR (→ BUILD | VERIFY)

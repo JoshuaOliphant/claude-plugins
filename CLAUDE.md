@@ -41,7 +41,7 @@ Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json` (the
 | Plugin | Purpose | Notable pieces |
 |---|---|---|
 | **mochi-creator** | Create cognitive-science-based flashcards via the Mochi API | `scripts/mochi_api.py` (module + CLI), prompt-quality validation, knowledge-type references |
-| **autonomous-sdlc** | Autonomous SDLC as a state machine on disk driven by a loop | `sdlc-loop` skill + `sdlc_state.py` state CLI, 6 skills, 2 subagents (Architect/Builder), loop Stop hook + denylisted auto-approve |
+| **autonomous-sdlc** | Autonomous SDLC as a state machine on disk driven by a loop | `sdlc-loop` skill + `sdlc_state.py` state CLI, 7 skills, 2 subagents (Architect/Builder), loop Stop hook + denylisted auto-approve, scored run ledger + `/sdlc-retro` |
 | **hexagonal-agents** | Web apps where an agent generates HTML UI | Ports-and-adapters arch, MCP tools, Claude Agent SDK, extensive `references/` |
 | **compound-knowledge** | Institutional memory: capture → retrieve → graduate | YAML-frontmatter solution files, grep-based retrieval, `knowledge-researcher` subagent |
 | **autoloop** | Generate Karpathy-style optimization loops | Produces `program.md` + immutable `auto/run.sh`, `codebase-scout` subagent |
