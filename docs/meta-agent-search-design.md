@@ -1,6 +1,7 @@
 # Meta-Agent Search over Plugin Workflows (ADAS applied to oliphant-plugins)
 
-**Status**: Proposed design (not yet implemented)
+**Status**: Phases 1–2 implemented as a proof of concept (`evals/run_trigger_eval.py` +
+`meta/`); see §8 for first results. Phases 3–4 remain proposed.
 **Prompted by**: two papers that formulate workflow design as a search problem —
 findable by algorithm, not only crafted by hand:
 
@@ -259,3 +260,32 @@ but should not be attempted until phases 1–2 have shaken out the archive mecha
 - **Scope of mutation.** Letting the meta-agent touch `hooks/scripts/*.sh` (tier 3)
   means candidate code executes with real permissions during evaluation. Start with
   prompts + state graph only; hook-script mutation needs a sandbox story first.
+
+## 8. Proof-of-concept results (phases 1–2)
+
+Implemented: `evals/run_trigger_eval.py` (haiku judge via the `claude` CLI, batched;
+deterministic hash-based dev/holdout split; balanced accuracy + separate FP rate;
+`METRIC` output) and the `meta/` harness (`program.md` loop protocol, immutable
+`auto/run.sh`, archive). One search iteration was run by hand to validate the loop
+end-to-end. Notes:
+
+- **`verification-stack-eval.json` is orphaned** — it targeted the skill removed by
+  the v2 loop redesign, so it is unmapped (8 of 9 fixtures map to live skills).
+- **Baseline (candidate-000)**: 4 of 8 descriptions are already saturated at dev 1.0
+  (bdd-spec, tdd-workflow, compound-capture, hexagonal-agents) — for those, the next
+  move is growing the eval sets, not search. Headroom: beads-workflow .833,
+  compound-retrieve .850, bdd-generate .917, mochi-creator .929 (the only skill with
+  dev false positives — over-triggering, the costlier failure mode).
+- **First searched candidate (candidate-001)**: target beads-workflow, operator
+  `add-trigger-phrases`. The incumbent covered issue CRUD but not the rest of the bd
+  lifecycle; adding the missing surfaces (bd stats / project health, bd sync / dolt
+  remote sharing, ready/unblocked-work phrasing) took **dev .833 → 1.0 and holdout
+  .875 → 1.0** with FP rate still 0. The holdout jump says the win is real, not dev
+  overfit. Guardrail cost: description grew 56 → 99 words.
+- Judge cost/latency: ~6–15 s per batched haiku call, 2–3 calls per skill per
+  evaluation — a full 8-skill baseline in ~5 minutes, one candidate in ~30 s.
+
+Caveats, per §7: the eval sets are small (20 cases), the judge simulates rather than
+reproduces the real trigger router, and a single 20-case fixture saturates quickly —
+candidate-001 should be spot-checked in a live session before being promoted to
+`plugins/` (which stays a human-reviewed PR, not an auto-merge).
