@@ -285,6 +285,140 @@ def test_resume_preserves_existing_review_block(tmp_path):
     assert after == before
 
 
+# --- Run capture + scoring (the /sdlc-retro ledger) -------------------------
+
+
+def _terminal_via_transition(tmp_path, target, reason):
+    """Drive the state to `target` through cmd_transition (legal edge required)."""
+    _run(tmp_path, sdlc_state.cmd_transition, target=target, reason=reason)
+
+
+def test_score_reflects_outcome_and_rework(tmp_path):
+    _init(tmp_path)
+    s = _read_state(tmp_path)
+    s["state"] = "DONE"
+    s["iteration"] = 12
+    s["attempts"] = {"bd-1": 1, "bd-2": 2, "bd-3": 4, "bd-4": 1}  # bd-3 exceeded
+    s["history"] = [
+        {"at": "t", "to": st, "reason": "r"}
+        for st in [
+            "INIT", "SPEC", "PLAN", "BUILD", "VERIFY", "BUILD",  # verify bounce
+            "VERIFY", "REVIEW", "BUILD", "VERIFY", "REVIEW",     # review roundtrip
+            "SHIP", "DONE",
+        ]
+    ]
+    _write_state(tmp_path, s)
+    metrics = sdlc_state.compute_score(_read_state(tmp_path))
+    assert metrics["outcome"] == "DONE"
+    assert metrics["rework"] == {
+        "verify_bounces": 1,
+        "review_roundtrips": 1,
+        "replans": 0,
+        "repairs": 0,
+    }
+    assert metrics["tasks_attempted"] == 4
+    assert metrics["attempts_exceeded"] == 1
+    # 12 iterations / 4 tasks = 3.0/task → full efficiency; 2/12 backward edges.
+    assert 0.0 < metrics["score"] <= 1.0
+    blocked = dict(s, state="BLOCKED")
+    assert sdlc_state.compute_score(blocked)["score"] < metrics["score"], (
+        "outcome must dominate: same trace but BLOCKED scores lower"
+    )
+
+
+def test_terminal_transition_archives_run(tmp_path):
+    archive_root = tmp_path / "archive-root"
+    os.environ["SDLC_RUNS_DIR"] = str(archive_root)
+    try:
+        _init(tmp_path, _feature="cart")
+        s = _read_state(tmp_path)
+        s["state"] = "SHIP"
+        _write_state(tmp_path, s)
+        (tmp_path / ".sdlc" / "signs.md").write_text("# Signs\n- Sign: check first\n")
+        _terminal_via_transition(tmp_path, "DONE", "https://example.com/pr/1")
+
+        ledger = (archive_root / "runs.jsonl").read_text().splitlines()
+        assert len(ledger) == 1
+        record = json.loads(ledger[0])
+        assert record["feature"] == "cart"
+        assert record["outcome"] == "DONE"
+        assert record["terminal_reason"] == "https://example.com/pr/1"
+        assert record["signs_active"] == 1  # header line not counted
+        assert record["plugin_version"] not in ("", None)
+        run_dir = Path(record["archive"])
+        assert (run_dir / "state.json").exists()
+        assert (run_dir / "signs.md").exists()
+        # The archived state is the terminal one, not a stale pre-save copy.
+        assert json.loads((run_dir / "state.json").read_text())["state"] == "DONE"
+    finally:
+        del os.environ["SDLC_RUNS_DIR"]
+
+
+def test_forced_block_archives_run(tmp_path):
+    # Budget force-blocks go through block(), not cmd_transition — the most
+    # informative runs (failures) must be captured too.
+    archive_root = tmp_path / "archive-root"
+    os.environ["SDLC_RUNS_DIR"] = str(archive_root)
+    try:
+        _init(tmp_path)
+        s = _read_state(tmp_path)
+        s["state"] = "BUILD"
+        s["iteration"] = 50  # at the budget; next tick exceeds it
+        s["last_progress_iteration"] = 50
+        _write_state(tmp_path, s)
+        import pytest
+
+        with pytest.raises(SystemExit):
+            _run(tmp_path, sdlc_state.cmd_tick, waiting=False)
+        record = json.loads((archive_root / "runs.jsonl").read_text().splitlines()[0])
+        assert record["outcome"] == "BLOCKED"
+        assert "max_iterations" in record["terminal_reason"]
+        assert record["score"] < 0.5  # BLOCKED forfeits the outcome half
+    finally:
+        del os.environ["SDLC_RUNS_DIR"]
+
+
+def test_archive_failure_never_breaks_the_transition(tmp_path):
+    # Point the archive root at a *file* so mkdir fails: the transition must
+    # still land (archive is best-effort by design).
+    poison = tmp_path / "not-a-dir"
+    poison.write_text("occupied")
+    os.environ["SDLC_RUNS_DIR"] = str(poison)
+    try:
+        _init(tmp_path)
+        s = _read_state(tmp_path)
+        s["state"] = "SHIP"
+        _write_state(tmp_path, s)
+        _terminal_via_transition(tmp_path, "DONE", "pr")
+        assert _read_state(tmp_path)["state"] == "DONE"
+    finally:
+        del os.environ["SDLC_RUNS_DIR"]
+
+
+def test_score_only_sees_current_increment(tmp_path):
+    # A messy increment 1 must not drag down increment 2's score: the trace
+    # window starts at the latest INIT entry.
+    _init(tmp_path)
+    s = _read_state(tmp_path)
+    s["history"] = [
+        {"at": "t", "to": st, "reason": "r"}
+        for st in ["INIT", "SPEC", "PLAN", "BUILD", "VERIFY", "BUILD", "VERIFY",
+                   "REVIEW", "BUILD", "VERIFY", "REVIEW", "SHIP", "DONE"]
+    ]
+    _write_state(tmp_path, s)
+    _run(tmp_path, sdlc_state.cmd_increment, feature="phase2", request="more")
+    s = _read_state(tmp_path)
+    s["state"] = "DONE"
+    _write_state(tmp_path, s)
+    metrics = sdlc_state.compute_score(_read_state(tmp_path))
+    assert metrics["rework"] == {
+        "verify_bounces": 0,
+        "review_roundtrips": 0,
+        "replans": 0,
+        "repairs": 0,
+    }
+
+
 if __name__ == "__main__":
     # Minimal fallback runner so the suite works without pytest installed.
     import tempfile
@@ -303,8 +437,12 @@ if __name__ == "__main__":
         test_init_on_done_with_new_feature_auto_increments,
         test_init_on_done_same_feature_just_resumes,
         test_init_on_in_progress_does_not_increment,
+        test_score_reflects_outcome_and_rework,
+        test_terminal_transition_archives_run,
+        test_archive_failure_never_breaks_the_transition,
+        test_score_only_sees_current_increment,
     ]
-    # The pytest.raises test needs pytest; skip it in fallback mode.
+    # The pytest.raises tests need pytest; skip them in fallback mode.
     failures = 0
     for t in tests:
         with tempfile.TemporaryDirectory() as d:

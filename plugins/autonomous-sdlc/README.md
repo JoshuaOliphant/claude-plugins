@@ -102,6 +102,7 @@ worktree isolation. PR creation is one `gh pr create` call.
 | `/autonomous-sdlc:sdlc-status` | Render `.sdlc/state.json` + progress |
 | `/autonomous-sdlc:sdlc-cancel` | Transition to BLOCKED(cancelled); state kept for resume |
 | `/autonomous-sdlc:prime` | Orient to a codebase (outside the loop) |
+| `/autonomous-sdlc:sdlc-retro` | Retro over the run ledger — propose skill improvements as a reviewable PR |
 
 ## Skills
 
@@ -113,6 +114,7 @@ worktree isolation. PR creation is one `gh pr create` call.
 | `tdd-workflow` | Red-green-refactor inner loop |
 | `beads-workflow` | Beads task graph — the loop's work queue (`bd ready` is the wave) |
 | `feedback` | Cross-session preferences + graduation target for loop signs |
+| `sdlc-retro` | Mine archived run traces for cross-run patterns; deliver grounded, human-reviewed improvement proposals |
 
 ## State Files (in the target project)
 
@@ -129,7 +131,13 @@ specs/{slug}-plan.md  # architect plan
 
 `python3 scripts/sdlc_state.py --help` documents the state CLI (init, tick [--waiting],
 transition, increment, task [--done], attempt, decide, note-progress, set-budget,
-set-driver, status, state).
+set-driver, status, state, score).
+
+Every run that reaches DONE or BLOCKED is automatically archived — trace files plus a
+scored ledger line — to the user-level `~/.claude/autonomous-sdlc/` (override:
+`SDLC_RUNS_DIR`), so the loop learns across projects instead of discarding its history.
+`scripts/sdlc_retro.py digest` aggregates the ledger for `/sdlc-retro`; design:
+[`docs/aflow-sdlc-optimization.md`](../../docs/aflow-sdlc-optimization.md).
 
 ## Composes With (soft dependencies — skipped silently when absent)
 
@@ -188,7 +196,23 @@ BUILD. A blank `--reviewers` value falls back to the default so the gate is neve
 
 ## Version History
 
-### v2.3.0 (Current)
+### v2.4.0 (Current)
+- **Run capture + scoring (the retro ledger)**: every terminal run (DONE *and* BLOCKED,
+  including budget force-blocks) archives its full trace (`state.json` history,
+  `decisions.jsonl`, `progress.md`, `signs.md`, `escalation.md`) to
+  `~/.claude/autonomous-sdlc/runs/` with a composite-scored line in `runs.jsonl`
+  (outcome, efficiency, rework rate, autonomy; `plugin_version` attributes scores to the
+  skill version that produced them). New `score` subcommand; archiving is best-effort and
+  can never break a transition.
+- **`/sdlc-retro` + `sdlc-retro` skill**: periodic, human-invoked retrospective — grade
+  the previous retro by comparing per-version score windows (pessimistic, min-n gated),
+  mine the worst runs for cross-run patterns, and deliver ≤5 grounded proposals (own
+  commit each) as a PR in author mode or feedback entries in consumer mode. Backed by
+  `scripts/sdlc_retro.py` (`digest`/`mark`). The retro proposes; the human merges.
+- Design note: `docs/aflow-sdlc-optimization.md` (AFlow's score/ledger/expand/keep loop,
+  amortized over real runs).
+
+### v2.3.0
 - **Next-increment lifecycle** (the loop is no longer single-use per project): a finished
   (`DONE`) session re-invoked with a new feature now starts increment 2 instead of silently
   resuming `DONE` and dropping the request. New `increment` subcommand archives the finished

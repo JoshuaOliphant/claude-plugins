@@ -29,6 +29,8 @@ Usage:
 
 import argparse
 import json
+import os
+import shutil
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -37,6 +39,8 @@ SDLC_DIR = Path(".sdlc")
 STATE_FILE = SDLC_DIR / "state.json"
 DECISIONS_FILE = SDLC_DIR / "decisions.jsonl"
 PROGRESS_FILE = SDLC_DIR / "progress.md"
+SIGNS_FILE = SDLC_DIR / "signs.md"
+ESCALATION_FILE = SDLC_DIR / "escalation.md"
 
 STATES = [
     "INIT",
@@ -104,6 +108,141 @@ def build_review_config(reviewers: str | None, mode: str | None) -> dict:
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+# --- Run capture + scoring (docs/aflow-sdlc-optimization.md §§3-4) ------------
+#
+# Every run that reaches a terminal state (DONE or BLOCKED, including budget
+# force-blocks) archives its full trace to a durable user-level ledger instead
+# of throwing it away. The ledger is what /sdlc-retro periodically mines to
+# propose improvements to the skill itself.
+
+# v1 heuristic: a task typically costs ~3 iterations (build + its share of
+# verify/review). Tune only after sanity-checking a dozen real ledger records
+# against human judgment of "that run went well".
+BASELINE_ITERATIONS_PER_TASK = 3.0
+
+
+def runs_root() -> Path:
+    """User-level, cross-project archive. SDLC_RUNS_DIR overrides (tests)."""
+    env = os.environ.get("SDLC_RUNS_DIR")
+    return Path(env) if env else Path.home() / ".claude" / "autonomous-sdlc"
+
+
+def plugin_version() -> str:
+    """The installed plugin's version — attributes ledger scores to the exact
+    skill version that produced them, so a retro can measure its predecessor."""
+    manifest = Path(__file__).resolve().parent.parent / ".claude-plugin" / "plugin.json"
+    try:
+        return json.loads(manifest.read_text())["version"]
+    except (OSError, ValueError, KeyError):
+        return "unknown"
+
+
+def current_increment_history(state: dict) -> list[dict]:
+    """History entries for the current increment: from its INIT entry on.
+    Earlier increments were archived at their own terminal transition."""
+    hist = state["history"]
+    start = 0
+    for i, h in enumerate(hist):
+        if h["to"] == "INIT":
+            start = i
+    return hist[start:]
+
+
+def compute_score(state: dict) -> dict:
+    """Composite run score from the transition trace. Weights per the design
+    note: outcome dominates; efficiency, rework, and autonomy split the rest."""
+    states = [h["to"] for h in current_increment_history(state)]
+    pairs = list(zip(states, states[1:]))
+    rework = {
+        "verify_bounces": pairs.count(("VERIFY", "BUILD")),
+        "review_roundtrips": pairs.count(("REVIEW", "BUILD")),
+        "replans": pairs.count(("PLAN", "PLAN")),
+        "repairs": states.count("REPAIR"),
+    }
+    rework_rate = min(sum(rework.values()) / max(len(pairs), 1), 1.0)
+
+    attempts = state.get("attempts", {})
+    tasks = max(len(attempts), 1)
+    limit = state["budgets"]["max_attempts_per_task"]
+    attempts_exceeded = sum(1 for n in attempts.values() if n > limit)
+
+    iterations = state.get("iteration", 0)
+    per_task = iterations / tasks
+    efficiency = (
+        1.0
+        if per_task <= BASELINE_ITERATIONS_PER_TASK
+        else BASELINE_ITERATIONS_PER_TASK / per_task
+    )
+    outcome = 1.0 if state["state"] == "DONE" else 0.0
+    autonomy = 1.0 - min(attempts_exceeded / tasks, 1.0)
+    score = (
+        0.5 * outcome
+        + 0.2 * efficiency
+        + 0.2 * (1.0 - rework_rate)
+        + 0.1 * autonomy
+    )
+    return {
+        "score": round(score, 3),
+        "outcome": state["state"],
+        "iterations": iterations,
+        "tasks_attempted": len(attempts),
+        "attempts_exceeded": attempts_exceeded,
+        "rework": rework,
+        "rework_rate": round(rework_rate, 3),
+        "wait_ticks": state.get("wait_ticks", 0),
+    }
+
+
+def archive_run(state: dict, reason: str) -> None:
+    """Copy the run's trace files into the archive and append a ledger line.
+
+    Best-effort by design: the terminal transition must succeed even when
+    archiving cannot (read-only home, weird cwd), so failures only warn.
+    """
+    try:
+        root = runs_root()
+        stamp = now().replace(":", "-").replace("+00-00", "Z")
+        slug = f"{stamp}_{Path.cwd().name}_{state['feature']}".replace("/", "-")
+        run_dir = root / "runs" / slug
+        suffix = 1
+        while run_dir.exists():
+            suffix += 1
+            run_dir = root / "runs" / f"{slug}-{suffix}"
+        run_dir.mkdir(parents=True)
+        for f in (STATE_FILE, DECISIONS_FILE, PROGRESS_FILE, SIGNS_FILE, ESCALATION_FILE):
+            if f.exists():
+                shutil.copy2(f, run_dir / f.name)
+        signs_active = 0
+        if SIGNS_FILE.exists():
+            signs_active = sum(
+                1
+                for line in SIGNS_FILE.read_text().splitlines()
+                if line.strip() and not line.lstrip().startswith("#")
+            )
+        decisions = (
+            len(DECISIONS_FILE.read_text().splitlines())
+            if DECISIONS_FILE.exists()
+            else 0
+        )
+        record = {
+            "at": now(),
+            "repo": Path.cwd().name,
+            "feature": state["feature"],
+            "cycle": state.get("cycle", 1),
+            "plugin_version": plugin_version(),
+            "terminal_reason": reason,
+            "decisions": decisions,
+            "signs_active": signs_active,
+            "archive": str(run_dir),
+            **compute_score(state),
+        }
+        with (root / "runs.jsonl").open("a") as f:
+            f.write(json.dumps(record) + "\n")
+        print(f"ARCHIVED {run_dir}")
+    except Exception as e:  # noqa: BLE001 — never let archiving break the loop
+        print(f"WARN archive failed: {e}", file=sys.stderr)
 
 
 def load() -> dict:
@@ -222,6 +361,7 @@ def block(state: dict, reason: str) -> None:
     state["state"] = "BLOCKED"
     save(state)
     append_progress(f"BLOCKED: {reason}")
+    archive_run(state, reason)
     print(f"BLOCKED {reason}")
 
 
@@ -323,6 +463,8 @@ def cmd_transition(args: argparse.Namespace) -> None:
     s["last_progress_iteration"] = s["iteration"]
     save(s)
     append_progress(f"→ {target}: {args.reason}")
+    if target in ("DONE", "BLOCKED"):
+        archive_run(s, args.reason)
     print(f"OK {target}")
 
 
@@ -394,6 +536,10 @@ def cmd_set_driver(args: argparse.Namespace) -> None:
     s["driver"] = args.driver
     save(s)
     print(f"OK driver={args.driver}")
+
+
+def cmd_score(_args: argparse.Namespace) -> None:
+    print(json.dumps(compute_score(load()), indent=2))
 
 
 def cmd_note_progress(args: argparse.Namespace) -> None:
@@ -489,6 +635,10 @@ def main() -> None:
     sp = sub.add_parser("note-progress", help="record progress (resets idle counter)")
     sp.add_argument("--what", required=True)
     sp.set_defaults(func=cmd_note_progress)
+
+    sub.add_parser(
+        "score", help="composite run score computed from the transition trace"
+    ).set_defaults(func=cmd_score)
 
     args = p.parse_args()
     args.func(args)
