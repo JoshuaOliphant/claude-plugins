@@ -1,0 +1,21 @@
+{
+  "id": "candidate-001",
+  "skill": "beads-workflow",
+  "parents": [
+    "candidate-000"
+  ],
+  "operator": "add-trigger-phrases",
+  "idea": "Parent candidate-000 (incumbent). The incumbent's trigger list covers create/update/close but not the rest of the bd lifecycle; dev misses cluster on project-health (bd stats) and sharing the issue database (bd sync / dolt remote). Add those surfaces plus 'ready/unblocked work' phrasing, keeping the MUST-use framing. Differs from candidate-000 by covering the full bd command lifecycle rather than only issue CRUD. Feasibility-checked: the skill body documents bd stats and bd sync.",
+  "judge": "claude-haiku-4-5-20251001",
+  "scores": {
+    "dev": 1.0,
+    "holdout": 1.0,
+    "dev_fp_rate": 0.0,
+    "desc_words": 99
+  },
+  "delta_vs_parent": {
+    "dev": 0.1667,
+    "holdout": 0.125
+  },
+  "experience": "Enumerating the missing lifecycle surfaces (stats, sync/dolt, ready-work) closed all dev misses and generalized to holdout; cost is description growth 56->99 words - a shorten pass is the natural next probe if this were continued."
+}
