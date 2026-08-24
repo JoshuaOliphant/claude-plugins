@@ -105,7 +105,7 @@ Knowledge bases are registered when:
 
 ```markdown
 ### second-brain
-- **path**: ~/Dropbox/python_workspace/second_brain/knowledge/solutions/
+- **path**: ~/dev/python_workspace/second_brain/knowledge/solutions/
 - **last_updated**: 2026-02-15
 - **solution_count**: 69
 - **primary_components**: [kubernetes, docker, mcp, claude-code, fastapi]
