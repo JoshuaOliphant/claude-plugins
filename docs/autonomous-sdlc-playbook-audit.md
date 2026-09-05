@@ -225,3 +225,62 @@ The slim-down's rationale ("intelligence-compensation that Fable/Opus-class mode
 longer need") and the playbook's ("humans remain accountable for every decision that
 requires judgment") pull in different directions on exactly one point: whether a human
 sees the plan before code exists. The `--gate plan` flag lets both be true.
+
+## Part 2: built-ins the plugin should use instead of its own (2026-09-05)
+
+Second pass, this time against the current Claude Code docs rather than the playbook.
+Sources: the docs fetched on 2026-09-05 (plugins reference, scheduled tasks, memory,
+hooks reference, skills, workflows, channels) plus the tool surface visible in a live
+v2.1.24x session. Two items could not be fully confirmed and are marked as such.
+
+### Two assumptions in the plugin are now wrong
+
+**The VERIFY state calls a skill the loop cannot invoke.** `skills/sdlc-loop/SKILL.md:128`
+says "the built-in verify skill if available". The bundled `/verify` skill is
+`disable-model-invocation`: the docs say it "runs only when you invoke it", the
+scheduled-tasks page names it as a skill that reaches Claude as plain text when fired,
+and a live session's skill list carries `code-review`, `simplify`, `security-review`
+and `loop` but not `verify`. Every VERIFY iteration falls through to "else the
+project's own stack" today. Fix: drop the `/verify` reference and make the recorded
+`test_command` (Part 1, item 7) the only mechanical check.
+
+**A registered `WorktreeCreate` hook replaces git.** The hooks reference describes the
+event as "Replaces default git behavior" and the contract as printing
+`{"worktree_path": ...}`; any non-zero exit aborts creation. A logging-only hook there
+is not a bug in what it prints, it is the wrong event to log from. v3 Task 6 (print
+nothing) may still leave creation broken. Delete both worktree hooks; `.sdlc/events/`
+loses two log lines nobody reads. I could not retrieve the full section, so if empty
+stdout turns out to be tolerated the deletion is still the smaller change.
+
+### Reinvented wheels, in order of leverage
+
+| # | Plugin piece | Built-in that replaces it | Notes |
+|---|---|---|---|
+| 1 | `loop-stop-hook.sh` wait-aware branch, `tick --waiting`, `max_wait_ticks`, `.hook-blocks` cap, the `/goal` offer | Bare `/loop` with `.claude/loop.md`, and `CronCreate` | `/loop` with no interval is self-paced: Claude picks a delay between one minute and one hour after each iteration via `ScheduleWakeup`, waits longer while builders run, and ends the loop itself with `stop: true`. `.claude/loop.md` is the project-level prompt bare `/loop` runs, so INIT can write the iteration ritual there and the user arms it with two keystrokes. Unlike `/goal`, `CronCreate` is Claude-invocable ("Under the hood, Claude uses these tools"), so `/sdlc` can arm a durable heartbeat itself. Both survive `--resume` for seven days and carry over to a backgrounded session, which keeps running without a terminal. Keep the Stop hook for zero-latency re-entry; delete its pacing logic and the `/goal` pitch. |
+| 2 | `feedback` skill + `feedback_manager.py` (shipped by five plugins, `~/.claude/<plugin>/feedback.yaml`) | Auto memory | Auto memory is on by default, per repository, loaded every session, and has a `feedback` type defined as "corrections you give Claude and approaches you confirm", which is the skill's trigger sentence. Retire the skill across the marketplace (`sync_shared.py` makes it one sweep) and delete every "Step 0: load stored feedback". Cross-project preferences go in `~/.claude/CLAUDE.md` or `~/.claude/rules/`. Caveat: subagents do not load the main session's auto memory; give the Builder `memory: project` like the Architect already has. |
+| 3 | `auto-approve.sh` (PermissionRequest: allow everything, deny a regex list) | Auto permission mode + a `PreToolUse` deny hook with `if` | Auto mode's classifier is now the default interactive mode on Pro/Max/Team and a valid `permissionMode` for agents. The hook's allow branch is redundant there and blanket-approves under manual mode. Keep only the deny branch, as `PreToolUse` with `if: "Bash(git push *)"` (permission-rule syntax, docs-confirmed), which blocks regardless of mode. Plugins cannot ship `permissions.deny`: plugin `settings.json` accepts only `agent` and `subagentStatusLine`, so the README publishes the deny block for users to paste. Switch the Builder from `bypassPermissions` to `auto`. |
+| 4 | Ad hoc "spawn builders in parallel, merge, test" prose in BUILD | Plugin-shipped workflow in `workflows/` | Plugin workflows run as `/autonomous-sdlc:build-wave`, are resumable, keep intermediate results out of the lead's context, and get a per-project "don't ask again" approval. A named plugin workflow does not need the `ultracode` keyword. Headless runs need `Workflow(build-wave)` in allow rules or auto mode. This retires the "on ≥2.1.154 a dynamic workflow may hold that fan-out" hand-wave. |
+| 5 | `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/sdlc_state.py` everywhere, plus the Stop hook's path-resolution dance | `bin/` in the plugin root | Executables in `bin/` are added to PATH, so the CLI becomes `sdlc-state tick`. Removes the class of "unexpanded `${CLAUDE_PLUGIN_ROOT}`" problems the hook comments already complain about. |
+| 6 | Plugin-global hooks in `hooks.json` that check for `.sdlc/` on every event in every project | Hooks in `sdlc-loop`'s skill frontmatter | Skill-frontmatter hooks register when the skill is invoked and stay for the session (`once: true` to fire once). The deny hook and the Part 1 test-lock hook belong here, scoped to sessions that are actually running a loop. |
+| 7 | `--gate plan` via BLOCKED (Part 1, item 4) | Native plan mode on the Architect | `permissionMode: plan` is valid for subagents and `ExitPlanMode` is the approval prompt; with `plansDirectory: specs` (already in the README) the plan lands where the Architect writes today. Headless approval goes through `--permission-prompt-tool`. Use this for the opt-in gate; the autonomous default is unchanged. |
+| 8 | SHIP's "optionally suggest `/loop 10m check PR CI...`" | Bare `/loop`, `/autofix-pr` on the web | The built-in maintenance prompt already does "tend to the current branch's pull request: review comments, failed CI runs, merge conflicts" and stops itself. SHIP prints `/loop` verbatim. Channels (research preview) push CI webhooks into the session instead of polling, which is the Maintain-stage shape from Part 1; not yet worth building on. |
+| 9 | `/prime` command | `/init` and `/context` | `/init` improves an existing CLAUDE.md rather than overwriting it, and with `CLAUDE_CODE_NEW_INIT=1` proposes CLAUDE.md, skills and hooks from a subagent exploration. Retire `/prime`. |
+| 10 | `evals/*.json` and `skills/*/evals/evals.json` fixtures | `claude plugin eval` (v2.1.198+, early access) and `/skill-doctor` | Native suite format is `evals/<case>/prompt.md` plus graders (regex, tool_used, file_exists, llm, baseline), run in isolated `claude -p` sessions, with `--json` for CI. This is the playbook's "evals on agent-config change" play. Migrate when access lands; `/skill-doctor` reports never-invoked skills over seven days, which is the evidence v3 used to retire `bdd-spec`. |
+| 11 | TaskCreate as the Beads fallback | Nothing native fits | Built-in tasks are off by default on Opus 4.8 / Sonnet 5 / Fable 5 unless `CLAUDE_CODE_ENABLE_TODO_TOOLS=1`, and persist under `~/.claude/tasks/`, not git. Drop the fallback and fall back to the plan document's task table, which the Architect already supports. |
+
+### Where hand-rolling is still right
+
+- `.sdlc/state.json`, `history`, `decisions.jsonl`, budgets and no-progress detection. Nothing native holds an ordered, resumable state machine with reasons and timestamps.
+- Git as the checkpoint. File checkpointing and `/rewind` do not cover subagent edits, so the Builder's work is only recoverable through commits. REPAIR via `git revert` stands.
+- Beads. Git-native, dependency-aware, shared across machines. Built-in tasks are none of those.
+- The Builder's prompt-based Stop hook completion gate. That is the native `type: prompt` hook used correctly; it converts to `SubagentStop` automatically.
+- `bdd-generate`. No native equivalent.
+
+### Effect on the v3.0.0 slim-down
+
+- Task 6 becomes "delete `worktree-create.sh` and `worktree-remove.sh` and their `hooks.json` entries" instead of fixing stdout.
+- The "Not Doing" list keeps `loop-stop-hook.sh` and `auto-approve.sh` untouched. Items 1 and 3 above argue for a v3.1 that does touch them, after the slim-down lands.
+- Retiring `feedback` (item 2) is a marketplace-wide change through `sync_shared.py`, so it is its own release, not part of v3.
+- The `/verify` fix is a one-line edit to the VERIFY dispatch entry and belongs in v3's Task 2 rewrite, since that file is being replaced anyway.
+
+Not verified: the `monitors/monitors.json` plugin directory the reference lists (its doc page returned 404), and the full `WorktreeCreate` section (truncated in the fetch). Everything else above was read from the docs or observed in a live session.
