@@ -55,9 +55,9 @@ record.
 
 #### autonomous-sdlc
 
-Autonomous SDLC as a state machine on disk, driven by a Stop-hook loop (optionally a
-user-armed `/goal`) — one verified, committed unit of work per iteration with
-decide-log-proceed autonomy and built-in verify / code-review / simplify gates. Architect
+Autonomous SDLC as a state machine on disk, driven by a Stop-hook loop (or a
+user-armed self-paced `/loop`) — one verified, committed unit of work per iteration with
+decide-log-proceed autonomy and built-in code-review / simplify gates. Architect
 and Builder subagents; TDD, BDD, and Beads skills.
 
 #### hexagonal-agents

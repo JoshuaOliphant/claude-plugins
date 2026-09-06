@@ -284,3 +284,66 @@ stdout turns out to be tolerated the deletion is still the smaller change.
 - The `/verify` fix is a one-line edit to the VERIFY dispatch entry and belongs in v3's Task 2 rewrite, since that file is being replaced anyway.
 
 Not verified: the `monitors/monitors.json` plugin directory the reference lists (its doc page returned 404), and the full `WorktreeCreate` section (truncated in the fetch). Everything else above was read from the docs or observed in a live session.
+
+## Part 3: what the current hooks reference changes (2026-09-06)
+
+Read against `code.claude.com/docs/en/hooks.md` on 2026-09-06. Three things in the
+reference the plugin was written without: hooks declared in skill and agent frontmatter,
+the `if` field with permission-rule syntax, and a set of events that did not exist at
+v2.1.139 (`PostToolUseFailure`, `PostToolBatch`, `PermissionDenied` with `retry`,
+`FileChanged`, `SessionEnd`, `Setup`, `InstructionsLoaded`, `PreModelSwitch`, plus the
+experimental `type: agent` hook).
+
+### Applied in 2.4.0
+
+Approved and shipped on this branch: the `/verify` reference is gone from VERIFY, both
+worktree hooks are deleted with their `hooks.json` entries, and the loop driver is
+native: `init` writes `.claude/loop.md`, a bare `/loop` runs the ritual self-paced,
+`set-driver loop` stands the Stop hook down, the skill no longer busy-waits on builders,
+and SHIP hands off to a bare `/loop`.
+
+### Hooks to adopt, ranked
+
+| # | Change | Mechanism from the reference | Why |
+|---|---|---|---|
+| 1 | Move the loop's hooks out of `hooks.json` and into `sdlc-loop`'s frontmatter | Skill-frontmatter hooks register when the skill is invoked and persist for the session; same YAML shape as `hooks.json`; all events supported | Today `auto-approve.sh` runs on every `PermissionRequest` in every project with the plugin installed and checks for `.sdlc/` each time. Registered by the skill, it exists only in sessions running a loop. `/sdlc` invokes the skill on iteration one, so nothing else changes. |
+| 2 | Replace `auto-approve.sh`'s allow-everything branch with `PreToolUse` deny rules using `if` | `if` takes permission-rule syntax (`Bash(git push *)`, `Edit(tests/**)`) and is evaluated only on tool events; `PreToolUse` blocks regardless of permission mode | Auto mode's classifier does the approving. The plugin keeps only what it knows better than the classifier: never push main, never force-push, never publish. Same hook carries the Part 1 test-lock (`if: "Edit(tests/**)"` guarded by a fix-task check) and protected paths. |
+| 3 | Builder-side completion record | A `Stop` hook in agent frontmatter converts to `SubagentStop`; `SubagentStop` can inject `additionalContext` and `systemMessage` into the parent | Add a `command` hook next to the existing prompt gate that appends "builder finished <task>" to `.sdlc/progress.md` and returns a `systemMessage` naming the task. The lead's re-entry after a builder finishes becomes a deterministic nudge instead of an inferred one. The lead still runs `task --done` after verifying. |
+| 4 | Orientation on resume | `SessionStart` fires on start and resume; hooks can return `additionalContext` | When `.sdlc/state.json` is active and not terminal, inject `sdlc_state.py status` output. A resumed session then starts oriented without the skill's step 2 having to run first. Cheap insurance the v2 redesign dropped when it removed the post-compact hook. |
+| 5 | Journal classifier denials instead of stalling on them | `PermissionDenied` fires when auto mode denies a call; `hookSpecificOutput.retry` tells the model whether it may retry | Pairs with moving the Builder from `bypassPermissions` to `auto`. The hook logs `decide --decision "classifier denied <cmd>"` and returns `retry: false`, so a denial becomes a journal entry the PR shows, and the attempt budget decides what happens next. |
+| 6 | Completion gate that checks disk, not transcript | `type: agent` hooks spawn a subagent with Read, Grep and Glob to verify conditions before returning a decision (experimental, 60s default timeout) | The current `type: prompt` gate reads the conversation for evidence of `git commit` and a green suite. An agent hook can run `git status --porcelain` and the recorded test command. Adopt once it leaves experimental; the prompt gate stays until then. |
+| 7 | Refuse a model switch mid-loop | `PreModelSwitch` fires before a requested switch and can block it | Optional. The Builder assumes Opus; a hook that blocks switches while `.sdlc/state.json` is active prevents a half-finished task continuing on a smaller model. |
+
+### Events considered and not adopted
+
+- `TaskCreated` / `TaskCompleted`: only fire for the built-in `TaskCreate` tool, which the plugin is dropping in favor of Beads.
+- `FileChanged`: watches filenames in the session's working directory; builder commits happen in worktrees, so the interesting changes are invisible to it. Watching `.sdlc/escalation.md` is possible but the BLOCKED transition already reports.
+- `PostToolBatch`: fires between a parallel tool batch and the next model call and can block. No loop invariant needs enforcing at that grain.
+- `PostCompact`: the v2 redesign removed it because every iteration re-orients from disk. Still true; `SessionStart` (item 4) covers the one case that matters, resume.
+- `once: true`: skill-frontmatter only. Useful for a one-shot `SessionStart`-style orientation if item 4 is done as a skill hook rather than a plugin hook.
+- `stop_hook_active`: available in the Stop hook's input and says whether this same stop was already blocked. The plugin's `.hook-blocks` counter is a cross-turn total, which is the cap that matters; keep it.
+
+### Answers to the two open questions
+
+**Feedback skill.** There is no built-in that improves a skill. There are two built-ins
+that cover the two halves of what `feedback` does today: auto memory's `feedback` type
+("corrections you give Claude and approaches you confirm") replaces the storage and the
+"Step 0: load stored feedback" recall ritual, per repository, with no ceremony; `claude
+plugin eval` and `/skill-doctor` replace the measurement side. Neither turns a
+correction into a `SKILL.md` edit. If the intent is improving the plugin, the useful
+remainder is a single `graduate` action: read the auto-memory feedback entries that
+mention the SDLC, and open a Beads issue against the plugin (or propose a `SKILL.md`
+diff) for each. The five-plugin `feedback_manager.py` and its YAML store can go; that
+is a `sync_shared.py` sweep and its own release.
+
+**Parallel builders as a workflow.** Yes. The workflow script API's `agent()` accepts
+`agentType`, resolved from the same registry as the Agent tool, and `isolation:
+'worktree'`. A plugin-shipped `workflows/build-wave.js` can do
+`pipeline(readyTasks, t => agent(prompt(t), {agentType: 'autonomous-sdlc:builder',
+isolation: 'worktree', label: t.id}))` followed by one merge-and-test agent, so each
+builder keeps its PostToolUse validators and completion gate. It runs as
+`/autonomous-sdlc:build-wave`, needs no `ultracode` keyword when invoked by name, is
+resumable within the session, and keeps builder output out of the lead's context. Two
+constraints: no mid-run user input (fine, the loop has none), and in `claude -p` the
+launch needs `Workflow(build-wave)` in allow rules or auto mode. Claude can start it
+from the BUILD dispatch entry when three or more independent tasks are ready.

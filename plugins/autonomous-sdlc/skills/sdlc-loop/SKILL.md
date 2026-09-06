@@ -46,8 +46,8 @@ Every iteration, in order, no exceptions:
    `python3 $STATE transition <NEXT> --reason "..."`. A transition counts as progress;
    an iteration with neither a commit nor a transition counts toward the no-progress
    limit (2), after which the loop force-blocks.
-5. **Stop.** The loop driver (the plugin's Stop hook, or a user-armed `/goal` evaluator) decides
-   whether another iteration runs. Never try to "finish the whole feature" in one
+5. **Stop.** The loop driver (the plugin's Stop hook, or a user-armed self-paced
+   `/loop`) decides whether another iteration runs. Never try to "finish the whole feature" in one
    iteration — small verified steps survive context loss; heroics don't.
 
 ## Dispatch Table
@@ -99,34 +99,23 @@ so new code paths don't become the unobserved ones. Commit. One re-plan is allow
    No ready tasks and none in flight → `transition VERIFY`.
    All remaining tasks blocked → escalate with the list.
 
-**Waiting on builders.** Background builders take minutes; the loop driver re-prompts in
-seconds. The trap is the *stop-and-wait* spin: stop with a builder still running, the
-Stop hook re-prompts you, you tick and find nothing ready, you stop again — and each of
-those wake-ups is a full-context turn that reloads this skill and re-orients. `tick
---waiting` keeps that off the **iteration budget**, but not off the **token bill**.
-
-So when an iteration finds builders in flight and nothing else ready:
+**Waiting on builders.** Background builders take minutes. Never busy-wait inside a
+turn (no `Monitor` polls, no bash `until` loops): a held-open turn is a held-open
+context. When an iteration finds builders in flight and nothing else ready:
 
 1. `python3 $STATE tick --waiting` (free; bounded by its own `max_wait_ticks` ceiling).
-2. **Default — block in-turn, do not hand control back.** Hold this turn open with a
-   real blocking wait on the artifact the builder commits, so no re-prompt ever fires:
-   - Preferred: the **Monitor** tool (the harness's blocking-wait primitive) with an
-     until-condition on the builder's expected output or task closure.
-   - Fallback where Monitor is unavailable: a bounded foreground bash wait, e.g.
-     `until [ -f <expected-output> ] || ! kill -0 <pid> 2>/dev/null; do :; done`
-     (bare `sleep` is blocked by the harness; this busy-waits, so prefer Monitor).
-   A held-open turn costs no new tokens while it waits — the model is idle, not
-   re-orienting. This is strictly cheaper than stopping and being re-prompted.
-3. **Fallback — if you do stop**, you no longer spin: the Stop hook is wait-aware. With
-   builders in flight in BUILD it allows the stop, and the builder's completion
-   notification re-enters the loop once — one wake per completion, not one per second.
-4. When a builder finishes: `python3 $STATE task <id> --done`, verify its work, and
+2. **Stop.** Under the Stop-hook driver, the hook allows the stop while BUILD has work
+   in flight, and the builder's completion notification re-enters the loop (one wake
+   per completion, not one per second). Under the `/loop` driver, schedule the next
+   wakeup 5 to 15 minutes out; the completion notification may re-enter sooner.
+3. When a builder finishes: `python3 $STATE task <id> --done`, verify its work, and
    take a normal work tick for whatever you do with it.
 
 ### VERIFY (→ REVIEW, ⇄ BUILD)
 Required checks:
-1. **Mechanical**: the built-in **verify** skill if available, else the project's own
-   stack (tests, lint, types).
+1. **Mechanical**: the project's own stack (tests, lint, types), using the test
+   command detected at INIT. (The bundled `/verify` skill is user-only and cannot be
+   invoked from a loop, so never plan on it.)
 2. **Spec compliance**: walk `specs/{slug}-spec.md` AC by AC and confirm each is
    demonstrably met — by its `@ac-N`-tagged test where bdd-generate scaffolding exists,
    by reading the code and exercising behavior where it doesn't. Tests passing is not
@@ -180,9 +169,12 @@ Push the branch (`git push -u origin feature/{slug}`). Create the PR yourself
 (`gh pr create` / `glab mr create`) with: summary from the plan doc, AC checklist from
 the spec, and a **"Decisions made autonomously"** section rendered from
 `.sdlc/decisions.jsonl`. Append the PR URL to `.sdlc/progress.md`. `transition DONE
---reason "<pr-url>"`. Optionally suggest the built-in **loop** skill to the user for PR
-babysitting (`/loop 10m check PR CI and address review comments`). Auth failures
-escalate — never store or guess credentials.
+--reason "<pr-url>"`. In the final report print a bare `/loop` for the user: its built-in
+maintenance prompt tends the current branch's PR (review comments, failed CI, merge
+conflicts) and ends itself when the PR goes quiet. Note that `.claude/loop.md` must be
+removed or edited first, or the bare `/loop` re-runs the SDLC ritual instead. On Claude
+Code on the web, `/autofix-pr` does the same. Auth failures escalate — never store or
+guess credentials.
 
 ### REPAIR (→ BUILD | VERIFY)
 The branch is broken in a way no single task owns. Diagnose — if the project has an
