@@ -24,6 +24,7 @@ def _init(tmp_path, **overrides):
     sdlc_state.STATE_FILE = sdlc_state.SDLC_DIR / "state.json"
     sdlc_state.PROGRESS_FILE = sdlc_state.SDLC_DIR / "progress.md"
     sdlc_state.DECISIONS_FILE = sdlc_state.SDLC_DIR / "decisions.jsonl"
+    sdlc_state.LOOP_MD_FILE = Path(".claude") / "loop.md"
     try:
         args = sdlc_state.argparse.Namespace(
             feature=overrides.get("_feature", "demo"),
@@ -285,6 +286,40 @@ def test_resume_preserves_existing_review_block(tmp_path):
     assert after == before
 
 
+# --- native /loop driver: init writes .claude/loop.md, set-driver accepts loop ---
+
+
+def test_init_writes_loop_md_with_feature_and_state_cli_path(tmp_path):
+    _init(tmp_path, _feature="user-auth")
+    loop_md = tmp_path / ".claude" / "loop.md"
+    assert loop_md.exists()
+    body = loop_md.read_text()
+    assert "user-auth" in body
+    # The absolute CLI path is baked in so the prompt needs no env expansion.
+    assert str(Path(sdlc_state.__file__).resolve()) in body
+    assert "${CLAUDE_PLUGIN_ROOT}" not in body
+    assert "ScheduleWakeup" in body
+
+
+def test_init_never_overwrites_an_existing_loop_md(tmp_path):
+    (tmp_path / ".claude").mkdir()
+    (tmp_path / ".claude" / "loop.md").write_text("mine\n")
+    _init(tmp_path)
+    assert (tmp_path / ".claude" / "loop.md").read_text() == "mine\n"
+
+
+def test_set_driver_accepts_loop(tmp_path):
+    _init(tmp_path)
+    cwd = Path.cwd()
+    os.chdir(tmp_path)
+    try:
+        sdlc_state.cmd_set_driver(sdlc_state.argparse.Namespace(driver="loop"))
+        assert json.loads(sdlc_state.STATE_FILE.read_text())["driver"] == "loop"
+    finally:
+        os.chdir(cwd)
+    assert "loop" in sdlc_state.DRIVERS
+
+
 if __name__ == "__main__":
     # Minimal fallback runner so the suite works without pytest installed.
     import tempfile
@@ -303,6 +338,9 @@ if __name__ == "__main__":
         test_init_on_done_with_new_feature_auto_increments,
         test_init_on_done_same_feature_just_resumes,
         test_init_on_in_progress_does_not_increment,
+        test_init_writes_loop_md_with_feature_and_state_cli_path,
+        test_init_never_overwrites_an_existing_loop_md,
+        test_set_driver_accepts_loop,
     ]
     # The pytest.raises test needs pytest; skip it in fallback mode.
     failures = 0

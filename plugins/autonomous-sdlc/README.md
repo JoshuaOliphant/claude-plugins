@@ -1,7 +1,7 @@
 # Autonomous SDLC Plugin
 
 Autonomous software development as a **state machine on disk driven by a loop**, not a
-pipeline. `/sdlc "<request>"` initializes `.sdlc/state.json`, arms a loop driver, and
+pipeline. `/sdlc "<request>"` initializes `.sdlc/state.json`, writes `.claude/loop.md`, and
 then iterates — one verified, committed unit of work per turn — until the state machine
 says `DONE` (PR open) or `BLOCKED` (one written escalation). No questions in between.
 
@@ -41,7 +41,7 @@ on `DONE` is a no-op resume; a loop still mid-flight always resumes its live wor
 | INIT | Branch, state files, tooling detection | committed |
 | SPEC | Acceptance criteria via `bdd-spec` (autonomous mode) | `specs/{slug}-spec.md` committed |
 | BUILD | **One task** via the Builder (TDD + hook gates); parallel builders with `isolation: "worktree"` when tasks are independent | `bd ready` is empty |
-| VERIFY | Built-in **verify** skill / project test stack + spec compliance (AC by AC) + telemetry check when an observability harness exists | green (red → fix task → BUILD) |
+| VERIFY | Project test stack (tests, lint, types) + spec compliance (AC by AC) + telemetry check when an observability harness exists | green (red → fix task → BUILD) |
 | REVIEW | Built-in **code-review**, optional **security-review**, then **simplify** + re-verify | no high-confidence findings (max 2 round-trips) |
 | SHIP | Push + `gh pr create` with the decision journal in the PR body | PR URL recorded |
 | REPAIR | Fix or revert a broken branch | green again |
@@ -55,14 +55,20 @@ compaction, session death, and restarts.
   iteration ritual until the state is terminal. Drives while `.sdlc/state.json` has
   `"driver": "auto"` (the init default) or `"stop-hook"`. It is **wait-aware**: in BUILD
   with builders in flight it allows the stop and lets the completion notification
-  re-enter the loop, so waiting on a multi-minute builder doesn't spin a re-prompt per
-  second (the skill's in-turn blocking wait is the first line of defense).
-- **`/goal` (optional upgrade, user-armed, Claude Code ≥ v2.1.139)**: `/goal` is a
-  user-only slash command — Claude cannot invoke it. `/sdlc`'s kickoff message shows
-  the exact goal to run (condition: `sdlc_state.py state` prints DONE or BLOCKED); if
-  you arm it, say so and Claude records `set-driver goal`, standing the Stop hook down.
-  The goal evaluator (a separate small model) then judges completion — a model that
-  didn't do the work.
+  re-enter the loop, so waiting on a multi-minute builder never spins a re-prompt per
+  second. Zero-latency re-entry; works headless (`claude -p`).
+- **Bare `/loop` (optional, user-armed, self-paced)**: `init` writes `.claude/loop.md`
+  with the iteration ritual, which is the prompt a bare `/loop` runs. Claude then picks
+  the delay between iterations itself (one minute while work is ready, 5 to 15 minutes
+  while builders run) and ends the loop when `tick` prints DONE or BLOCKED. The loop
+  survives `--resume` for seven days and keeps firing in a backgrounded session. `/loop`
+  is user-invoked; `/sdlc`'s kickoff prints it, and if you run it, say so and Claude
+  records `set-driver loop`, standing the Stop hook down. Requires Claude Code
+  v2.1.248 or later on Bedrock, Foundry, or Google Cloud (self-paced `/loop` works on
+  every version elsewhere).
+- **`/goal`** is still accepted as a driver value for loops recorded before `/loop`
+  existed, but `/sdlc` no longer offers it: the goal evaluator has no pacing, so it
+  re-prompts as fast as the Stop hook without the hook's wait-awareness.
 
 Budgets guard both: max iterations (default 50), max attempts per task (default 3),
 and no-progress detection (2 idle iterations force `BLOCKED`).
@@ -90,8 +96,8 @@ Safety rails for unattended operation:
 | **Architect** | Opus | PLAN | Plan document + task decomposition (docs are tasks too) |
 | **Builder** | Opus | BUILD | One task with TDD; PostToolUse validators + Stop-hook completion gate |
 
-Verification and review are **states that call built-in skills** (verify, code-review,
-security-review, simplify), not agents. Merging is the REPAIR state plus native
+Verification is a state that runs the project's own test stack; review is a state
+that calls built-in skills (code-review, security-review, simplify), not agents. Merging is the REPAIR state plus native
 worktree isolation. PR creation is one `gh pr create` call.
 
 ## Commands
@@ -123,6 +129,7 @@ worktree isolation. PR creation is one `gh pr create` call.
 ├── decisions.jsonl   # autonomous decisions, rendered into the PR
 ├── signs.md          # guardrails accumulated from observed mistakes
 └── escalation.md     # written only on BLOCKED
+.claude/loop.md       # the iteration ritual a bare /loop runs (written once, never overwritten)
 specs/{slug}-spec.md  # acceptance criteria
 specs/{slug}-plan.md  # architect plan
 ```
@@ -143,7 +150,7 @@ set-driver, status, state).
 
 ## Prerequisites
 
-- Optional: Claude Code ≥ v2.1.139 if you want to arm the `/goal` driver yourself (the Stop hook needs nothing)
+- Optional: Claude Code ≥ v2.1.248 on Bedrock, Foundry, or Google Cloud if you want the self-paced `/loop` driver (the Stop hook needs nothing)
 - Git, `gh` or `glab` CLI, `uv` for Python projects
 - Optional: Beads CLI (`bd`) for the task graph; TaskCreate is the fallback
 
@@ -188,7 +195,26 @@ BUILD. A blank `--reviewers` value falls back to the default so the gate is neve
 
 ## Version History
 
-### v2.3.0 (Current)
+### v2.4.0 (Current)
+- **Native self-paced `/loop` replaces the `/goal` offer.** `init` writes `.claude/loop.md`
+  with the iteration ritual and the state CLI's absolute path, so a bare `/loop` drives
+  the loop with Claude choosing the delay between iterations (short while work is ready,
+  minutes while builders run) and ending it on DONE or BLOCKED. New `loop` driver value;
+  `set-driver loop` stands the Stop hook down. `goal` stays accepted for old loops.
+- **No in-turn busy-waiting.** The `sdlc-loop` skill no longer holds a turn open with
+  `Monitor` or a bash `until` loop while builders run: it stops, and the completion
+  notification (Stop-hook driver) or the next wakeup (`/loop` driver) re-enters.
+- **VERIFY no longer names the bundled `/verify` skill.** That skill is user-only
+  (`disable-model-invocation`), so the loop could never call it; VERIFY runs the
+  project's own test stack, as it always did in practice.
+- **Worktree hooks removed.** A registered `WorktreeCreate` hook replaces git's worktree
+  creation and must return `worktree_path`; the plugin's logging-only hooks broke
+  `EnterWorktree` and `isolation: "worktree"`. Both hooks and their `hooks.json` entries
+  are gone; nothing read the `.sdlc/events/` log they wrote.
+- SHIP prints a bare `/loop` (the built-in PR-maintenance prompt) as the babysitting
+  handoff instead of a custom prompt.
+
+### v2.3.0
 - **Next-increment lifecycle** (the loop is no longer single-use per project): a finished
   (`DONE`) session re-invoked with a new feature now starts increment 2 instead of silently
   resuming `DONE` and dropping the request. New `increment` subcommand archives the finished

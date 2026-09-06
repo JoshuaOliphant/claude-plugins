@@ -5,7 +5,7 @@
 
 Every loop iteration starts by calling `tick` and ends by calling
 `transition` or `note-progress`. The loop driver (the plugin's Stop hook,
-or a user-armed /goal evaluator) reads `state` to decide whether the loop
+or a user-armed self-paced `/loop`) reads `state` to decide whether the loop
 may exit. All state lives in
 .sdlc/ in the current working directory so any fresh context can resume.
 
@@ -22,7 +22,7 @@ Usage:
     sdlc_state.py task bd-a1b2 --done      # remove it from the in-flight set
     sdlc_state.py attempt bd-a1b2          # count an attempt; exit 1 when budget exceeded
     sdlc_state.py set-budget --max-iterations 120   # adjust budgets mid-loop (log a decision too)
-    sdlc_state.py set-driver goal          # record that the user armed /goal (stands the hook down)
+    sdlc_state.py set-driver loop          # record that the user armed a bare /loop (stands the hook down)
     sdlc_state.py decide --decision "JWT RS256 over HS256" --why "..." [--irreversible]
     sdlc_state.py note-progress --what "closed bd-a1b2"
 """
@@ -37,6 +37,15 @@ SDLC_DIR = Path(".sdlc")
 STATE_FILE = SDLC_DIR / "state.json"
 DECISIONS_FILE = SDLC_DIR / "decisions.jsonl"
 PROGRESS_FILE = SDLC_DIR / "progress.md"
+# Project-level prompt that a bare `/loop` runs (self-paced: Claude picks the
+# delay between iterations and ends the loop itself). Written once at init so
+# the user can arm the native driver with two keystrokes. Never overwritten.
+LOOP_MD_FILE = Path(".claude") / "loop.md"
+
+# auto: the plugin's Stop hook drives. loop: the user armed a bare /loop and
+# said so (set-driver loop), which stands the hook down. goal is kept for loops
+# recorded before /loop existed; stop-hook forces the hook explicitly.
+DRIVERS = ("auto", "loop", "goal", "stop-hook")
 
 STATES = [
     "INIT",
@@ -100,6 +109,40 @@ def build_review_config(reviewers: str | None, mode: str | None) -> dict:
             f"Invalid --review-mode {chosen_mode!r}; choose one of {REVIEW_MODES}."
         )
     return {"reviewers": names, "mode": chosen_mode}
+
+
+LOOP_MD_TEMPLATE = """\
+# autonomous-sdlc loop prompt (written by `sdlc_state.py init`; a bare `/loop` runs it)
+
+You are one iteration of the autonomous-sdlc loop for **{feature}**. Follow the
+`sdlc-loop` skill's iteration ritual exactly, then stop:
+
+1. `python3 {state_cli} tick` (or `tick --waiting` if this iteration only checks on
+   in-flight builders). If it prints `DONE` or `BLOCKED`, the loop is finished: end
+   this /loop (`ScheduleWakeup` with `stop: true`), report the final status, and stop.
+2. Orient: `python3 {state_cli} status`, tail `.sdlc/progress.md`, `git log --oneline -10`,
+   and `.sdlc/signs.md` if it exists.
+3. Do ONE unit of work for the current state (dispatch table in the `sdlc-loop` skill).
+4. Commit, then `note-progress` or `transition`.
+5. Pace the next wakeup: builders still in flight, wait 5 to 15 minutes; ready work,
+   1 minute; every remaining task blocked, escalate (`transition BLOCKED`) and end the loop.
+"""
+
+
+def write_loop_md(feature: str) -> bool:
+    """Write .claude/loop.md for the native /loop driver. Returns True if written.
+
+    Never overwrites: a project may already have its own loop.md, and the user
+    may have edited ours. The state CLI's absolute path is baked in so the
+    prompt needs no ${CLAUDE_PLUGIN_ROOT} expansion.
+    """
+    if LOOP_MD_FILE.exists():
+        return False
+    LOOP_MD_FILE.parent.mkdir(parents=True, exist_ok=True)
+    LOOP_MD_FILE.write_text(
+        LOOP_MD_TEMPLATE.format(feature=feature, state_cli=Path(__file__).resolve())
+    )
+    return True
 
 
 def now() -> str:
@@ -183,6 +226,8 @@ def cmd_init(args: argparse.Namespace) -> None:
         PROGRESS_FILE.write_text(
             f"# Progress: {args.feature}\n\nRequest: {args.request}\n\n"
         )
+    if write_loop_md(args.feature):
+        append_progress(f"wrote {LOOP_MD_FILE} (bare /loop drives the ritual)")
     append_progress(f"loop initialized (driver={args.driver})")
     print(f"INIT feature={args.feature} driver={args.driver}")
 
@@ -414,10 +459,9 @@ def main() -> None:
     sp.add_argument("--max-iterations", type=int, default=50)
     sp.add_argument("--max-attempts", type=int, default=3)
     sp.add_argument("--max-wait-ticks", type=int, default=200)
-    # auto: the Stop hook drives. /goal is user-only — if the user arms it and
-    # says so, set-driver goal stands the hook down. The hook drives whenever the
-    # driver is not "goal".
-    sp.add_argument("--driver", choices=["auto", "goal", "stop-hook"], default="auto")
+    # auto: the Stop hook drives. /loop is user-armed — if the user arms it and
+    # says so, set-driver loop stands the hook down (see DRIVERS).
+    sp.add_argument("--driver", choices=list(DRIVERS), default="auto")
     sp.add_argument(
         "--reviewers",
         default=None,
@@ -473,7 +517,7 @@ def main() -> None:
     sp.set_defaults(func=cmd_set_budget)
 
     sp = sub.add_parser("set-driver", help="record the loop driver")
-    sp.add_argument("driver", choices=["auto", "goal", "stop-hook"])
+    sp.add_argument("driver", choices=list(DRIVERS))
     sp.set_defaults(func=cmd_set_driver)
 
     sp = sub.add_parser("attempt", help="count an attempt on a task")
