@@ -70,6 +70,13 @@ and say that if they run it, they should tell you so you can record
 don't both re-prompt. Until they say so, assume the Stop hook drives; never wait for an
 answer. `/loop` is user-invoked; you cannot start it yourself.
 
+Two footnotes for the same kickoff message, one line each: `.claude/loop.md` is
+machine-local (it bakes this checkout's absolute path to the state CLI, is rewritten by
+every `/sdlc`, and is removed on DONE or BLOCKED), so it belongs in `.gitignore`, not in a
+commit. And self-paced `/loop` needs Claude Code v2.1.248 or later on Bedrock, Foundry,
+or Google Cloud; elsewhere any version works. Skip the version line when `claude --version`
+already shows 2.1.248+ or the session is not on one of those providers.
+
 Headless and unattended runs need neither: `claude -p "/sdlc '<request>'"` runs under
 the Stop hook, and a backgrounded interactive session keeps a `/loop` firing without a
 terminal.

@@ -65,7 +65,11 @@ compaction, session death, and restarts.
   is user-invoked; `/sdlc`'s kickoff prints it, and if you run it, say so and Claude
   records `set-driver loop`, standing the Stop hook down. Requires Claude Code
   v2.1.248 or later on Bedrock, Foundry, or Google Cloud (self-paced `/loop` works on
-  every version elsewhere).
+  every version elsewhere). `.claude/loop.md` is machine-local: it bakes the absolute
+  path of this install's `sdlc_state.py`, every `/sdlc` (fresh, resume, or increment)
+  rewrites it with the current feature and path, and DONE or BLOCKED removes it so a
+  later bare `/loop` runs the built-in PR-maintenance prompt. Add it to `.gitignore`.
+  A `loop.md` without the plugin's marker line is yours and is never touched.
 - **`/goal`** is still accepted as a driver value for loops recorded before `/loop`
   existed, but `/sdlc` no longer offers it: the goal evaluator has no pacing, so it
   re-prompts as fast as the Stop hook without the hook's wait-awareness.
@@ -129,7 +133,7 @@ worktree isolation. PR creation is one `gh pr create` call.
 ├── decisions.jsonl   # autonomous decisions, rendered into the PR
 ├── signs.md          # guardrails accumulated from observed mistakes
 └── escalation.md     # written only on BLOCKED
-.claude/loop.md       # the iteration ritual a bare /loop runs (written once, never overwritten)
+.claude/loop.md       # the iteration ritual a bare /loop runs (machine-local; rewritten by /sdlc, removed on DONE/BLOCKED; gitignore it)
 specs/{slug}-spec.md  # acceptance criteria
 specs/{slug}-plan.md  # architect plan
 ```
@@ -201,6 +205,10 @@ BUILD. A blank `--reviewers` value falls back to the default so the gate is neve
   the loop with Claude choosing the delay between iterations (short while work is ready,
   minutes while builders run) and ending it on DONE or BLOCKED. New `loop` driver value;
   `set-driver loop` stands the Stop hook down. `goal` stays accepted for old loops.
+  The file is machine-local: every `/sdlc` rewrites it (feature and CLI path stay
+  current across increments and plugin upgrades) and DONE or BLOCKED removes it, so the
+  SHIP handoff's bare `/loop` reaches the built-in PR prompt instead of re-running the
+  ritual. Files without the plugin's marker line are left alone. Gitignore it.
 - **No in-turn busy-waiting.** The `sdlc-loop` skill no longer holds a turn open with
   `Monitor` or a bash `until` loop while builders run: it stops, and the completion
   notification (Stop-hook driver) or the next wakeup (`/loop` driver) re-enters.
@@ -208,7 +216,7 @@ BUILD. A blank `--reviewers` value falls back to the default so the gate is neve
   (`disable-model-invocation`), so the loop could never call it; VERIFY runs the
   project's own test stack, as it always did in practice.
 - **Worktree hooks removed.** A registered `WorktreeCreate` hook replaces git's worktree
-  creation and must return `worktree_path`; the plugin's logging-only hooks broke
+  creation and must print the new worktree's path on stdout; the plugin's logging-only hooks broke
   `EnterWorktree` and `isolation: "worktree"`. Both hooks and their `hooks.json` entries
   are gone; nothing read the `.sdlc/events/` log they wrote.
 - SHIP prints a bare `/loop` (the built-in PR-maintenance prompt) as the babysitting

@@ -169,12 +169,14 @@ Push the branch (`git push -u origin feature/{slug}`). Create the PR yourself
 (`gh pr create` / `glab mr create`) with: summary from the plan doc, AC checklist from
 the spec, and a **"Decisions made autonomously"** section rendered from
 `.sdlc/decisions.jsonl`. Append the PR URL to `.sdlc/progress.md`. `transition DONE
---reason "<pr-url>"`. In the final report print a bare `/loop` for the user: its built-in
-maintenance prompt tends the current branch's PR (review comments, failed CI, merge
-conflicts) and ends itself when the PR goes quiet. Note that `.claude/loop.md` must be
-removed or edited first, or the bare `/loop` re-runs the SDLC ritual instead. On Claude
-Code on the web, `/autofix-pr` does the same. Auth failures escalate — never store or
-guess credentials.
+--reason "<pr-url>"`. `transition DONE` removes `.claude/loop.md` (only the one `init`
+wrote; a user's own file stays), so a bare `/loop` now falls through to Claude Code's
+built-in PR-maintenance prompt. In the final report print a bare `/loop` for the user:
+that prompt tends the current branch's PR (review comments, failed CI, merge conflicts)
+and ends itself when the PR goes quiet. If the user armed `/loop` as the driver, its
+current run ends on the next wakeup (`tick` prints DONE); they start the new one after.
+On Claude Code on the web, `/autofix-pr` does the same. Auth failures escalate — never
+store or guess credentials.
 
 ### REPAIR (→ BUILD | VERIFY)
 The branch is broken in a way no single task owns. Diagnose — if the project has an

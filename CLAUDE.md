@@ -68,7 +68,7 @@ Each plugin follows a consistent layout:
 
 v2 replaced the agent-team pipeline with a state machine on disk (`.sdlc/state.json`,
 owned by `scripts/sdlc_state.py`) driven by the plugin's Stop-hook loop (`init` also writes
-`.claude/loop.md`, so a user may arm a bare self-paced `/loop` as the driver instead; Claude cannot). States: INIT → SPEC → PLAN → BUILD ⇄ VERIFY → REVIEW →
+`.claude/loop.md`, rewritten on every init and removed on DONE/BLOCKED, so a user may arm a bare self-paced `/loop` as the driver instead; Claude cannot). States: INIT → SPEC → PLAN → BUILD ⇄ VERIFY → REVIEW →
 SHIP → DONE, plus REPAIR and BLOCKED. Two agents remain, both **Opus**: **Architect**
 (PLAN state) and **Builder** (BUILD state, keeps its PostToolUse validators and
 Stop-hook completion gate). VERIFY runs the project's own test stack (the bundled

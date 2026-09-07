@@ -301,11 +301,118 @@ def test_init_writes_loop_md_with_feature_and_state_cli_path(tmp_path):
     assert "ScheduleWakeup" in body
 
 
-def test_init_never_overwrites_an_existing_loop_md(tmp_path):
+def test_init_never_overwrites_a_user_owned_loop_md(tmp_path):
+    # No marker line → the user's own prompt; init leaves it alone.
     (tmp_path / ".claude").mkdir()
     (tmp_path / ".claude" / "loop.md").write_text("mine\n")
     _init(tmp_path)
     assert (tmp_path / ".claude" / "loop.md").read_text() == "mine\n"
+
+
+def _stale_loop_md(tmp_path, feature="old-feature"):
+    loop_md = tmp_path / ".claude" / "loop.md"
+    loop_md.parent.mkdir(exist_ok=True)
+    loop_md.write_text(
+        f"{sdlc_state.LOOP_MD_MARKER} (stale)\n\n"
+        f"loop for **{feature}**: python3 /old/plugin/path/sdlc_state.py tick\n"
+    )
+    return loop_md
+
+
+def test_resume_regenerates_our_stale_loop_md(tmp_path):
+    # The baked absolute CLI path goes stale when the plugin is upgraded or the
+    # checkout moves; resume must rewrite our file with the current path.
+    _init(tmp_path, _feature="cart")
+    loop_md = _stale_loop_md(tmp_path, feature="cart")
+    s = _read_state(tmp_path)
+    s["state"] = "BUILD"
+    _write_state(tmp_path, s)
+
+    _init(tmp_path, _feature="cart")
+    body = loop_md.read_text()
+    assert "/old/plugin/path" not in body
+    assert str(Path(sdlc_state.__file__).resolve()) in body
+
+
+def test_increment_retargets_loop_md_feature(tmp_path):
+    _init(tmp_path, _feature="cart", _request="build a cart")
+    s = _read_state(tmp_path)
+    s["state"] = "DONE"
+    _write_state(tmp_path, s)
+    _stale_loop_md(tmp_path, feature="cart")
+
+    _init(tmp_path, _feature="checkout", _request="add checkout")
+    body = (tmp_path / ".claude" / "loop.md").read_text()
+    assert "**checkout**" in body
+    assert "**cart**" not in body
+
+
+def _transition(tmp_path, target, from_state=None):
+    cwd = Path.cwd()
+    os.chdir(tmp_path)
+    try:
+        if from_state:
+            s = json.loads(sdlc_state.STATE_FILE.read_text())
+            s["state"] = from_state
+            sdlc_state.STATE_FILE.write_text(json.dumps(s))
+        sdlc_state.cmd_transition(
+            sdlc_state.argparse.Namespace(target=target, reason="test")
+        )
+    finally:
+        os.chdir(cwd)
+
+
+def test_transition_done_removes_our_loop_md(tmp_path):
+    # Otherwise the SHIP report's "run a bare /loop to babysit the PR" would
+    # re-enter the finished ritual instead of the built-in PR prompt.
+    _init(tmp_path)
+    loop_md = tmp_path / ".claude" / "loop.md"
+    assert loop_md.exists()
+    _transition(tmp_path, "DONE", from_state="SHIP")
+    assert not loop_md.exists()
+    assert "removed" in (tmp_path / ".sdlc" / "progress.md").read_text()
+
+
+def test_transition_done_keeps_user_owned_loop_md(tmp_path):
+    (tmp_path / ".claude").mkdir()
+    loop_md = tmp_path / ".claude" / "loop.md"
+    loop_md.write_text("mine\n")
+    _init(tmp_path)
+    _transition(tmp_path, "DONE", from_state="SHIP")
+    assert loop_md.read_text() == "mine\n"
+
+
+def test_transition_blocked_removes_loop_md_and_resume_rewrites_it(tmp_path):
+    _init(tmp_path, _feature="cart")
+    loop_md = tmp_path / ".claude" / "loop.md"
+    _transition(tmp_path, "BLOCKED", from_state="BUILD")
+    assert not loop_md.exists()
+    # The human fixes the blocker and re-runs /sdlc: the prompt comes back.
+    _init(tmp_path, _feature="cart")
+    assert loop_md.exists()
+    assert "**cart**" in loop_md.read_text()
+
+
+def test_forced_block_from_tick_removes_loop_md(tmp_path):
+    _init(tmp_path)
+    loop_md = tmp_path / ".claude" / "loop.md"
+    s = _read_state(tmp_path)
+    s["state"] = "BUILD"
+    s["iteration"] = s["budgets"]["max_iterations"]
+    _write_state(tmp_path, s)
+    cwd = Path.cwd()
+    os.chdir(tmp_path)
+    try:
+        try:
+            sdlc_state.cmd_tick(sdlc_state.argparse.Namespace(waiting=False))
+        except SystemExit as e:
+            assert e.code == 1
+        else:
+            raise AssertionError("tick past the budget should exit 1")
+    finally:
+        os.chdir(cwd)
+    assert _read_state(tmp_path)["state"] == "BLOCKED"
+    assert not loop_md.exists()
 
 
 def test_set_driver_accepts_loop(tmp_path):
@@ -339,7 +446,13 @@ if __name__ == "__main__":
         test_init_on_done_same_feature_just_resumes,
         test_init_on_in_progress_does_not_increment,
         test_init_writes_loop_md_with_feature_and_state_cli_path,
-        test_init_never_overwrites_an_existing_loop_md,
+        test_init_never_overwrites_a_user_owned_loop_md,
+        test_resume_regenerates_our_stale_loop_md,
+        test_increment_retargets_loop_md_feature,
+        test_transition_done_removes_our_loop_md,
+        test_transition_done_keeps_user_owned_loop_md,
+        test_transition_blocked_removes_loop_md_and_resume_rewrites_it,
+        test_forced_block_from_tick_removes_loop_md,
         test_set_driver_accepts_loop,
     ]
     # The pytest.raises test needs pytest; skip it in fallback mode.

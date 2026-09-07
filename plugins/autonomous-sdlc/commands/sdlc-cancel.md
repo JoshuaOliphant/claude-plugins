@@ -20,6 +20,8 @@ python3 ${CLAUDE_PLUGIN_ROOT}/scripts/sdlc_state.py transition BLOCKED --reason 
 
 If the driver is `loop` (the user armed a bare `/loop`), the next wakeup sees BLOCKED
 and ends the loop itself; to stop it sooner the user presses `Esc` while it waits.
+`transition BLOCKED` also removes the plugin-written `.claude/loop.md`; a later `/sdlc`
+rewrites it, and until then a bare `/loop` runs the built-in PR-maintenance prompt.
 A legacy `goal` driver needs the user to run `/goal clear`.
 
 ## 2. Clean up parallel work (if any)
