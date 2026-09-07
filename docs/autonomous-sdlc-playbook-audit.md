@@ -323,6 +323,7 @@ and SHIP hands off to a bare `/loop`.
 - `PostCompact`: the v2 redesign removed it because every iteration re-orients from disk. Still true; `SessionStart` (item 4) covers the one case that matters, resume.
 - `once: true`: skill-frontmatter only. Useful for a one-shot `SessionStart`-style orientation if item 4 is done as a skill hook rather than a plugin hook.
 - `stop_hook_active`: available in the Stop hook's input and says whether this same stop was already blocked. The plugin's `.hook-blocks` counter is a cross-turn total, which is the cap that matters; keep it.
+- Function hooks (`CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1`, a `modules` entry in `hooks.json`, `/plugin-types`): in-process TypeScript middleware present in the 2.1.260 binary behind a flag, with no public docs or changelog entry (proposal: [anthropics/claude-code#91870](https://github.com/anthropics/claude-code/issues/91870)). Not for 2.4.0: shell hooks stay, and a `modules` key is not dual-shipped because older loaders have been reported to drop a whole `hooks.json` on unknown keys. Once GA, revisit items 2, 3 and 5 above plus the Stop pacing and test-lock as typed `tool.call` handlers over shared state.
 
 ### Answers to the two open questions
 
