@@ -40,10 +40,20 @@ cmd = event.get("tool_input", {}).get("command", "") or ""
 
 DENY = [
     (r"push\s+.*(--force|-f\b)", "force-push"),
-    (r"git\s+push\s+\S*\s*(origin\s+)?(main|master)\b", "push to main/master"),
+    # Any push whose destination is main/master, in every spelling: `origin main`,
+    # `HEAD:main`, `feature:main`, `refs/heads/main`, `+main`. The lookahead stops
+    # `main-menu`, `my-main` and similar branch names from matching. `[^|;&]*?`
+    # keeps the match inside one subcommand of a compound command.
+    (
+        r"\bgit\s+push\b[^|;&]*?(?:\s|:|/)\+?(main|master)(?=\s|$|[;&|])",
+        "push to main/master",
+    ),
     (r"git\s+branch\s+-D\s+(main|master)\b", "delete main/master"),
     (r"git\s+reset\s+--hard\s+origin", "hard reset to remote"),
-    (r"rm\s+(-\w*r\w*f|\-\w*f\w*r)\w*\s+[/~]", "recursive delete outside the worktree"),
+    # Any recursive force-delete of an absolute or ~ path, inside the project or
+    # not (a relative `rm -rf build` passes). Deliberately blunt: an autonomous
+    # loop has no business deleting by absolute path.
+    (r"rm\s+(-\w*r\w*f|\-\w*f\w*r)\w*\s+[/~]", "recursive delete of an absolute or ~ path"),
     (r"\b(npm|pnpm|yarn)\s+publish\b", "package publish"),
     (r"\btwine\s+upload\b", "package publish"),
     (r"\bcargo\s+publish\b", "package publish"),

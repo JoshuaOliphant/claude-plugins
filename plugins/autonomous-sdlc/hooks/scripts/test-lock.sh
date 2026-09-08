@@ -45,7 +45,10 @@ path = tool_input.get("file_path") or tool_input.get("notebook_path") or ""
 if not path:
     defer()
 
-TEST_DIRS = {"tests", "test", "spec", "specs", "__tests__", "testing"}
+# `specs/` is deliberately absent: it holds the loop's own product docs
+# (`specs/<slug>-intent.md`, `-spec.md`, `-plan.md`), which stay editable during a
+# fix task. Test files that happen to live there still lock via TEST_FILE.
+TEST_DIRS = {"tests", "test", "spec", "__tests__", "testing"}
 TEST_FILE = re.compile(
     r"(^test_.*\.py$)|(_test\.(py|go|rb|rs|ts|js|tsx|jsx)$)|(\.(test|spec)\.[cm]?[jt]sx?$)"
     r"|(_spec\.rb$)|(Tests?\.(java|kt|cs|swift)$)|(^conftest\.py$)"

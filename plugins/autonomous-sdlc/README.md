@@ -93,8 +93,10 @@ loop. There is no plugin-level `hooks.json`: installing the plugin changes nothi
 projects that never run a loop.
 
 - **Destructive-command denylist** (`PreToolUse` on Bash, `deny-destructive.sh`):
-  force-push, pushing to or deleting `main`/`master`, hard resets to remote, recursive
-  deletes outside the worktree, package publishing, repo deletion. PreToolUse runs before
+  force-push, pushing to or deleting `main`/`master` in any spelling (`origin main`,
+  `HEAD:main`, `refs/heads/main`, `+main`), hard resets to remote, recursive deletes of
+  any absolute or `~` path (relative `rm -rf build` still passes), package publishing,
+  repo deletion. PreToolUse runs before
   permission checks in every mode, so it binds even for the `bypassPermissions` Builder,
   which carries the same hook in its own frontmatter.
 - **Test-lock on fix tasks** (`PreToolUse` on Write/Edit, `test-lock.sh`): while a task
@@ -106,8 +108,10 @@ projects that never run a loop.
 - **Completion verifier**: Builders cannot stop until it confirms tests pass, code is
   committed, hooks are clean, and the task is closed.
 
-The denylist also works outside the plugin. Paste this into a managed or project
-`settings.json` to enforce it for every session, loop or not:
+A subset of the denylist also works outside the plugin. Paste this into a managed or
+project `settings.json` to enforce it for every session, loop or not. It is weaker
+than the hook: permission rules are prefix matches, so they cannot express refspec
+pushes (`HEAD:main`) or absolute-path `rm -rf`; the hook stays the real rail.
 
 ```json
 {

@@ -69,8 +69,9 @@ hook stands down unless `.sdlc/state.json` holds a non-terminal loop:
 - **PermissionRequest → allow** (`auto-approve.sh`): routine work never stalls on a
   prompt nobody will answer. It only allows; it never denies.
 - **PreToolUse Bash → deny** (`deny-destructive.sh`): force-push, push to or delete
-  `main`/`master`, hard reset to remote, recursive delete outside the worktree,
-  package publish, repo deletion. PreToolUse runs before permission checks in every
+  `main`/`master` in any spelling (including `HEAD:main` and `refs/heads/main`),
+  hard reset to remote, recursive delete of any absolute or `~` path, package
+  publish, repo deletion. PreToolUse runs before permission checks in every
   mode, so this binds even for a `bypassPermissions` Builder.
 - **PreToolUse Write/Edit → test-lock** (`test-lock.sh`): while a registered fix task
   is in flight, test files are read-only (see VERIFY). A green run then proves the fix.
@@ -260,7 +261,9 @@ If the `compound-capture` skill is available, record any non-trivial solution or
 this feature produced (once, at feature level); skip silently if absent.
 Push the branch (`git push -u origin feature/{slug}`). Then `$STATE gate ship`: on
 `GATED ship` (the loop was started with `--gate ship`) stop immediately; the human
-reviews the branch and their next `/sdlc` resumes here. On `OPEN ship`, create the PR
+reviews the branch, which is already on the remote at this point (they edit locally
+and push again, nothing is held back on the laptop), and their next `/sdlc` resumes
+here. On `OPEN ship`, create the PR
 yourself (`gh pr create` / `glab mr create`) with: summary from the plan doc, AC
 checklist from the spec, a link to the intent document, and a **"Decisions made
 autonomously"** section rendered from `.sdlc/decisions.jsonl`. Append the PR URL to `.sdlc/progress.md`. `transition DONE

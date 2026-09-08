@@ -171,10 +171,11 @@ def gate_escalation_text(name: str, state: dict) -> str:
         )
     return (
         "# Gate: ship review\n\n"
-        "The loop paused on purpose (`--gate ship`), before opening the pull request.\n\n"
+        "The loop paused on purpose (`--gate ship`), before opening the pull request. "
+        "The feature branch is already pushed to the remote (no PR yet).\n\n"
         "1. Review the branch: `git log --oneline main..HEAD`, `git diff main...HEAD`, and "
         "`.sdlc/decisions.jsonl`.\n"
-        "2. Fix anything by hand and commit it on the feature branch.\n"
+        "2. Fix anything by hand, commit it on the feature branch, and push again.\n"
         f"3. Re-run `{rerun}`. The resume continues in SHIP and opens the PR.\n"
     )
 

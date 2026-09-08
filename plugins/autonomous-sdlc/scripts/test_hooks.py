@@ -58,9 +58,29 @@ def test_deny_push_to_main_even_in_a_compound_command(tmp_path):
     assert _deny(out)
 
 
+def test_deny_push_to_main_via_refspec(tmp_path):
+    # Every spelling of "the destination is main" must be caught, not just
+    # `origin main`; a bypassPermissions Builder is counting on this rail.
+    for cmd in (
+        "git push origin HEAD:main",
+        "git push origin feature/x:main",
+        "git push origin refs/heads/main",
+        "git push origin HEAD:refs/heads/master",
+        "git push origin +main",
+        "git push upstream master",
+    ):
+        assert _deny(run_hook(DENY, tmp_path, ACTIVE, bash(cmd))), cmd
+
+
 def test_deny_allows_routine_git(tmp_path):
-    assert run_hook(DENY, tmp_path, ACTIVE, bash("git push -u origin feature/x")) is None
-    assert run_hook(DENY, tmp_path, ACTIVE, bash("uv run pytest -q")) is None
+    for cmd in (
+        "git push -u origin feature/x",
+        "git push origin feature/main-menu",  # branch names containing main
+        "git push origin HEAD:feature/my-main",
+        "git push origin main-menu",
+        "uv run pytest -q",
+    ):
+        assert run_hook(DENY, tmp_path, ACTIVE, bash(cmd)) is None, cmd
 
 
 def test_deny_defers_without_an_active_loop(tmp_path):
@@ -96,6 +116,19 @@ def test_lock_allows_source_edits_during_fix_task(tmp_path):
     state = {"state": "BUILD", "in_flight": ["bd-fix"], "fix_tasks": ["bd-fix"]}
     assert run_hook(LOCK, tmp_path, state, edit("src/auth.py")) is None
     assert run_hook(LOCK, tmp_path, state, edit("docs/testing.md")) is None
+
+
+def test_lock_leaves_playbook_specs_docs_editable(tmp_path):
+    # specs/ holds the loop's own intent, spec and plan documents, not a test suite.
+    state = {"state": "BUILD", "in_flight": ["bd-fix"], "fix_tasks": ["bd-fix"]}
+    for path in (
+        "specs/user-auth-intent.md",
+        "specs/user-auth-spec.md",
+        "specs/user-auth-plan.md",
+    ):
+        assert run_hook(LOCK, tmp_path, state, edit(path)) is None, path
+    # A real test file under specs/ still locks, by filename.
+    assert _deny(run_hook(LOCK, tmp_path, state, edit("specs/auth.spec.ts")))
 
 
 def test_lock_is_off_when_fix_task_registered_but_not_in_flight(tmp_path):
