@@ -86,12 +86,64 @@ autonomously"** section of the PR for batch review. Escalation (`BLOCKED` +
 branch, credential/security boundaries, genuine requirement contradictions, and budget
 exhaustion.
 
-Safety rails for unattended operation:
-- The permission hook **denylists** force-push, pushing/deleting `main`, hard resets to
-  remote, recursive deletes outside the worktree, package publishing, and repo deletion
-  — and auto-approves routine work.
-- Builders cannot stop until a completion verifier confirms tests pass, code is
+Safety rails for unattended operation. All of them are hooks declared in the
+`sdlc-loop` skill's frontmatter, so they register only in sessions that invoked the loop
+(`/sdlc` invokes it) and every script stands down unless `.sdlc/state.json` holds a live
+loop. There is no plugin-level `hooks.json`: installing the plugin changes nothing in
+projects that never run a loop.
+
+- **Destructive-command denylist** (`PreToolUse` on Bash, `deny-destructive.sh`):
+  force-push, pushing to or deleting `main`/`master`, hard resets to remote, recursive
+  deletes outside the worktree, package publishing, repo deletion. PreToolUse runs before
+  permission checks in every mode, so it binds even for the `bypassPermissions` Builder,
+  which carries the same hook in its own frontmatter.
+- **Test-lock on fix tasks** (`PreToolUse` on Write/Edit, `test-lock.sh`): while a task
+  registered with `sdlc-state fix-task <id>` is in flight, test files are read-only. The
+  lead commits the reproducing test first, so a green run proves the bug is gone rather
+  than that the test changed.
+- **Routine approval** (`PermissionRequest`, `auto-approve.sh`): allows while a loop is
+  live so headless and manual-mode sessions never stall on a prompt. It never denies.
+- **Completion verifier**: Builders cannot stop until it confirms tests pass, code is
   committed, hooks are clean, and the task is closed.
+
+The denylist also works outside the plugin. Paste this into a managed or project
+`settings.json` to enforce it for every session, loop or not:
+
+```json
+{
+  "permissions": {
+    "deny": [
+      "Bash(git push --force*)", "Bash(git push -f*)",
+      "Bash(git push origin main*)", "Bash(git push origin master*)",
+      "Bash(git push --delete*)", "Bash(git branch -D main*)", "Bash(git branch -D master*)",
+      "Bash(git reset --hard origin*)",
+      "Bash(npm publish*)", "Bash(pnpm publish*)", "Bash(yarn publish*)",
+      "Bash(twine upload*)", "Bash(cargo publish*)", "Bash(gh repo delete*)"
+    ]
+  }
+}
+```
+
+## Intent Documents and Approval Gates
+
+Every loop has an **intent document** at `specs/{slug}-intent.md` (the playbook's
+`intent.md`): pain points, proposed outcome, affected systems, open questions. Pass one
+in (`/sdlc specs/foo-intent.md`, from a teammate or a monitoring stage) and the loop
+uses it as written; give a sentence and INIT writes it from the request. SPEC derives
+the acceptance criteria from it, and SHIP links it from the PR.
+
+**Approval gates** are opt-in pauses for teams that want a human between plan and code
+or before the PR. Both reuse BLOCKED, so nothing new to learn:
+
+```bash
+sdlc-state init --feature x --request "..." --gate plan        # pause after the plan commits
+sdlc-state init --feature x --request "..." --gate plan,ship   # and again before the PR
+```
+
+At the gate the loop writes `.sdlc/escalation.md` naming what to review (the plan, or
+the branch diff and decision log), and stops. Review, edit in place if you like, and
+re-run `/sdlc`: the resume records the gate as passed and continues. The autonomous
+default has no gates.
 
 ## Agents
 
@@ -128,19 +180,22 @@ worktree isolation. PR creation is one `gh pr create` call.
 
 ```
 .sdlc/
-├── state.json        # single source of truth: state, iteration, budgets, attempts
+├── state.json        # single source of truth: state, iteration, budgets, attempts, intent, gates, fix tasks
 ├── progress.md       # append-only log every iteration orients from
 ├── decisions.jsonl   # autonomous decisions, rendered into the PR
 ├── signs.md          # guardrails accumulated from observed mistakes
-└── escalation.md     # written only on BLOCKED
+└── escalation.md     # written on BLOCKED, including approval gates
 .claude/loop.md       # the iteration ritual a bare /loop runs (machine-local; rewritten by /sdlc, removed on DONE/BLOCKED; gitignore it)
+specs/{slug}-intent.md  # intent document (given, or written by INIT)
 specs/{slug}-spec.md  # acceptance criteria
 specs/{slug}-plan.md  # architect plan
 ```
 
-`python3 scripts/sdlc_state.py --help` documents the state CLI (init, tick [--waiting],
-transition, increment, task [--done], attempt, decide, note-progress, set-budget,
-set-driver, status, state).
+`sdlc-state --help` documents the state CLI (init, tick [--waiting], transition, gate,
+fix-task [--unlock], increment, task [--done], attempt, decide, note-progress,
+set-budget, set-driver, status, state). `sdlc-state` is the plugin's `bin/` wrapper, on
+PATH while the plugin is enabled; `python3 scripts/sdlc_state.py` is the same program
+for installs without `bin/` (plugins distributed through claude.ai organization settings).
 
 ## Composes With (soft dependencies — skipped silently when absent)
 
@@ -156,6 +211,7 @@ set-driver, status, state).
 
 - Optional: Claude Code ≥ v2.1.248 on Bedrock, Foundry, or Google Cloud if you want the self-paced `/loop` driver (the Stop hook needs nothing)
 - Git, `gh` or `glab` CLI, `uv` for Python projects
+- Plugin `bin/` (for `sdlc-state` on PATH) is not available to plugins distributed through claude.ai organization settings; the docs give the script-path fallback
 - Optional: Beads CLI (`bd`) for the task graph; TaskCreate is the fallback
 
 ## Recommended Settings
@@ -199,7 +255,28 @@ BUILD. A blank `--reviewers` value falls back to the default so the gate is neve
 
 ## Version History
 
-### v2.4.0 (Current)
+### v2.5.0 (Current)
+- **Hooks live in the `sdlc-loop` skill's frontmatter.** `hooks.json` is gone; the
+  permission rails, driver, and StopFailure logger register when the skill is invoked
+  and exist only in sessions running a loop. `/sdlc` and `.claude/loop.md` invoke the
+  skill (Skill tool) for that reason.
+- **Denylist moved to `PreToolUse`** (`deny-destructive.sh`, documented output shape),
+  which binds in every permission mode; `auto-approve.sh` only allows now, with the
+  documented `PermissionRequest` shape. The Builder keeps `bypassPermissions` and carries
+  both PreToolUse rails itself. A pasteable `permissions.deny` block is in the README.
+- **Test-lock for fix tasks.** `sdlc-state fix-task <id>` registers a fix task; while it
+  is in flight, `test-lock.sh` makes test files read-only. VERIFY and REVIEW commit the
+  reproducing test before registering the task. `task --done` lifts the lock;
+  `fix-task --unlock --reason` lifts it early.
+- **Intent documents.** `init --intent <path>` records a given intent doc; otherwise
+  `specs/{slug}-intent.md` is recorded and INIT writes it from the request. `/sdlc`
+  accepts a path to an intent document as its argument. SPEC derives AC from it.
+- **Approval gates.** `init --gate plan[,ship]`; `sdlc-state gate <name>` pauses via
+  BLOCKED with a review-instructions escalation file, and the next `/sdlc` passes it.
+- **`bin/sdlc-state`.** Skills and commands call `sdlc-state`; agents keep the explicit
+  script path.
+
+### v2.4.0
 - **Native self-paced `/loop` replaces the `/goal` offer.** `init` writes `.claude/loop.md`
   with the iteration ritual and the state CLI's absolute path, so a bare `/loop` drives
   the loop with Claude choosing the delay between iterations (short while work is ready,
