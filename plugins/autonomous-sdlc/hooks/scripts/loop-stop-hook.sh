@@ -1,5 +1,5 @@
 #!/bin/bash
-# ABOUTME: Fallback outer-loop driver for Claude Code without /goal (< v2.1.139).
+# ABOUTME: Default outer-loop driver: re-prompts until the state machine says DONE or BLOCKED.
 # ABOUTME: Blocks session stop and re-injects the iteration ritual until the state machine says DONE or BLOCKED.
 
 [ -f ".sdlc/state.json" ] || exit 0
@@ -9,9 +9,9 @@
 PLUGIN_ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 STATE_CLI="$PLUGIN_ROOT/scripts/sdlc_state.py"
 
-# One read: driver, state, and how many tasks are in flight. "auto" means
-# /sdlc hasn't recorded a successful /goal arm (set-driver goal) yet, so the
-# fallback must drive — otherwise a failed probe would leave no driver at all.
+# One read: driver, state, and how many tasks are in flight. "auto" means the
+# user has not armed a native driver (a bare /loop, recorded via set-driver
+# loop), so this hook must drive; any other driver value stands it down.
 # in_flight folds in the pre-2.1 single current_task slot for old loops.
 read -r DRIVER STATE INFLIGHT <<<"$(python3 -c "
 import json
@@ -35,9 +35,8 @@ fi
 # Waiting on background builders: when BUILD has work in flight, the agent is
 # legitimately idle-waiting, not quitting with ready work left. Allow the stop
 # and let the builder's completion notification re-enter the loop, instead of
-# burning a full re-prompt per wait-check. The model-side default is an in-turn
-# blocking wait (see the sdlc-loop skill's "Waiting on builders"); this keeps a
-# stop cheap if the agent does hand control back. Scoped to BUILD on purpose —
+# burning a full re-prompt per wait-check (see the sdlc-loop skill's "Waiting on
+# builders": the model stops rather than busy-waiting in-turn). Scoped to BUILD on purpose —
 # any other state with in_flight set is unexpected and should still re-prompt.
 # No .hook-blocks increment here: a wait is the absence of a spin, not one.
 if [ "$STATE" = "BUILD" ] && [ "${INFLIGHT:-0}" -gt 0 ]; then
