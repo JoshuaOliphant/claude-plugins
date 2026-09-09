@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# ABOUTME: `sdlc-state` on PATH while the plugin is enabled (plugin bin/): runs scripts/sdlc_state.py.
+# ABOUTME: Lets skills and commands say `sdlc-state tick` instead of an absolute or ${CLAUDE_PLUGIN_ROOT} path.
+set -euo pipefail
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec python3 "$here/../scripts/sdlc_state.py" "$@"

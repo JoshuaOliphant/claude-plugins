@@ -303,6 +303,44 @@ native: `init` writes `.claude/loop.md`, a bare `/loop` runs the ritual self-pac
 `set-driver loop` stands the Stop hook down, the skill no longer busy-waits on builders,
 and SHIP hands off to a bare `/loop`.
 
+### Applied in 2.5.0 (2026-09-08)
+
+Shipped after the 2.4.0 review: Part 1 items 1, 2 and 4 (intent document in and out,
+fix-task test-lock, `--gate plan` / `--gate ship` via BLOCKED) and this part's items 1
+and 2 (hooks moved into `sdlc-loop`'s frontmatter, the denylist as a `PreToolUse` deny),
+plus `bin/sdlc-state` from Part 2 item 5. Decisions taken on the way, with the reason:
+
+- **No `if` on the deny hook.** `if` cannot carry alternation, so the ten denylist
+  patterns would mean ten handlers; one regex script is smaller and is under test.
+  The docs do confirm `if` checks each subcommand of a compound command, so the
+  concern about `cd x && git push` was unfounded; the choice is about size, not safety.
+- **Builder stays `bypassPermissions`.** `auto` is a valid agent mode, but it depends
+  on the classifier being available to the account, and the loop runs headless.
+  `PreToolUse` denies "fire before any permission-mode check, in every permission
+  mode, including `bypassPermissions`" (hooks guide), so the rails no longer depend on
+  the mode. The Builder carries both PreToolUse rails in its own frontmatter because
+  the docs do not say whether session hooks reach subagent tool calls.
+- **Gates via BLOCKED, not native plan mode** (Part 2 item 7). `ExitPlanMode` is a
+  live prompt; a headless loop would hang on it. BLOCKED is on disk and resumable, and
+  the resume path already exists. `sdlc-state gate <name>` reuses it with zero new
+  states.
+- **Test-lock sequencing.** The lead commits the reproducing test *before* registering
+  the fix task, so the lock (armed when a registered fix task is in flight) never
+  blocks the test that defines the fix. Fix tasks run in the shared directory because
+  the hook reads the live `state.json`, which a worktree does not have.
+- **Item 4 (`SessionStart` orientation) not adopted.** The hooks reference documents
+  `additionalContext` for `UserPromptSubmit`, not `SessionStart`; and as a plugin-level
+  hook it would be the one thing left in a `hooks.json`. Revisit if the docs change.
+- **`hooks.json` deleted.** With every hook scoped to the skill, the plugin registers
+  nothing in sessions that never run a loop. Skill hooks register on invocation, so
+  `/sdlc` and `.claude/loop.md` now invoke the skill with the Skill tool rather than
+  reading it; whether they survive `--resume` is not documented, and re-running `/sdlc`
+  re-registers them either way.
+- **`bin/`** is on the Bash tool's PATH while the plugin is enabled but not available
+  to plugins distributed through claude.ai organization settings, so the skill and
+  commands say `sdlc-state` with the script-path fallback named once; agents keep the
+  explicit path because the docs do not say `bin/` reaches subagents or hooks.
+
 ### Hooks to adopt, ranked
 
 | # | Change | Mechanism from the reference | Why |

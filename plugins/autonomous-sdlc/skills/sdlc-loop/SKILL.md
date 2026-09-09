@@ -5,7 +5,7 @@ description: >
   what one unit of work the current state requires, how to verify it, and which
   transition to record. Trigger: an active `.sdlc/state.json` exists, or the /sdlc
   command invokes it. Not for ad-hoc use outside a loop.
-version: 2.1.0
+version: 2.2.0
 effort: high
 allowed-tools:
   - Bash
@@ -16,6 +16,38 @@ allowed-tools:
   - Edit
   - Task
   - Skill
+# Registered for the rest of the session when this skill is INVOKED (Skill tool
+# or /sdlc); merely Reading SKILL.md registers nothing. Scoped here instead of a
+# plugin-level hooks.json so the rails exist only in sessions running a loop.
+# Every script no-ops unless .sdlc/state.json holds a non-terminal loop.
+hooks:
+  PermissionRequest:
+    - matcher: ".*"
+      hooks:
+        - type: command
+          command: bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-approve.sh"
+          timeout: 5
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-destructive.sh"
+          timeout: 5
+    - matcher: "Write|Edit|MultiEdit|NotebookEdit"
+      hooks:
+        - type: command
+          command: bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/test-lock.sh"
+          timeout: 5
+  Stop:
+    - hooks:
+        - type: command
+          command: bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/loop-stop-hook.sh"
+          timeout: 10
+  StopFailure:
+    - hooks:
+        - type: command
+          command: bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/stop-failure.sh"
+          timeout: 10
 ---
 
 # SDLC Loop
@@ -24,26 +56,49 @@ You are one iteration of a loop. Context from previous iterations may be gone �
 by design. Everything you need is on disk; everything the next iteration needs must be
 on disk before you stop.
 
-`STATE=${CLAUDE_PLUGIN_ROOT}/scripts/sdlc_state.py` (run with `python3`).
+`STATE=sdlc-state` — the plugin's `bin/` puts it on PATH while the plugin is enabled.
+If `command -v sdlc-state` fails (installs distributed through claude.ai organization
+settings drop `bin/`), use `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/sdlc_state.py` instead.
+
+## Hooks this skill registers
+
+Invoking this skill (Skill tool, or `/sdlc`, which invokes it) registers five hooks for
+the rest of the session; Reading the file registers nothing, so always invoke. Each
+hook stands down unless `.sdlc/state.json` holds a non-terminal loop:
+
+- **PermissionRequest → allow** (`auto-approve.sh`): routine work never stalls on a
+  prompt nobody will answer. It only allows; it never denies.
+- **PreToolUse Bash → deny** (`deny-destructive.sh`): force-push, push to or delete
+  `main`/`master` in any spelling (including `HEAD:main` and `refs/heads/main`),
+  hard reset to remote, recursive delete of any absolute or `~` path, package
+  publish, repo deletion. PreToolUse runs before permission checks in every
+  mode, so this binds even for a `bypassPermissions` Builder.
+- **PreToolUse Write/Edit → test-lock** (`test-lock.sh`): while a registered fix task
+  is in flight, test files are read-only (see VERIFY). A green run then proves the fix.
+- **Stop** (`loop-stop-hook.sh`): the default driver, re-injects the ritual.
+- **StopFailure** (`stop-failure.sh`): logs API-error stops to `.sdlc/events/`.
+
+The Builder agent carries the two PreToolUse rails in its own frontmatter as well, so
+they hold inside subagents whether or not session hooks reach them.
 
 ## The Iteration Ritual
 
 Every iteration, in order, no exceptions:
 
-1. **Tick**: `python3 $STATE tick` — increments the iteration counter and enforces
+1. **Tick**: `$STATE tick` — increments the iteration counter and enforces
    budgets. If it prints `DONE` or `BLOCKED`, stop immediately: the loop is over.
    **Exception**: if this iteration exists only to check on in-flight background
-   builders (no other ready work), use `python3 $STATE tick --waiting` instead — wait
+   builders (no other ready work), use `$STATE tick --waiting` instead — wait
    checks are free, not budgeted units of work (see "Waiting on builders" below).
-2. **Orient**: `python3 $STATE status`, read the tail of `.sdlc/progress.md`, run
+2. **Orient**: `$STATE status`, read the tail of `.sdlc/progress.md`, run
    `git log --oneline -10`, and read `.sdlc/signs.md` if it exists (guardrails from
    past mistakes — they override your instincts). On your first iteration in a session,
    also load stored preferences:
    `python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py autonomous-sdlc show-feedback`
    — apply `loop_behavior`, `verification`, and `general` entries.
 3. **Work**: do **one unit of work** for the current state (dispatch table below).
-4. **Record**: commit the work, then `python3 $STATE note-progress --what "..."` or
-   `python3 $STATE transition <NEXT> --reason "..."`. A transition counts as progress;
+4. **Record**: commit the work, then `$STATE note-progress --what "..."` or
+   `$STATE transition <NEXT> --reason "..."`. A transition counts as progress;
    an iteration with neither a commit nor a transition counts toward the no-progress
    limit (2), after which the loop force-blocks.
 5. **Stop.** The loop driver (the plugin's Stop hook, or a user-armed self-paced
@@ -54,8 +109,19 @@ Every iteration, in order, no exceptions:
 
 ### INIT → SPEC
 Confirm the environment: feature branch exists (create `feature/{slug}` if not), state
-files committed, tooling detected (`bd`, `gh`/`glab`, test runner). Transition to SPEC.
-On unfixable environment problems (no git repo, no write access): escalate.
+files committed, tooling detected (`bd`, `gh`/`glab`, test runner).
+
+**Intent document.** `$STATE status` prints `intent: <path>`. If the file exists (the
+user passed an intent doc to `/sdlc`), leave it alone. If not, write it from the
+request, in the playbook's shape: title, **Pain points** (what is wrong or missing
+today), **Proposed outcome** (what "done" looks like for the user), **Affected systems**
+(files, services, interfaces you expect to touch, from a quick scan), and **Open
+questions** (each answered inline with `$STATE decide`, never left for the human). Keep
+it under a page. Commit it: it is the artifact the spec, the plan, and the PR trace
+back to, and the handoff a future monitoring stage can hand *in*.
+
+Transition to SPEC. On unfixable environment problems (no git repo, no write access):
+escalate.
 
 **Observability check (soft dependency).** Detect a project harness:
 `bash .claude/harness/observability/status.sh --json` (file absent → none). Note the
@@ -66,8 +132,9 @@ as an early task — it goes through normal build/verify and lands as its own re
 commit. Skip silently when the skill is absent or the project shape doesn't warrant it.
 
 ### SPEC → PLAN
-Derive acceptance criteria from `.sdlc/state.json`'s `request` field using the
-`bdd-spec` skill in autonomous mode (decide-don't-ask: resolve ambiguities yourself and
+Derive acceptance criteria from the intent document (`intent:` in `$STATE status`;
+its Proposed outcome is the source of truth, the `request` string is only its seed)
+using the `bdd-spec` skill in autonomous mode (decide-don't-ask: resolve ambiguities yourself and
 log each with `$STATE decide`). Write `specs/{slug}-spec.md` with numbered AC. Commit.
 Escalate **only** if the request is self-contradictory — not merely vague.
 
@@ -83,10 +150,17 @@ the feature's new surface — scan-and-propose scoped to this feature, autonomou
 so new code paths don't become the unobserved ones. Commit. One re-plan is allowed
 (`PLAN → PLAN`); a second planning failure escalates.
 
+**Plan gate (opt-in).** After the plan commits, run `$STATE gate plan`. It prints
+`OPEN plan` unless the loop was started with `--gate plan`, in which case it writes
+`.sdlc/escalation.md` ("review `specs/{slug}-plan.md`, edit in place, re-run `/sdlc`"),
+moves to BLOCKED, and prints `GATED plan`: stop immediately, without transitioning.
+The human's next `/sdlc` records the gate as passed and resumes in BUILD. Only on
+`OPEN` do you `transition BUILD`.
+
 ### BUILD (⇄ BUILD, → VERIFY)
 1. `bd ready` (or TaskList) → pick **one** task (or several independent ones for
-   parallel builders). For each: `python3 $STATE task <id>` (adds to the in-flight set;
-   `task <id> --done` when it closes) and `python3 $STATE attempt <id>` — if attempt
+   parallel builders). For each: `$STATE task <id>` (adds to the in-flight set;
+   `task <id> --done` when it closes) and `$STATE attempt <id>` — if attempt
    prints `EXCEEDED`, mark the task blocked in the tracker, log a decision, and pick
    the next ready task instead.
 2. Spawn a Builder (`agents/builder.md`) for the task — its TDD discipline, PostToolUse
@@ -99,16 +173,25 @@ so new code paths don't become the unobserved ones. Commit. One re-plan is allow
    No ready tasks and none in flight → `transition VERIFY`.
    All remaining tasks blocked → escalate with the list.
 
+**Fix tasks** (created by VERIFY or REVIEW and registered with `$STATE fix-task <id>`)
+run in the shared directory, never in a worktree: the test-lock hook reads the live
+`.sdlc/state.json`, and a worktree only has the committed copy. Putting one in flight
+(`$STATE task <id>`) makes every test file read-only until `task <id> --done`; the
+Builder fixes source until the committed reproducing test passes. If the Builder
+reports that the test itself is wrong, judge that yourself: `$STATE fix-task <id>
+--unlock --reason "..."` plus a logged decision, then fix the test and re-lock by
+registering again.
+
 **Waiting on builders.** Background builders take minutes. Never busy-wait inside a
 turn (no `Monitor` polls, no bash `until` loops): a held-open turn is a held-open
 context. When an iteration finds builders in flight and nothing else ready:
 
-1. `python3 $STATE tick --waiting` (free; bounded by its own `max_wait_ticks` ceiling).
+1. `$STATE tick --waiting` (free; bounded by its own `max_wait_ticks` ceiling).
 2. **Stop.** Under the Stop-hook driver, the hook allows the stop while BUILD has work
    in flight, and the builder's completion notification re-enters the loop (one wake
    per completion, not one per second). Under the `/loop` driver, schedule the next
    wakeup 5 to 15 minutes out; the completion notification may re-enter sooner.
-3. When a builder finishes: `python3 $STATE task <id> --done`, verify its work, and
+3. When a builder finishes: `$STATE task <id> --done`, verify its work, and
    take a normal work tick for whatever you do with it.
 
 ### VERIFY (→ REVIEW, ⇄ BUILD)
@@ -127,9 +210,18 @@ Required checks:
    first: distinguish "pipeline broken" from "code path never executed" before filing
    either as a failure.
 
-All green → `transition REVIEW`. Any red → create a fix task naming the failing
-check or AC, `transition BUILD`. Merge conflicts or a broken branch that isn't one
-task's fault → `transition REPAIR`.
+All green → `transition REVIEW`. Any red → the fix path, in this order:
+
+1. **Reproducing test first.** If the red is an existing failing test, that is the
+   reproducing test. If it is an unmet AC with no test (or a telemetry gap), write the
+   failing test now, yourself, while no fix task is in flight and the test-lock is
+   off. Commit it on its own ("test(ac-N): reproduce <failure>").
+2. Create the fix task in the tracker naming the failing check or AC, then
+   `$STATE fix-task <id>`: from the moment BUILD puts it in flight, test files are
+   read-only, so the fix must make *this* test pass rather than change it.
+3. `transition BUILD`.
+
+Merge conflicts or a broken branch that isn't one task's fault → `transition REPAIR`.
 
 ### REVIEW (→ SHIP, ⇄ BUILD)
 Once per feature, not per task. **Read the gate config first** — it is per-project and
@@ -151,8 +243,10 @@ initialized without the new flags reviews exactly as before.
      `silent-failure-hunter`) → dispatch the matching `pr-review-toolkit` agent via the
      Task tool if that plugin is installed; skip with a logged decision if it is absent.
 2. Handle findings per `mode`:
-   - **block** (default): real bugs become fix tasks → `transition BUILD`. The gate
-     holds SHIP until the branch is clean (subject to the round-trip budget below).
+   - **block** (default): real bugs become fix tasks → `transition BUILD`, through the
+     same fix path as VERIFY (reproducing test committed first, then `$STATE fix-task
+     <id>`). The gate holds SHIP until the branch is clean (subject to the round-trip
+     budget below).
    - **annotate**: never transition back to BUILD for findings. Collect every finding
      into a "Review findings (annotate mode)" block to paste into the PR body, then
      proceed straight to step 3.
@@ -165,10 +259,14 @@ initialized without the new flags reviews exactly as before.
 ### SHIP → DONE
 If the `compound-capture` skill is available, record any non-trivial solution or gotcha
 this feature produced (once, at feature level); skip silently if absent.
-Push the branch (`git push -u origin feature/{slug}`). Create the PR yourself
-(`gh pr create` / `glab mr create`) with: summary from the plan doc, AC checklist from
-the spec, and a **"Decisions made autonomously"** section rendered from
-`.sdlc/decisions.jsonl`. Append the PR URL to `.sdlc/progress.md`. `transition DONE
+Push the branch (`git push -u origin feature/{slug}`). Then `$STATE gate ship`: on
+`GATED ship` (the loop was started with `--gate ship`) stop immediately; the human
+reviews the branch, which is already on the remote at this point (they edit locally
+and push again, nothing is held back on the laptop), and their next `/sdlc` resumes
+here. On `OPEN ship`, create the PR
+yourself (`gh pr create` / `glab mr create`) with: summary from the plan doc, AC
+checklist from the spec, a link to the intent document, and a **"Decisions made
+autonomously"** section rendered from `.sdlc/decisions.jsonl`. Append the PR URL to `.sdlc/progress.md`. `transition DONE
 --reason "<pr-url>"`. `transition DONE` removes `.claude/loop.md` (only the one `init`
 wrote; a user's own file stays), so a bare `/loop` now falls through to Claude Code's
 built-in PR-maintenance prompt. In the final report print a bare `/loop` for the user:
@@ -209,7 +307,7 @@ credentials, or anything on the Escalate list below — those stay gated exactly
 CLAUDE.md specifies, and always route through `transition BLOCKED`, never a question.
 
 ```bash
-python3 $STATE decide --decision "what you chose" --why "one-line rationale"
+$STATE decide --decision "what you chose" --why "one-line rationale"
 ```
 
 **Prefer documented facts over guessed ones.** When a decision turns on *externally
@@ -227,7 +325,7 @@ review comment; a question costs the whole loop.
 
 **Budgets are adjustable, not sacred.** If a legitimate loop is about to exhaust a
 budget for structural reasons (many parallel waves, a large plan), raise it explicitly —
-`python3 $STATE set-budget --max-iterations N` — and log the decision with the reason.
+`$STATE set-budget --max-iterations N` — and log the decision with the reason.
 Never hand-edit `state.json` for this; the wrong key is silently ignored.
 
 **Escalate only for** (the complete list):
@@ -237,7 +335,7 @@ Never hand-edit `state.json` for this; the wrong key is silently ignored.
 4. Budget exhaustion or every remaining task blocked.
 
 Escalation procedure: write `.sdlc/escalation.md` (situation, options considered,
-your recommendation), then `python3 $STATE transition BLOCKED --reason "<one line>"`.
+your recommendation), then `$STATE transition BLOCKED --reason "<one line>"`.
 The loop exits; the human reads one file and re-runs `/sdlc` to resume.
 
 ## Signs

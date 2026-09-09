@@ -54,5 +54,5 @@ if [ "$BLOCKS" -gt 200 ]; then
 fi
 
 cat <<EOF
-{"decision": "block", "reason": "SDLC loop is in state $STATE — it is not finished. Run the next iteration per the sdlc-loop skill: (1) python3 $STATE_CLI tick, (2) orient from .sdlc/progress.md, .sdlc/signs.md and git log, (3) do ONE unit of work for $STATE, (4) commit and record a transition or note-progress, (5) stop. If tick prints DONE or BLOCKED, just stop."}
+{"decision": "block", "reason": "SDLC loop is in state $STATE — it is not finished. Run the next iteration per the sdlc-loop skill (invoke it with the Skill tool if this session has not yet): (1) python3 $STATE_CLI tick, (2) orient from .sdlc/progress.md, .sdlc/signs.md and git log, (3) do ONE unit of work for $STATE, (4) commit and record a transition or note-progress, (5) stop. If tick prints DONE or BLOCKED, just stop."}
 EOF

@@ -12,6 +12,10 @@ may exit. All state lives in
 Usage:
     sdlc_state.py init --feature user-auth --request "Add auth" [--max-iterations 50]
                        [--reviewers code-review,security-review] [--review-mode block]
+                       [--intent specs/user-auth-intent.md] [--gate plan,ship]
+    sdlc_state.py gate plan                # pause for human review if --gate plan was set (else OPEN)
+    sdlc_state.py fix-task bd-c3d4         # register a VERIFY/REVIEW fix task: test files lock while it is in flight
+    sdlc_state.py fix-task bd-c3d4 --unlock --reason "the test itself was wrong"
     sdlc_state.py state                    # prints just the state name (for evaluators)
     sdlc_state.py status                   # human-readable summary
     sdlc_state.py tick                     # start a WORK iteration: bump counter, enforce budgets
@@ -51,6 +55,15 @@ LOOP_MD_MARKER = "# autonomous-sdlc loop prompt"
 # said so (set-driver loop), which stands the hook down. goal is kept for loops
 # recorded before /loop existed; stop-hook forces the hook explicitly.
 DRIVERS = ("auto", "loop", "goal", "stop-hook")
+
+# Opt-in human approval gates (playbook: "approved plan committed before code",
+# "hooks as approval gates"). A gate reuses BLOCKED: `gate <name>` pauses the
+# loop with an escalation file, and the next `init` (a re-run of /sdlc) records
+# the gate as passed and resumes at GATE_RESUME[name]. No new states.
+GATES = ("plan", "ship")
+GATE_RESUME = {"plan": "BUILD", "ship": "SHIP"}
+GATE_REASON_PREFIX = "gate: "
+ESCALATION_FILE = SDLC_DIR / "escalation.md"
 
 STATES = [
     "INIT",
@@ -116,6 +129,57 @@ def build_review_config(reviewers: str | None, mode: str | None) -> dict:
     return {"reviewers": names, "mode": chosen_mode}
 
 
+def parse_gates(gates: str | None) -> list[str]:
+    """Parse the --gate init flag (comma-separated gate names) and validate it."""
+    names = [g.strip() for g in (gates or "").split(",") if g.strip()]
+    unknown = [g for g in names if g not in GATES]
+    if unknown:
+        sys.exit(f"Unknown --gate {unknown}; choose from {', '.join(GATES)}.")
+    return list(dict.fromkeys(names))  # dedupe, keep order
+
+
+def default_intent(feature: str) -> str:
+    return f"specs/{feature}-intent.md"
+
+
+def resolve_intent(intent: str | None, feature: str) -> str:
+    """The intent document path recorded in state.json.
+
+    Given explicitly (`/sdlc specs/foo-intent.md`), the file must already exist:
+    it is the human's input. Omitted, the default path is recorded and the INIT
+    dispatch writes the document from the request sentence, so every loop has a
+    committed intent artifact the spec and the PR trace back to.
+    """
+    if intent:
+        if not Path(intent).exists():
+            sys.exit(f"--intent {intent} does not exist.")
+        return intent
+    return default_intent(feature)
+
+
+def gate_escalation_text(name: str, state: dict) -> str:
+    feature, request = state["feature"], state.get("request", "")
+    rerun = f'/sdlc "{request}"' if request else "/sdlc"
+    if name == "plan":
+        return (
+            "# Gate: plan review\n\n"
+            "The loop paused on purpose (`--gate plan`), after the plan was committed and "
+            "before any code was written.\n\n"
+            f"1. Review `specs/{feature}-plan.md` (and `specs/{feature}-spec.md`).\n"
+            "2. Edit either file in place if you want changes; the loop reads them from disk.\n"
+            f"3. Re-run `{rerun}`. The resume records the gate as passed and continues into BUILD.\n"
+        )
+    return (
+        "# Gate: ship review\n\n"
+        "The loop paused on purpose (`--gate ship`), before opening the pull request. "
+        "The feature branch is already pushed to the remote (no PR yet).\n\n"
+        "1. Review the branch: `git log --oneline main..HEAD`, `git diff main...HEAD`, and "
+        "`.sdlc/decisions.jsonl`.\n"
+        "2. Fix anything by hand, commit it on the feature branch, and push again.\n"
+        f"3. Re-run `{rerun}`. The resume continues in SHIP and opens the PR.\n"
+    )
+
+
 LOOP_MD_TEMPLATE = """\
 {marker} (written by `sdlc_state.py init`; a bare `/loop` runs it)
 
@@ -126,6 +190,9 @@ LOOP_MD_TEMPLATE = """\
 You are one iteration of the autonomous-sdlc loop for **{feature}**. Follow the
 `sdlc-loop` skill's iteration ritual exactly, then stop:
 
+0. If this session has not invoked the `sdlc-loop` skill yet, invoke it now with the
+   Skill tool (not Read): its frontmatter registers the loop's permission rails and
+   test-lock hooks for the session.
 1. `python3 {state_cli} tick` (or `tick --waiting` if this iteration only checks on
    in-flight builders). If it prints `DONE` or `BLOCKED`, the loop is finished: end
    this /loop (`ScheduleWakeup` with `stop: true`), report the final status, and stop.
@@ -217,6 +284,39 @@ def cmd_init(args: argparse.Namespace) -> None:
         if "review" not in state:
             state["review"] = build_review_config(None, None)
             save(state)
+        # Same backfill for the 2.5.0 fields (intent, gates, fix tasks).
+        added = False
+        for key, value in (
+            ("intent", default_intent(state["feature"])),
+            ("gates", []),
+            ("gates_passed", []),
+            ("fix_tasks", []),
+        ):
+            if key not in state:
+                state[key] = value
+                added = True
+        if added:
+            save(state)
+        # A loop paused at an approval gate resumes by the human re-running /sdlc:
+        # record the gate as passed and continue at the state the gate guards.
+        last_reason = (state["history"][-1] if state["history"] else {}).get("reason", "")
+        if state["state"] == "BLOCKED" and last_reason.startswith(GATE_REASON_PREFIX):
+            name = last_reason[len(GATE_REASON_PREFIX) :].strip()
+            target = GATE_RESUME.get(name)
+            if target:
+                state["gates_passed"].append(name)
+                state["history"].append(
+                    {"at": now(), "to": target, "reason": f"gate {name} passed by human"}
+                )
+                state["state"] = target
+                state["last_progress_iteration"] = state["iteration"]
+                save(state)
+                append_progress(f"→ {target}: gate {name} passed (human re-ran /sdlc)")
+                write_loop_md(state["feature"])
+                print(
+                    f"RESUME state={target} iteration={state['iteration']} gate={name} passed"
+                )
+                return
         # A finished (DONE) loop re-invoked with a *new* feature is the next
         # increment, not a resume: archive the finished increment and reset to
         # INIT so a plain `/sdlc "new thing"` works in the same project instead
@@ -224,7 +324,9 @@ def cmd_init(args: argparse.Namespace) -> None:
         # on DONE is a true no-op resume; a non-DONE state always resumes live
         # work untouched (never increment over a loop still in flight).
         if state["state"] == "DONE" and args.feature != state["feature"]:
-            apply_increment(state, args.feature, args.request)
+            apply_increment(
+                state, args.feature, args.request, getattr(args, "intent", None)
+            )
             save(state)
             append_progress(
                 f"━━ increment {state['cycle']}: {args.feature} — {args.request}"
@@ -238,10 +340,16 @@ def cmd_init(args: argparse.Namespace) -> None:
             write_loop_md(state["feature"])
         print(f"RESUME state={state['state']} iteration={state['iteration']}")
         return
+    intent = resolve_intent(getattr(args, "intent", None), args.feature)
+    gates = parse_gates(getattr(args, "gates", None))
     SDLC_DIR.mkdir(exist_ok=True)
     state = {
         "feature": args.feature,
         "request": args.request,
+        "intent": intent,
+        "gates": gates,
+        "gates_passed": [],
+        "fix_tasks": [],
         "state": "INIT",
         "cycle": 1,
         "driver": args.driver,
@@ -272,7 +380,8 @@ def cmd_init(args: argparse.Namespace) -> None:
     else:
         append_progress(f"kept user-owned {LOOP_MD_FILE} (no marker line)")
     append_progress(f"loop initialized (driver={args.driver})")
-    print(f"INIT feature={args.feature} driver={args.driver}")
+    gate_note = f" gates={','.join(gates)}" if gates else ""
+    print(f"INIT feature={args.feature} driver={args.driver} intent={intent}{gate_note}")
 
 
 def cmd_state(_args: argparse.Namespace) -> None:
@@ -294,6 +403,19 @@ def cmd_status(_args: argparse.Namespace) -> None:
         [s["current_task"]] if s.get("current_task") else []
     )
     print(f"in flight: {', '.join(in_flight) or '-'}")
+    fix_tasks = s.get("fix_tasks", [])
+    locked = sorted(set(fix_tasks) & set(in_flight))
+    print(
+        f"fix tasks: {', '.join(fix_tasks) or '-'}"
+        + (f" (test files LOCKED for {', '.join(locked)})" if locked else "")
+    )
+    print(f"intent: {s.get('intent', '-')}")
+    gates = s.get("gates", [])
+    passed = set(s.get("gates_passed", []))
+    print(
+        "gates: "
+        + (", ".join(g + (" (passed)" if g in passed else "") for g in gates) or "-")
+    )
     review = s.get("review", build_review_config(None, None))
     print(f"review gate: {', '.join(review['reviewers'])} (mode={review['mode']})")
     print(f"last progress: iteration {s['last_progress_iteration']}")
@@ -315,7 +437,9 @@ def block(state: dict, reason: str) -> None:
     print(f"BLOCKED {reason}")
 
 
-def apply_increment(state: dict, feature: str, request: str) -> None:
+def apply_increment(
+    state: dict, feature: str, request: str, intent: str | None = None
+) -> None:
     """Archive the current increment and reset the session onto the next one.
 
     DONE is a terminal sink in the edge graph and init is resume-only, so
@@ -342,6 +466,9 @@ def apply_increment(state: dict, feature: str, request: str) -> None:
     state["cycle"] = new_cycle
     state["feature"] = feature
     state["request"] = request
+    state["intent"] = resolve_intent(intent, feature)
+    state["gates_passed"] = []  # gates (the config) persist; passes are per increment
+    state["fix_tasks"] = []
     state["state"] = "INIT"
     state["in_flight"] = []
     state["iteration"] = 0
@@ -360,7 +487,7 @@ def apply_increment(state: dict, feature: str, request: str) -> None:
 
 def cmd_increment(args: argparse.Namespace) -> None:
     s = load()
-    apply_increment(s, args.feature, args.request)
+    apply_increment(s, args.feature, args.request, getattr(args, "intent", None))
     save(s)
     append_progress(f"━━ increment {s['cycle']}: {args.feature} — {args.request}")
     write_loop_md(args.feature)
@@ -427,12 +554,63 @@ def cmd_task(args: argparse.Namespace) -> None:
     if args.done:
         if args.task_id in in_flight:
             in_flight.remove(args.task_id)
+        if args.task_id in s.get("fix_tasks", []):
+            s["fix_tasks"].remove(args.task_id)  # closing a fix task lifts its test-lock
     elif args.task_id not in in_flight:
         in_flight.append(args.task_id)
     s["in_flight"] = in_flight
     s.pop("current_task", None)  # superseded by in_flight (v2.1)
     save(s)
     print(f"OK in_flight=[{', '.join(in_flight) or '-'}]")
+
+
+def cmd_fix_task(args: argparse.Namespace) -> None:
+    """Register (or unlock) a fix task.
+
+    VERIFY and REVIEW create fix tasks for red checks and real findings. While a
+    registered fix task is in flight, the test-lock hook denies edits to test
+    files, so a green run proves the bug is gone rather than that the test was
+    changed (playbook Test stage). The reproducing test is committed *before*
+    the task is registered, by the lead, so the lock never blocks it.
+    """
+    s = load()
+    fix = s.setdefault("fix_tasks", [])
+    if args.unlock:
+        if args.task_id in fix:
+            fix.remove(args.task_id)
+        save(s)
+        append_progress(f"test-lock lifted for {args.task_id}: {args.reason}")
+        print(f"OK unlocked {args.task_id} (log a decision explaining why)")
+        return
+    if args.task_id not in fix:
+        fix.append(args.task_id)
+    save(s)
+    print(
+        f"OK fix_tasks=[{', '.join(fix)}] — test files lock while one is in flight "
+        f"(task <id> --done lifts it)"
+    )
+
+
+def cmd_gate(args: argparse.Namespace) -> None:
+    """Pause at an opt-in approval gate, or print OPEN when it is not configured."""
+    s = load()
+    name = args.name
+    if name not in s.get("gates", []) or name in s.get("gates_passed", []):
+        print(f"OPEN {name}")
+        return
+    if s["state"] not in ACTIVE_STATES:
+        sys.exit(f"gate {name}: loop is {s['state']}, nothing to gate.")
+    ESCALATION_FILE.write_text(gate_escalation_text(name, s))
+    s["history"].append(
+        {"at": now(), "to": "BLOCKED", "reason": f"{GATE_REASON_PREFIX}{name}"}
+    )
+    s["state"] = "BLOCKED"
+    s["last_progress_iteration"] = s["iteration"]
+    save(s)
+    append_progress(f"→ BLOCKED: gate {name} (human review requested; re-run /sdlc)")
+    if remove_loop_md():
+        append_progress(f"removed {LOOP_MD_FILE} (gate; /sdlc rewrites it)")
+    print(f"GATED {name} — loop paused for human review ({ESCALATION_FILE}); stop now")
 
 
 def cmd_attempt(args: argparse.Namespace) -> None:
@@ -529,6 +707,24 @@ def main() -> None:
             "annotate: findings are listed in the PR body, never block SHIP."
         ),
     )
+    sp.add_argument(
+        "--intent",
+        default=None,
+        help=(
+            "Path to an existing intent document (the playbook's intent.md). "
+            "Omit to record specs/<feature>-intent.md, which INIT writes from the request."
+        ),
+    )
+    sp.add_argument(
+        "--gate",
+        dest="gates",
+        default=None,
+        help=(
+            "Comma-separated approval gates: plan (pause after the plan commits, "
+            "before BUILD) and/or ship (pause before opening the PR). Each pause is "
+            "BLOCKED with an escalation file; re-running /sdlc passes the gate."
+        ),
+    )
     sp.set_defaults(func=cmd_init)
 
     sub.add_parser("state", help="print just the state name").set_defaults(
@@ -553,7 +749,20 @@ def main() -> None:
     sp = sub.add_parser("increment", help="finish this increment, start the next")
     sp.add_argument("--feature", required=True)
     sp.add_argument("--request", default="")
+    sp.add_argument("--intent", default=None)
     sp.set_defaults(func=cmd_increment)
+
+    sp = sub.add_parser("gate", help="pause at an opt-in approval gate (or print OPEN)")
+    sp.add_argument("name", choices=list(GATES))
+    sp.set_defaults(func=cmd_gate)
+
+    sp = sub.add_parser(
+        "fix-task", help="register a fix task (test files lock while it is in flight)"
+    )
+    sp.add_argument("task_id")
+    sp.add_argument("--unlock", action="store_true", help="lift the test-lock early")
+    sp.add_argument("--reason", default="unlocked", help="why the lock was lifted")
+    sp.set_defaults(func=cmd_fix_task)
 
     sp = sub.add_parser("task", help="mark a task in flight (or done with --done)")
     sp.add_argument("task_id")

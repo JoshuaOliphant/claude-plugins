@@ -15,7 +15,7 @@ loop stays resumable.
 ## 1. Stop the loop
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/scripts/sdlc_state.py transition BLOCKED --reason "cancelled by user"
+sdlc-state transition BLOCKED --reason "cancelled by user"
 ```
 
 If the driver is `loop` (the user armed a bare `/loop`), the next wakeup sees BLOCKED

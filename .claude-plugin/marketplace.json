@@ -29,8 +29,8 @@
     {
       "name": "autonomous-sdlc",
       "source": "./plugins/autonomous-sdlc",
-      "description": "Autonomous SDLC as a state machine on disk driven by a Stop-hook loop (optionally a user-armed /goal) — one verified unit of work per iteration, decide-log-proceed autonomy, built-in verify/code-review/simplify gates",
-      "version": "2.4.0",
+      "description": "Autonomous SDLC as a state machine on disk driven by a Stop-hook loop (or a user-armed self-paced /loop) — one verified unit of work per iteration, decide-log-proceed autonomy with opt-in plan/ship approval gates, intent documents, a fix-task test-lock, built-in code-review/simplify gates",
+      "version": "2.5.0",
       "author": {
         "name": "Joshua Oliphant"
       },

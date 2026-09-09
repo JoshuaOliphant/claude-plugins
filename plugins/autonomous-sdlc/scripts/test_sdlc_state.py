@@ -35,6 +35,8 @@ def _init(tmp_path, **overrides):
             driver="goal",
             reviewers=overrides.get("reviewers", None),
             review_mode=overrides.get("review_mode", None),
+            intent=overrides.get("intent", None),
+            gates=overrides.get("gates", None),
         )
         sdlc_state.cmd_init(args)
         return json.loads(sdlc_state.STATE_FILE.read_text())
@@ -415,6 +417,150 @@ def test_forced_block_from_tick_removes_loop_md(tmp_path):
     assert not loop_md.exists()
 
 
+# --- 2.5.0: intent, approval gates, fix tasks ---
+
+
+def _run(tmp_path, fn, **ns):
+    cwd = Path.cwd()
+    os.chdir(tmp_path)
+    try:
+        fn(sdlc_state.argparse.Namespace(**ns))
+    finally:
+        os.chdir(cwd)
+
+
+def test_init_records_default_intent_path(tmp_path):
+    state = _init(tmp_path, _feature="user-auth")
+    assert state["intent"] == "specs/user-auth-intent.md"
+    assert state["gates"] == [] and state["gates_passed"] == [] and state["fix_tasks"] == []
+
+
+def test_init_accepts_an_existing_intent_file_and_rejects_a_missing_one(tmp_path):
+    (tmp_path / "specs").mkdir()
+    (tmp_path / "specs" / "given.md").write_text("# intent\n")
+    state = _init(tmp_path, intent="specs/given.md")
+    assert state["intent"] == "specs/given.md"
+    cwd = Path.cwd()
+    os.chdir(tmp_path)
+    try:
+        (tmp_path / ".sdlc" / "state.json").unlink()
+        try:
+            sdlc_state.resolve_intent("specs/missing.md", "x")
+        except SystemExit as e:
+            assert "does not exist" in str(e.code)
+        else:
+            raise AssertionError("missing --intent must exit")
+    finally:
+        os.chdir(cwd)
+
+
+def test_init_records_gates_and_rejects_unknown_ones(tmp_path):
+    state = _init(tmp_path, gates="plan,ship")
+    assert state["gates"] == ["plan", "ship"]
+    try:
+        sdlc_state.parse_gates("plan,merge")
+    except SystemExit as e:
+        assert "merge" in str(e.code)
+    else:
+        raise AssertionError("unknown gate must exit")
+
+
+def test_gate_is_open_when_not_configured(tmp_path, capsys):
+    _init(tmp_path)
+    _run(tmp_path, sdlc_state.cmd_gate, name="plan")
+    assert "OPEN plan" in capsys.readouterr().out
+    assert _read_state(tmp_path)["state"] == "INIT"
+
+
+def test_gate_plan_pauses_and_rerun_resumes_into_build(tmp_path, capsys):
+    _init(tmp_path, _feature="cart", _request="build a cart", gates="plan")
+    s = _read_state(tmp_path)
+    s["state"] = "PLAN"
+    _write_state(tmp_path, s)
+    _run(tmp_path, sdlc_state.cmd_gate, name="plan")
+    out = capsys.readouterr().out
+    assert "GATED plan" in out
+    state = _read_state(tmp_path)
+    assert state["state"] == "BLOCKED"
+    assert state["history"][-1]["reason"] == "gate: plan"
+    escalation = (tmp_path / ".sdlc" / "escalation.md").read_text()
+    assert "specs/cart-plan.md" in escalation and '/sdlc "build a cart"' in escalation
+    assert not (tmp_path / ".claude" / "loop.md").exists()
+
+    # The human reviews, then re-runs /sdlc: the gate is passed, BUILD resumes.
+    _init(tmp_path, _feature="cart", _request="build a cart")
+    out = capsys.readouterr().out
+    assert "RESUME state=BUILD" in out and "gate=plan passed" in out
+    state = _read_state(tmp_path)
+    assert state["state"] == "BUILD" and state["gates_passed"] == ["plan"]
+    assert (tmp_path / ".claude" / "loop.md").exists()
+
+    # A passed gate never fires twice.
+    _run(tmp_path, sdlc_state.cmd_gate, name="plan")
+    assert "OPEN plan" in capsys.readouterr().out
+
+
+def test_gate_ship_resumes_into_ship(tmp_path, capsys):
+    _init(tmp_path, gates="ship")
+    s = _read_state(tmp_path)
+    s["state"] = "SHIP"
+    _write_state(tmp_path, s)
+    _run(tmp_path, sdlc_state.cmd_gate, name="ship")
+    assert _read_state(tmp_path)["state"] == "BLOCKED"
+    _init(tmp_path)
+    assert "RESUME state=SHIP" in capsys.readouterr().out
+
+
+def test_ordinary_blocked_resume_is_not_a_gate_pass(tmp_path, capsys):
+    _init(tmp_path, gates="plan")
+    _transition(tmp_path, "BLOCKED", from_state="BUILD")
+    _init(tmp_path)
+    out = capsys.readouterr().out
+    assert "RESUME state=BLOCKED" in out and "gate=" not in out
+    assert _read_state(tmp_path)["gates_passed"] == []
+
+
+def test_fix_task_register_unlock_and_done(tmp_path, capsys):
+    _init(tmp_path)
+    _run(tmp_path, sdlc_state.cmd_fix_task, task_id="bd-fix", unlock=False, reason="")
+    assert _read_state(tmp_path)["fix_tasks"] == ["bd-fix"]
+    _run(tmp_path, sdlc_state.cmd_task, task_id="bd-fix", done=False)
+    _run(tmp_path, sdlc_state.cmd_status)
+    assert "test files LOCKED for bd-fix" in capsys.readouterr().out
+    _run(tmp_path, sdlc_state.cmd_task, task_id="bd-fix", done=True)
+    state = _read_state(tmp_path)
+    assert state["fix_tasks"] == [] and state["in_flight"] == []
+    _run(tmp_path, sdlc_state.cmd_fix_task, task_id="bd-2", unlock=False, reason="")
+    _run(
+        tmp_path, sdlc_state.cmd_fix_task, task_id="bd-2", unlock=True, reason="test wrong"
+    )
+    assert _read_state(tmp_path)["fix_tasks"] == []
+    assert "test wrong" in (tmp_path / ".sdlc" / "progress.md").read_text()
+
+
+def test_increment_keeps_gates_but_resets_passes_fix_tasks_and_intent(tmp_path):
+    _init(tmp_path, _feature="cart", _request="a", gates="plan")
+    s = _read_state(tmp_path)
+    s.update(state="DONE", gates_passed=["plan"], fix_tasks=["bd-9"])
+    _write_state(tmp_path, s)
+    _init(tmp_path, _feature="checkout", _request="b")
+    state = _read_state(tmp_path)
+    assert state["gates"] == ["plan"] and state["gates_passed"] == []
+    assert state["fix_tasks"] == [] and state["intent"] == "specs/checkout-intent.md"
+
+
+def test_resume_backfills_2_5_fields(tmp_path):
+    _init(tmp_path, _feature="old")
+    s = _read_state(tmp_path)
+    for k in ("intent", "gates", "gates_passed", "fix_tasks"):
+        s.pop(k)
+    s["state"] = "BUILD"
+    _write_state(tmp_path, s)
+    _init(tmp_path, _feature="old")
+    state = _read_state(tmp_path)
+    assert state["intent"] == "specs/old-intent.md" and state["fix_tasks"] == []
+
+
 def test_set_driver_accepts_loop(tmp_path):
     _init(tmp_path)
     cwd = Path.cwd()
@@ -453,8 +599,14 @@ if __name__ == "__main__":
         test_transition_done_keeps_user_owned_loop_md,
         test_transition_blocked_removes_loop_md_and_resume_rewrites_it,
         test_forced_block_from_tick_removes_loop_md,
+        test_init_records_default_intent_path,
+        test_init_accepts_an_existing_intent_file_and_rejects_a_missing_one,
+        test_init_records_gates_and_rejects_unknown_ones,
+        test_increment_keeps_gates_but_resets_passes_fix_tasks_and_intent,
+        test_resume_backfills_2_5_fields,
         test_set_driver_accepts_loop,
     ]
+    # Tests taking capsys need pytest; they are skipped in fallback mode.
     # The pytest.raises test needs pytest; skip it in fallback mode.
     failures = 0
     for t in tests:
