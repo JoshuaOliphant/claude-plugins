@@ -84,6 +84,27 @@ where the same id appears as bare prose.
 
 Trace regexes are free to score — no LLM judge is billed. The cost is the agent run.
 
+## Writing fixture queries
+
+A fixture query becomes an eval prompt verbatim, and the harness attaches nothing to
+it. So a query that points at content the user would have pasted — "turn **these
+meeting notes** into cards", "make cards from **this article**" — does not test
+triggering. The agent correctly answers "I don't see the notes in your message",
+loads no skill, and the case fails for a reason that has nothing to do with the
+skill description.
+
+Inline enough content to make the request answerable:
+
+```diff
+- turn these meeting notes about our API design decisions into flashcards
++ we decided to version the API in the URL path rather than a header, because CDN
++ caching keys off the path. turn that into flashcards
+```
+
+Two queries in `mochi-creator-eval.json` had this defect and produced a phantom
+"skill never fires" result until the content was inlined; one of them then passed
+3/3. Grep new fixtures for `these|this|my <noun>` before trusting a red case.
+
 ## Hand-authored cases
 
 Generated cases only answer "did the right skill load?". Cases that test what a

@@ -4,7 +4,7 @@ description: >
   MUST use when the user mentions flashcards, Mochi, spaced repetition, memorization, studying, or
   wanting to remember something. Trigger proactively when the user says "I want to remember this",
   "make flashcards", "create Mochi cards", "help me study", "turn this into flashcards", "SRS",
-  "Anki", or "I need to memorize this". Creates evidence-based cards using cognitive science
+  or "I need to memorize this". Creates evidence-based cards using cognitive science
   principles (Andy Matuschak's 5 properties of effective prompts) via the Mochi API.
 ---
 
