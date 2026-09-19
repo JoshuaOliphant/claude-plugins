@@ -26,8 +26,9 @@ claude-plugins/
 │   ├── check_all.py                   # One-command repo health check (versions + sync + tests)
 │   ├── check_marketplace_versions.py  # Asserts marketplace.json ⇄ plugin.json (versions + registration)
 │   ├── sync_shared.py                 # Asserts/regenerates per-plugin copies of shared artifacts
+│   ├── gen_trigger_evals.py           # Compiles evals/*.json fixtures into plugin eval cases
 │   └── shared/                        # Canonical sources for artifacts duplicated across plugins
-├── evals/                          # Skill-trigger eval datasets (fixtures, not a plugin)
+├── evals/                          # Skill-trigger eval fixtures (data, not a plugin)
 ├── ai_docs/                        # Background research/reference docs (not shipped in plugins)
 ├── docs/                           # Planning and specifications
 ├── README.md                       # Marketplace installation instructions
@@ -146,6 +147,40 @@ python scripts/sync_shared.py --write     # regenerate every copy from its canon
 
 Edit only the canonical file in `scripts/shared/`, then run `--write`. Register a new shared
 artifact by appending to `SHARED_ARTIFACTS` in `scripts/sync_shared.py`.
+
+### Plugin eval suites
+
+`claude plugin eval` reads cases from an `evals/` directory **inside a plugin**. It does
+not understand marketplace roots, so `claude plugin eval .` at the top of this repo
+always reports "no eval cases found" — target a plugin directory instead:
+
+```bash
+cd plugins/mochi-creator
+claude plugin eval .                     # behaviour cases, with the no-plugin ablation arm
+claude plugin eval . --ablation none --case '*-pos-*'
+```
+
+Two kinds of case live side by side under each plugin's `evals/`:
+
+- **Generated trigger cases** (`<fixture>-<pos|neg>-NN/`) are compiled from the
+  `evals/*.json` fixtures by `scripts/gen_trigger_evals.py`. They assert only that the
+  right skill loaded, via a regex over the run trace pinned to the plugin-qualified
+  skill id (`"skill":"compound-knowledge:compound-retrieve"`). That is narrower than
+  `tool_used: Skill`, which cannot tell two skills of the same plugin apart. These
+  files are script-owned — edit the fixture and re-run `--write`, never the case.
+- **Hand-authored cases** test what a skill actually produces, and are worth the
+  default `with-without` ablation because the delta against no-plugin Claude is the
+  number that says whether the skill earns its place.
+
+```bash
+python scripts/gen_trigger_evals.py --write    # (re)compile; --limit N widens the sample
+python scripts/gen_trigger_evals.py --check    # drift gate, also run by check_all.py
+```
+
+Every case is a live `claude` child run billed to your own credential (×`runs`,
+×arms), so CI runs the free `--check` on every push and gates the suites themselves
+behind the manual `plugin-eval` workflow_dispatch job. Details and costs:
+`evals/README.md`.
 
 ## Important Implementation Details
 

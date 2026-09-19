@@ -6,7 +6,8 @@
 Checks, in order:
   1. ``check_marketplace_versions.py`` — marketplace.json matches each plugin.json
   2. ``sync_shared.py --check``        — generated shared copies match their canonical source
-  3. ``pytest``                        — every plugin's test suite
+  3. ``gen_trigger_evals.py --check`` — generated eval cases match the evals/ fixtures
+  4. ``pytest``                        — every plugin's test suite
 
 Usage:
     python scripts/check_all.py            # run all checks, exit non-zero on any failure
@@ -28,6 +29,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 CHECKS: list[tuple[str, list[str]]] = [
     ("marketplace versions", [sys.executable, "scripts/check_marketplace_versions.py"]),
     ("shared-artifact sync", [sys.executable, "scripts/sync_shared.py", "--check"]),
+    ("trigger-eval sync", [sys.executable, "scripts/gen_trigger_evals.py", "--check"]),
     ("test suite", [sys.executable, "-m", "pytest", "-q"]),
 ]
 

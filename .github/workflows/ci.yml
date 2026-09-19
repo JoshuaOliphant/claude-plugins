@@ -4,6 +4,20 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      plugin:
+        description: Plugin directory under plugins/ to evaluate
+        required: true
+        default: mochi-creator
+      case:
+        description: Case-name glob passed to --case (blank runs the whole suite)
+        required: false
+        default: ''
+      max_cost_usd:
+        description: Hard ceiling for the run
+        required: false
+        default: '5'
 
 jobs:
   checks:
@@ -26,3 +40,32 @@ jobs:
       - name: Run review-diff suite with its 100% coverage gate
         working-directory: plugins/review-diff
         run: uv run --group dev pytest
+
+  plugin-eval:
+    name: Plugin eval suite (manual)
+    # Each case spawns a real `claude` child run and bills a live credential, so this
+    # never runs on push or PR -- it is dispatched deliberately.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the plugin's eval suite
+        working-directory: plugins/${{ inputs.plugin }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude plugin eval . \
+            --trust-plugin \
+            --ablation none \
+            --concurrency 4 \
+            --max-cost-usd '${{ inputs.max_cost_usd }}' \
+            ${{ inputs.case && format('--case ''{0}''', inputs.case) || '' }} \
+            --json eval-results.json
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-eval-${{ inputs.plugin }}
+          path: |
+            plugins/${{ inputs.plugin }}/eval-results.json
+            plugins/${{ inputs.plugin }}/evals/results/

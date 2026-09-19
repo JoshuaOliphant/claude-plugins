@@ -80,3 +80,6 @@ AGENTS.md
 
 # autonomous-sdlc: machine-local /loop prompt (absolute path baked in)
 .claude/loop.md
+
+# claude plugin eval run output (HTML reports + per-run JSON)
+plugins/*/evals/results/
