@@ -1,11 +1,15 @@
 # ABOUTME: The semantic lint rules: one Jev question per rule, tied to a unit kind, plus how an answer becomes a finding.
-# ABOUTME: Noul rules flag on the yes-probability; Choice rules flag on the probability mass outside their acceptable labels.
+# ABOUTME: Each rule also names the ruff rules that already catch the same problem syntactically, so they can move to ruff.
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from extract import Unit, is_test_path
 from typesafe_sdk import Choice, Noul, NoulCriteria
+
+
+def no_static_equivalent(label: str, unit: Unit) -> tuple[str, ...]:
+    return ()
 
 
 @dataclass(frozen=True)
@@ -15,7 +19,10 @@ class Rule:
     message: str
     question: Noul | Choice
     acceptable: frozenset[str] = frozenset()
+    threshold: float = 0.5
+    actions: dict[str, str] = field(default_factory=dict, hash=False)
     applies: Callable[[Unit], bool] = lambda unit: True
+    static_equivalents: Callable[[str, Unit], tuple[str, ...]] = no_static_equivalent
 
     def probability(self, answer) -> tuple[float, str]:
         if isinstance(self.question, Noul):
@@ -25,12 +32,28 @@ class Rule:
         }
         return sum(flagged.values()), max(flagged, key=flagged.get)
 
+    def message_for(self, label: str) -> str:
+        return self.actions.get(label, self.message)
+
+
+def comment_static_equivalents(label: str, unit: Unit) -> tuple[str, ...]:
+    return ("ERA001",) if label == "commented_out_code" else ()
+
 
 COMMENT_KIND = Rule(
     id="comment-kind",
     kind="comment",
     message="comment does not earn its place: only a why the code cannot show survives",
     acceptable=frozenset({"why", "todo"}),
+    actions={
+        "narrates": "delete: the comment restates the code",
+        "section_banner": "delete: organize with functions or modules instead of banners",
+        "commented_out_code": "delete: version control keeps the old code",
+        "change_history": "move to the commit message: it describes how the code changed",
+        "misleading": "fix or delete: the comment disagrees with the code",
+        "belongs_in_docs": "move to documentation: it explains usage or design, not these lines",
+    },
+    static_equivalents=comment_static_equivalents,
     question=Choice(
         instructions=(
             "Classify the Python comment `comment`, reading it against the code around it "
@@ -39,13 +62,17 @@ COMMENT_KIND = Rule(
         ),
         criteria={
             "why": (
-                "Explains something the code cannot show: an external constraint (a library, "
-                "protocol, platform, or API contract), a legal or license header, a justified "
-                "lint or type-checker suppression, an issue link, or the reason behind a "
-                "non-obvious choice."
+                "Explains something the code cannot show about these lines: an external "
+                "constraint (a library, protocol, platform, or API contract), a legal or license "
+                "header, a justified lint or type-checker suppression, an issue link, or the "
+                "reason behind a non-obvious choice that a reader would otherwise undo."
             ),
             "todo": "A TODO or FIXME note recording known unfinished work.",
-            "narrates": "Restates what the nearby code does, in words the code already says.",
+            "narrates": (
+                "Restates what the nearby code does or is about to do, including short labels "
+                "for the next line such as 'Limit to 20 results', 'Sort tags', or 'Fallback to "
+                "default if invalid'."
+            ),
             "section_banner": (
                 "A divider, heading, or step label that organizes the file, such as "
                 "'--- helpers ---' or 'Step 2: parse'."
@@ -53,31 +80,55 @@ COMMENT_KIND = Rule(
             "commented_out_code": "Code disabled by commenting it out.",
             "change_history": (
                 "Describes how the code changed or used to be: 'now uses', 'previously', "
-                "'refactored', 'new version', 'instead of the old'."
+                "'refactored', 'new version', 'superseded by', 'instead of the old'."
             ),
             "misleading": "Contradicts or no longer matches the code next to it.",
+            "belongs_in_docs": (
+                "Explains how to use the module, how the system fits together, or the design "
+                "rationale for a whole feature: material for a README, guide, or architecture "
+                "note rather than for the next few lines."
+            ),
         },
     ),
 )
+
+
+def handler_static_equivalents(label: str, unit: Unit) -> tuple[str, ...]:
+    rules = []
+    if unit.facts.get("bare"):
+        rules.append("E722")
+    if unit.facts.get("broad"):
+        rules.append("BLE001")
+    only = unit.facts.get("only_statement")
+    if only == "Pass":
+        rules.append("S110")
+    elif only == "Continue":
+        rules.append("S112")
+    return tuple(rules)
+
 
 SILENT_FAILURE = Rule(
     id="silent-failure",
     kind="handler",
     message="except clause hides the failure from callers",
+    static_equivalents=handler_static_equivalents,
     question=Noul(
         instructions=(
-            "Does the except clause `handler` of `try_statement` hide the failure, so callers "
-            "carry on as if nothing went wrong?"
+            "Does the except clause `handler` of `try_statement` hide a failure that matters, so "
+            "callers carry on as if nothing went wrong?"
         ),
         criteria=NoulCriteria(
             true=(
-                "It swallows the exception: pass, continue, returns a default or fallback value, "
-                "or only logs below error level, and nothing is re-raised or reported."
+                "It swallows the exception with pass, continue, a default or fallback value, or "
+                "a log below error level, the operation it guarded mattered to the caller, and "
+                "nothing is re-raised or reported."
             ),
             false=(
                 "It re-raises, raises a different error, returns an explicit failure the caller "
-                "must handle, reports it as an error, or catches an exception that is an "
-                "expected, fully handled outcome (such as a missing optional file)."
+                "must handle, or reports it as an error. Also no when the exception is an "
+                "expected outcome handled on purpose: a missing optional file, a probe whose "
+                "documented answer is 'not found', or best-effort cleanup such as killing a "
+                "process that may already be gone or deleting a temporary file."
             ),
         ),
     ),
@@ -85,6 +136,7 @@ SILENT_FAILURE = Rule(
 
 IO_MIXED_WITH_LOGIC = Rule(
     id="io-mixed-with-logic",
+    threshold=0.7,
     kind="function",
     message="function mixes I/O with domain logic; keep I/O at the edges",
     question=Noul(
@@ -106,53 +158,43 @@ IO_MIXED_WITH_LOGIC = Rule(
     ),
 )
 
-VENDOR_LEAK = Rule(
-    id="vendor-leak",
-    kind="function",
-    message="third-party framework or vendor type leaks into domain logic",
-    question=Noul(
-        instructions=(
-            "Does `function` hold domain logic while taking, returning, or depending on a "
-            "third-party framework or vendor type that could stay at the edge?"
-        ),
-        criteria=NoulCriteria(
-            true=(
-                "Domain decisions are made directly on a vendor object, such as an HTTP response, "
-                "ORM session, SDK client, or web-framework request, or such a type crosses into "
-                "or out of the logic."
-            ),
-            false=(
-                "It uses only the language, the standard library, and the project's own types, "
-                "or it is an adapter whose job is to translate a vendor type at the edge."
-            ),
-        ),
-    ),
-)
-
 NAME_HIDES_SIDE_EFFECTS = Rule(
     id="name-hides-side-effects",
+    threshold=0.7,
     kind="function",
     message="function does something significant its name does not suggest",
     question=Noul(
         instructions=(
             "Does `function` do something significant that its name `qualified_name` does not "
-            "suggest?"
+            "lead a reader to expect?"
         ),
         criteria=NoulCriteria(
             true=(
-                "It writes files, mutates its arguments or global state, makes network calls, "
-                "deletes data, or exits the process, and a reader of the name would not expect it."
+                "The name promises a read, a calculation, a check, or a formatted value (get_, "
+                "find_, load_, is_, has_, check_, validate_, parse_, format_, build_, compute_, a "
+                "plain noun), yet the function writes files, mutates its arguments or global "
+                "state, makes network calls, deletes data, or exits the process."
             ),
-            false="The name tells a reader everything important the function does.",
+            false=(
+                "The name already announces effects: main, run_, cmd_, handle_, do_, apply_, "
+                "save_, write_, update_, delete_, send_, sync_, install_, setup_, a verb for the "
+                "effect itself, or a test_ function. Or the function has no significant effects."
+            ),
         ),
     ),
 )
 
 DOCSTRING_QUALITY = Rule(
     id="docstring-quality",
+    threshold=0.7,
     kind="function",
     message="docstring is inaccurate, empty of information, or hides a surprise",
     acceptable=frozenset({"accurate"}),
+    actions={
+        "restates_name": "delete or rewrite: the docstring only repeats the name",
+        "contradicts": "fix: the docstring claims behavior the code does not have",
+        "omits_surprise": "extend: name the side effect or failure mode a caller must know",
+    },
     applies=lambda unit: "docstring" in unit.state,
     question=Choice(
         instructions="Judge the docstring `docstring` against the code in `function`.",
@@ -192,9 +234,10 @@ LOG_EXPOSURE = Rule(
 
 TEST_SMELL = Rule(
     id="test-smell",
+    threshold=0.7,
     kind="function",
     message="test cannot catch the regression it claims to guard",
-    acceptable=frozenset({"meaningful"}),
+    acceptable=frozenset({"meaningful", "smoke"}),
     applies=lambda unit: unit.name.rsplit(".", 1)[-1].startswith("test_"),
     question=Choice(
         instructions=(
@@ -202,12 +245,19 @@ TEST_SMELL = Rule(
         ),
         criteria={
             "meaningful": "Drives real code and asserts outcomes that would change if it broke.",
+            "smoke": (
+                "Has no assertion but drives real code whose failure raises, and its name "
+                "claims only that the code runs or does not crash."
+            ),
             "tautology": "Its assertions compare values the test itself set up and cannot fail.",
             "mocks_unit_under_test": (
                 "Replaces the very code it claims to test with a mock, then asserts on the mock."
             ),
-            "overclaims": ("Its name or docstring promises more than its assertions check."),
-            "no_real_assertion": "Asserts nothing, or only that something is not None or truthy.",
+            "overclaims": "Its name or docstring promises more than its assertions check.",
+            "no_real_assertion": (
+                "Its only checks are that a value exists or is truthy, when the name promises a "
+                "specific result."
+            ),
         },
     ),
 )
@@ -256,7 +306,6 @@ RULES = [
     COMMENT_KIND,
     SILENT_FAILURE,
     IO_MIXED_WITH_LOGIC,
-    VENDOR_LEAK,
     NAME_HIDES_SIDE_EFFECTS,
     DOCSTRING_QUALITY,
     LOG_EXPOSURE,

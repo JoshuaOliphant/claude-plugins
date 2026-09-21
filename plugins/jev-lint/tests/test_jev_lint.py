@@ -122,10 +122,32 @@ def test_main_reports_findings_sorted_and_exits_one(cli, capsys):
     assert capsys.readouterr().out.splitlines() == [
         (
             "m.py:5: silent-failure [yes p=0.80] except clause hides the failure from callers "
-            "(Exception)"
+            "(Exception) [ruff: BLE001, S110]"
         ),
+        "Syntactic findings ruff can catch without Jev; add to [tool.ruff.lint] extend-select:",
+        "  BLE001: 1 finding",
+        "  S110: 1 finding",
         "1 findings from 1 judgments over 2 units",
     ]
+
+
+def test_static_rule_summary_counts_each_ruff_rule():
+    def finding(*codes):
+        return jev_lint.Judgment("m.py", 1, "n", "r", "l", 0.9, "msg", codes)
+
+    assert jev_lint.static_rule_summary([finding()]) == []
+    assert jev_lint.static_rule_summary([finding("ERA001"), finding("ERA001", "S110")]) == [
+        "Syntactic findings ruff can catch without Jev; add to [tool.ruff.lint] extend-select:",
+        "  ERA001: 2 findings",
+        "  S110: 1 finding",
+    ]
+
+
+def test_main_uses_each_rules_own_threshold_unless_overridden(cli, capsys):
+    cli(FakeJev({"io-mixed-with-logic": noul(0.6)}))
+    assert jev_lint.main(["--rules", "io-mixed-with-logic"]) == 0
+    assert jev_lint.main(["--rules", "io-mixed-with-logic", "--threshold", "0.5"]) == 1
+    assert "io-mixed-with-logic [yes p=0.60]" in capsys.readouterr().out
 
 
 def test_main_exits_zero_below_threshold(cli, capsys):

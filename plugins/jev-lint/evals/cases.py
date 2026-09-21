@@ -145,42 +145,6 @@ def save_orders(path, orders):
     Path(path).write_text(json.dumps([asdict(order) for order in orders], indent=2))
 """,
     },
-    # vendor-leak
-    {
-        "rule": "vendor-leak",
-        "flag": True,
-        "source": """
-def is_refundable(response: httpx.Response) -> bool:
-    data = response.json()
-    return data["status"] == "cancelled" and data["amount"] < 500
-""",
-    },
-    {
-        "rule": "vendor-leak",
-        "flag": True,
-        "source": """
-def overdue_invoices(session: Session, today: date) -> list[Invoice]:
-    invoices = session.query(Invoice).filter(Invoice.paid.is_(False)).all()
-    return [inv for inv in invoices if (today - inv.due).days > 30 and inv.amount > 0]
-""",
-    },
-    {
-        "rule": "vendor-leak",
-        "flag": False,
-        "source": """
-def is_refundable(order: Order) -> bool:
-    return order.status == "cancelled" and order.amount < 500
-""",
-    },
-    {
-        "rule": "vendor-leak",
-        "flag": False,
-        "source": """
-def order_from_response(response: httpx.Response) -> Order:
-    data = response.json()
-    return Order(id=data["id"], status=data["status"], amount=data["amount"])
-""",
-    },
     # name-hides-side-effects
     {
         "rule": "name-hides-side-effects",
@@ -523,5 +487,46 @@ def test_missing_setting_raises_config_error():
             ["    order = make_order(prices=[42])"],
             context=["    assert order.total == 42"],
         ),
+    },
+    # comment-kind: text that belongs in documentation versus a why the code cannot show
+    {
+        "rule": "comment-kind",
+        "flag": True,
+        "source": """
+# How to use this module: call `connect(url)` once at startup, then pass the
+# returned Session to every repository class. Sessions are not thread-safe, so
+# web workers should create one per request.
+def connect(url):
+    return Session(url)
+""",
+    },
+    {
+        "rule": "comment-kind",
+        "flag": True,
+        "source": """
+# The pipeline has three stages. The collector polls each source every minute and
+# writes raw events to the queue; the enricher joins them with account data; the
+# publisher batches enriched events to the warehouse. Stages share only the queue.
+QUEUE_NAME = "events"
+""",
+    },
+    {
+        "rule": "comment-kind",
+        "flag": False,
+        "source": """
+def send(frame):
+    # The device firmware drops frames larger than 512 bytes without an error.
+    for chunk in split(frame, 512):
+        port.write(chunk)
+""",
+    },
+    {
+        "rule": "comment-kind",
+        "flag": False,
+        "source": """
+def parse(text):
+    # Keep strict=False: vendor exports contain control characters in notes fields.
+    return json.loads(text, strict=False)
+""",
     },
 ]

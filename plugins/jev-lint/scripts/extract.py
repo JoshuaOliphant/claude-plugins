@@ -15,6 +15,7 @@ DIRECTIVE = re.compile(
 )
 SCRIPT_BLOCK_START = "# /// script"
 SCRIPT_BLOCK_END = "# ///"
+BROAD_EXCEPTIONS = {"Exception", "BaseException"}
 LOG_METHODS = {"debug", "info", "warning", "warn", "error", "exception", "critical", "log"}
 
 
@@ -25,6 +26,7 @@ class Unit:
     line: int
     name: str
     state: dict = field(hash=False)
+    facts: dict = field(default_factory=dict, hash=False)
 
 
 def is_test_path(path: str) -> bool:
@@ -151,7 +153,14 @@ class _Collector(ast.NodeVisitor):
         for handler in node.handlers:
             state = {"try_statement": statement, "handler": _segment(self.source, handler)}
             name = ast.unparse(handler.type) if handler.type else "bare except"
-            self.units.append(Unit("handler", self.path, handler.lineno, name, state))
+            facts = {
+                "bare": handler.type is None,
+                "broad": name in BROAD_EXCEPTIONS,
+                "only_statement": (
+                    type(handler.body[0]).__name__ if len(handler.body) == 1 else None
+                ),
+            }
+            self.units.append(Unit("handler", self.path, handler.lineno, name, state, facts))
         self.generic_visit(node)
 
     visit_TryStar = visit_Try

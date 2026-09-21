@@ -102,6 +102,11 @@ async def refresh():
 
     handler_names = [unit.name for unit in by_kind["handler"]]
     assert handler_names == ["FileNotFoundError", "bare except", "ValueError"]
+    assert [unit.facts for unit in by_kind["handler"]] == [
+        {"bare": False, "broad": False, "only_statement": None},
+        {"bare": True, "broad": False, "only_statement": "Raise"},
+        {"bare": False, "broad": False, "only_statement": "Pass"},
+    ]
     assert "try:" in by_kind["handler"][0].state["try_statement"]
     assert by_kind["handler"][0].state["handler"].startswith("except FileNotFoundError")
 

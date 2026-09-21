@@ -5,7 +5,7 @@
 # ///
 # ABOUTME: Semantic linter for Python: asks Jev plain-language questions about comments, handlers, functions, logs, and diffs.
 # ABOUTME: One request per unit carries every rule that applies to it; findings at or above the threshold are reported.
-"""Usage: uv run jev_lint.py [PATH ...] [--diff REF] [--rules id,id] [--threshold 0.5] [--json]
+"""Usage: uv run jev_lint.py [PATH ...] [--diff REF] [--rules id,id] [--threshold P] [--json]
 
 Exit codes: 0 no findings, 1 findings reported, 2 Jev unavailable,
 3 skipped because TYPESAFE_API_KEY is not set.
@@ -17,6 +17,7 @@ import json
 import os
 import subprocess
 import sys
+from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -24,7 +25,6 @@ from extract import Unit, extract_hunks, extract_source_units
 from rules import RULES, Rule
 from typesafe_sdk import AsyncTypeSafeClient, TypeSafeError
 
-DEFAULT_THRESHOLD = 0.5
 DEFAULT_CONCURRENCY = 16
 SKIPPED_DIRS = {".venv", "venv", "node_modules", "__pycache__", ".git", "build", "dist"}
 
@@ -38,6 +38,7 @@ class Judgment:
     label: str
     probability: float
     message: str
+    static_rules: tuple[str, ...] = ()
 
 
 def python_files(paths: list[Path]) -> list[Path]:
@@ -91,7 +92,16 @@ async def judge_unit(client, semaphore, unit: Unit, rules: list[Rule]) -> list[J
     for rule in applicable:
         probability, label = rule.probability(response.answers[rule.id])
         judgments.append(
-            Judgment(unit.path, unit.line, unit.name, rule.id, label, probability, rule.message)
+            Judgment(
+                unit.path,
+                unit.line,
+                unit.name,
+                rule.id,
+                label,
+                probability,
+                rule.message_for(label),
+                rule.static_equivalents(label, unit),
+            )
         )
     return judgments
 
@@ -103,10 +113,25 @@ async def judge_units(client, units: list[Unit], rules: list[Rule], concurrency:
 
 
 def format_finding(judgment: Judgment) -> str:
-    return (
+    line = (
         f"{judgment.path}:{judgment.line}: {judgment.rule} "
         f"[{judgment.label} p={judgment.probability:.2f}] {judgment.message} ({judgment.name})"
     )
+    if judgment.static_rules:
+        line += f" [ruff: {', '.join(judgment.static_rules)}]"
+    return line
+
+
+def static_rule_summary(findings: list[Judgment]) -> list[str]:
+    counts = Counter(code for finding in findings for code in finding.static_rules)
+    if not counts:
+        return []
+    lines = [
+        "Syntactic findings ruff can catch without Jev; add to [tool.ruff.lint] extend-select:"
+    ]
+    for code, count in counts.most_common():
+        lines.append(f"  {code}: {count} finding{'s' if count != 1 else ''}")
+    return lines
 
 
 async def run(units: list[Unit], rules: list[Rule], concurrency: int) -> list[Judgment]:
@@ -119,7 +144,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("paths", nargs="*", type=Path)
     parser.add_argument("--diff", metavar="REF", help="also judge hunks of `git diff REF`")
     parser.add_argument("--rules", help="comma-separated rule ids (default: all)")
-    parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD)
+    parser.add_argument(
+        "--threshold", type=float, help="flag at or above this probability (default: per rule)"
+    )
     parser.add_argument("--concurrency", type=int, default=DEFAULT_CONCURRENCY)
     parser.add_argument("--json", action="store_true", help="print every judgment as JSON")
     args = parser.parse_args(argv)
@@ -142,8 +169,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"jev unavailable: {error}")
         return 2
 
+    thresholds = {
+        rule.id: rule.threshold if args.threshold is None else args.threshold for rule in rules
+    }
     findings = sorted(
-        (j for j in judgments if j.probability >= args.threshold),
+        (j for j in judgments if j.probability >= thresholds[j.rule]),
         key=lambda j: -j.probability,
     )
     if args.json:
@@ -151,6 +181,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         for finding in findings:
             print(format_finding(finding))
+        for line in static_rule_summary(findings):
+            print(line)
         print(f"{len(findings)} findings from {len(judgments)} judgments over {len(units)} units")
     return 1 if findings else 0
 
