@@ -12,7 +12,11 @@ package = false
 [dependency-groups]
 # Repo-wide dev tooling. Individual plugins that need more (e.g. review-diff's
 # coverage gate) declare their own dependency-group in their own pyproject.toml.
-dev = ["pytest>=8", "ruff>=0.6"]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+    "typesafe-sdk>=0.7",
+]
 
 [tool.pytest.ini_options]
 # `uv run --group dev pytest` from the repo root discovers every plugin's tests.

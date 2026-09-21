@@ -188,6 +188,8 @@ worktree isolation. PR creation is one `gh pr create` call.
 ├── progress.md       # append-only log every iteration orients from
 ├── decisions.jsonl   # autonomous decisions, rendered into the PR
 ├── signs.md          # guardrails accumulated from observed mistakes
+├── ac-evidence.json  # per-AC test source and result, fed to the Jev judge in VERIFY
+├── ac-verdicts.json  # the Jev judge's per-AC verdicts and probabilities
 └── escalation.md     # written on BLOCKED, including approval gates
 .claude/loop.md       # the iteration ritual a bare /loop runs (machine-local; rewritten by /sdlc, removed on DONE/BLOCKED; gitignore it)
 specs/{slug}-intent.md  # intent document (given, or written by INIT)
@@ -210,6 +212,11 @@ for installs without `bin/` (plugins distributed through claude.ai organization 
   PLAN adds a feature-scoped instrumentation task; VERIFY confirms the feature's
   instrumented paths actually fired (`observability-query`); REPAIR queries error
   logs/spans first.
+- **TypeSafe (Jev)**: when `TYPESAFE_API_KEY` is set, VERIFY runs
+  `scripts/ac_judge.py`, an independent judge that asks Jev whether each AC's test
+  assertions demonstrate it (`supports` / `partial` / `contradicts` / `says_nothing`).
+  Code settles untested and failing ACs without a model call. `evals/ac_judge/run_eval.py`
+  replays hand-labeled cases against the live API.
 
 ## Prerequisites
 
@@ -259,7 +266,14 @@ BUILD. A blank `--reviewers` value falls back to the default so the gate is neve
 
 ## Version History
 
-### v2.5.0 (Current)
+### v2.6.0 (Current)
+- **Independent AC judge in VERIFY** (opt-in via `TYPESAFE_API_KEY`): `scripts/ac_judge.py`
+  asks TypeSafe's Jev to judge each acceptance criterion's test evidence, so spec compliance
+  is no longer graded only by the loop that wrote the code. One request covers every AC;
+  `partial`, `contradicts`, and `says_nothing` become fix tasks, and low-confidence
+  `supports` goes to a manual walk. Hand-labeled eval set in `evals/ac_judge/`.
+
+### v2.5.0
 - **Hooks live in the `sdlc-loop` skill's frontmatter.** `hooks.json` is gone; the
   permission rails, driver, and StopFailure logger register when the skill is invoked
   and exist only in sessions running a loop. `/sdlc` and `.claude/loop.md` invoke the

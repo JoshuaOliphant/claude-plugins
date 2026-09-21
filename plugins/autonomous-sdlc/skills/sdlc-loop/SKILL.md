@@ -5,7 +5,7 @@ description: >
   what one unit of work the current state requires, how to verify it, and which
   transition to record. Trigger: an active `.sdlc/state.json` exists, or the /sdlc
   command invokes it. Not for ad-hoc use outside a loop.
-version: 2.2.0
+version: 2.3.0
 effort: high
 allowed-tools:
   - Bash
@@ -203,6 +203,15 @@ Required checks:
    demonstrably met — by its `@ac-N`-tagged test where bdd-generate scaffolding exists,
    by reading the code and exercising behavior where it doesn't. Tests passing is not
    the same as the spec being satisfied.
+   **Independent judge (only when `TYPESAFE_API_KEY` is set):** write
+   `.sdlc/ac-evidence.json` mapping each AC id to the source of the tests or step
+   definitions that exercise it and their result
+   (`{"AC-1": {"result": "passed", "tests": ["<source>"]}}`), then run
+   `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/ac_judge.py --spec specs/{slug}-spec.md --evidence .sdlc/ac-evidence.json --out .sdlc/ac-verdicts.json`.
+   Jev, which did not write the code, judges whether each AC's assertions show it is met.
+   Exit 0 → every AC is met. Exit 1 → every `partial`, `unmet`, or `untested` AC is red
+   (its fix task names the verdict); walk `needs_review` ACs by hand. Exit 2 or 3 → the
+   judge is unavailable; walk every AC by hand as above.
 3. **Telemetry (only when the project has an observability harness)**: exercise the
    feature once for real and use the `observability-query` skill to confirm the
    feature's instrumented paths fired with real labels — tests can pass while the wired
