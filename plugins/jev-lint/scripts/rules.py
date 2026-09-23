@@ -1,10 +1,10 @@
 # ABOUTME: The semantic lint rules: one Jev question per rule, tied to a unit kind, plus how an answer becomes a finding.
-# ABOUTME: Each rule also names the ruff rules that already catch the same problem syntactically, so they can move to ruff.
+# ABOUTME: Rules whose findings have a syntactic twin name the ruff rules that catch it, so those can move to ruff.
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from extract import Unit, is_test_path
+from extract import Kind, Unit, is_test_path
 from typesafe_sdk import Choice, Noul, NoulCriteria
 
 
@@ -15,7 +15,7 @@ def no_static_equivalent(label: str, unit: Unit) -> tuple[str, ...]:
 @dataclass(frozen=True)
 class Rule:
     id: str
-    kind: str
+    kind: Kind
     message: str
     question: Noul | Choice
     acceptable: frozenset[str] = frozenset()
@@ -24,12 +24,25 @@ class Rule:
     applies: Callable[[Unit], bool] = lambda unit: True
     static_equivalents: Callable[[str, Unit], tuple[str, ...]] = no_static_equivalent
 
+    def __post_init__(self) -> None:
+        if isinstance(self.question, Noul):
+            if self.acceptable or self.actions:
+                raise ValueError(f"{self.id}: a Noul rule has no labels to accept or act on")
+            return
+        labels = set(self.question.criteria)
+        if not self.acceptable < labels:
+            raise ValueError(f"{self.id}: acceptable labels must be a strict subset of criteria")
+        if not set(self.actions) <= labels - self.acceptable:
+            raise ValueError(f"{self.id}: actions must name flagged labels")
+
     def probability(self, answer) -> tuple[float, str]:
         if isinstance(self.question, Noul):
             return answer.noul, "yes"
         flagged = {
             label: p for label, p in answer.probabilities.items() if label not in self.acceptable
         }
+        if not flagged:
+            return 0.0, answer.choice
         return sum(flagged.values()), max(flagged, key=flagged.get)
 
     def message_for(self, label: str) -> str:
@@ -94,16 +107,18 @@ COMMENT_KIND = Rule(
 
 
 def handler_static_equivalents(label: str, unit: Unit) -> tuple[str, ...]:
+    bare, broad = unit.facts.get("bare"), unit.facts.get("broad")
     rules = []
-    if unit.facts.get("bare"):
+    if bare:
         rules.append("E722")
-    if unit.facts.get("broad"):
+    if broad:
         rules.append("BLE001")
-    only = unit.facts.get("only_statement")
-    if only == "Pass":
-        rules.append("S110")
-    elif only == "Continue":
-        rules.append("S112")
+    if bare or broad:
+        only = unit.facts.get("only_statement")
+        if only == "Pass":
+            rules.append("S110")
+        elif only == "Continue":
+            rules.append("S112")
     return tuple(rules)
 
 
@@ -111,6 +126,7 @@ SILENT_FAILURE = Rule(
     id="silent-failure",
     kind="handler",
     message="except clause hides the failure from callers",
+    threshold=0.7,
     static_equivalents=handler_static_equivalents,
     question=Noul(
         instructions=(
@@ -119,16 +135,17 @@ SILENT_FAILURE = Rule(
         ),
         criteria=NoulCriteria(
             true=(
-                "It swallows the exception with pass, continue, a default or fallback value, or "
-                "a log below error level, the operation it guarded mattered to the caller, and "
-                "nothing is re-raised or reported."
+                "It swallows the exception with pass, continue, a default or fallback value, a "
+                "substitute resource such as another port, file, or service, or a log below "
+                "error level, so the caller cannot tell the operation failed. Best-effort code "
+                "counts: a cleanup or fallback that quietly does nothing when it fails still "
+                "hides the failure."
             ),
             false=(
-                "It re-raises, raises a different error, returns an explicit failure the caller "
-                "must handle, or reports it as an error. Also no when the exception is an "
-                "expected outcome handled on purpose: a missing optional file, a probe whose "
-                "documented answer is 'not found', or best-effort cleanup such as killing a "
-                "process that may already be gone or deleting a temporary file."
+                "It re-raises, raises a different error, or reports it at error level. Also no "
+                "when it returns a sentinel the function's contract documents and the caller "
+                "must check, such as None meaning 'not in a repository', or when the exception "
+                "is itself the expected answer, such as FileNotFoundError for an optional file."
             ),
         ),
     ),
@@ -160,7 +177,6 @@ IO_MIXED_WITH_LOGIC = Rule(
 
 NAME_HIDES_SIDE_EFFECTS = Rule(
     id="name-hides-side-effects",
-    threshold=0.7,
     kind="function",
     message="function does something significant its name does not suggest",
     question=Noul(
@@ -177,8 +193,13 @@ NAME_HIDES_SIDE_EFFECTS = Rule(
             ),
             false=(
                 "The name already announces effects: main, run_, cmd_, handle_, do_, apply_, "
-                "save_, write_, update_, delete_, send_, sync_, install_, setup_, a verb for the "
-                "effect itself, or a test_ function. Or the function has no significant effects."
+                "save_, write_, update_, delete_, send_, sync_, install_, setup_, generate_, "
+                "convert_, create_, init_, or any verb naming the effect itself (dequeue, flush, "
+                "push, record, summarize via a service). Also no for code whose role implies "
+                "effects: CLI commands, route handlers, test_ functions, pytest fixtures, BDD "
+                "given_/when_/then_ steps, test fakes recording calls, and lazy get-or-create "
+                "accessors that build and cache a client or singleton. Or the function has no "
+                "significant effects."
             ),
         ),
     ),

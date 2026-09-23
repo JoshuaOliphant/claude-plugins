@@ -4,11 +4,13 @@
 # dependencies = ["typesafe-sdk>=0.7"]
 # ///
 # ABOUTME: Semantic linter for Python: asks Jev plain-language questions about comments, handlers, functions, logs, and diffs.
-# ABOUTME: One request per unit carries every rule that applies to it; findings at or above the threshold are reported.
-"""Usage: uv run jev_lint.py [PATH ...] [--diff REF] [--rules id,id] [--threshold P] [--json]
+# ABOUTME: One request per unit carries every rule that applies to it; findings at or above each rule's threshold are reported.
+"""Usage: uv run jev_lint.py [PATH ...] [--diff REF] [--rules id,id] [--threshold P]
+                         [--concurrency N] [--json]
 
-Exit codes: 0 no findings, 1 findings reported, 2 Jev unavailable,
-3 skipped because TYPESAFE_API_KEY is not set.
+Exit codes: 0 no findings, 1 findings reported, 2 Jev failed for at least one unit,
+3 skipped because TYPESAFE_API_KEY is not set, 4 bad input (missing path, git diff
+failure, unreadable files, or nothing to lint).
 """
 
 import argparse
@@ -25,8 +27,21 @@ from extract import Unit, extract_hunks, extract_source_units
 from rules import RULES, Rule
 from typesafe_sdk import AsyncTypeSafeClient, TypeSafeError
 
+EXIT_CLEAN = 0
+EXIT_FINDINGS = 1
+EXIT_JEV_FAILED = 2
+EXIT_NO_KEY = 3
+EXIT_BAD_INPUT = 4
 DEFAULT_CONCURRENCY = 16
 SKIPPED_DIRS = {".venv", "venv", "node_modules", "__pycache__", ".git", "build", "dist"}
+
+
+class MissingAnswer(Exception):
+    pass
+
+
+class GitDiffError(Exception):
+    pass
 
 
 @dataclass(frozen=True)
@@ -41,6 +56,12 @@ class Judgment:
     static_rules: tuple[str, ...] = ()
 
 
+@dataclass(frozen=True)
+class Failure:
+    unit: Unit
+    error: str
+
+
 def python_files(paths: list[Path]) -> list[Path]:
     files = []
     for path in paths:
@@ -51,23 +72,26 @@ def python_files(paths: list[Path]) -> list[Path]:
             parts = candidate.relative_to(path).parts
             if not any(part in SKIPPED_DIRS or part.startswith(".") for part in parts[:-1]):
                 files.append(candidate)
-    return files
+    return list(dict.fromkeys(files))
 
 
-def collect_units(paths: list[Path]) -> list[Unit]:
-    units = []
+def collect_units(paths: list[Path]) -> tuple[list[Unit], list[str]]:
+    units, skipped = [], []
     for path in python_files(paths):
         try:
             units.extend(extract_source_units(str(path), path.read_text()))
-        except (SyntaxError, UnicodeDecodeError) as error:
-            print(f"skipped {path}: {error}", file=sys.stderr)
-    return units
+        except (SyntaxError, UnicodeDecodeError, OSError) as error:
+            skipped.append(f"{path}: {error}")
+    return units, skipped
 
 
 def git_diff(ref: str) -> str:
-    return subprocess.run(
-        ["git", "diff", "-U3", ref, "--", "*.py"], check=True, capture_output=True, text=True
-    ).stdout
+    try:
+        return subprocess.run(
+            ["git", "diff", "-U3", ref, "--", "*.py"], check=True, capture_output=True, text=True
+        ).stdout
+    except subprocess.CalledProcessError as error:
+        raise GitDiffError(error.stderr.strip() or f"git diff {ref} exited {error.returncode}")
 
 
 def select_rules(ids: str | None) -> list[Rule]:
@@ -90,6 +114,8 @@ async def judge_unit(client, semaphore, unit: Unit, rules: list[Rule]) -> list[J
         )
     judgments = []
     for rule in applicable:
+        if rule.id not in response.answers:
+            raise MissingAnswer(f"Jev returned no answer for {rule.id}")
         probability, label = rule.probability(response.answers[rule.id])
         judgments.append(
             Judgment(
@@ -106,10 +132,22 @@ async def judge_unit(client, semaphore, unit: Unit, rules: list[Rule]) -> list[J
     return judgments
 
 
-async def judge_units(client, units: list[Unit], rules: list[Rule], concurrency: int):
+async def judge_units(
+    client, units: list[Unit], rules: list[Rule], concurrency: int
+) -> tuple[list[Judgment], list[Failure]]:
     semaphore = asyncio.Semaphore(concurrency)
-    batches = await asyncio.gather(*(judge_unit(client, semaphore, u, rules) for u in units))
-    return [judgment for batch in batches for judgment in batch]
+    results = await asyncio.gather(
+        *(judge_unit(client, semaphore, unit, rules) for unit in units), return_exceptions=True
+    )
+    judgments, failures = [], []
+    for unit, result in zip(units, results):
+        if isinstance(result, (TypeSafeError, MissingAnswer)):
+            failures.append(Failure(unit, str(result)))
+        elif isinstance(result, BaseException):
+            raise result
+        else:
+            judgments.extend(result)
+    return judgments, failures
 
 
 def format_finding(judgment: Judgment) -> str:
@@ -134,7 +172,16 @@ def static_rule_summary(findings: list[Judgment]) -> list[str]:
     return lines
 
 
-async def run(units: list[Unit], rules: list[Rule], concurrency: int) -> list[Judgment]:
+def summary_line(findings, judgments, units, skipped, failures) -> str:
+    line = f"{len(findings)} findings from {len(judgments)} judgments over {len(units)} units"
+    if skipped:
+        line += f"; {len(skipped)} files skipped"
+    if failures:
+        line += f"; {len(failures)} units failed"
+    return line
+
+
+async def run(units: list[Unit], rules: list[Rule], concurrency: int):
     async with AsyncTypeSafeClient() as client:
         return await judge_units(client, units, rules, concurrency)
 
@@ -151,23 +198,35 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="print every judgment as JSON")
     args = parser.parse_args(argv)
 
-    if not os.environ.get("TYPESAFE_API_KEY"):
-        print("skipped: TYPESAFE_API_KEY is not set")
-        return 3
-
     try:
         rules = select_rules(args.rules)
     except ValueError as error:
         parser.error(str(error))
-    units = collect_units(args.paths if args.paths or args.diff else [Path(".")])
+    missing = [path for path in args.paths if not path.exists()]
+    if missing:
+        for path in missing:
+            print(f"no such path: {path}", file=sys.stderr)
+        return EXIT_BAD_INPUT
+    if not os.environ.get("TYPESAFE_API_KEY"):
+        print("skipped: TYPESAFE_API_KEY is not set")
+        return EXIT_NO_KEY
+
+    units, skipped = collect_units(args.paths if args.paths or args.diff else [Path(".")])
     if args.diff:
-        units.extend(extract_hunks(git_diff(args.diff)))
+        try:
+            units.extend(extract_hunks(git_diff(args.diff)))
+        except GitDiffError as error:
+            print(f"git diff failed: {error}", file=sys.stderr)
+            return EXIT_BAD_INPUT
+    if not units and not skipped:
+        print("nothing to lint: no Python units found", file=sys.stderr)
+        return EXIT_BAD_INPUT
 
     try:
-        judgments = asyncio.run(run(units, rules, args.concurrency))
+        judgments, failures = asyncio.run(run(units, rules, args.concurrency))
     except TypeSafeError as error:
-        print(f"jev unavailable: {error}")
-        return 2
+        print(f"jev unavailable: {error}", file=sys.stderr)
+        return EXIT_JEV_FAILED
 
     thresholds = {
         rule.id: rule.threshold if args.threshold is None else args.threshold for rule in rules
@@ -183,8 +242,20 @@ def main(argv: list[str] | None = None) -> int:
             print(format_finding(finding))
         for line in static_rule_summary(findings):
             print(line)
-        print(f"{len(findings)} findings from {len(judgments)} judgments over {len(units)} units")
-    return 1 if findings else 0
+        print(summary_line(findings, judgments, units, skipped, failures))
+    for entry in skipped:
+        print(f"skipped {entry}", file=sys.stderr)
+    for failure in failures:
+        unit = failure.unit
+        print(
+            f"jev failed on {unit.path}:{unit.line} ({unit.name}): {failure.error}", file=sys.stderr
+        )
+
+    if failures:
+        return EXIT_JEV_FAILED
+    if skipped:
+        return EXIT_BAD_INPUT
+    return EXIT_FINDINGS if findings else EXIT_CLEAN
 
 
 if __name__ == "__main__":

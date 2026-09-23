@@ -7,7 +7,7 @@ description: Use when the user asks to "lint comments", "find narrating comments
 
 Semantic lint for Python. `ast` and `tokenize` find the units (comments, except
 handlers, functions, log calls, diff hunks); Jev answers one question per rule about
-each unit; findings above each rule's threshold are reported.
+each unit; findings at or above each rule's threshold are reported.
 
 ```bash
 uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev_lint.py path/to/code            # whole tree
@@ -16,7 +16,10 @@ uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev_lint.py src --rules comment-kind,silent
 uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev_lint.py src --json              # every judgment
 ```
 
-Exit codes: 0 clean, 1 findings, 2 Jev unavailable, 3 `TYPESAFE_API_KEY` not set.
+Exit codes: 0 clean, 1 findings, 2 Jev failed for at least one unit, 3
+`TYPESAFE_API_KEY` not set, 4 bad input (missing path, git diff failure, unreadable
+files, or nothing to lint). Codes 2 and 4 mean the run was incomplete, not clean:
+say so rather than reporting the findings as the whole picture.
 
 ## Acting on findings
 
@@ -30,7 +33,8 @@ Each finding line names its label and the action:
 | `comment-kind [misleading]` | fix the comment or the code so they agree |
 | `docstring-quality [restates_name]` | delete or rewrite with what the name cannot say |
 | `docstring-quality [omits_surprise]`, `[contradicts]` | fix the docstring |
-| `silent-failure` | re-raise, raise a domain error, or return an explicit failure |
+| `silent-failure` | re-raise, raise a domain error, report it at error level, or return a sentinel the docstring promises |
+| `log-exposure [secret]`, `[personal_data]`, `[financial]` | remove or redact the value from the log call |
 | `io-mixed-with-logic` | pull the decisions into a pure function; keep I/O at the edge |
 | `name-hides-side-effects` | rename to announce the effect, or move the effect out |
 | `test-smell`, `test-weakening` | make the test able to fail when the behavior breaks |

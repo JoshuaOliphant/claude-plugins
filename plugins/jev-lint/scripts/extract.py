@@ -6,6 +6,17 @@ import io
 import re
 import tokenize
 from dataclasses import dataclass, field
+from typing import Literal
+
+Kind = Literal["comment", "handler", "function", "log_call", "hunk"]
+
+STATE_KEYS: dict[str, set[str]] = {
+    "comment": {"comment", "code_before", "code_after", "inline_code"},
+    "handler": {"try_statement", "handler"},
+    "function": {"qualified_name", "function", "docstring"},
+    "log_call": {"log_call", "enclosing_function"},
+    "hunk": {"path", "hunk", "removed", "added"},
+}
 
 CONTEXT_LINES = 3
 MAX_SEGMENT_LINES = 80
@@ -17,11 +28,14 @@ SCRIPT_BLOCK_START = "# /// script"
 SCRIPT_BLOCK_END = "# ///"
 BROAD_EXCEPTIONS = {"Exception", "BaseException"}
 LOG_METHODS = {"debug", "info", "warning", "warn", "error", "exception", "critical", "log"}
+LOGGER_NAMES = {"log", "logger", "logging"}
+LOGGER_SUFFIXES = ("_log", "_logger")
+NO_NEWLINE_MARKER = "\\ "
 
 
 @dataclass(frozen=True)
 class Unit:
-    kind: str
+    kind: Kind
     path: str
     line: int
     name: str
@@ -46,6 +60,19 @@ def _comment_tokens(source: str) -> list[tokenize.TokenInfo]:
     return [token for token in tokens if token.type == tokenize.COMMENT]
 
 
+def _script_block_rows(tokens: list[tokenize.TokenInfo]) -> set[int]:
+    rows: set[int] = set()
+    start = None
+    for token in tokens:
+        text = token.string.strip()
+        if start is None and text == SCRIPT_BLOCK_START:
+            start = token.start[0]
+        elif start is not None and text == SCRIPT_BLOCK_END:
+            rows.update(range(start, token.start[0] + 1))
+            start = None
+    return rows
+
+
 def _code_neighbors(lines: list[str], first: int, last: int) -> tuple[str, str]:
     before, after = [], []
     row = first - 1
@@ -63,19 +90,13 @@ def _code_neighbors(lines: list[str], first: int, last: int) -> tuple[str, str]:
 
 def extract_comments(path: str, source: str) -> list[Unit]:
     lines = source.splitlines()
+    tokens = _comment_tokens(source)
+    script_rows = _script_block_rows(tokens)
     blocks: list[list[tokenize.TokenInfo]] = []
-    in_script_block = False
-    for token in _comment_tokens(source):
-        text = token.string.strip()
-        if text == SCRIPT_BLOCK_START:
-            in_script_block = True
-            continue
-        if in_script_block:
-            in_script_block = text != SCRIPT_BLOCK_END
-            continue
-        if DIRECTIVE.match(text):
-            continue
+    for token in tokens:
         row, col = token.start
+        if row in script_rows or DIRECTIVE.match(token.string.strip()):
+            continue
         inline = bool(lines[row - 1][:col].strip())
         previous = blocks[-1][-1] if blocks else None
         continues_block = (
@@ -93,8 +114,7 @@ def extract_comments(path: str, source: str) -> list[Unit]:
     for block in blocks:
         first, last = block[0].start[0], block[-1].start[0]
         before, after = _code_neighbors(lines, first, last)
-        head_line = lines[first - 1]
-        inline_code = head_line[: block[0].start[1]].rstrip()
+        inline_code = lines[first - 1][: block[0].start[1]].rstrip()
         state = {
             "comment": "\n".join(token.string for token in block),
             "code_before": before,
@@ -110,12 +130,26 @@ def _segment(source: str, node: ast.AST) -> str:
     return truncate(ast.get_source_segment(source, node) or "")
 
 
-def _is_logger(node: ast.expr) -> bool:
+def _called_name(node: ast.expr) -> str:
     if isinstance(node, ast.Name):
-        return "log" in node.id.lower()
+        return node.id
     if isinstance(node, ast.Attribute):
-        return "log" in node.attr.lower()
-    return False
+        return node.attr
+    return ""
+
+
+def _is_logger(node: ast.expr) -> bool:
+    if isinstance(node, ast.Call):
+        return _called_name(node.func) == "getLogger"
+    name = _called_name(node).lower()
+    return name in LOGGER_NAMES or name.endswith(LOGGER_SUFFIXES)
+
+
+def _exception_names(node: ast.expr | None) -> list[str]:
+    if node is None:
+        return []
+    elements = node.elts if isinstance(node, ast.Tuple) else [node]
+    return [ast.unparse(element) for element in elements]
 
 
 class _Collector(ast.NodeVisitor):
@@ -152,10 +186,11 @@ class _Collector(ast.NodeVisitor):
         statement = _segment(self.source, node)
         for handler in node.handlers:
             state = {"try_statement": statement, "handler": _segment(self.source, handler)}
+            exceptions = _exception_names(handler.type)
             name = ast.unparse(handler.type) if handler.type else "bare except"
             facts = {
                 "bare": handler.type is None,
-                "broad": name in BROAD_EXCEPTIONS,
+                "broad": any(exception in BROAD_EXCEPTIONS for exception in exceptions),
                 "only_statement": (
                     type(handler.body[0]).__name__ if len(handler.body) == 1 else None
                 ),
@@ -181,12 +216,12 @@ def extract_source_units(path: str, source: str) -> list[Unit]:
     return extract_comments(path, source) + collector.units
 
 
-HUNK_HEADER = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@")
+HUNK_HEADER = re.compile(r"^@@ -\d+(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
 
 
 def extract_hunks(diff: str) -> list[Unit]:
     units = []
-    path = None
+    old_path = path = None
     hunk: dict | None = None
 
     def close() -> None:
@@ -200,20 +235,36 @@ def extract_hunks(diff: str) -> list[Unit]:
             units.append(Unit("hunk", path, hunk["start"], path, state))
 
     for line in diff.splitlines():
-        if line.startswith("+++ "):
-            close()
-            hunk = None
-            target = line[4:]
-            path = target.removeprefix("b/")
-        elif line.startswith("@@"):
-            close()
-            match = HUNK_HEADER.match(line)
-            hunk = {"start": int(match.group(1)), "lines": [], "removed": [], "added": []}
-        elif hunk is not None and not line.startswith(("--- ", "diff ", "index ")):
+        if hunk and (hunk["old_left"] > 0 or hunk["new_left"] > 0):
+            if line.startswith(NO_NEWLINE_MARKER):
+                continue
             hunk["lines"].append(line)
             if line.startswith("-"):
                 hunk["removed"].append(line[1:])
+                hunk["old_left"] -= 1
             elif line.startswith("+"):
                 hunk["added"].append(line[1:])
+                hunk["new_left"] -= 1
+            else:
+                hunk["old_left"] -= 1
+                hunk["new_left"] -= 1
+        elif line.startswith("--- "):
+            old_path = line[4:].removeprefix("a/")
+        elif line.startswith("+++ "):
+            close()
+            hunk = None
+            target = line[4:]
+            path = old_path if target == "/dev/null" else target.removeprefix("b/")
+        elif line.startswith("@@"):
+            close()
+            match = HUNK_HEADER.match(line)
+            hunk = match and {
+                "start": int(match.group(2)),
+                "old_left": int(match.group(1) or 1),
+                "new_left": int(match.group(3) or 1),
+                "lines": [],
+                "removed": [],
+                "added": [],
+            }
     close()
     return [unit for unit in units if unit.path and unit.path.endswith(".py")]

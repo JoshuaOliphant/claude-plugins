@@ -1,12 +1,28 @@
-# ABOUTME: Tests for rules.py: how Noul and Choice answers become finding probabilities, and which units each rule applies to.
+# ABOUTME: Tests for rules.py: how answers become finding probabilities, rule validation, ruff mapping, and prompt contracts.
 # ABOUTME: Answers are real SDK objects built by conftest helpers.
+import re
+
+import pytest
 from conftest import choice, noul
-from extract import Unit
-from rules import COMMENT_KIND, DOCSTRING_QUALITY, RULES, SILENT_FAILURE, TEST_SMELL, TEST_WEAKENING
+from extract import STATE_KEYS, Unit
+from rules import (
+    COMMENT_KIND,
+    DOCSTRING_QUALITY,
+    RULES,
+    SILENT_FAILURE,
+    TEST_SMELL,
+    TEST_WEAKENING,
+    Rule,
+)
+from typesafe_sdk import Choice, Noul
 
 
 def _unit(kind="function", name="f", path="pkg/m.py", **state):
     return Unit(kind, path, 1, name, state)
+
+
+def _handler(**facts):
+    return Unit("handler", "m.py", 1, "h", {}, facts)
 
 
 def test_noul_rule_flags_on_yes_probability():
@@ -15,19 +31,15 @@ def test_noul_rule_flags_on_yes_probability():
 
 def test_choice_rule_sums_mass_outside_acceptable_and_names_top_problem():
     answer = choice(
-        {
-            "why": 0.4,
-            "todo": 0.05,
-            "narrates": 0.3,
-            "section_banner": 0.2,
-            "commented_out_code": 0.05,
-            "change_history": 0.0,
-            "misleading": 0.0,
-        }
+        {"why": 0.4, "todo": 0.05, "narrates": 0.3, "section_banner": 0.2, "misleading": 0.05}
     )
     probability, label = COMMENT_KIND.probability(answer)
     assert round(probability, 2) == 0.55
     assert label == "narrates"
+
+
+def test_choice_answer_with_only_acceptable_labels_scores_zero():
+    assert COMMENT_KIND.probability(choice({"why": 0.9, "todo": 0.1})) == (0.0, "why")
 
 
 def test_docstring_rule_applies_only_with_a_docstring():
@@ -45,10 +57,6 @@ def test_weakening_applies_to_test_paths_only():
     assert not TEST_WEAKENING.applies(_unit(kind="hunk", path="pkg/orders.py"))
 
 
-def test_rules_without_a_filter_apply_to_every_unit_of_their_kind():
-    assert SILENT_FAILURE.applies(_unit(kind="handler"))
-
-
 def test_comment_labels_carry_their_own_action():
     assert COMMENT_KIND.message_for("belongs_in_docs").startswith("move to documentation")
     assert COMMENT_KIND.message_for("change_history").startswith("move to the commit message")
@@ -59,30 +67,52 @@ def test_commented_out_code_maps_to_ruff_eradicate():
     unit = _unit(kind="comment")
     assert COMMENT_KIND.static_equivalents("commented_out_code", unit) == ("ERA001",)
     assert COMMENT_KIND.static_equivalents("narrates", unit) == ()
-
-
-def test_handler_facts_map_to_ruff_rules():
-    def handler(**facts):
-        return Unit("handler", "m.py", 1, "h", {}, facts)
-
-    assert SILENT_FAILURE.static_equivalents(
-        "yes", handler(bare=True, broad=False, only_statement="Pass")
-    ) == ("E722", "S110")
-    assert SILENT_FAILURE.static_equivalents(
-        "yes", handler(bare=False, broad=True, only_statement="Continue")
-    ) == ("BLE001", "S112")
-    assert (
-        SILENT_FAILURE.static_equivalents(
-            "yes", handler(bare=False, broad=False, only_statement="Return")
-        )
-        == ()
-    )
     assert DOCSTRING_QUALITY.static_equivalents("contradicts", _unit()) == ()
 
 
-def test_rule_ids_are_unique_and_choice_rules_name_real_labels():
+@pytest.mark.parametrize(
+    ("facts", "codes"),
+    [
+        ({"bare": True, "broad": False, "only_statement": "Pass"}, ("E722", "S110")),
+        ({"bare": False, "broad": True, "only_statement": "Continue"}, ("BLE001", "S112")),
+        ({"bare": False, "broad": True, "only_statement": "Return"}, ("BLE001",)),
+        ({"bare": False, "broad": False, "only_statement": "Pass"}, ()),
+    ],
+)
+def test_handler_facts_map_to_the_ruff_rules_that_fire_by_default(facts, codes):
+    assert SILENT_FAILURE.static_equivalents("yes", _handler(**facts)) == codes
+
+
+@pytest.mark.parametrize(
+    ("question", "extra", "message"),
+    [
+        (Noul(instructions="q"), {"acceptable": frozenset({"yes"})}, "Noul rule has no labels"),
+        (Noul(instructions="q"), {"actions": {"yes": "fix"}}, "Noul rule has no labels"),
+        (
+            Choice(instructions="q", criteria={"good": "g", "bad": "b"}),
+            {"acceptable": frozenset({"good", "bad"})},
+            "strict subset",
+        ),
+        (
+            Choice(instructions="q", criteria={"good": "g", "bad": "b"}),
+            {"acceptable": frozenset({"good"}), "actions": {"good": "keep"}},
+            "actions must name flagged labels",
+        ),
+    ],
+)
+def test_rules_reject_labels_that_do_not_fit_their_question(question, extra, message):
+    with pytest.raises(ValueError, match=message):
+        Rule(id="r", kind="function", message="m", question=question, **extra)
+
+
+def test_rule_ids_are_unique():
     assert len({rule.id for rule in RULES}) == len(RULES)
-    for rule in RULES:
-        if rule.acceptable:
-            assert rule.acceptable <= set(rule.question.criteria)
-            assert set(rule.actions) <= set(rule.question.criteria) - rule.acceptable
+
+
+@pytest.mark.parametrize("rule", RULES, ids=lambda rule: rule.id)
+def test_every_state_key_a_prompt_names_is_produced_for_its_unit_kind(rule):
+    referenced = {
+        re.split(r"[.\[]", name)[0] for name in re.findall(r"`([^`]+)`", rule.question.instructions)
+    }
+    assert referenced
+    assert referenced <= STATE_KEYS[rule.kind]

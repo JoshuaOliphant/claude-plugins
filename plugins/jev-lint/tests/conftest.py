@@ -26,7 +26,11 @@ class _Response:
 
 
 class FakeJev:
-    """Answers each question id from `answers`; records every request it receives."""
+    """Answers each question id from `answers`, a dict or a function of (state, question id).
+
+    A question id the answers do not cover is left out of the response, as the SDK does for
+    answer types it does not recognize. Every request is recorded.
+    """
 
     def __init__(self, answers=None, error=None):
         self.answers = answers or {}
@@ -39,11 +43,17 @@ class FakeJev:
     async def __aexit__(self, *exc):
         return False
 
+    def _answer(self, state, question_id):
+        if callable(self.answers):
+            return self.answers(state, question_id)
+        return self.answers.get(question_id)
+
     async def system_one(self, state, questions):
         self.requests.append({"state": state, "questions": questions})
         if self.error:
             raise self.error
-        return _Response({question_id: self.answers[question_id] for question_id in questions})
+        answers = {question_id: self._answer(state, question_id) for question_id in questions}
+        return _Response({key: answer for key, answer in answers.items() if answer is not None})
 
 
 @pytest.fixture

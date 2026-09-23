@@ -1,5 +1,5 @@
-# ABOUTME: Hand-labeled cases for the non-comment jev-lint rules: each is a source or diff snippet and whether the rule should flag it.
-# ABOUTME: Comment-kind cases come from git history instead (see comments.jsonl), since cleanup commits already labeled them.
+# ABOUTME: Hand-labeled cases for every jev-lint rule: each is a source or diff snippet and whether the rule should flag it.
+# ABOUTME: run_eval.py also scores an optional JSONL of comments that real cleanup commits deleted.
 
 
 def diff(path: str, removed: list[str], added: list[str], context: list[str] = ()) -> str:
@@ -17,7 +17,6 @@ def diff(path: str, removed: list[str], added: list[str], context: list[str] = (
 
 
 CASES = [
-    # silent-failure
     {
         "rule": "silent-failure",
         "flag": True,
@@ -89,7 +88,55 @@ def run_job(job):
         raise
 """,
     },
-    # io-mixed-with-logic
+    {
+        "rule": "silent-failure",
+        "flag": True,
+        "source": """
+def stop_server(port):
+    try:
+        pid = find_pid(port)
+        os.kill(pid, signal.SIGTERM)
+    except Exception:
+        pass
+""",
+    },
+    {
+        "rule": "silent-failure",
+        "flag": True,
+        "source": """
+def bind(port):
+    try:
+        return HTTPServer(("127.0.0.1", port), Handler)
+    except OSError:
+        return HTTPServer(("127.0.0.1", 0), Handler)
+""",
+    },
+    {
+        "rule": "silent-failure",
+        "flag": False,
+        "source": """
+def repo_root(path):
+    \"\"\"Return the git repository root containing path, or None when path is not in a repository.\"\"\"
+    try:
+        return subprocess.run(
+            ["git", "-C", path, "rev-parse", "--show-toplevel"],
+            check=True, capture_output=True, text=True,
+        ).stdout.strip()
+    except subprocess.CalledProcessError:
+        return None
+""",
+    },
+    {
+        "rule": "silent-failure",
+        "flag": False,
+        "source": """
+def terminate(pid):
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+""",
+    },
     {
         "rule": "io-mixed-with-logic",
         "flag": True,
@@ -145,7 +192,6 @@ def save_orders(path, orders):
     Path(path).write_text(json.dumps([asdict(order) for order in orders], indent=2))
 """,
     },
-    # name-hides-side-effects
     {
         "rule": "name-hides-side-effects",
         "flag": True,
@@ -204,7 +250,6 @@ def cmd_tick(args):
     print(f"iteration {state['iteration']}")
 """,
     },
-    # docstring-quality
     {
         "rule": "docstring-quality",
         "flag": True,
@@ -259,7 +304,6 @@ def backoff_delay(attempt, base=0.5, cap=30.0):
     return min(cap, base * 2**attempt)
 ''',
     },
-    # log-exposure
     {
         "rule": "log-exposure",
         "flag": True,
@@ -306,7 +350,6 @@ def fetch(url, attempt):
     return httpx.get(url)
 """,
     },
-    # test-smell
     {
         "rule": "test-smell",
         "flag": True,
@@ -360,7 +403,6 @@ def test_missing_setting_raises_config_error():
         lookup({}, "api_url")
 """,
     },
-    # symptom-workaround
     {
         "rule": "symptom-workaround",
         "flag": True,
@@ -425,7 +467,6 @@ def test_missing_setting_raises_config_error():
             context=["def add_item(order, sku, quantity):"],
         ),
     },
-    # test-weakening
     {
         "rule": "test-weakening",
         "flag": True,
@@ -488,7 +529,6 @@ def test_missing_setting_raises_config_error():
             context=["    assert order.total == 42"],
         ),
     },
-    # comment-kind: text that belongs in documentation versus a why the code cannot show
     {
         "rule": "comment-kind",
         "flag": True,
