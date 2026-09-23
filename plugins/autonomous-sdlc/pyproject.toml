@@ -1,0 +1,27 @@
+[project]
+name = "autonomous-sdlc-dev"
+version = "0.1.0"
+description = "Dev tooling for the autonomous-sdlc plugin (sdlc_state.py is stdlib-only; ac_judge.py declares its own deps)"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "typesafe-sdk>=0.7"]
+
+[tool.pytest.ini_options]
+addopts = "--cov --cov-report=term-missing"
+testpaths = ["scripts"]
+
+[tool.coverage.run]
+include = ["scripts/ac_judge.py"]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+exclude_also = ['if __name__ == "__main__":']
+
+[tool.ruff]
+line-length = 100
