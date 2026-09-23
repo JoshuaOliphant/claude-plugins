@@ -8,10 +8,6 @@ from extract import Kind, Unit, is_test_path
 from typesafe_sdk import Choice, Noul, NoulCriteria
 
 
-def no_static_equivalent(label: str, unit: Unit) -> tuple[str, ...]:
-    return ()
-
-
 @dataclass(frozen=True)
 class Rule:
     id: str
@@ -22,7 +18,7 @@ class Rule:
     threshold: float = 0.5
     actions: dict[str, str] = field(default_factory=dict, hash=False)
     applies: Callable[[Unit], bool] = lambda unit: True
-    static_equivalents: Callable[[str, Unit], tuple[str, ...]] = no_static_equivalent
+    static_equivalents: Callable[[str, Unit], tuple[str, ...]] = lambda label, unit: ()
 
     def __post_init__(self) -> None:
         if isinstance(self.question, Noul):
@@ -108,18 +104,18 @@ COMMENT_KIND = Rule(
 
 def handler_static_equivalents(label: str, unit: Unit) -> tuple[str, ...]:
     bare, broad = unit.facts.get("bare"), unit.facts.get("broad")
-    rules = []
+    codes = []
     if bare:
-        rules.append("E722")
+        codes.append("E722")
     if broad:
-        rules.append("BLE001")
+        codes.append("BLE001")
     if bare or broad:
-        only = unit.facts.get("only_statement")
-        if only == "Pass":
-            rules.append("S110")
-        elif only == "Continue":
-            rules.append("S112")
-    return tuple(rules)
+        only_statement = unit.facts.get("only_statement")
+        if only_statement == "Pass":
+            codes.append("S110")
+        elif only_statement == "Continue":
+            codes.append("S112")
+    return tuple(codes)
 
 
 SILENT_FAILURE = Rule(
@@ -153,9 +149,9 @@ SILENT_FAILURE = Rule(
 
 IO_MIXED_WITH_LOGIC = Rule(
     id="io-mixed-with-logic",
-    threshold=0.7,
     kind="function",
     message="function mixes I/O with domain logic; keep I/O at the edges",
+    threshold=0.7,
     question=Noul(
         instructions=(
             "Does `function` both perform I/O and hold domain logic that deserves its own "
@@ -207,9 +203,9 @@ NAME_HIDES_SIDE_EFFECTS = Rule(
 
 DOCSTRING_QUALITY = Rule(
     id="docstring-quality",
-    threshold=0.7,
     kind="function",
     message="docstring is inaccurate, empty of information, or hides a surprise",
+    threshold=0.7,
     acceptable=frozenset({"accurate"}),
     actions={
         "restates_name": "delete or rewrite: the docstring only repeats the name",
@@ -255,9 +251,9 @@ LOG_EXPOSURE = Rule(
 
 TEST_SMELL = Rule(
     id="test-smell",
-    threshold=0.7,
     kind="function",
     message="test cannot catch the regression it claims to guard",
+    threshold=0.7,
     acceptable=frozenset({"meaningful", "smoke"}),
     applies=lambda unit: unit.name.rsplit(".", 1)[-1].startswith("test_"),
     question=Choice(

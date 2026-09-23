@@ -6,6 +6,7 @@ import io
 import re
 import tokenize
 from dataclasses import dataclass, field
+from itertools import islice
 from typing import Literal
 
 Kind = Literal["comment", "handler", "function", "log_call", "hunk"]
@@ -73,24 +74,20 @@ def _script_block_rows(tokens: list[tokenize.TokenInfo]) -> set[int]:
     return rows
 
 
+def _code_lines_along(lines: list[str], rows: range) -> list[str]:
+    code = (lines[row - 1] for row in rows if not lines[row - 1].lstrip().startswith("#"))
+    return list(islice(code, CONTEXT_LINES))
+
+
 def _code_neighbors(lines: list[str], first: int, last: int) -> tuple[str, str]:
-    before, after = [], []
-    row = first - 1
-    while row >= 1 and len(before) < CONTEXT_LINES:
-        if not lines[row - 1].lstrip().startswith("#"):
-            before.insert(0, lines[row - 1])
-        row -= 1
-    row = last + 1
-    while row <= len(lines) and len(after) < CONTEXT_LINES:
-        if not lines[row - 1].lstrip().startswith("#"):
-            after.append(lines[row - 1])
-        row += 1
-    return "\n".join(before), "\n".join(after)
+    before = _code_lines_along(lines, range(first - 1, 0, -1))
+    after = _code_lines_along(lines, range(last + 1, len(lines) + 1))
+    return "\n".join(reversed(before)), "\n".join(after)
 
 
-def extract_comments(path: str, source: str) -> list[Unit]:
-    lines = source.splitlines()
-    tokens = _comment_tokens(source)
+def _comment_blocks(
+    lines: list[str], tokens: list[tokenize.TokenInfo]
+) -> list[list[tokenize.TokenInfo]]:
     script_rows = _script_block_rows(tokens)
     blocks: list[list[tokenize.TokenInfo]] = []
     for token in tokens:
@@ -109,9 +106,13 @@ def extract_comments(path: str, source: str) -> list[Unit]:
             blocks[-1].append(token)
         else:
             blocks.append([token])
+    return blocks
 
+
+def extract_comments(path: str, source: str) -> list[Unit]:
+    lines = source.splitlines()
     units = []
-    for block in blocks:
+    for block in _comment_blocks(lines, _comment_tokens(source)):
         first, last = block[0].start[0], block[-1].start[0]
         before, after = _code_neighbors(lines, first, last)
         inline_code = lines[first - 1][: block[0].start[1]].rstrip()
@@ -219,35 +220,50 @@ def extract_source_units(path: str, source: str) -> list[Unit]:
 HUNK_HEADER = re.compile(r"^@@ -\d+(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
 
 
+@dataclass
+class _Hunk:
+    start: int
+    old_left: int
+    new_left: int
+    lines: list[str] = field(default_factory=list)
+    removed: list[str] = field(default_factory=list)
+    added: list[str] = field(default_factory=list)
+
+    def wants_more_lines(self) -> bool:
+        return self.old_left > 0 or self.new_left > 0
+
+    def take(self, line: str) -> None:
+        self.lines.append(line)
+        if line.startswith("-"):
+            self.removed.append(line[1:])
+            self.old_left -= 1
+        elif line.startswith("+"):
+            self.added.append(line[1:])
+            self.new_left -= 1
+        else:
+            self.old_left -= 1
+            self.new_left -= 1
+
+
 def extract_hunks(diff: str) -> list[Unit]:
     units = []
     old_path = path = None
-    hunk: dict | None = None
+    hunk: _Hunk | None = None
 
     def close() -> None:
-        if hunk and (hunk["removed"] or hunk["added"]):
+        if hunk and (hunk.removed or hunk.added):
             state = {
                 "path": path,
-                "hunk": truncate("\n".join(hunk["lines"])),
-                "removed": "\n".join(hunk["removed"]),
-                "added": "\n".join(hunk["added"]),
+                "hunk": truncate("\n".join(hunk.lines)),
+                "removed": "\n".join(hunk.removed),
+                "added": "\n".join(hunk.added),
             }
-            units.append(Unit("hunk", path, hunk["start"], path, state))
+            units.append(Unit("hunk", path, hunk.start, path, state))
 
     for line in diff.splitlines():
-        if hunk and (hunk["old_left"] > 0 or hunk["new_left"] > 0):
-            if line.startswith(NO_NEWLINE_MARKER):
-                continue
-            hunk["lines"].append(line)
-            if line.startswith("-"):
-                hunk["removed"].append(line[1:])
-                hunk["old_left"] -= 1
-            elif line.startswith("+"):
-                hunk["added"].append(line[1:])
-                hunk["new_left"] -= 1
-            else:
-                hunk["old_left"] -= 1
-                hunk["new_left"] -= 1
+        if hunk and hunk.wants_more_lines():
+            if not line.startswith(NO_NEWLINE_MARKER):
+                hunk.take(line)
         elif line.startswith("--- "):
             old_path = line[4:].removeprefix("a/")
         elif line.startswith("+++ "):
@@ -258,13 +274,14 @@ def extract_hunks(diff: str) -> list[Unit]:
         elif line.startswith("@@"):
             close()
             match = HUNK_HEADER.match(line)
-            hunk = match and {
-                "start": int(match.group(2)),
-                "old_left": int(match.group(1) or 1),
-                "new_left": int(match.group(3) or 1),
-                "lines": [],
-                "removed": [],
-                "added": [],
-            }
+            hunk = (
+                _Hunk(
+                    start=int(match.group(2)),
+                    old_left=int(match.group(1) or 1),
+                    new_left=int(match.group(3) or 1),
+                )
+                if match
+                else None
+            )
     close()
     return [unit for unit in units if unit.path and unit.path.endswith(".py")]

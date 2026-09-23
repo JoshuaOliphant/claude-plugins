@@ -172,7 +172,13 @@ def static_rule_summary(findings: list[Judgment]) -> list[str]:
     return lines
 
 
-def summary_line(findings, judgments, units, skipped, failures) -> str:
+def summary_line(
+    findings: list[Judgment],
+    judgments: list[Judgment],
+    units: list[Unit],
+    skipped: list[str],
+    failures: list[Failure],
+) -> str:
     line = f"{len(findings)} findings from {len(judgments)} judgments over {len(units)} units"
     if skipped:
         line += f"; {len(skipped)} files skipped"
@@ -181,7 +187,17 @@ def summary_line(findings, judgments, units, skipped, failures) -> str:
     return line
 
 
-async def run(units: list[Unit], rules: list[Rule], concurrency: int):
+def findings_above_threshold(
+    judgments: list[Judgment], rules: list[Rule], override: float | None
+) -> list[Judgment]:
+    thresholds = {rule.id: rule.threshold if override is None else override for rule in rules}
+    above = (j for j in judgments if j.probability >= thresholds[j.rule])
+    return sorted(above, key=lambda j: -j.probability)
+
+
+async def run(
+    units: list[Unit], rules: list[Rule], concurrency: int
+) -> tuple[list[Judgment], list[Failure]]:
     async with AsyncTypeSafeClient() as client:
         return await judge_units(client, units, rules, concurrency)
 
@@ -228,13 +244,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"jev unavailable: {error}", file=sys.stderr)
         return EXIT_JEV_FAILED
 
-    thresholds = {
-        rule.id: rule.threshold if args.threshold is None else args.threshold for rule in rules
-    }
-    findings = sorted(
-        (j for j in judgments if j.probability >= thresholds[j.rule]),
-        key=lambda j: -j.probability,
-    )
+    findings = findings_above_threshold(judgments, rules, args.threshold)
     if args.json:
         print(json.dumps([asdict(j) for j in judgments], indent=2))
     else:

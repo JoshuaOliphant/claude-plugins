@@ -3,7 +3,6 @@
 import sys
 from pathlib import Path
 
-import pytest
 from typesafe_sdk import ChoiceAnswer, NoulAnswer
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
@@ -54,8 +53,3 @@ class FakeJev:
             raise self.error
         answers = {question_id: self._answer(state, question_id) for question_id in questions}
         return _Response({key: answer for key, answer in answers.items() if answer is not None})
-
-
-@pytest.fixture
-def fake_jev():
-    return FakeJev

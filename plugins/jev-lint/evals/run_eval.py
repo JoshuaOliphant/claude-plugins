@@ -11,6 +11,7 @@ import json
 import sys
 import time
 from collections import Counter, defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -26,6 +27,23 @@ RULES_BY_ID = {rule.id: rule for rule in RULES}
 THRESHOLDS = (0.5, 0.7, 0.9)
 
 
+@dataclass(frozen=True)
+class LabeledCase:
+    unit: Unit
+    should_flag: bool
+    source: str
+    rule_id: str
+
+
+@dataclass(frozen=True)
+class Scored:
+    rule_id: str
+    should_flag: bool
+    probability: float
+    label: str
+    source: str
+
+
 def unit_for_case(index: int, case: dict) -> Unit:
     rule = RULES_BY_ID[case["rule"]]
     if "diff" in case:
@@ -38,10 +56,10 @@ def unit_for_case(index: int, case: dict) -> Unit:
         raise ValueError(
             f"case {index} ({rule.id}) contains no {rule.kind} unit the rule applies to"
         )
-    return unit
+    return Unit(unit.kind, f"case{index}/{unit.path}", unit.line, unit.name, unit.state)
 
 
-def comment_cases(path: Path) -> list[tuple[Unit, bool, str]]:
+def comment_cases(path: Path) -> list[LabeledCase]:
     cases = []
     for line in path.read_text().splitlines():
         record = json.loads(line)
@@ -52,76 +70,76 @@ def comment_cases(path: Path) -> list[tuple[Unit, bool, str]]:
         }
         unit_path = f"{record['label']}/{record['repo']}@{record['sha']}/{record['path']}"
         unit = Unit("comment", unit_path, record["line"], record["comment"][:60], state)
-        cases.append((unit, record["label"] == "deleted", f"{record['repo']}@{record['sha']}"))
+        source = f"{record['repo']}@{record['sha']} {unit.name}"
+        cases.append(LabeledCase(unit, record["label"] == "deleted", source, "comment-kind"))
     return cases
 
 
-async def judge(
-    labeled: list[tuple[Unit, bool, str, str]],
-) -> list[tuple[str, bool, float, str, str]]:
-    keys = Counter((unit.path, unit.line) for unit, *_ in labeled)
+async def judge(cases: list[LabeledCase]) -> list[Scored]:
+    keys = Counter((case.unit.path, case.unit.line) for case in cases)
     duplicated = [key for key, count in keys.items() if count > 1]
     if duplicated:
         raise ValueError(f"labeled units share a path and line: {duplicated[:3]}")
     by_rule = defaultdict(list)
-    for unit, flag, source, rule_id in labeled:
-        by_rule[rule_id].append((unit, flag, source))
-    results = []
-    for rule_id, cases in by_rule.items():
-        units = [unit for unit, _, _ in cases]
+    for case in cases:
+        by_rule[case.rule_id].append(case)
+    scored = []
+    for rule_id, rule_cases in by_rule.items():
+        units = [case.unit for case in rule_cases]
         judgments, failures = await run(units, [RULES_BY_ID[rule_id]], concurrency=16)
         if failures:
             failed = [f"{f.unit.path}:{f.unit.line}: {f.error}" for f in failures]
             raise RuntimeError(f"Jev failed on {len(failures)} {rule_id} cases: {failed[:3]}")
         by_unit = {(j.path, j.line): j for j in judgments}
-        for unit, flag, source in cases:
-            judgment = by_unit[(unit.path, unit.line)]
-            results.append((rule_id, flag, judgment.probability, judgment.label, source))
-    return results
+        for case in rule_cases:
+            judgment = by_unit[(case.unit.path, case.unit.line)]
+            scored.append(
+                Scored(rule_id, case.should_flag, judgment.probability, judgment.label, case.source)
+            )
+    return scored
 
 
-def report(results) -> None:
+def report(scored: list[Scored]) -> None:
     by_rule = defaultdict(list)
-    for rule_id, flag, probability, label, source in results:
-        by_rule[rule_id].append((flag, probability, label, source))
+    for row in scored:
+        by_rule[row.rule_id].append(row)
     for rule_id, rows in by_rule.items():
-        positives = sum(flag for flag, *_ in rows)
+        positives = sum(row.should_flag for row in rows)
         print(f"\n== {rule_id}: {len(rows)} cases, {positives} should flag ==")
         for threshold in THRESHOLDS:
-            flagged = [(flag, p) for flag, p, *_ in rows if p >= threshold]
-            true_positives = sum(flag for flag, _ in flagged)
+            flagged = [row for row in rows if row.probability >= threshold]
+            true_positives = sum(row.should_flag for row in flagged)
             precision = true_positives / len(flagged) if flagged else float("nan")
             recall = true_positives / positives if positives else float("nan")
             print(
                 f"  threshold {threshold}: flagged {len(flagged):3}  "
                 f"precision {precision:.2f}  recall {recall:.2f}"
             )
-        misses = [row for row in rows if (row[1] >= 0.5) != row[0]]
-        for flag, probability, label, source in misses[:12]:
-            kind = "missed" if flag else "false alarm"
-            print(f"    {kind:11} p={probability:.2f} [{label}] {source}")
+        misses = [row for row in rows if (row.probability >= 0.5) != row.should_flag]
+        for row in misses[:12]:
+            kind = "missed" if row.should_flag else "false alarm"
+            print(f"    {kind:11} p={row.probability:.2f} [{row.label}] {row.source}")
 
 
 def main() -> None:
-    labeled = []
+    cases = []
     for index, case in enumerate(CASES):
-        unit = unit_for_case(index, case)
-        unit = Unit(unit.kind, f"case{index}/{unit.path}", unit.line, unit.name, unit.state)
         snippet = (case.get("source") or case["diff"]).strip().splitlines()
         source = snippet[0] if "source" in case else snippet[-1]
-        labeled.append((unit, case["flag"], source[:70], case["rule"]))
+        cases.append(
+            LabeledCase(unit_for_case(index, case), case["flag"], source[:70], case["rule"])
+        )
     if len(sys.argv) > 1:
         comments_path = Path(sys.argv[1])
         if not comments_path.exists():
             sys.exit(f"no such comments file: {comments_path}")
-        for unit, flag, source in comment_cases(comments_path):
-            labeled.append((unit, flag, f"{source} {unit.name}", "comment-kind"))
+        cases.extend(comment_cases(comments_path))
 
     start = time.perf_counter()
-    results = asyncio.run(judge(labeled))
+    scored = asyncio.run(judge(cases))
     elapsed = time.perf_counter() - start
-    report(results)
-    print(f"\n{len(results)} judgments in {elapsed:.1f}s")
+    report(scored)
+    print(f"\n{len(scored)} judgments in {elapsed:.1f}s")
 
 
 if __name__ == "__main__":
