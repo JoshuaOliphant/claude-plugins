@@ -281,6 +281,7 @@ TEST_SMELL = Rule(
 
 SYMPTOM_WORKAROUND = Rule(
     id="symptom-workaround",
+    threshold=0.7,
     kind="hunk",
     message="change hides a symptom instead of fixing its cause",
     question=Noul(
@@ -290,17 +291,24 @@ SYMPTOM_WORKAROUND = Rule(
         ),
         criteria=NoulCriteria(
             true=(
-                "It adds a retry, sleep, broad except, default fallback, skip or xfail, a "
-                "loosened check, or a special case that makes a failure go away without "
-                "explaining or removing why it happens."
+                "It adds a retry, sleep, broad except that stays quiet, default fallback, skip "
+                "or xfail, a loosened check, or a special case that makes a failure go away "
+                "without explaining or removing why it happens."
             ),
-            false="It changes behavior at the cause, or is unrelated to handling a failure.",
+            false=(
+                "It changes behavior at the cause, or is unrelated to handling a failure. Also "
+                "no when the new handling surfaces the failure rather than hiding it: it "
+                "re-raises, raises an HTTP or domain error, logs at error level, or shows the "
+                "user an error. New features, new modules, and refactors that keep the same "
+                "error behavior are not workarounds."
+            ),
         ),
     ),
 )
 
 TEST_WEAKENING = Rule(
     id="test-weakening",
+    threshold=0.7,
     kind="hunk",
     message="change weakens the tests",
     applies=lambda unit: is_test_path(unit.path),
@@ -312,9 +320,15 @@ TEST_WEAKENING = Rule(
         criteria=NoulCriteria(
             true=(
                 "It removes or loosens assertions, widens expected values, adds skip or xfail, or "
-                "deletes test cases, without adding equivalent checks."
+                "deletes test cases, and the same hunk adds nothing that checks the behavior "
+                "instead."
             ),
-            false="The tests check at least as much after the change as before.",
+            false=(
+                "The tests check at least as much after the change as before. Also no when an "
+                "assertion becomes more specific, when a removed test or argument is replaced in "
+                "the same hunk, and when the change only follows the code it tests: a renamed "
+                "field, a removed parameter, or new setup with the assertions intact."
+            ),
         ),
     ),
 )

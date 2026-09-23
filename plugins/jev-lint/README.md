@@ -27,8 +27,8 @@ failure, unreadable files, or nothing to lint).
 | `docstring-quality` | function with docstring | Choice: accurate / restates_name / contradicts / omits_surprise | 0.7 |
 | `log-exposure` | logger call | Choice: harmless / secret / personal_data / financial | 0.5 |
 | `test-smell` | `test_*` function | Choice: meaningful / smoke / tautology / mocks_unit_under_test / overclaims / no_real_assertion | 0.7 |
-| `symptom-workaround` | diff hunk | Does the change hide a symptom instead of fixing its cause? | 0.5 |
-| `test-weakening` | diff hunk in a test file | Does the change weaken the tests? | 0.5 |
+| `symptom-workaround` | diff hunk | Does the change hide a symptom instead of fixing its cause? | 0.7 |
+| `test-weakening` | diff hunk in a test file | Does the change weaken the tests? | 0.7 |
 
 `silent-failure` follows a strict policy: best-effort cleanup and silent fallbacks to a
 substitute resource count as hiding a failure; a documented sentinel the caller must
@@ -52,8 +52,14 @@ against samples a reviewer labeled without seeing Jev's answers.
 | `name-hides-side-effects` | 0.86 / 0.86 | 50 functions across 20 repositories, but tuned on that sample, so treat as optimistic |
 | `io-mixed-with-logic` | 1.00 / 0.83 | 20 functions from this repo |
 | `docstring-quality` | 0.90 / 0.82 | 20 docstrings from this repo |
+| `log-exposure` | 0.93 / 0.93 | 30 logger calls drawn from 2,437 across 20 repositories |
+| `test-weakening` | 1.00 / 0.89 | 30 hunks from real commits in test files, but tuned on that sample |
+| `symptom-workaround` | 1.00 / 0.67 | 30 hunks from real commits, but tuned on that sample |
 | `test-smell` | no false alarms on 11 real tests | recall unmeasured: the sample held no real smells |
-| `log-exposure`, `symptom-workaround`, `test-weakening` | not measured on real code | 100% on 5–6 synthetic cases each |
+
+The diff rules were measured against 240 real commits across those repositories: hunks
+that surface an error (re-raise, HTTP error, error-level log, a message to the user) and
+test changes that follow a renamed API are the false alarms the criteria had to learn.
 
 This repository (615 units, 1,288 judgments) lints in about 7 seconds; 1,790 files
 across 20 repositories took 227 seconds, roughly 95 judgments a second at the default
