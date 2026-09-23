@@ -17,8 +17,8 @@ class Rule:
     acceptable: frozenset[str] = frozenset()
     threshold: float = 0.5
     actions: dict[str, str] = field(default_factory=dict, hash=False)
-    applies: Callable[[Unit], bool] = lambda unit: True
-    static_equivalents: Callable[[str, Unit], tuple[str, ...]] = lambda label, unit: ()
+    applies: Callable[[Unit], bool] = lambda _unit: True
+    static_equivalents: Callable[[str, Unit], tuple[str, ...]] = lambda _label, _unit: ()
 
     def __post_init__(self) -> None:
         if isinstance(self.question, Noul):
@@ -45,7 +45,7 @@ class Rule:
         return self.actions.get(label, self.message)
 
 
-def comment_static_equivalents(label: str, unit: Unit) -> tuple[str, ...]:
+def comment_static_equivalents(label: str, _unit: Unit) -> tuple[str, ...]:
     return ("ERA001",) if label == "commented_out_code" else ()
 
 
@@ -102,7 +102,7 @@ COMMENT_KIND = Rule(
 )
 
 
-def handler_static_equivalents(label: str, unit: Unit) -> tuple[str, ...]:
+def handler_static_equivalents(_label: str, unit: Unit) -> tuple[str, ...]:
     bare, broad = unit.facts.get("bare"), unit.facts.get("broad")
     codes = []
     if bare:
