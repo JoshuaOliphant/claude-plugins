@@ -16,13 +16,13 @@ a quick lookup can answer.
 
 ## Steps
 
-1. **Read before asking.** Read `docs/agents/issue-tracker.md` (if it is missing, use `gh` and
-   suggest `compost:setup`), `CONTEXT.md` or `CONTEXT-MAP.md`, the ADRs in `docs/adr/` that touch
+1. **Read before asking.** Read `docs/agents/issue-tracker.md` (if it is missing, run
+   `compost:setup` now, then continue), `CONTEXT.md` or `CONTEXT-MAP.md`, the ADRs in `docs/adr/` that touch
    the area, the relevant code, and recent commits. Use the glossary's terms from here on
    ([ubiquitous language](../../canon/ubiquitous-language.md)). Send subagents after facts you
    still need and keep going while they run; only the questions that depend on a fact wait for it.
    If the request already lives in an issue, thread, or doc that settles the decisions, synthesize
-   the spec from it without an interview: skip to step 6.
+   the spec from it without an interview: classify it (step 2), then skip to step 6.
 
 2. **Classify in one line, out loud,** so the user can override it:
    - **Spike**: a feasibility question ("can we...", "is it possible..."). Its output is an
@@ -58,7 +58,9 @@ a quick lookup can answer.
    The interview ends when the frontier is empty: every branch visited, nothing silently
    assumed. That is the stopping rule, not the user saying "enough" and not a series of approval
    gates. If nobody is there to answer (an unattended run), take your recommended answers, mark
-   each bullet in the refined prompt as an assumption, and continue.
+   each bullet in the refined prompt as an assumption, and continue. If the user says "enough",
+   do the same for the frontier still open: each recommendation becomes a bullet marked
+   (assumed).
 
 5. **Sharpen the domain as it settles.** While the rounds run, do the domain modeling inline, as
    described in [domain docs](references/domain-docs.md):
@@ -114,9 +116,11 @@ a quick lookup can answer.
 
 10. **Post the parent issue** with the tracker from `docs/agents/issue-tracker.md` (by default
     `gh issue create` with the `spec` label; a local tracker writes `.scratch/<slug>/spec.md`).
-    Commit `CONTEXT.md` and ADR changes as their own `docs:` commit. Bounded work proceeds from
-    here. Architectural work stops: link the issue, ask for approval, and record the approval as
-    an issue comment. Requested changes go into the issue, then repeat step 9.
+    Commit `CONTEXT.md` and ADR changes, with any Gherkin feature files from step 8, as their own
+    `docs:` commit. Bounded work proceeds from here. Architectural work stops: link the issue, ask
+    for approval, and record the approval as an issue comment. An explicit instruction in the
+    request to build it counts as that approval, unless the approach you chose changes what the
+    user asked for. Requested changes go into the issue, then repeat step 9.
 
 ## Next moves
 

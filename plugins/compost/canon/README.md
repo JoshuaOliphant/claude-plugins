@@ -9,7 +9,7 @@ only when relevant.
 - [Good-enough software](good-enough-software.md): agree the quality bar up front, meet it fully, and stop there.
 - [Ubiquitous language](ubiquitous-language.md): one domain vocabulary in talk and code, scoped by bounded contexts, recorded in `CONTEXT.md` and `CONTEXT-MAP.md`.
 - [Deep modules](deep-modules.md): much behavior behind a small interface; hide decisions likely to change; design the interface twice.
-- [Seams](seams.md): places to change behavior without editing there, where tests get in and red, green, refactor happens.
+- [Seams](seams.md): places to change behavior without editing there, where tests get in and where you see them fail.
 - [Expand, migrate, contract](expand-contract.md): change a depended-on interface in green steps, and always finish the contract step.
 
 ## Working principles

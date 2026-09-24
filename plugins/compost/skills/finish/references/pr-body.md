@@ -39,8 +39,12 @@ unproven facts, or judgment calls.
 - <Anything deferred, with the issue that tracks it.>
 - <Coverage exclusions proposed and why the lines earn no test.>
 
-Closes #<issue>
+Closes #<parent>, closes #<sub-issue>, closes #<sub-issue>
 ```
+
+The `Closes` line names the parent issue and every sub-issue, so the merge closes all of them;
+work with no parent closes its one issue.
+Keep it when editing a body `compost:implement` already wrote.
 
 Leave a section empty with "None." rather than deleting it, so a reviewer knows it was
 considered.

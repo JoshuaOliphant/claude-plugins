@@ -47,8 +47,8 @@ its first error, so the next skill knows the repo isn't green before it starts.
 <name>, <adopted from the existing suite | defaulted for the stack | chosen>.
 
 - Tests live in <path>; shared fixtures in <conftest.py, factories module, helpers>.
-- Each acceptance criterion AC-N is backed by at least one test: <a pytest-bdd scenario tagged
-  `@ac-N` | a test named `test_ac<N>_<behavior>` | a `describe` block named for AC-N>.
+- Each acceptance criterion AC-N maps to a test node id or parametrize id, recorded in the
+  issue's AC table<; BDD scenarios are also tagged `@ac-N`>.
 - BDD feature files: <yes, under tests/bdd/features/ | no>.
 
 ## Gates
@@ -67,7 +67,9 @@ its first error, so the next skill knows the repo isn't green before it starts.
 
 Threshold: <n>% line coverage. It is a gate, not a target to pad: when reaching it would take tests
 that prove nothing, bring the uncovered lines to the user with a proposed exclusion or a lower
-threshold.
+threshold. When running unattended, under `compost:implement`, or as a worker, post the proposal
+as a ruling comment on the issue, list it in the PR's Risk section, and continue; the user
+decides at `compost:finish`.
 
 Exclusions agreed so far:
 

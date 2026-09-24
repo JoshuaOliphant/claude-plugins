@@ -8,8 +8,9 @@ description: Checks the skill repos compost was made from for upstream changes w
 Turning a compost pile mixes new material in. compost was made by breaking other people's skills
 down and rebuilding them; those sources keep improving. `turn` finds what changed upstream since
 compost last took from each source, decides what is worth working in, and files that as issues.
-It never edits compost's skills itself: an adopted change goes through `compost:implement` like
-any other work, so it gets built, verified, and reviewed.
+It never edits compost's skills itself: an adopted change goes through `compost:spec`, or
+`compost:build` for a single small adopt, like any other work, so it gets built, verified, and
+reviewed.
 
 `pile.toml` at the plugin root lists every source:
 
@@ -64,5 +65,6 @@ scheduled routine or a cron-driven `claude -p "/compost:turn"` in the compost re
 
 ## Next moves
 
-- `compost:implement` when `turn` filed issues worth doing now.
-- `compost:spec` when an adapted idea is big enough to need its own design.
+- `compost:build` when `turn` filed a single small adopt worth doing now.
+- `compost:spec` when filed issues are worth doing now: it turns them into a parent issue that
+  `compost:implement` can work, and gives an adapted idea the design it needs.

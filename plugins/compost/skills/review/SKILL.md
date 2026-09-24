@@ -1,6 +1,6 @@
 ---
 name: review
-description: Reviews a verified change with subagents on two axes, Standards and Spec, then works through the findings that survive. Run it after compost:verify passes on every issue, without being asked. Use when someone says "review this branch", "review my changes", "check this against the issue", "is this ready to merge", "does the approach fit", or "I want to sign off on the diff myself".
+description: Reviews a verified change with subagents on two axes, Standards and Spec, then works through the findings that survive. Run it after compost:verify passes on every issue, without being asked. Use when someone says "review this branch", "review my changes", "check this against the issue", "does the approach fit", or "I want to sign off on the diff myself".
 ---
 
 # Review
@@ -11,7 +11,9 @@ Run this after `compost:verify` passes on every issue. Nobody needs to ask.
 
 ## Steps
 
-1. **Run the review workflow.** Run `/compost:review-changes` with `{base, issue}`. Leave `base` out to review against the merge-base with the default branch; pass `issue` when you know the issue number, since the Spec axis needs its AC-N. The workflow scopes the diff, runs a Standards reviewer and a Spec reviewer as `compost:reviewer` subagents in parallel, and hands every finding to a skeptic told to refute it. Pass `skeptics: 3` for a branch where a false finding would be expensive; a finding then survives only when most skeptics uphold it.
+1. **Run the review workflow.** Run `/compost:review-changes` with `{base, head, issue}`. Leave `base` out to review against the merge-base with the default branch. Leave `head` out to review up to `HEAD`; pass it to review one issue's commits on a branch that has moved on, such as `<merge>^2` for an issue landed by a merge. Pass `issue` when you know the issue number, since the Spec axis needs its AC-N. The workflow scopes the diff, runs a Standards reviewer and a Spec reviewer as `compost:reviewer` subagents in parallel, and hands every blocker and major finding to a skeptic told to refute it; minor findings skip the skeptic and come back marked unverified. Pass `skeptics: 3` for a branch where a false finding would be expensive; a finding then survives only when most skeptics uphold it.
+
+   Running the workflow from this skill is the opt-in it needs: it spawns a handful of agents, not dozens. If the Workflow tool is unavailable, as inside a subagent, do the same by hand: spawn two `compost:reviewer` agents in one message, one on the Standards axis and one on the Spec axis, then one skeptic pass over their blocker and major findings.
 
    If the workflow reports an empty diff or an unresolvable base, fix that first: commit the work, or pass the right base. If it skipped the Spec axis because no spec was found, say so in the issue comment in step 6. A change reviewed on one axis has been half reviewed.
 
@@ -41,7 +43,7 @@ For a large or ambiguous change, `vet` is a further independent pass over the di
 
 ## When the user wants to sign off themselves
 
-Some changes the user wants to read with their own eyes. When they say so, run `/review-diff` from the review-diff plugin. It opens the branch diff in a local browser for inline, merge-request style comments and waits while they review. Their comments are the user's own review: understand each, ask about anything unclear before changing code, then fix, re-verify, and record them on the issue as in steps 4 to 6.
+Some changes the user wants to read with their own eyes. When they say so, run `/review-diff:review-diff` from the review-diff plugin. It opens the branch diff in a local browser for inline, merge-request style comments and waits while they review. Their comments are the user's own review: understand each, ask about anything unclear before changing code, then fix, re-verify, and record them on the issue as in steps 4 to 6.
 
 ## Next moves
 

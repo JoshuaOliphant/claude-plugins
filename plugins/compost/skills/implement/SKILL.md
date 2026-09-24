@@ -21,7 +21,7 @@ the work so each step can be checked before the next builds on it
 ## Steps
 
 1. **Orient.** Read `docs/agents/issue-tracker.md` for the tracker and its commands; if it is absent,
-   use `gh` and suggest `compost:setup` once. Read the parent issue, every sub-issue, and every
+   run `compost:setup` now, then continue. Read the parent issue, every sub-issue, and every
    comment on them: earlier rulings bind you, and a status comment from `compost:pause` means you are
    resuming, so start from its next action. Read `CONTEXT.md` and the ADRs in `docs/adr/` for the
    areas the issues touch. Run `git log` and `git worktree list` to see what already landed.
@@ -31,18 +31,22 @@ the work so each step can be checked before the next builds on it
    sets don't overlap can run at once; issues that share a file go into one lane and run in order.
    How many issues you take on at once is your judgment; there is no size rule.
 
-3. **Set up the branch and draft PR.** Work in a worktree on a feature branch named for the parent
-   issue; if you are already in one, use it. Push the branch and open a draft PR whose body closes the
-   parent and every sub-issue ("Closes #12, closes #13"). Committing, pushing this branch, and opening
-   the draft PR need no one's OK; merging it does.
+3. **Set up the feature branch.** Work in a worktree on a feature branch named for the parent
+   issue; if you are already in one, use it. The draft PR waits until the first issue lands on the
+   branch (step 5), because the forge rejects a PR with no commits over its base. Committing,
+   pushing this branch, and opening the draft PR need no one's OK; merging it does.
 
 4. **Work the frontier.**
    - **One issue, or one lane:** do it yourself in this session. Load `compost:build`, then
      `compost:verify`. A subagent for a single issue only adds a handoff.
-   - **Several independent issues:** spawn one subagent per issue in a single message, each with
-     `isolation: "worktree"` and in the background, without asking. When agent teams are enabled
-     (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`), spawn them as named teammates instead; a teammate
-     spawn cannot take `isolation`, so its brief tells it to create its own worktree first.
+   - **Several independent issues or lanes:** spawn one subagent per lane in a single message, so
+     the lanes run in parallel, each with `isolation: "worktree"` and in the background, without
+     asking. A lane of one issue is just that issue; a worker with a longer lane works its issues
+     in order. When agent teams are enabled (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`), spawn them
+     as named teammates instead; a teammate spawn cannot take `isolation`, so its brief tells it to
+     create its own worktree first.
+   - An isolated worktree starts from the default branch, not the feature branch. Every brief names
+     the feature branch's head SHA, and the worker switches to it before any work.
    - Write each brief from [references/task-brief.md](references/task-brief.md): the issue, its
      acceptance criteria, its Interfaces block, the `CONTEXT.md` terms it uses, and pointers to any
      rulings that touch it. Size the brief to the issue; a one-file change gets a paragraph.
@@ -52,20 +56,26 @@ the work so each step can be checked before the next builds on it
 5. **Land each finished issue.** A completion is an event to handle, not a review to do inline.
    Read the worker's short report; if it says `DONE_WITH_CONCERNS`, read the concerns first. Merge
    its branch into the feature branch with `--no-ff`, then run the suite on the feature branch; a
-   merge is a change like any other. A red suite after a merge goes to `compost:diagnose`.
+   merge is a change like any other. A red suite after a merge goes to `compost:diagnose`. After the
+   first landing, push the branch and open a draft PR whose body closes the parent and every
+   sub-issue ("Closes #12, closes #13").
 
 6. **Review every issue.** Load `compost:review` for the issue's commits. It runs the
-   `/compost:review-changes` workflow through subagents; you never wait to be asked. Take its
-   findings through the reception protocol there: check each against the code, fix what holds, and
-   rule on what doesn't.
+   `/compost:review-changes` workflow through subagents; you never wait to be asked. Scope it to
+   the one issue: for an issue landed by a merge, pass `base` as `<merge>^1`, `head` as
+   `<merge>^2`, and `issue` as its number; for one built in this session, pass `base` as the parent of
+   its first commit and `head` as its last. Take its findings through the reception protocol there: check each against the
+   code, fix what holds, and rule on what doesn't.
    - Fix findings where the work was done: resume the worker that built the issue with the findings
      verbatim, or fix them yourself when you built it. Each fix is seen failing before it passes, then
-     `compost:verify` runs again.
+     `compost:verify` runs again. A worker's fixes land on its own branch, so land it again (step 5)
+     before the re-review.
    - If three rounds of fixes still leave findings open, stop the loop. Rule on each remaining
      finding (park it, or make the smallest change that unblocks dependent issues) and post the
      ruling. A loop that won't converge is a design problem, not an effort problem.
 
-7. **Record progress.** When an issue passes review, tick it on the parent's checklist and comment on
+7. **Record progress.** When an issue passes review, tick it on the parent's checklist (only this
+   skill ticks the parent; workers tick their own issue's AC boxes) and comment on
    the issue with its commits and the verification you ran. Then recompute the frontier and go back to
    step 4. The checklist and git log are the progress record; there is no other.
 

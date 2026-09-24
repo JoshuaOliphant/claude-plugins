@@ -92,7 +92,7 @@ where seams go, and keeps heavy architecture out unless a dependency earns it. T
    from `CONTEXT.md`: add the term, creating the file if needed. Sharpen a fuzzy term: update it there.
    When the user rejects a candidate for a reason a future reviewer would need in order not to suggest
    it again, offer an ADR; skip reasons that are temporary ("not now") or obvious. Offer ADRs only for
-   decisions that are hard to reverse, surprising, and a real trade-off.
+   decisions that meet the test in [domain docs](../spec/references/domain-docs.md).
 
 8. **Refactor by replacing, not layering.** Move every caller to the deepened interface in the same
    change and delete the old modules; no compatibility shims or deprecated paths. Write tests at the

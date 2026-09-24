@@ -54,7 +54,9 @@ Each decision is a sub-issue of the map, labelled `decision`, with the question 
 - **Prototype:** a question about how something should look or behave, settled by building
   something cheap to react to (see `compost:spec`'s prototype reference).
 - **Interview:** a decision only the user can make, settled in `compost:spec`-style rounds. Never
-  answer the user's side yourself.
+  answer the user's side yourself while they are there to answer. In an unattended run, take your
+  recommendation, mark it (assumed) in the resolution comment, and keep going; the user can
+  overturn it later.
 - **Task:** manual work that must happen before a decision can be made (provisioning access,
   signing up for a service to judge its API). Done alone where possible, otherwise handed to the
   user as a precise checklist.

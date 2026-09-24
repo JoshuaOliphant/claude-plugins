@@ -17,7 +17,7 @@ The tracker is the only plan. No markdown plan files, no second task list.
 ## Steps
 
 1. **Read the spec and the ground.** Fetch the parent issue with its comments, using the commands
-   in `docs/agents/issue-tracker.md` (if it is missing, use `gh` and suggest `compost:setup`).
+   in `docs/agents/issue-tracker.md` (if it is missing, run `compost:setup` now, then continue).
    Read `CONTEXT.md`, the ADRs in the area, and the code the spec touches. Use the glossary's
    terms in every title and body. If there is no spec, or it still has open questions, go back to
    `compost:spec` first.

@@ -79,7 +79,10 @@ edits the user made by hand.
    still hold a `CLAUDE.md`, since any of them stops `AGENTS.md` from loading. Commit the changes
    as one `chore: configure agent skills` commit. Tell the user which compost skills now read
    these files, that they can edit `docs/agents/*.md` directly, and, after a migration, to look
-   for the `AGENTS.md loaded` line at the start of their next session.
+   for the `AGENTS.md loaded` line at the start of their next session. Also tell them that in
+   manual permission mode the `/compost:review-changes` workflow asks for permission on every run
+   until they pick "Yes, and don't ask again", or until they add `Workflow(compost:review-changes)`
+   to their allow rules.
 
 ## Next moves
 

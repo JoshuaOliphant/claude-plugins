@@ -4,6 +4,7 @@ import re
 
 import pile
 import pytest
+import yaml
 from conftest import PLUGIN_ROOT
 
 SKILLS = sorted(path.parent for path in (PLUGIN_ROOT / "skills").glob("*/SKILL.md"))
@@ -18,8 +19,7 @@ WORKFLOW_NAME = re.compile(r"export const meta = \{\s*name: '([^']+)'")
 def frontmatter(skill_dir):
     text = (skill_dir / "SKILL.md").read_text()
     assert text.startswith("---\n"), f"{skill_dir.name}: SKILL.md must open with frontmatter"
-    header = text[4 : text.index("\n---", 4)]
-    return dict(re.findall(r"^(\w+): (.*)$", header, re.MULTILINE))
+    return yaml.safe_load(text[4 : text.index("\n---", 4)])
 
 
 def known_names():

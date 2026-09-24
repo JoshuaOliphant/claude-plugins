@@ -1,6 +1,6 @@
 ---
 name: finish
-description: Integrates reviewed work: tests it against the branch it will merge into, opens or updates the pull request, and merges or discards only on the user's word. Use when the user says "finish this", "wrap it up", "open the PR", "update the PR", "ready to merge", "merge it", "clean up the worktree", or "throw this branch away".
+description: Integrates reviewed work by testing it against the branch it will merge into, opening or updating the pull request, and merging or discarding only on the user's word. Use when the user says "finish this", "wrap it up", "open the PR", "update the PR", "ready to merge", "merge it", "clean up the worktree", or "throw this branch away".
 ---
 
 # Finish
@@ -52,7 +52,9 @@ yours to do without asking.
    or update the open one. The body has five sections: Goal, Decisions, Changes, Validation,
    Risk. Decisions summarizes the rulings posted as issue comments. Validation carries
    `compost:verify`'s evidence and the merge-result run. Risk names whatever is unproven,
-   deferred, or excluded from coverage. End the body with `Closes #<issue>`. Use the
+   deferred, or excluded from coverage. End the body with a `Closes` line for the issue, or for
+   the parent and every sub-issue (`Closes #12, closes #13, closes #14`), keeping any the PR
+   already has. Use the
    [PR body template](references/pr-body.md) and the tracker's own CLI (`gh pr create --draft`,
    `gh pr edit`, `glab mr create --draft`). With a local tracker, post the same body on the
    issue file instead.
@@ -63,8 +65,9 @@ yours to do without asking.
    branch does not need to wait; go on to step 7.
 
 7. **Merge with a merge commit, then clean up.** When told to merge:
-   - With an open PR, merge through the forge with a merge commit: `gh pr merge <n> --merge`.
-     That is the forge's `--no-ff`. Never squash or rebase unless the user asks for it.
+   - With an open PR, mark it ready with `gh pr ready <n>` (the forge refuses to merge a draft),
+     then merge through the forge with a merge commit: `gh pr merge <n> --merge`. That is the
+     forge's `--no-ff`. Never squash or rebase unless the user asks for it.
    - Without a PR, merge from the main checkout, never from inside the worktree:
      `git -C "$main_root" switch <target>`, `git -C "$main_root" pull --ff-only`, then
      `git -C "$main_root" merge --no-ff "$branch"`. Run the suite on the result. If it is red,
@@ -88,7 +91,8 @@ yours to do without asking.
 
 9. **Capture what was learned.** If the work turned up a gotcha, a non-obvious root cause, or a
    verdict reached from measurement, and the compound-knowledge plugin is installed, use
-   `compound-knowledge:compound-capture` to record it. Tick the issue in its parent's checklist.
+   `compound-knowledge:compound-capture` to record it. When no `compost:implement` run worked this
+   parent, tick the issue in its parent's checklist; otherwise implement already did.
 
 ## Next moves
 

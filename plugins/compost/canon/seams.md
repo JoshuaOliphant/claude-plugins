@@ -16,13 +16,15 @@ its own. One adapter behind a seam makes it hypothetical; it is real once two th
 it, typically the production adapter and a test adapter. "Seam" is preferred over "boundary",
 which already means a bounded context.
 
-## Seams and red, green, refactor
+## Seeing a test fail through the seam
 
-Kent Beck's test-driven cycle (*Test-Driven Development: By Example*) needs a seam to work. Red:
-write a test through the seam and watch it fail for the reason you expect. Green: make it pass
-with the simplest change. Refactor: clean up behind the seam while the test holds the behavior
-still. When no seam exists, the first move is to make one, with the smallest mechanical edit,
-before any behavior change.
+A test is trusted only once you have seen it fail for the reason you expect. A test that has
+never failed may be checking nothing: the wrong code path, a mock of the thing it meant to
+exercise, an assertion that cannot be false. The seam is where the test gets in, so it is also
+where you make it fail: change the behavior behind the seam, or run the test against the code
+before the change, and watch the assertion go red with the message you expected. Whether the test
+or the code comes first is a separate choice. When no seam exists, cut one with the smallest
+mechanical edit before any behavior change, so the test can reach the code at all.
 
 ## Why it matters for an agent
 

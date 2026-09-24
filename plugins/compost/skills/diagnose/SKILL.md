@@ -35,7 +35,9 @@ comes first, the theory second, and the fix last, at the root. The why is in
    If you truly cannot build one, say so, list what you tried, and ask for one of: access to an
    environment that reproduces it, a captured artifact (log dump, HAR, core dump, timestamped screen
    recording), or permission to add temporary instrumentation in production. Do not hypothesise
-   without a loop.
+   without a loop. When running unattended, under `compost:implement`, or as a worker, post that
+   request as a ruling comment on the issue, list it in the PR's Risk section, and carry on with
+   the rest of the work; the user decides at `compost:finish`.
 
 3. **Reproduce and minimise.** Run the loop and watch it go red. Confirm it is the failure the user
    described and not a neighbouring one; the wrong bug gets the wrong fix. Record the exact symptom.
@@ -70,7 +72,9 @@ comes first, the theory second, and the fix last, at the root. The why is in
 
    When hypotheses are independent and their probes don't share files or state, test them at once:
    one subagent per hypothesis, each in its own worktree, or teammates when agent teams are enabled.
-   Give each the loop command, its hypothesis and prediction, and ask for the probe output and a
+   An isolated worktree starts from the default branch, not the code you are debugging, so give each
+   the SHA under investigation and have it run `git switch -C <branch> <SHA>` before probing. Give
+   each the loop command, its hypothesis and prediction, and ask for the probe output and a
    verdict. Probes that touch the same files run in order.
 
 7. **Fix at the root, with a regression test at a real seam.** A real seam (Feathers,

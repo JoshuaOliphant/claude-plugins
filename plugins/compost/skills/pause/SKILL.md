@@ -48,12 +48,11 @@ Pause only when asked or when the session has to end. "Keep going", "going to be
    **Skills to load:** `compost:implement`, plus any the next action needs.
    ```
 
-   If the user said what the next session is for, shape the next action around that.
+   If the user said what the next session is for, shape the next action around that. Leave the
+   parent's checklist alone: `compost:implement` ticks an issue once it passes review, and the
+   status comment already says what is done.
 
-4. **Update the checklist.** Tick every sub-issue that is done on the parent, so the checklist and the
-   status comment agree.
-
-5. **Report.** Where you stopped, the commits you made and whether each tree is clean, the link to the
+4. **Report.** Where you stopped, the commits you made and whether each tree is clean, the link to the
    status comment, and the first action on resume. This is a pause, not a final report; don't
    recap the whole run.
 

@@ -25,7 +25,7 @@ result decide, rather than choosing from documentation claims or plausible reaso
 ## In practice
 
 - Before saying done, run the thing the user will run: the command, the endpoint, the page. Use
-  `/run` or `/verify` to drive the app when a test cannot show the behavior.
+  `/run` to drive the app when a test cannot show the behavior.
 - Report what you checked and what you saw, including checks that failed. "Tests pass" without the
   output is a claim, not a result.
 - Prefer a check you can script and rerun (a test, a comparison script, a query) over a one-time

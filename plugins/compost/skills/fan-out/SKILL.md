@@ -28,13 +28,16 @@ Spawn the attempts without asking. The cost is tokens; the payoff is not buildin
 2. **Choose the shape and the number.**
    - **Race:** N attempts at the identical brief. Use it when the task is generation-bound and
      variety comes from the attempt itself.
-   - **Directions:** each attempt is assigned a different stance, such as minimal, most flexible,
-     and optimized for the common case; or one hypothesis per investigator. Use it for interface
-     design and for diagnosis with several live hypotheses.
+   - **Directions:** each attempt is assigned a different stance, or one hypothesis per
+     investigator. Use it for interface design and for diagnosis with several live hypotheses. For
+     an interface, take the stances and the brief from `compost:deepen`'s
+     [design it twice](../deepen/references/design-it-twice.md).
    Three attempts is the usual starting point; add one per extra direction worth exploring.
 
 3. **Spawn them all in one message.** Each attempt writes to its own place: a worktree
-   (`isolation: "worktree"`) when it changes code, otherwise its own scratch directory. Each produces
+   (`isolation: "worktree"`) when it changes code, otherwise its own scratch directory. An isolated
+   worktree starts from the default branch, so give each attempt the SHA under investigation and
+   have it run `git switch -C <branch> <SHA>` before any work. Each produces
    the artifact plus a short rationale naming the alternatives it considered and rejected.
    - With agent teams enabled (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`), use named teammates.
      Research, review, and competing hypotheses are where teams do best, because teammates can
@@ -43,8 +46,9 @@ Spawn the attempts without asking. The cost is tokens; the payoff is not buildin
      changes code creates its own worktree first.
    - Otherwise use background subagents. They don't talk to each other; the judging step does the
      challenging.
-   - A Claude Code workflow is the tool when the fan-out runs to dozens of agents, but a workflow run
-     needs the user's explicit ask. Suggest it and wait for a yes; don't start one on your own.
+   - A Claude Code workflow is the tool when the fan-out runs to dozens of agents, but a workflow
+     you write yourself for a fan-out needs the user's explicit ask. Suggest it and wait for a yes;
+     don't start one on your own.
    If an attempt fails to produce its artifact, go on with the rest and note the dropout.
 
 4. **Judge against the rubric.** Once every attempt is in, spawn one read-only judge subagent with
@@ -74,8 +78,8 @@ Spawn the attempts without asking. The cost is tokens; the payoff is not buildin
 
 8. **Record the result.** Post it where the decision belongs: as a ruling comment on the issue
    (Ruling / Why / Cost if wrong), naming the base, the grafts and which attempt each came from, what
-   was rejected and why, and any dropouts. When the choice is hard to reverse, surprising, and a real
-   trade-off, offer an ADR in `docs/adr/`. Delete the losing worktrees and scratch directories once
+   was rejected and why, and any dropouts. When the choice meets the ADR test in
+   [domain docs](../spec/references/domain-docs.md), offer an ADR in `docs/adr/`. Delete the losing worktrees and scratch directories once
    the record is posted.
 
 ## Next moves

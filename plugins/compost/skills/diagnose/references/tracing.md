@@ -34,11 +34,12 @@ same test or the same argument.
 
 When something appears during a test run (a stray file, a leftover row, a changed global) and you
 don't know which test causes it, run the test files one at a time and check for the pollution after
-each. [`../scripts/find-polluter.sh`](../scripts/find-polluter.sh) does this for any test runner:
+each. [`../scripts/find-polluter.sh`](../scripts/find-polluter.sh) does this for any test runner.
+Run it from the repo root with the path that appears, which must not exist yet:
 
 ```bash
-scripts/find-polluter.sh .git 'uv run pytest' tests/test_*.py
-scripts/find-polluter.sh .git 'npx vitest run' src/**/*.test.ts
+${CLAUDE_PLUGIN_ROOT}/skills/diagnose/scripts/find-polluter.sh stray-output.db 'uv run pytest' tests/test_*.py
+${CLAUDE_PLUGIN_ROOT}/skills/diagnose/scripts/find-polluter.sh stray-output.db 'npx vitest run' src/**/*.test.ts
 ```
 
 It stops at the first file that creates the path and prints it.

@@ -6,7 +6,7 @@ set -uo pipefail
 
 if [ $# -lt 3 ]; then
   echo "Usage: $0 <path-that-appears> <test-command> <test-file>..." >&2
-  echo "Example: $0 .git 'uv run pytest' tests/test_*.py" >&2
+  echo "Example: $0 stray-output.db 'uv run pytest' tests/test_*.py" >&2
   exit 2
 fi
 

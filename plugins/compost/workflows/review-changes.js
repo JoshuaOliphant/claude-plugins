@@ -1,25 +1,26 @@
 // ABOUTME: Compost's review workflow: Standards and Spec reviewers in parallel over a branch diff.
-// ABOUTME: Skeptic agents try to refute each finding; survivors and refutations come back side by side.
+// ABOUTME: Skeptic agents try to refute each blocker and major finding; survivors and refutations come back side by side.
 export const meta = {
   name: 'review-changes',
-  description: 'Review a branch along two axes, Standards and Spec, then have skeptics try to refute every finding',
-  whenToUse: 'After verify passes on an issue, or whenever a branch or work-in-progress diff needs review. Pass {base, issue}; both are optional.',
+  description: 'Review a branch along two axes, Standards and Spec, then have skeptics try to refute every blocker and major finding',
+  whenToUse: 'After verify passes on an issue, or whenever a branch or work-in-progress diff needs review. Pass {base, head, issue}; all are optional, and head defaults to HEAD.',
   phases: [
     { title: 'Scope', detail: 'pin the base, the diff, the spec, and the standards sources' },
-    { title: 'Standards', detail: 'reviewer against instructions files, CONTEXT.md, ADRs, and the canon; skeptics refute each finding' },
-    { title: 'Spec', detail: 'reviewer against the issue AC-N and interfaces; skeptics refute each finding' },
+    { title: 'Standards', detail: 'reviewer against instructions files, CONTEXT.md, ADRs, and the canon; skeptics refute each blocker and major' },
+    { title: 'Spec', detail: 'reviewer against the issue AC-N and interfaces; skeptics refute each blocker and major' },
   ],
 }
 
 const input = typeof args === 'object' && args !== null ? args : { base: args }
 const skepticsPerFinding = input.skeptics || 1
+const head = input.head || 'HEAD'
 
 const SCOPE_SCHEMA = {
   type: 'object',
   required: ['base', 'head', 'diffCommand', 'commits', 'files', 'standardsSources', 'spec'],
   properties: {
     base: { type: 'string', description: 'Resolved commit SHA of the fixed point' },
-    head: { type: 'string', description: 'Resolved commit SHA of HEAD' },
+    head: { type: 'string', description: 'Resolved commit SHA of the head under review' },
     diffCommand: { type: 'string' },
     commits: { type: 'array', items: { type: 'string' } },
     files: { type: 'array', items: { type: 'string' } },
@@ -85,17 +86,17 @@ phase('Scope')
 
 const baseHint = input.base
   ? `The fixed point is \`${input.base}\`.`
-  : 'No fixed point was given: use the merge-base of HEAD with the default branch (`git merge-base HEAD origin/HEAD`, falling back to `main` then `master`).'
+  : `No fixed point was given: use the merge-base of \`${head}\` with the default branch (\`git merge-base ${head} origin/HEAD\`, falling back to \`main\` then \`master\`).`
 
 const issueHint = input.issue
   ? `The originating issue is #${input.issue}.`
   : 'No issue was given: look for issue references in the commit messages (#123, Closes #45) and in the branch name, then for a spec file under docs/, specs/, or .scratch/ matching the branch.'
 
 const scope = await agent(
-  `Scope a code review of the current branch. Do not review anything yet.
+  `Scope a code review of the changes up to \`${head}\`. Do not review anything yet.
 
-${baseHint}
-1. Resolve the fixed point and HEAD with \`git rev-parse\`. Record diffCommand as \`git diff <base-sha>...<head-sha>\` (three dots, against the merge-base), the commits from \`git log --oneline <base>..HEAD\`, and the changed files from \`git diff --name-only <base>...HEAD\`.
+${baseHint} The head under review is \`${head}\`.
+1. Resolve the fixed point and the head with \`git rev-parse\`. Record diffCommand as \`git diff <base-sha>...<head-sha>\` (three dots, against the merge-base), the commits from \`git log --oneline <base-sha>..<head-sha>\`, and the changed files from \`git diff --name-only <base-sha>...<head-sha>\`.
 2. ${issueHint} Fetch the issue the way docs/agents/issue-tracker.md says; if that file is missing, use \`gh issue view <n> --comments\`. Copy its user stories, every AC-N, and any interfaces verbatim into spec.text.
 3. List the standards sources that exist: CLAUDE.md and AGENTS.md at the root and in directories the diff touches, CONTEXT.md or CONTEXT-MAP.md, docs/adr/*.md, CODING_STANDARDS.md, CONTRIBUTING.md, and linter or formatter configs (so reviewers know what tooling already enforces).
 
@@ -111,7 +112,11 @@ if (!scope || scope.problem || scope.files.length === 0) {
 
 log(`Reviewing ${scope.files.length} files across ${scope.commits.length} commits since ${scope.base.slice(0, 8)}`)
 
-const diffContext = `Diff: \`${scope.diffCommand}\`
+const readAtHead = head === 'HEAD'
+  ? ''
+  : `\nThe working tree may not be at the head under review: read changed files with \`git show ${scope.head}:<path>\`, not from disk.`
+
+const diffContext = `Diff: \`${scope.diffCommand}\`${readAtHead}
 Commits:
 ${scope.commits.join('\n')}
 Changed files:
@@ -160,7 +165,7 @@ Report:
 function skepticPrompt(axis, finding) {
   const location = finding.line === null ? finding.file : `${finding.file}:${finding.line}`
   const specText = axis.name === 'Spec' ? `\nThe spec the finding was judged against:\n${scope.spec.text}\n` : ''
-  return `A reviewer made the ${axis.name} finding below about the diff \`${scope.diffCommand}\`. Your job is to refute it.
+  return `A reviewer made the ${axis.name} finding below about the diff \`${scope.diffCommand}\`. Your job is to refute it.${readAtHead}
 ${specText}
 Finding (${finding.severity}) at ${location}:
 Claim: ${finding.claim}
@@ -204,14 +209,21 @@ const results = await pipeline(
   async (review, axis) => {
     if (review && review.skipped) return { axis: axis.name, status: 'skipped: no spec found', survivors: [], refuted: [] }
     if (!review) return { axis: axis.name, status: 'failed: the reviewer did not return', survivors: [], refuted: [] }
-    const judged = await pipeline(review.findings, (finding, _item, index) => survives(axis, finding, index))
+    const serious = review.findings.filter(finding => finding.severity !== 'minor')
+    const unverified = review.findings
+      .filter(finding => finding.severity === 'minor')
+      .map(finding => ({ ...finding, unverified: true }))
+    const judged = await pipeline(serious, (finding, _item, index) => survives(axis, finding, index))
     const complete = judged.filter(Boolean)
     const lost = judged.length - complete.length
     if (lost > 0) log(`${axis.name}: ${lost} findings lost their skeptic run and are left out`)
     return {
       axis: axis.name,
-      status: `reviewed: ${review.findings.length} findings raised`,
-      survivors: complete.filter(j => j.survived).map(j => ({ ...j.finding, upheldBecause: j.reasons })),
+      status: `reviewed: ${review.findings.length} findings raised, ${unverified.length} minor left unverified`,
+      survivors: [
+        ...complete.filter(j => j.survived).map(j => ({ ...j.finding, upheldBecause: j.reasons })),
+        ...unverified,
+      ],
       refuted: complete.filter(j => !j.survived).map(j => ({ ...j.finding, refutedBecause: j.reasons })),
     }
   },

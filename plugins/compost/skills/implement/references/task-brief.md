@@ -20,8 +20,11 @@ You are implementing issue #<n>: <title>
 <one or two lines: the parent issue #<p>, what this issue adds, and which issues depend on it>
 
 ## Workspace
-Your worktree starts from <feature branch> at <SHA>. Work only there, on branch <branch>.
-<For a teammate: create it first with `git worktree add <path> -b <branch> <feature branch>`.>
+Your work starts from <feature branch> at <feature SHA>. Work only in your worktree, on branch
+<branch>. A harness-made worktree starts from the default branch, not the feature branch, so first
+run `git switch -C <branch> <feature SHA>` and confirm `git rev-parse HEAD` prints <feature SHA>
+before any other work.
+<For a teammate: create it first with `git worktree add <path> -b <branch> <feature SHA>`.>
 Read this repo's instructions file (AGENTS.md or CLAUDE.md) before editing.
 
 ## Acceptance criteria (verbatim from the issue)
