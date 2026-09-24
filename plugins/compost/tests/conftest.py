@@ -1,6 +1,7 @@
 # ABOUTME: Fixtures for compost's tooling: a real upstream git repo served as github.com/acme/skills, a pinned
 # ABOUTME: pile.toml, and Jev stand-ins that answer with the SDK's own response models. Scripts import as modules.
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -14,6 +15,14 @@ import pile
 from jevtools import core
 
 PLUGIN_ROOT = Path(__file__).parent.parent
+
+
+def evals_dir() -> Path:
+    """The labeled eval cases live in the private compost-evals repo; COMPOST_EVALS points at its evals/."""
+    configured = os.environ.get("COMPOST_EVALS")
+    if not configured or not Path(configured).expanduser().is_dir():
+        pytest.skip("set COMPOST_EVALS to a checkout of compost-evals' evals/ directory to run the live evals")
+    return Path(configured).expanduser()
 
 
 @pytest.fixture(autouse=True)

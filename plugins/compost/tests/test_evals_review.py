@@ -1,4 +1,4 @@
-# ABOUTME: Live evals for the review Jev tools against labeled cases in tests/evals/ (real findings, commits, and files
+# ABOUTME: Live evals for the review Jev tools against labeled cases in compost-evals (COMPOST_EVALS) (real findings, commits, and files
 # ABOUTME: from this repo). Marked jev, so they only run with `pytest -m jev`; each prints its measurements and asserts a floor.
 import asyncio
 import json
@@ -6,17 +6,16 @@ from collections import defaultdict
 
 import jev
 import pytest
-from conftest import PLUGIN_ROOT
+from conftest import PLUGIN_ROOT, evals_dir
 from jevtools import review
 
 pytestmark = pytest.mark.jev
 
-EVALS = PLUGIN_ROOT / "tests" / "evals"
 REPO = PLUGIN_ROOT.parent.parent
 
 
 def cases(name: str) -> list[dict]:
-    return json.loads((EVALS / f"{name}.json").read_text())["cases"]
+    return json.loads((evals_dir() / f"{name}.json").read_text())["cases"]
 
 
 def run(name: str, payload: dict) -> dict:
@@ -98,7 +97,7 @@ def test_canon_pick_loads_the_essays_a_reviewer_needs():
 def test_locate_anchors_claims_and_spots_absent_ones():
     labeled = cases("locate")
     queries = [{key: case[key] for key in ("claim", "file", "start", "end") if key in case} for case in labeled]
-    located = run("locate", {"repo": str(PLUGIN_ROOT), "queries": queries})["locations"]
+    located = run("locate", {"repo": str(evals_dir()), "queries": queries})["locations"]
     positives = [(case, got) for case, got in zip(labeled, located, strict=True) if case["lines"]]
     negatives = [(case, got) for case, got in zip(labeled, located, strict=True) if not case["lines"]]
     for case, got in zip(labeled, located, strict=True):

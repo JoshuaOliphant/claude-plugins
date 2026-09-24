@@ -1,18 +1,17 @@
-# ABOUTME: Live evals for the meta family's Jev tools on labeled real cases in tests/evals/ (run with pytest -m jev).
+# ABOUTME: Live evals for the meta family's Jev tools on labeled real cases in compost-evals (COMPOST_EVALS) (run with pytest -m jev).
 # ABOUTME: Each prints what it measured and asserts the floor measured when its threshold constant was chosen.
 import asyncio
 import json
 
 import pytest
-from conftest import PLUGIN_ROOT
+from conftest import evals_dir
 from jevtools import core, meta
 
 pytestmark = pytest.mark.jev
-EVALS = PLUGIN_ROOT / "tests" / "evals"
 
 
 def cases(name: str) -> list[dict]:
-    return json.loads((EVALS / f"{name}.json").read_text())
+    return json.loads((evals_dir() / f"{name}.json").read_text())
 
 
 def ask_live(judge, gathered: list[dict]) -> list:
@@ -30,7 +29,7 @@ def test_classify_change_sends_every_adopt_and_adapt_to_be_read():
     labeled = cases("classify-change")
     by_source: dict[str, list[dict]] = {}
     for case in labeled:
-        change = {"path": case["path"], "skills": case["skills"], "diff": (PLUGIN_ROOT / case["diff"]).read_text()}
+        change = {"path": case["path"], "skills": case["skills"], "diff": (evals_dir() / case["diff"]).read_text()}
         by_source.setdefault(case["source"], []).append(change)
     gathered = [meta.describe_changes(source, changes) for source, changes in by_source.items()]
     results = ask_live(meta.classify_change, gathered)

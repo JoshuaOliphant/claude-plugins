@@ -29,7 +29,6 @@ dev = [
 testpaths = ["plugins"]
 addopts = "-m \"not jev\""
 markers = ["jev: live evals against the TypeSafe API (uv run --group dev pytest -m jev)"]
-norecursedirs = ["plugins/compost/tests/evals/fixtures"]
 
 [tool.ruff]
 line-length = 100

@@ -72,8 +72,10 @@ calling the API; `compost:setup` runs it and tells you how to store one.
 | `stop-guard` | Noul ×2 | Stop hook in implement runs | 23/23 (23 final messages) |
 
 Thresholds were chosen from the same labeled cases they are measured on, so treat the numbers as
-upper bounds until the tools have run on real work. `uv run --group dev pytest -m jev` re-runs every
-eval against the live API for a few cents.
+upper bounds until the tools have run on real work. The labeled cases are drawn from private
+projects and sessions, so they live in a separate private repo, `compost-evals`. With a checkout,
+`COMPOST_EVALS=<checkout>/evals uv run --group dev pytest -m jev` re-runs every eval against the
+live API for a few cents; without one, those tests skip.
 
 ## Install
 

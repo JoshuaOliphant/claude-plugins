@@ -1,20 +1,18 @@
-# ABOUTME: Live evals for the spec family's Jev tools against labeled cases in tests/evals/ (pytest -m jev).
+# ABOUTME: Live evals for the spec family's Jev tools against labeled cases in compost-evals (COMPOST_EVALS) (pytest -m jev).
 # ABOUTME: Each prints its accuracy, precision, and recall and asserts the floor measured when its threshold was set.
 import asyncio
 import json
-from pathlib import Path
 
 import jev
 import pytest
+from conftest import evals_dir
 from jevtools.core import Unavailable
 
 pytestmark = pytest.mark.jev
 
-EVALS = Path(__file__).parent / "evals"
-
 
 def cases(name: str) -> list[dict]:
-    return json.loads((EVALS / f"{name}.json").read_text())
+    return json.loads((evals_dir() / f"{name}.json").read_text())
 
 
 def live(tool: str, payload: dict) -> dict:

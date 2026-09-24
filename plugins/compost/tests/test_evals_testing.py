@@ -1,26 +1,24 @@
-# ABOUTME: Live evals for the testing family's Jev tools, run against the labeled cases in tests/evals/.
+# ABOUTME: Live evals for the testing family's Jev tools, run against the labeled cases in compost-evals (COMPOST_EVALS).
 # ABOUTME: Each prints its measurements and a threshold sweep, and asserts a floor measured on 24 Sep 2026.
 import asyncio
 import json
-from pathlib import Path
 
 import pytest
+from conftest import evals_dir
 from jevtools import core, suite, testing
 
 pytestmark = pytest.mark.jev
 
-PLUGIN_ROOT = Path(__file__).parent.parent
-EVALS = PLUGIN_ROOT / "tests" / "evals"
 PRICE_PER_TOKEN = 42 / 1e9
 
 
 def labeled(name: str) -> dict:
-    return json.loads((EVALS / f"{name}.json").read_text())
+    return json.loads((evals_dir() / f"{name}.json").read_text())
 
 
 def fixture_suite(path: str, limit: int) -> dict[str, str]:
     tests: dict[str, str] = {}
-    for relative, source in json.loads((PLUGIN_ROOT / path).read_text()).items():
+    for relative, source in json.loads((evals_dir() / path).read_text()).items():
         tests.update(suite.tests_in(relative, source, limit))
     return tests
 
@@ -146,7 +144,7 @@ def test_ac_exercised_flags_tests_that_never_assert_the_then():
 
 def test_test_value_proposes_exclusions_only_for_blocks_that_prove_nothing(tmp_path):
     cases = labeled("test-value")
-    for name, text in json.loads((PLUGIN_ROOT / cases["code"]).read_text()).items():
+    for name, text in json.loads((evals_dir() / cases["code"]).read_text()).items():
         (tmp_path / name).write_text(text)
     uncovered = [{"file": case["file"], "lines": case["lines"]} for case in cases["cases"]]
     gathered = testing.gather_gaps({"repo": str(tmp_path), "uncovered": uncovered})
@@ -168,7 +166,7 @@ def test_test_value_proposes_exclusions_only_for_blocks_that_prove_nothing(tmp_p
 def test_claim_backed_checks_claims_against_their_output():
     cases = labeled("claim-backed")
     claims = [
-        {"claim": case["claim"], "output_file": str(PLUGIN_ROOT / case["output_file"])}
+        {"claim": case["claim"], "output_file": str(evals_dir() / case["output_file"])}
         if "output_file" in case
         else {"claim": case["claim"], "output": case["output"]}
         for case in cases["cases"]
