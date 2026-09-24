@@ -1,0 +1,124 @@
+# What compost was made from. `pin` is the upstream commit compost reflects; `feeds` maps upstream
+# paths to the compost skills they fed ("canon" for the essays). Maintained by compost:turn and
+# scripts/pile.py; NOTICE is generated from this file.
+
+[[source]]
+name = "mattpocock"
+repo = "mattpocock/skills"
+role = "input"
+license = "MIT"
+pin = "c55ee46073ed923f86ce59a5eb3b6d895095d1b7"
+
+[source.feeds]
+"skills/engineering/to-spec" = ["spec"]
+"skills/engineering/grill-with-docs" = ["spec"]
+"skills/engineering/domain-modeling" = ["spec", "canon"]
+"skills/engineering/prototype" = ["spec"]
+"skills/productivity/grilling" = ["spec"]
+"skills/productivity/grill-me" = ["spec"]
+"skills/engineering/to-tickets" = ["slice"]
+"skills/engineering/wayfinder" = ["slice"]
+"skills/engineering/setup-matt-pocock-skills" = ["setup"]
+"skills/engineering/tdd" = ["build"]
+"skills/engineering/code-review" = ["review"]
+"skills/engineering/diagnosing-bugs" = ["diagnose"]
+"skills/engineering/codebase-design" = ["deepen", "canon"]
+"skills/engineering/improve-codebase-architecture" = ["deepen"]
+"skills/engineering/implement" = ["implement"]
+"skills/in-progress/implement-spec" = ["implement"]
+"skills/productivity/handoff" = ["pause"]
+
+[[source]]
+name = "superpowers"
+repo = "obra/superpowers"
+role = "input"
+license = "MIT"
+pin = "5bf4e78011075bcfc0dc295f0724994cd123ee71"
+
+[source.feeds]
+"skills/brainstorming" = ["spec"]
+"skills/writing-plans" = ["slice"]
+"skills/using-git-worktrees" = ["build"]
+"skills/test-driven-development" = ["build"]
+"skills/verification-before-completion" = ["verify"]
+"skills/receiving-code-review" = ["review"]
+"skills/finishing-a-development-branch" = ["finish"]
+"skills/systematic-debugging" = ["diagnose"]
+"skills/subagent-driven-development" = ["implement"]
+"skills/executing-plans" = ["implement"]
+
+[[source]]
+name = "pstack"
+repo = "cursor/plugins"
+role = "input"
+license = "MIT"
+pin = "12d587dfb20741cafc376c42c696c5f6e2a64487"
+
+[source.feeds]
+"pstack/skills/blast-radius" = ["verify"]
+"pstack/skills/no-comments" = ["verify"]
+"pstack/agents/comment-sicko.md" = ["verify"]
+"pstack/skills/principle-prove-it-works" = ["verify", "canon"]
+"pstack/skills/principle-fix-root-causes" = ["diagnose", "canon"]
+"pstack/skills/principle-boundary-discipline" = ["diagnose", "deepen", "canon"]
+"pstack/skills/principle-type-system-discipline" = ["deepen", "canon"]
+"pstack/skills/principle-model-the-domain" = ["canon"]
+"pstack/skills/principle-subtract-before-you-add" = ["canon"]
+"pstack/skills/principle-sequence-verifiable-units" = ["canon"]
+"pstack/skills/architect" = ["deepen"]
+"pstack/skills/poteto-mode/playbooks/orchestrate.md" = ["implement"]
+"pstack/skills/poteto-mode/playbooks/pause-safely.md" = ["pause"]
+"pstack/skills/poteto-mode/playbooks/session-pickup.md" = ["pause"]
+"pstack/skills/arena" = ["fan-out"]
+"pstack/skills/swarm" = ["fan-out"]
+
+[[source]]
+name = "blueprint"
+repo = "imbue-ai/blueprint"
+role = "input"
+license = "MIT"
+pin = "fb06284691c2c948aeb24c3282492f6628f93c3a"
+
+[source.feeds]
+"skills/blueprint" = ["spec"]
+"skills/blueprint-generate" = ["spec"]
+
+[[source]]
+name = "oliphant-plugins"
+repo = "JoshuaOliphant/claude-plugins"
+role = "frozen"
+license = "MIT"
+pin = "3ad48fd22015717b922a86b53c1087316d2d7302"
+note = "autonomous-sdlc (bdd-spec, bdd-generate, sdlc-loop), stick-shift, and review-diff; compost replaces the first two."
+
+[source.feeds]
+"plugins/autonomous-sdlc/skills/bdd-spec" = ["spec"]
+"plugins/autonomous-sdlc/skills/bdd-generate" = ["spec"]
+"plugins/autonomous-sdlc/skills/sdlc-loop" = ["implement"]
+"plugins/stick-shift/commands/spec.md" = ["spec"]
+"plugins/stick-shift/commands/build.md" = ["build"]
+"plugins/stick-shift/commands/verify.md" = ["verify", "setup"]
+"plugins/stick-shift/references" = ["build", "verify", "setup"]
+"plugins/review-diff/skills/review-diff" = ["review"]
+
+[[source]]
+name = "code-guardian"
+repo = "imbue-ai/code-guardian"
+role = "reference"
+license = "none published"
+pin = "22eb50fa3843dd1f3b1111ede621565c1d40584e"
+note = "No license, so compost takes only the idea behind verify-architecture (judge approach fit from the problem alone), written independently in skills/review/references/approach-fit.md."
+
+[[source]]
+name = "anthropic-skills"
+repo = "anthropics/skills"
+role = "reference"
+license = "per skill"
+pin = "34040c9c568585f6929bedeaad110ad08f079624"
+
+[[source]]
+name = "vercel-skills"
+repo = "vercel-labs/skills"
+role = "reference"
+license = "MIT"
+pin = "7407f3893ad4dceab546ac002c3ef806e4000c73"
