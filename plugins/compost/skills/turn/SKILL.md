@@ -27,15 +27,23 @@ reviewed.
    clone under `~/.cache/compost/upstream/`, lists every file changed since the pin, and groups
    them by the compost skill they feed, then lists the names of the changed files no `feeds` entry
    maps. It prints the `git diff` command for reading each change.
-2. Read the diff of every file listed under a compost skill. Skim the unmapped file names for a
-   skill that did not exist when the pin was set; a promising one becomes a `feeds` entry.
-3. Judge each change against the compost skill it feeds and the [canon](../../canon/README.md):
+2. Skim the unmapped file names for a skill that did not exist when the pin was set; a promising
+   one becomes a `feeds` entry, and its paths go into the sort below.
+3. Sort the changes before reading them. Ask Jev first: per source, write
+   `{"source": "<name>", "paths": [<every path listed under a compost skill, plus promising
+   unmapped ones>]}` to a temp file and run
+   `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py classify-change --input <file>`. Record each change
+   with `needs_reading: false` as ignored, with Jev's verdict as the reason, without reading it.
+   Read the diff of every path in `to_read` and judge it yourself; Jev's verdict there is a hint,
+   since it over-calls adopt and adapt on long diffs ([Jev tools](references/jev-tools.md)). Exit 3
+   means Jev is unavailable: read every listed diff. Judge each change you read against the compost
+   skill it feeds and the [canon](../../canon/README.md):
    - **adopt**: better than what compost has, fits as is (a sharper step, a fixed bug, a clearer
      example)
    - **adapt**: the idea is good, the form conflicts with compost's rulings (a new approval gate,
      a TDD ritual, beads, a size rule); take the idea, not the text
    - **ignore**: churn, tooling specific to the source, or already covered
-   When there are dozens of changes, sort them first with parallel subagents, one per compost
+   When dozens of changes remain to read, split them across parallel subagents, one per compost
    skill, each returning adopt / adapt / ignore with a one-line reason; then read the adopt and
    adapt candidates yourself.
 4. File one issue per adopt or adapt on the compost repo (the `repository` in
@@ -58,6 +66,24 @@ reviewed.
 3. Add a `[[source]]` with `role = "reference"`, its license, and `pin` set to the commit you read.
 4. A reference becomes an `input` the first time compost takes text from it: set the role, add
    `feeds`, and regenerate NOTICE.
+
+## Check compost's own text after a change
+
+An adopted change rewrites a skill, and a description edit changes which skill Claude loads. After
+any change to a skill's text or description, run the plugin's two regression evals before the
+change merges ([Jev tools](references/jev-tools.md)):
+
+1. **Routing.** From `plugins/compost` in the source repo, run
+   `uv run --group dev pytest -m jev tests/test_evals_meta.py -k route -s`. It routes the 30 real
+   prompts in `tests/evals/route.json` through every skill's description and fails below 27 of 30.
+   A new miss, or a prompt now marked `close`, points at the description that moved; fix the
+   description, not the eval.
+2. **Rulings.** Write `{"paths": [<the changed markdown files, relative to the plugin root>]}` to a
+   temp file and run `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py rulings-lint --input <file>`
+   (`{}` lints the whole plugin). Read each flagged passage against the rulings it names: reword
+   the ones that drifted, and leave the false flags with a line in the commit message.
+
+Exit 3 from either means Jev is unavailable: re-read the changed text against the rulings yourself.
 
 ## Run it on a schedule
 

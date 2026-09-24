@@ -1,0 +1,16 @@
+{
+  "description": "compost stop-guard: during a compost:implement run, a stop that waits on the user for anything but an allowed stop is sent back to post a ruling and continue.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --quiet \"${CLAUDE_PLUGIN_ROOT}/scripts/stop_guard.py\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
