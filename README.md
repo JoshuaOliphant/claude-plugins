@@ -53,9 +53,17 @@ record.
 
 ### Software development
 
+#### compost
+
+One software-engineering workflow made from Matt Pocock's skills, superpowers, pstack, Imbue's
+blueprint, and the two SDLC plugins below: specs with Given/When/Then acceptance criteria,
+tracer-bullet issues in your tracker, builds that fit tests into the existing suite, and review
+by subagents on every change. `compost:setup` configures a repo and offers to switch off the
+collections compost replaces. See [plugins/compost](plugins/compost/README.md).
+
 #### autonomous-sdlc
 
-Autonomous SDLC as a state machine on disk, driven by a Stop-hook loop (or a
+**Deprecated: superseded by compost, no further updates.** Autonomous SDLC as a state machine on disk, driven by a Stop-hook loop (or a
 user-armed self-paced `/loop`) — one verified, committed unit of work per iteration with
 decide-log-proceed autonomy and built-in code-review / simplify gates. Architect
 and Builder subagents; TDD, BDD, and Beads skills.
@@ -96,7 +104,7 @@ browser and feed the comments back to Claude Code.
 
 #### stick-shift
 
-A manually-driven ("disassembled") SDLC — the same `.sdlc/` session format as
+**Deprecated: superseded by compost, no further updates.** A manually-driven ("disassembled") SDLC — the same `.sdlc/` session format as
 autonomous-sdlc, but you drive each phase by hand via slash commands
 (`/spec → /plan → /build → /verify → /journal`). Built for legible, narratable live demos;
 adopts an in-progress autonomous-sdlc session and stands its loop down.

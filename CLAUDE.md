@@ -42,7 +42,7 @@ Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json` (the
 | Plugin | Purpose | Notable pieces |
 |---|---|---|
 | **mochi-creator** | Create cognitive-science-based flashcards via the Mochi API | `scripts/mochi_api.py` (module + CLI), prompt-quality validation, knowledge-type references |
-| **autonomous-sdlc** | Autonomous SDLC as a state machine on disk driven by a loop | `sdlc-loop` skill + `sdlc_state.py` state CLI (`bin/sdlc-state`), 6 skills, 2 subagents (Architect/Builder); the loop's hooks (Stop driver, PreToolUse denylist and fix-task test-lock, PermissionRequest allow) live in the skill's frontmatter, not a `hooks.json` |
+| **autonomous-sdlc** | Deprecated (superseded by compost). Autonomous SDLC as a state machine on disk driven by a loop | `sdlc-loop` skill + `sdlc_state.py` state CLI (`bin/sdlc-state`), 6 skills, 2 subagents (Architect/Builder); the loop's hooks (Stop driver, PreToolUse denylist and fix-task test-lock, PermissionRequest allow) live in the skill's frontmatter, not a `hooks.json` |
 | **hexagonal-agents** | Web apps where an agent generates HTML UI | Ports-and-adapters arch, MCP tools, Claude Agent SDK, extensive `references/` |
 | **compound-knowledge** | Institutional memory: capture → retrieve → graduate | YAML-frontmatter solution files, grep-based retrieval, `knowledge-researcher` subagent |
 | **autoloop** | Generate Karpathy-style optimization loops | Produces `program.md` + immutable `auto/run.sh`, `codebase-scout` subagent |
@@ -50,7 +50,7 @@ Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json` (the
 | **understand** | Process information for real understanding (antidote to the illusion of clarity) | `explain-back` skill: graded recall, struggle-then-teach per gap, Mochi-card output, resumable session record |
 | **review-diff** | Local browser-based diff review fed back to Claude Code | web UI for commenting on working-tree/branch diffs |
 | **compost** | One SDLC workflow made from Matt Pocock's skills, superpowers, pstack, blueprint, and autonomous-sdlc | 13 skills linked by Next moves, `canon/` essays, `/compost:review-changes` workflow + `reviewer` agent, `pile.toml` + `scripts/pile.py` tracking upstream sources for `compost:turn` |
-| **stick-shift** | Manually-driven ("disassembled") SDLC for legible live demos | 5 slash commands (`/spec` `/plan` `/build` `/verify` `/journal`) over a shared `.sdlc/` session; trimmed `session_state.py`; no loop/hooks |
+| **stick-shift** | Deprecated (superseded by compost). Manually-driven ("disassembled") SDLC for legible live demos | 5 slash commands (`/spec` `/plan` `/build` `/verify` `/journal`) over a shared `.sdlc/` session; trimmed `session_state.py`; no loop/hooks |
 
 Every plugin also ships a `feedback` skill backed by `scripts/feedback_manager.py` to persist user preferences across sessions.
 
