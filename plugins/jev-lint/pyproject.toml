@@ -1,0 +1,35 @@
+[project]
+name = "jev-lint-dev"
+version = "0.1.0"
+description = "Dev tooling for the jev-lint plugin (the linter declares its runtime deps inline)"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "pytest-cov>=5", "ruff>=0.6", "typesafe-sdk>=0.7"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=extract --cov=rules --cov=jev_lint --cov=run_eval --cov-report=term-missing"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+exclude_also = ['if __name__ == "__main__":']
+
+[tool.ruff]
+line-length = 100
+
+# The rules jev-lint tells other projects to enable, plus unused-argument, which would
+# have caught a stub this plugin shipped.
+[tool.ruff.lint]
+extend-select = ["ARG", "BLE", "ERA", "E722", "S110", "S112"]
+
+# pytest injects fixtures by argument name, so a fixture used only for its side effect
+# reads as unused; stand-in callbacks must match the real signature the same way.
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ARG"]

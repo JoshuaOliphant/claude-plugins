@@ -3,7 +3,7 @@
 # ABOUTME: Run before publishing; exits non-zero (and prints the drift) on any mismatch.
 """Check that .claude-plugin/marketplace.json is in sync with every plugin.json.
 
-CLAUDE.md treats each plugin's plugin.json as the source of truth for its
+AGENTS.md treats each plugin's plugin.json as the source of truth for its
 version, and requires marketplace.json to copy that value at publication time.
 This script enforces that rule so the catalog never advertises a stale version.
 

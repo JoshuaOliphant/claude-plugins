@@ -1,5 +1,7 @@
 # Stick Shift
 
+> **Deprecated.** Superseded by [compost](../compost/README.md). compost covers the same spec, plan, build, and verify phases as skills you can invoke one at a time (`/compost:spec`, `/compost:slice`, `/compost:build`, `/compost:verify`). No further updates are planned. `compost:setup` finds this plugin on a machine and offers to disable it.
+
 Manually-driven ("disassembled") SDLC. Same `.sdlc/` **session** format as
 `autonomous-sdlc`, but you swap the autonomous Stop-hook **harness** for one you drive
 by hand: five slash commands, one phase each, every one ending by handing control back

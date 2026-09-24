@@ -31,15 +31,13 @@ echo '{"category": "<category>", "feedback": "<what the user said>", "context": 
   python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py agent-skills save-feedback
 ```
 
-**Categories**: plan_style, recap_style, status_format, orchestration, autonomy, docs_discipline, review, usage_limits, general
+**Categories**: plan_style, recap_style, status_format, docs_discipline, review, usage_limits, general
 
 **Examples**:
 - "Recaps are too long, keep them lean" → `{"category": "recap_style", "feedback": "Keep visual-recap output lean — prefer the headline wireframe + key-change diffs over exhaustive prose"}`
 - "Always lead plans with the wireframe" → `{"category": "plan_style", "feedback": "For UI plans, lead with the top canvas wireframe before document-body sections"}`
-- "Don't stop to ask, use best judgment" → `{"category": "autonomy", "feedback": "Default to plow-ahead: convert routine ambiguity into stated assumptions, stop only for true blockers"}`
 - "Web-search the official docs before guessing" → `{"category": "docs_discipline", "feedback": "Always read-the-damn-docs: web-search current official docs before implementing against any third-party API"}`
 - "Use red/green/yellow at the end of every response" → `{"category": "status_format", "feedback": "End substantive responses with a quick-recap red/yellow/green status block"}`
-- "Delegate heavy reading to cheap subagents" → `{"category": "orchestration", "feedback": "Reserve the expensive model for judgment; delegate research/coding/testing to cheaper subagents"}`
 
 ### Show Feedback
 
@@ -80,7 +78,7 @@ python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py agent-skills show-feedb
 
 2. Read the target SKILL.md for the skill the feedback is about, under
    `${CLAUDE_PLUGIN_ROOT}/skills/<skill-name>/SKILL.md` (e.g. `skills/visual-recap/SKILL.md`
-   for recap_style, `skills/plow-ahead/SKILL.md` for autonomy).
+   for recap_style).
 
 3. For each feedback entry, decide:
    - **Consolidate**: Universal preferences, repeated corrections, rules that always apply.
@@ -116,10 +114,8 @@ When an agent-skill runs, load stored feedback and apply the matching category:
 - **plan_style** → shapes visual-plan surface choice, layout, and what leads the document.
 - **recap_style** → calibrates visual-recap length, wireframe choices, and diff selection.
 - **status_format** → adjusts the quick-recap status-block convention.
-- **orchestration** → tunes efficient-fable / efficient-frontier delegation strategy.
-- **autonomy** → adjusts plow-ahead's stop-vs-assume threshold.
 - **docs_discipline** → reinforces read-the-damn-docs triggers.
-- **review** → shapes agent-watchdog / plan-arbiter scope and verdict style.
+- **review** → shapes plan-arbiter scope and verdict style.
 - **usage_limits** → calibrates stay-within-limits pause/resume behavior.
 - **general** → applied across all agent-skills.
 

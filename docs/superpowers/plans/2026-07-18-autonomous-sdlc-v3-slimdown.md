@@ -29,6 +29,8 @@ Task 3 deletes `plugins/autonomous-sdlc/skills/bdd-spec/` (4 files), `plugins/au
 
 ## Known Bug Found During Planning (fix included as Task 6)
 
+> **Superseded (2026-09-06, autonomous-sdlc 2.4.0):** the hooks reference states a registered `WorktreeCreate` hook replaces git's worktree creation and must return `worktree_path`, so a logging-only hook is the wrong event to register, not a stdout bug. Both worktree hooks and their `hooks.json` entries were deleted. Task 6 is no longer needed.
+
 The plugin's `WorktreeCreate` hook (`hooks/scripts/worktree-create.sh`) prints a `{"systemMessage": ...}` JSON to stdout. The Claude Code harness interprets a `WorktreeCreate` hook's stdout as a custom worktree **path**, so with this plugin installed, `EnterWorktree` fails with `ENOENT: chdir ... -> '.../{"systemMessage": ...}'`. Reproduced 2026-07-18 in this repo. The same risk applies to `worktree-remove.sh`.
 
 ## File Structure

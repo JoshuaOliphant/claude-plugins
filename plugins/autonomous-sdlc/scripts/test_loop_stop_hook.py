@@ -110,6 +110,14 @@ def test_driver_goal_stands_hook_down(tmp_path):
     assert BLOCK_MARKER not in out
 
 
+def test_driver_loop_stands_hook_down(tmp_path):
+    # When the user has armed a bare /loop (self-paced), the Stop hook must not
+    # also drive, or both re-prompt.
+    out, code = run_hook(tmp_path, _build_state(driver="loop"))
+    assert code == 0
+    assert BLOCK_MARKER not in out
+
+
 def test_hard_cap_fires_after_200_blocks(tmp_path):
     # The belt-and-braces cap still releases a loop that keeps stopping without
     # ever ticking (in_flight empty, so it is a real spin, not a wait).
@@ -132,6 +140,7 @@ if __name__ == "__main__":
         test_non_build_state_with_inflight_still_blocks,
         test_terminal_states_release_even_with_inflight,
         test_driver_goal_stands_hook_down,
+        test_driver_loop_stands_hook_down,
         test_hard_cap_fires_after_200_blocks,
     ]
     failures = 0

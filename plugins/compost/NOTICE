@@ -1,0 +1,8 @@
+compost is made from other people's skills, reworked. Each source below keeps its license;
+their copyright notices apply to the parts of compost derived from them.
+
+- mattpocock: https://github.com/mattpocock/skills (MIT), from c55ee46073ed
+- superpowers: https://github.com/obra/superpowers (MIT), from 5bf4e7801107
+- pstack: https://github.com/cursor/plugins (MIT), from 12d587dfb207
+- blueprint: https://github.com/imbue-ai/blueprint (MIT), from fb06284691c2
+- oliphant-plugins: https://github.com/JoshuaOliphant/claude-plugins (MIT), from 3ad48fd22015
