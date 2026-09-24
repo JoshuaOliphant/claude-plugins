@@ -1,19 +1,20 @@
 // ABOUTME: Compost's review workflow: Standards and Spec reviewers in parallel over a branch diff.
-// ABOUTME: Skeptic agents try to refute each blocker and major finding; survivors, refutations, and unjudged findings come back side by side.
+// ABOUTME: Skeptics try to refute each finding worth one (Jev's triage, else every blocker and major); survivors, refutations, and unjudged findings come back side by side.
 export const meta = {
   name: 'review-changes',
-  description: 'Review a branch along two axes, Standards and Spec, then have skeptics try to refute every blocker and major finding',
-  whenToUse: 'After verify passes on an issue, or whenever a branch or work-in-progress diff needs review. Pass {base, head, issue, skeptics}, all optional: base defaults to the merge-base with the default branch, head to HEAD, issue to one found in the commits or branch name, skeptics (votes per blocker or major finding) to 1. A bare string is treated as base.',
+  description: 'Review a branch along two axes, Standards and Spec, then have skeptics try to refute every finding worth one (by Jev triage, else every blocker and major)',
+  whenToUse: 'After verify passes on an issue, or whenever a branch or work-in-progress diff needs review. Pass {base, head, issue, skeptics, jev}, all optional: base defaults to the merge-base with the default branch, head to HEAD, issue to one found in the commits or branch name, skeptics (votes per finding worth a skeptic) to 1, jev (the path to compost scripts/jev.py, which ranks files by structural risk) to none. A bare string is treated as base.',
   phases: [
-    { title: 'Scope', detail: 'pin the base, the diff, the spec, and the standards sources' },
-    { title: 'Standards', detail: 'reviewer against instructions files, CONTEXT.md, ADRs, and the canon; skeptics refute each blocker and major' },
-    { title: 'Spec', detail: 'reviewer against the issue AC-N and interfaces; skeptics refute each blocker and major' },
+    { title: 'Scope', detail: 'pin the base, the diff, the spec, and the standards sources; rank files by structural risk' },
+    { title: 'Standards', detail: 'reviewer against instructions files, CONTEXT.md, ADRs, and the canon; skeptics refute each finding worth one' },
+    { title: 'Spec', detail: 'reviewer against the issue AC-N and interfaces; skeptics refute each finding worth one' },
   ],
 }
 
 const input = typeof args === 'object' && args !== null ? args : { base: args }
 const skepticsPerFinding = input.skeptics || 1
 const head = input.head || 'HEAD'
+const jevScript = input.jev || ''
 
 const SCOPE_SCHEMA = {
   type: 'object',
@@ -36,6 +37,24 @@ const SCOPE_SCHEMA = {
       },
     },
     problem: { type: 'string', description: 'Why scoping failed; empty on success' },
+    risk: {
+      type: 'object',
+      description: 'Copied from jev.py review-risk; omit when no jev path was given',
+      required: ['ranked', 'structural', 'files'],
+      properties: {
+        ranked: { type: 'boolean', description: 'false when review-risk exited non-zero' },
+        structural: { type: 'boolean' },
+        files: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['file', 'score', 'structural'],
+            properties: { file: { type: 'string' }, score: { type: 'number' }, structural: { type: 'boolean' } },
+          },
+        },
+        problem: { type: 'string', description: 'The first line of stderr when review-risk failed' },
+      },
+    },
   },
 }
 
@@ -54,6 +73,7 @@ const FINDINGS_SCHEMA = {
           severity: { type: 'string', enum: ['blocker', 'major', 'minor'] },
           claim: { type: 'string' },
           evidence: { type: 'string', description: 'The rule or AC-N quoted with its file, plus the code quoted at file:line' },
+          skeptic: { type: 'boolean', description: 'worth_skeptic from jev.py triage-finding; omit when Jev was unavailable' },
         },
       },
     },
@@ -93,13 +113,17 @@ const issueHint = input.issue
   ? `The originating issue is #${input.issue}.`
   : 'No issue was given: look for issue references in the commit messages (#123, Closes #45) and in the branch name, then for a spec file under docs/, specs/, or .scratch/ matching the branch.'
 
+const riskStep = jevScript
+  ? `\n4. Rank the changed files by structural risk: write \`{"base": "<base-sha>", "head": "<head-sha>"}\` to a temp file and run \`uv run ${jevScript} review-risk --input <file>\`. Set risk to \`{ranked: true, structural, files}\` from its output, keeping each file's file, score, and structural. If it exits non-zero, set risk to \`{ranked: false, structural: false, files: [], problem: "<first line of stderr>"}\`.`
+  : ''
+
 const scope = await agent(
   `Scope a code review of the changes up to \`${head}\`. Do not review anything yet.
 
 ${baseHint} The head under review is \`${head}\`.
 1. Resolve the fixed point and the head with \`git rev-parse\`. Record diffCommand as \`git diff <base-sha>...<head-sha>\` (three dots, against the merge-base), the commits from \`git log --oneline <base-sha>..<head-sha>\`, and the changed files from \`git diff --name-only <base-sha>...<head-sha>\`.
 2. ${issueHint} Fetch the issue the way docs/agents/issue-tracker.md says; if that file is missing, use \`gh issue view <n> --comments\`. Copy its user stories, every AC-N, and any interfaces verbatim into spec.text. If an issue number was given and fetching it fails, set spec to \`{found: false, source: "", text: "", problem: "<the error you got>"}\` and carry on with the rest.
-3. List the standards sources that exist: CLAUDE.md and AGENTS.md at the root and in directories the diff touches, CONTEXT.md or CONTEXT-MAP.md, docs/adr/*.md, CODING_STANDARDS.md, CONTRIBUTING.md, and linter or formatter configs (so reviewers know what tooling already enforces).
+3. List the standards sources that exist: CLAUDE.md and AGENTS.md at the root and in directories the diff touches, CONTEXT.md or CONTEXT-MAP.md, docs/adr/*.md, CODING_STANDARDS.md, CONTRIBUTING.md, and linter or formatter configs (so reviewers know what tooling already enforces).${riskStep}
 
 If the fixed point does not resolve or the diff is empty, say so in problem and return every other field empty: base, head, and diffCommand as "", commits, files, and standardsSources as [], and spec as \`{found: false, source: "", text: ""}\`.`,
   { label: 'scope', phase: 'Scope', schema: SCOPE_SCHEMA, effort: 'low' },
@@ -122,11 +146,20 @@ const readAtHead = head === 'HEAD'
   ? ''
   : `\nThe working tree may not be at the head under review: read changed files with \`git show ${scope.head}:<path>\`, not from disk.`
 
+const risk = scope.risk && scope.risk.ranked
+  ? { ranked: true, structural: scope.risk.structural, files: scope.risk.files }
+  : { ranked: false, structural: null, files: [], problem: scope.risk ? scope.risk.problem || 'review-risk failed' : 'no jev path given' }
+
+const fileList = risk.ranked
+  ? `Changed files, riskiest first (structural risk 0-4 from Jev; read the top ones first):
+${risk.files.map(f => `${f.file} (${f.score.toFixed(2)}${f.structural ? ', structural' : ''})`).join('\n')}`
+  : `Changed files:
+${scope.files.join('\n')}`
+
 const diffContext = `Diff: \`${scope.diffCommand}\`${readAtHead}
 Commits:
 ${scope.commits.join('\n')}
-Changed files:
-${scope.files.join('\n')}`
+${fileList}`
 
 const AXES = [
   {
@@ -206,6 +239,10 @@ async function judge(axis, finding, index) {
   }
 }
 
+function worthSkeptic(finding) {
+  return typeof finding.skeptic === 'boolean' ? finding.skeptic : finding.severity !== 'minor'
+}
+
 function unjudgedAfterThrow(finding) {
   return { finding, verdict: 'unjudged', failed: skepticsPerFinding, reasons: ['the skeptic stage threw'] }
 }
@@ -231,9 +268,9 @@ const results = await pipeline(
       return { axis: axis.name, status: 'skipped: no spec found', complete: true, survivors: [], refuted: [], unjudged: [] }
     }
     if (!review) return failedAxis(axis.name, 'the reviewer did not return')
-    const serious = review.findings.filter(finding => finding.severity !== 'minor')
+    const serious = review.findings.filter(worthSkeptic)
     const unverified = review.findings
-      .filter(finding => finding.severity === 'minor')
+      .filter(finding => !worthSkeptic(finding))
       .map(finding => ({ ...finding, unverified: true }))
     const judged = (await pipeline(serious, (finding, _item, index) => judge(axis, finding, index)))
       .map((j, i) => j || unjudgedAfterThrow(serious[i]))
@@ -242,7 +279,7 @@ const results = await pipeline(
     if (unjudged.length > 0) log(`${axis.name}: ${unjudged.length} findings have no skeptic verdict`)
     return {
       axis: axis.name,
-      status: `reviewed: ${review.findings.length} findings raised, ${unverified.length} minor left unverified`,
+      status: `reviewed: ${review.findings.length} findings raised, ${unverified.length} left unverified`,
       complete: true,
       survivors: [
         ...withVerdict('survived').map(j => ({ ...j.finding, upheldBecause: j.reasons, failedVotes: j.failed })),
@@ -266,6 +303,7 @@ return {
   base: scope.base,
   head: scope.head,
   specSource: scope.spec.source,
+  risk,
   complete: standards.complete && spec.complete,
   standards,
   spec,
