@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Claude Code plugin marketplace (`oliphant-plugins`). It distributes nine plugins that extend Claude Code with specialized skills, subagents, commands, and hooks. Each plugin is self-contained under `plugins/` and registered in `.claude-plugin/marketplace.json`.
+This is a Claude Code plugin marketplace (`oliphant-plugins`). It distributes eleven plugins that extend Claude Code with specialized skills, subagents, commands, and hooks. Each plugin is self-contained under `plugins/` and registered in `.claude-plugin/marketplace.json`.
 
 ## Repository Structure
 
@@ -21,7 +21,8 @@ claude-plugins/
 │   ├── observability-harness/      # Local Docker-free OTLP stack (OTel → Vector → JSONL/Victoria*)
 │   ├── understand/                 # Explain-back learning loop (graded recall → Mochi cards)
 │   ├── review-diff/                # Local web-based diff review fed back to Claude Code
-│   └── stick-shift/                # Manually-driven ("disassembled") SDLC via slash commands
+│   ├── stick-shift/                # Manually-driven ("disassembled") SDLC via slash commands
+│   └── compost/                    # One SDLC workflow composted from several skill collections
 ├── scripts/
 │   ├── check_all.py                   # One-command repo health check (versions + sync + tests)
 │   ├── check_marketplace_versions.py  # Asserts marketplace.json ⇄ plugin.json (versions + registration)
@@ -48,6 +49,7 @@ Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json` (the
 | **observability-harness** | Local Docker-free OTLP stack (OTel → Vector → JSONL/Victoria*) + instrumentation | setup skill with scan-and-propose, `observability-query` skill, `status.sh --json` detection contract, scripted `verify.sh`; composed by autonomous-sdlc as a soft dependency |
 | **understand** | Process information for real understanding (antidote to the illusion of clarity) | `explain-back` skill: graded recall, struggle-then-teach per gap, Mochi-card output, resumable session record |
 | **review-diff** | Local browser-based diff review fed back to Claude Code | web UI for commenting on working-tree/branch diffs |
+| **compost** | One SDLC workflow made from Matt Pocock's skills, superpowers, pstack, blueprint, and autonomous-sdlc | 13 skills linked by Next moves, `canon/` essays, `/compost:review-changes` workflow + `reviewer` agent, `pile.toml` + `scripts/pile.py` tracking upstream sources for `compost:turn` |
 | **stick-shift** | Manually-driven ("disassembled") SDLC for legible live demos | 5 slash commands (`/spec` `/plan` `/build` `/verify` `/journal`) over a shared `.sdlc/` session; trimmed `session_state.py`; no loop/hooks |
 
 Every plugin also ships a `feedback` skill backed by `scripts/feedback_manager.py` to persist user preferences across sessions.
