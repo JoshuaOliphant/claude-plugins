@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from jevtools import meta, review, spec, testing  # noqa: F401  (importing registers the tools)
-from jevtools.core import Cache, Jev, Unavailable, open_client
+from jevtools.core import MISSING_KEY, Cache, Jev, Unavailable, open_client, resolve_key
 from jevtools.registry import TOOLS, BadInput
 
 EXIT_BAD_INPUT = 2
@@ -45,12 +45,18 @@ async def run(name: str, payload: dict, client_factory=open_client, cache: Cache
 
 def main(argv: list[str] | None = None, client_factory=open_client) -> int:
     parser = argparse.ArgumentParser(prog="jev.py", description="compost's Jev tools")
-    parser.add_argument("tool", choices=sorted([*TOOLS, "list"]))
+    parser.add_argument("tool", choices=sorted([*TOOLS, "list", "status"]))
     parser.add_argument("--input", help="JSON file with the tool's input; default stdin")
     args = parser.parse_args(argv)
     if args.tool == "list":
         for name, entry in sorted(TOOLS.items()):
             print(f"{name:16} {entry.summary}")
+        return 0
+    if args.tool == "status":
+        if resolve_key() is None:
+            print(f"jev unavailable: {MISSING_KEY}", file=sys.stderr)
+            return EXIT_UNAVAILABLE
+        print(f"jev ready: a TypeSafe key was found; {len(TOOLS)} tools available")
         return 0
     try:
         result = asyncio.run(run(args.tool, read_input(args.input), client_factory))

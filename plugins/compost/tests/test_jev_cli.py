@@ -21,8 +21,23 @@ def repo(tmp_path):
 
 
 def placing(state, questions):
+    if "covered" in questions:
+        return {"covered": noul(0.9)}
     options = questions["neighbour"].criteria
-    return {"neighbour": choice(next(iter(options)), options, 0.95), "covered": noul(0.9)}
+    return {"neighbour": choice(next(iter(options)), options, 0.95)}
+
+
+def test_status_reports_a_key_without_calling_the_api(monkeypatch, capsys):
+    monkeypatch.setenv("TYPESAFE_API_KEY", "k")
+    assert jev.main(["status"]) == 0
+    assert capsys.readouterr().out.startswith("jev ready: a TypeSafe key was found; 17 tools available")
+
+
+def test_status_without_a_key_exits_3_and_says_how_to_store_one(monkeypatch, capsys):
+    monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
+    monkeypatch.setenv("PATH", "")
+    assert jev.main(["status"]) == jev.EXIT_UNAVAILABLE
+    assert "security add-generic-password -s typesafe" in capsys.readouterr().err
 
 
 def test_list_names_every_tool(capsys):
@@ -43,7 +58,7 @@ def test_a_tool_reads_json_input_and_prints_its_judgment(cache_dir, repo, tmp_pa
         "covered": None,
         "alternatives": [],
     }
-    assert output["jev"] == {"input_tokens": 100, "cached": 0}
+    assert output["jev"] == {"input_tokens": 200, "cached": 0}
     assert (cache_dir / "jev-cache.json").exists()
 
 

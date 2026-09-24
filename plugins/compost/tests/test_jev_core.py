@@ -57,6 +57,17 @@ def test_cache_round_trips_through_its_file(tmp_path):
     assert core.Cache(path).get("absent") is None
 
 
+def test_an_unreadable_cache_starts_empty_and_is_replaced_whole(tmp_path):
+    path = tmp_path / "cache.json"
+    path.write_text('{"k": {"flag": ')
+    cache = core.Cache(path)
+    assert cache.get("k") is None
+    cache.put("k", {"flag": noul(0.4)})
+    cache.save()
+    assert core.Cache(path).get("k") == {"flag": noul(0.4)}
+    assert [p.name for p in tmp_path.iterdir()] == ["cache.json"]
+
+
 def test_cache_key_depends_on_tool_state_and_question_text():
     base = core.cache_key("t", {"text": "a"}, QUESTIONS)
     assert base == core.cache_key("t", {"text": "a"}, QUESTIONS)

@@ -36,6 +36,45 @@ Work is tracked in the repo's issue tracker (GitHub by default), recorded by `co
 `docs/agents/issue-tracker.md`. Domain vocabulary lives in `CONTEXT.md`, decisions in
 `docs/adr/`.
 
+## Jev tools
+
+Many steps in the workflow are narrow judgments over lists that code can already produce: which
+existing test an acceptance criterion belongs in, whether a review finding is worth a skeptic
+subagent, whether an upstream change needs reading. compost hands those to
+[TypeSafe Jev](https://docs.typesafe.ai), which answers typed questions (Choice, Noul, Score) in a
+second or two for a fraction of a cent, so the frontier model spends its tokens on the rest.
+
+Skills call `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py <tool> --input <file.json>`; `jev.py list`
+names them all. Code gathers the candidates, Jev picks or checks, and thresholds in code decide.
+Results are cached by content hash in `~/.cache/compost/`. The key comes from `TYPESAFE_API_KEY`
+or the macOS Keychain item `typesafe`. Without one, a tool exits 3 and the skill makes the call
+itself, so Jev speeds compost up and never blocks it. `jev.py status` checks for a key without
+calling the API; `compost:setup` runs it and tells you how to store one.
+
+| Tool | Primitive | Used by | Live eval (cases) |
+| --- | --- | --- | --- |
+| `find-test` | Choice + Noul | build, diagnose | right test 33/34, extend-or-add 33/34 (34) |
+| `duplicate-test` | Noul | build | 23/23 (23 pairs) |
+| `ac-exercised` | Noul | verify | 20/22 (22) |
+| `test-value` | Score | verify | 24/24 (24 uncovered blocks) |
+| `claim-backed` | Noul | verify | 22/22 (22 claims) |
+| `triage-finding` | Choice | reviewer, review-changes | serious findings sent to a skeptic 15/15, minor spared 8/11 (26) |
+| `review-risk` | Score | review-changes, review | 24–25/28 structural calls (28 files) |
+| `canon-pick` | Choice | reviewer | precision and recall ~0.6 (22) |
+| `locate` | Choice + Noul | reviewer, spec | anchored 17/18, absent 8/8 (26) |
+| `spec-class` | Choice | spec | 21/22, never lighter than labeled (22) |
+| `question-value` | Score | spec | 24–25/25 (25 questions) |
+| `ac-quality` | Score ×3 | spec | 24/24 (24) |
+| `adr-worthy` | Noul ×3 | spec, deepen, implement | 24/24 (24 rulings) |
+| `classify-change` | Choice | turn | every adopt/adapt read 4/4, no ignore recorded wrongly, 15/26 ignores skipped (30) |
+| `route` | Choice | turn, description changes | 27/30 (30 real prompts) |
+| `rulings-lint` | Noul ×8 | turn, compost's own text | 10/13 violations, 2–4 false flags (36 passages) |
+| `stop-guard` | Noul ×2 | Stop hook in implement runs | 23/23 (23 final messages) |
+
+Thresholds were chosen from the same labeled cases they are measured on, so treat the numbers as
+upper bounds until the tools have run on real work. `uv run --group dev pytest -m jev` re-runs every
+eval against the live API for a few cents.
+
 ## Install
 
 ```

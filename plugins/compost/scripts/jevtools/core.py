@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import subprocess
+import tempfile
 from pathlib import Path
 
 from typesafe_sdk import AsyncTypeSafeClient, TypeSafeError
@@ -44,7 +45,10 @@ def cache_key(tool: str, state: dict, questions: dict) -> str:
 class Cache:
     def __init__(self, path: Path | None = None):
         self.path = path or CACHE
-        self.entries: dict[str, dict] = json.loads(self.path.read_text()) if self.path.exists() else {}
+        try:
+            self.entries: dict[str, dict] = json.loads(self.path.read_text())
+        except (OSError, json.JSONDecodeError):
+            self.entries = {}
 
     def get(self, key: str) -> dict | None:
         return self.entries.get(key)
@@ -53,8 +57,11 @@ class Cache:
         self.entries[key] = answers
 
     def save(self) -> None:
+        """Writes a temp file and renames it, since the Stop hook saves from parallel sessions."""
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(json.dumps(self.entries))
+        with tempfile.NamedTemporaryFile("w", dir=self.path.parent, delete=False, suffix=".tmp") as handle:
+            handle.write(json.dumps(self.entries))
+        os.replace(handle.name, self.path)
 
 
 class Jev:
@@ -81,13 +88,17 @@ class Jev:
         return answers
 
 
+MISSING_KEY = (
+    f"{ENV_VAR} is not set and no Keychain item '{KEYCHAIN_SERVICE}' exists; get a key at "
+    f"https://docs.typesafe.ai, then store it with: security add-generic-password -s {KEYCHAIN_SERVICE} "
+    f'-a "$USER" -w  (or export {ENV_VAR} where the Keychain is unavailable)'
+)
+
+
 def open_client() -> AsyncTypeSafeClient:
     key = resolve_key()
     if key is None:
-        raise Unavailable(
-            f"{ENV_VAR} is not set and no Keychain item '{KEYCHAIN_SERVICE}' exists; "
-            f'store one with: security add-generic-password -s {KEYCHAIN_SERVICE} -a "$USER" -w'
-        )
+        raise Unavailable(MISSING_KEY)
     return AsyncTypeSafeClient(api_key=key)
 
 

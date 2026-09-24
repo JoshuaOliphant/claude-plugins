@@ -18,9 +18,10 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-m \"not jev\" --cov=pile --cov=jev --cov=jevtools --cov-report=term-missing"
+addopts = "-m \"not jev\" --cov=pile --cov=jev --cov=jevtools --cov=stop_guard --cov-report=term-missing"
 markers = ["jev: live evals against the TypeSafe API (uv run --group dev pytest -m jev)"]
 testpaths = ["tests"]
+norecursedirs = ["tests/evals/fixtures"]
 
 [tool.coverage.report]
 fail_under = 100
