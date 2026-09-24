@@ -19,14 +19,15 @@ reviewed.
 - `frozen`: an input that will not change again (a retired plugin). Listed for attribution only.
 - `reference`: a repo watched for ideas and not drawn from yet.
 
-`${CLAUDE_PLUGIN_ROOT}/scripts/pile.py` does the bookkeeping (Python 3.11+, stdlib only).
+`${CLAUDE_PLUGIN_ROOT}/scripts/pile.py` does the bookkeeping (Python 3.11+ via uv, stdlib only).
 
 ## Check for upstream changes
 
-1. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/pile.py status`. For each input it keeps a blobless
+1. Run `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/pile.py status`. For each input it keeps a blobless
    clone under `~/.cache/compost/upstream/`, lists every file changed since the pin, and groups
-   them by the compost skill they feed. It prints the `git diff` command for reading each change.
-2. Read the diff of every file listed under a compost skill. Skim the unmapped files' names for a
+   them by the compost skill they feed, then lists the names of the changed files no `feeds` entry
+   maps. It prints the `git diff` command for reading each change.
+2. Read the diff of every file listed under a compost skill. Skim the unmapped file names for a
    skill that did not exist when the pin was set; a promising one becomes a `feeds` entry.
 3. Judge each change against the compost skill it feeds and the [canon](../../canon/README.md):
    - **adopt**: better than what compost has, fits as is (a sharper step, a fixed bug, a clearer
@@ -42,8 +43,8 @@ reviewed.
    link, the compost skill it touches, and what to take.
 5. Once every change since a pin has a ruling, move the pin. Pins live in the source repo, not the
    installed plugin: in a worktree of that repo run
-   `python3 plugins/compost/scripts/pile.py advance <source> <commit>`, then
-   `python3 plugins/compost/scripts/pile.py notice`, and commit both with the ignored changes and
+   `uv run plugins/compost/scripts/pile.py advance <source> <commit>`, then
+   `uv run plugins/compost/scripts/pile.py notice`, and commit both with the ignored changes and
    their reasons in the commit message. That is the record that keeps them from resurfacing.
 6. Report: per source, how many changes were adopted, adapted, and ignored, with the issue links.
 

@@ -2,7 +2,7 @@
 # ABOUTME: The upstream fixture serves a local repo as github.com, so clone and fetch both run offline.
 import pile
 import pytest
-from conftest import commit
+from conftest import commit, run_git
 
 
 def test_load_reads_sources_with_their_feeds(pile_file):
@@ -12,11 +12,31 @@ def test_load_reads_sources_with_their_feeds(pile_file):
     assert own.feeds == {}
 
 
-def test_load_rejects_an_unknown_role(tmp_path):
+VALID = '[[source]]\nname = "x"\nrepo = "a/b"\nrole = "input"\nlicense = "MIT"\npin = "c"\n'
+WITHOUT_PIN = VALID.replace('pin = "c"\n', "")
+WITH_EXTRA = VALID + 'sha = "d"\n'
+
+
+@pytest.mark.parametrize(
+    ("text", "message"),
+    [
+        (VALID.replace("input", "vendored"), "x: role must be one of input, frozen, reference, not 'vendored'"),
+        (WITHOUT_PIN, r"source 1 \(x\): missing pin"),
+        (WITH_EXTRA, r"source 1 \(x\): unknown field sha"),
+        ("[[source]\n", "cannot read .*pile.toml"),
+    ],
+    ids=["unknown role", "missing field", "unknown field", "not toml"],
+)
+def test_load_names_what_is_wrong_with_the_file(tmp_path, text, message):
     path = tmp_path / "pile.toml"
-    path.write_text('[[source]]\nname = "x"\nrepo = "a/b"\nrole = "vendored"\nlicense = "MIT"\npin = "c"\n')
-    with pytest.raises(pile.PileError, match="role must be one of input, frozen, reference, not 'vendored'"):
+    path.write_text(text)
+    with pytest.raises(pile.PileError, match=message):
         pile.load(path)
+
+
+def test_load_reports_a_missing_file(tmp_path):
+    with pytest.raises(pile.PileError, match="cannot read .*absent.toml"):
+        pile.load(tmp_path / "absent.toml")
 
 
 @pytest.mark.parametrize(
@@ -42,19 +62,53 @@ def test_status_reports_nothing_new_then_changes_after_upstream_moves(pile_file,
     assert (item.head, item.by_skill, item.unmapped) == (head, {"spec": ["skills/to-spec/SKILL.md"]}, ["LICENSE"])
     status = pile.render_status([item])
     assert f"diffs: git -C {pile.CLONES / 'acme_skills'} diff" in status
-    assert "  compost:spec\n    skills/to-spec/SKILL.md\n  1 changed files feed no compost skill" in status
+    assert "  compost:spec\n    skills/to-spec/SKILL.md\n  feed no compost skill:\n    LICENSE" in status
+
+
+def test_a_renamed_fed_skill_still_reports_under_the_skill_it_fed(pile_file, upstream):
+    run_git(upstream, "mv", "skills/to-spec", "skills/spec-writer")
+    commit(upstream, {"notes/my notes.md": "spaced\n"}, "rename and add a spaced path")
+    [item] = pile.drift(pile.load(pile_file))
+    assert item.by_skill == {"spec": ["skills/to-spec/SKILL.md"]}
+    assert item.unmapped == ["notes/my notes.md", "skills/spec-writer/SKILL.md"]
+
+
+def test_status_lists_unmapped_files_up_to_a_limit(pile_file):
+    source = pile.load(pile_file)[0]
+    unmapped = [f"docs/{n:02}.md" for n in range(pile.UNMAPPED_SHOWN + 2)]
+    status = pile.render_status([pile.Drift(source, "f" * 40, {}, unmapped)])
+    assert f"    docs/{pile.UNMAPPED_SHOWN - 1:02}.md\n    and 2 more" in status
+    assert f"docs/{pile.UNMAPPED_SHOWN:02}.md" not in status
 
 
 def test_compare_reports_a_pin_upstream_does_not_have(pile_file):
-    with pytest.raises(pile.PileError, match="git -C .* diff --name-only 0000000 .* failed"):
+    with pytest.raises(pile.PileError, match="diff --name-only --no-renames -z 0000000 .* failed"):
         pile.git_compare("acme/skills", "0000000")
 
 
-def test_advance_moves_only_the_named_pin(pile_file):
+def test_git_missing_from_path_is_reported(monkeypatch):
+    monkeypatch.setenv("PATH", "")
+    with pytest.raises(pile.PileError, match="git not found on PATH"):
+        pile.git("--version")
+
+
+def test_advance_resolves_the_commit_and_moves_only_the_named_pin(pile_file, upstream):
+    head = commit(upstream, {"skills/to-spec/SKILL.md": "spec v2\n"}, "second")
     before = pile_file.read_text()
-    old = pile.advance(pile_file, "acme", "c" * 40)
-    assert pile.load(pile_file)[0].pin == "c" * 40
-    assert pile_file.read_text() == before.replace(old, "c" * 40)
+    old, new = pile.advance(pile_file, "acme", head[:7])
+    assert new == head
+    assert pile_file.read_text() == before.replace(old, head)
+
+
+def test_advance_refuses_a_commit_upstream_does_not_have(pile_file):
+    with pytest.raises(pile.PileError, match="0000000 is not a commit in acme/skills"):
+        pile.advance(pile_file, "acme", "0000000")
+
+
+def test_advance_refuses_a_pin_written_in_another_form(pile_file):
+    pile_file.write_text(pile_file.read_text().replace('pin = "aaaa', 'pin="aaaa'))
+    with pytest.raises(pile.PileError, match="own's pin is not written as `pin = \"aaaa"):
+        pile.advance(pile_file, "own", "c")
 
 
 def test_advance_refuses_an_unknown_source(pile_file):
@@ -80,10 +134,11 @@ def test_cli_status_prints_the_report(pile_file, capsys):
     assert "acme (acme/skills): nothing new since" in capsys.readouterr().out
 
 
-def test_cli_advance_prints_the_move(pile_file, capsys):
+def test_cli_advance_prints_the_move(pile_file, upstream, capsys):
     old = pile.load(pile_file)[0].pin
-    assert pile.main(["--pile", str(pile_file), "advance", "acme", "d" * 40]) == 0
-    assert capsys.readouterr().out == f"acme: {old[:7]} → ddddddd\n"
+    head = commit(upstream, {"README.md": "readme v2\n"}, "second")
+    assert pile.main(["--pile", str(pile_file), "advance", "acme", head]) == 0
+    assert capsys.readouterr().out == f"acme: {old[:7]} → {head[:7]}\n"
 
 
 def test_cli_reports_errors_on_stderr(pile_file, capsys):

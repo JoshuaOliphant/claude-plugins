@@ -3,7 +3,7 @@
 One software-engineering workflow for Claude Code, made by breaking down several skill collections
 and rebuilding the best of each: Matt Pocock's skills, obra's superpowers, Lauren Tan's pstack,
 Imbue's blueprint and code guardian, and the autonomous-sdlc and stick-shift plugins it replaces.
-`NOTICE` lists them with their licenses; `pile.toml` records which upstream files fed which skill.
+`NOTICE` lists the sources compost takes text from; `pile.toml` records which upstream files fed which skill.
 
 ## How it works
 
@@ -52,7 +52,9 @@ skills installed outside a plugin add `"<skill-name>": "off"` under `skillOverri
 
 ## Development
 
+From `plugins/compost` (the 100% coverage gate applies when pytest runs from there):
+
 ```sh
 uv run --group dev pytest        # tooling tests (100% coverage) and checks on the shipped files
-python3 scripts/pile.py status   # upstream changes since each source's pin
+uv run scripts/pile.py status    # upstream changes since each source's pin (Python 3.11+ via uv)
 ```

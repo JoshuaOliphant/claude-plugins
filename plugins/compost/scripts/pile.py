@@ -1,15 +1,17 @@
 # ABOUTME: Reads compost's pile.toml, the list of sources the plugin was made from, and reports upstream drift.
 # ABOUTME: CLI: `status` maps upstream changes to compost skills, `advance` moves a pin, `notice` writes NOTICE.
 import argparse
+import dataclasses
 import subprocess
 import sys
 import tomllib
-from dataclasses import dataclass, field
+from dataclasses import MISSING, dataclass, field
 from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 PILE = PLUGIN_ROOT / "pile.toml"
 CLONES = Path.home() / ".cache" / "compost" / "upstream"
+UNMAPPED_SHOWN = 20
 
 ROLES = ("input", "frozen", "reference")
 
@@ -38,11 +40,22 @@ class PileError(Exception):
 
 
 def load(path: Path = PILE) -> list[Source]:
-    data = tomllib.loads(path.read_text())
-    sources = [Source(**entry) for entry in data.get("source", [])]
-    for source in sources:
-        if source.role not in ROLES:
-            raise PileError(f"{source.name}: role must be one of {', '.join(ROLES)}, not {source.role!r}")
+    try:
+        data = tomllib.loads(path.read_text())
+    except (OSError, tomllib.TOMLDecodeError) as error:
+        raise PileError(f"cannot read {path}: {error}") from error
+    fields = {f.name for f in dataclasses.fields(Source)}
+    required = {f.name for f in dataclasses.fields(Source) if f.default is MISSING and f.default_factory is MISSING}
+    sources = []
+    for index, entry in enumerate(data.get("source", [])):
+        label = f"source {index + 1} ({entry.get('name', 'unnamed')})"
+        if missing := sorted(required - entry.keys()):
+            raise PileError(f"{label}: missing {', '.join(missing)}")
+        if unknown := sorted(entry.keys() - fields):
+            raise PileError(f"{label}: unknown field {', '.join(unknown)}")
+        if entry["role"] not in ROLES:
+            raise PileError(f"{entry['name']}: role must be one of {', '.join(ROLES)}, not {entry['role']!r}")
+        sources.append(Source(**entry))
     return sources
 
 
@@ -64,7 +77,10 @@ def _under(path: str, prefix: str) -> bool:
 
 
 def git(*args: str) -> str:
-    result = subprocess.run(["git", *args], capture_output=True, text=True, check=False)
+    try:
+        result = subprocess.run(["git", *args], capture_output=True, text=True, check=False)
+    except FileNotFoundError as error:
+        raise PileError("git not found on PATH") from error
     if result.returncode != 0:
         raise PileError(f"git {' '.join(args)} failed: {result.stderr.strip()}")
     return result.stdout
@@ -74,17 +90,23 @@ def clone_path(repo: str) -> Path:
     return CLONES / repo.replace("/", "_")
 
 
-def git_compare(repo: str, pin: str) -> tuple[str, list[str]]:
-    """Diffs a blobless clone, since GitHub's compare API stops listing files at 300."""
+def sync_clone(repo: str) -> Path:
+    """Keeps a blobless clone, since GitHub's compare API stops listing files at 300."""
     path = clone_path(repo)
     if not (path / ".git").exists():
         url = f"https://github.com/{repo}.git"
         git("clone", "--quiet", "--filter=blob:none", "--no-checkout", url, str(path))
     else:
-        git("-C", str(path), "fetch", "--quiet", "origin")
+        git("-C", str(path), "fetch", "--quiet", "--prune", "origin")
+        git("-C", str(path), "remote", "set-head", "origin", "--auto")
+    return path
+
+
+def git_compare(repo: str, pin: str) -> tuple[str, list[str]]:
+    path = sync_clone(repo)
     head = git("-C", str(path), "rev-parse", "origin/HEAD").strip()
-    changed = git("-C", str(path), "diff", "--name-only", pin, head).split()
-    return head, sorted(changed)
+    output = git("-C", str(path), "diff", "--name-only", "--no-renames", "-z", pin, head)
+    return head, sorted(name for name in output.split("\0") if name)
 
 
 def drift(sources: list[Source]) -> list[Drift]:
@@ -111,20 +133,31 @@ def render_status(report: list[Drift]) -> str:
             lines.append(f"  compost:{skill}")
             lines.extend(f"    {path}" for path in paths)
         if item.unmapped:
-            lines.append(f"  {len(item.unmapped)} changed files feed no compost skill")
+            lines.append("  feed no compost skill:")
+            lines.extend(f"    {path}" for path in item.unmapped[:UNMAPPED_SHOWN])
+            if len(item.unmapped) > UNMAPPED_SHOWN:
+                lines.append(f"    and {len(item.unmapped) - UNMAPPED_SHOWN} more")
     return "\n".join(lines)
 
 
-def advance(path: Path, name: str, commit: str) -> str:
+def advance(path: Path, name: str, commit: str) -> tuple[str, str]:
     sources = {source.name: source for source in load(path)}
     if name not in sources:
         raise PileError(f"no source named {name!r} in {path.name}")
-    old = f'pin = "{sources[name].pin}"'
+    source = sources[name]
+    old = f'pin = "{source.pin}"'
     text = path.read_text()
-    if text.count(old) != 1:
-        raise PileError(f"{name}'s pin {sources[name].pin} is shared with another source; edit {path.name} by hand")
-    path.write_text(text.replace(old, f'pin = "{commit}"'))
-    return sources[name].pin
+    if text.count(old) == 0:
+        raise PileError(f"{name}'s pin is not written as `{old}` in {path.name}; edit it by hand")
+    if text.count(old) > 1:
+        raise PileError(f"{name}'s pin {source.pin} is shared with another source; edit {path.name} by hand")
+    clone = sync_clone(source.repo)
+    try:
+        resolved = git("-C", str(clone), "rev-parse", "--verify", "--quiet", f"{commit}^{{commit}}").strip()
+    except PileError as error:
+        raise PileError(f"{commit} is not a commit in {source.repo}") from error
+    path.write_text(text.replace(old, f'pin = "{resolved}"'))
+    return source.pin, resolved
 
 
 def render_notice(sources: list[Source]) -> str:
@@ -145,7 +178,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pile", type=Path, default=PILE)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("status", help="list upstream changes since each input's pin, by compost skill")
-    move = commands.add_parser("advance", help="move a source's pin once every change since it has a ruling")
+    move = commands.add_parser("advance", help="move SOURCE's pin to COMMIT, resolved to a full hash upstream")
     move.add_argument("source")
     move.add_argument("commit")
     notice = commands.add_parser("notice", help="write NOTICE from pile.toml")
@@ -155,8 +188,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "status":
             print(render_status(drift(load(args.pile))))
         elif args.command == "advance":
-            old = advance(args.pile, args.source, args.commit)
-            print(f"{args.source}: {old[:7]} → {args.commit[:7]}")
+            old, new = advance(args.pile, args.source, args.commit)
+            print(f"{args.source}: {old[:7]} → {new[:7]}")
         else:
             notice_path = args.pile.parent / "NOTICE"
             expected = render_notice(load(args.pile))

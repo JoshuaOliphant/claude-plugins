@@ -1,6 +1,9 @@
 # What compost was made from. `pin` is the upstream commit compost reflects; `feeds` maps upstream
-# paths to the compost skills they fed ("canon" for the essays). Maintained by compost:turn and
-# scripts/pile.py; NOTICE is generated from this file.
+# paths to the compost skills they fed ("canon" for the essays). Roles:
+#   input: compost takes text from it, and pile.py checks it for drift since the pin.
+#   frozen: an input that will not change again (a retired plugin); listed for attribution only.
+#   reference: watched for ideas; nothing taken yet, so it is not in NOTICE.
+# scripts/pile.py rewrites the pins and generates NOTICE; sources and feeds are edited by hand.
 
 [[source]]
 name = "mattpocock"
