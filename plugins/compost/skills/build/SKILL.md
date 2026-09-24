@@ -49,7 +49,10 @@ no test counts until you have seen it fail for the right reason.
    it uses. Once the tests exist, post the map as an issue comment, one line per AC-N with its
    test node id, so `compost:verify` reads it instead of guessing.
 
-4. **Place each acceptance criterion.** Take the first of these that fits:
+4. **Place each acceptance criterion.** Ask Jev first: run `find-test` with the repo and every
+   AC-N ([jev](references/jev.md)). `extend` names the test that already covers the criterion;
+   `add-beside` names the one to write next to. Read the named test before you act on it. Exit 3
+   means Jev is unavailable: place it from your survey. Either way, take the first of these that fits:
    1. Change the expectation in a test that already covers the behavior.
    2. Add a case to an existing parametrized table.
    3. Write a test in the existing file, on existing fixtures. Extend a fixture or factory with a
@@ -108,9 +111,13 @@ no test counts until you have seen it fail for the right reason.
    A mutation that nothing catches is an unprotected behavior. Close it with a case in an
    existing table or test, following step 4 again.
 
-10. **Commit with the issue number.** Run the full suite. A failing test outside the change gets
-    run on the base SHA first. Red there, it is pre-existing: handle it as a red baseline in
-    step 2. Green there, your change broke it: hand it to `compost:diagnose`. Commit with a
+10. **Commit with the issue number.** Before committing, ask Jev whether a new or changed test
+    re-covers an existing one: run `duplicate-test` with the base the branch started from
+    ([jev](references/jev.md)), and fold every `fold into <test>` into that test as step 4 says.
+    Exit 3: compare each new test against its neighbours in the file yourself. Run the full
+    suite. A failing test outside the change gets run on the base SHA first. Red there, it is
+    pre-existing: handle it as a red baseline in step 2. Green there, your change broke it: hand
+    it to `compost:diagnose`. Commit with a
     conventional message that names the issue, such as
     `feat(auth): expire tokens at their expiry instant (#42)`. The issue closes when its PR
     merges, not at commit. Tick this issue's own AC boxes; the parent's checklist is not yours to
