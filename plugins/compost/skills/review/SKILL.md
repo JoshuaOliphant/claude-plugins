@@ -17,6 +17,10 @@ Run this after `compost:verify` passes on every issue. Nobody needs to ask.
 
    If the workflow reports an empty diff or an unresolvable base, fix that first: commit the work, or pass the right base. If it skipped the Spec axis because no spec was found, say so in the issue comment in step 6. A change reviewed on one axis has been half reviewed.
 
+   If `complete` is false or either axis's status starts with `failed:`, the review did not happen. Fix what the status names (an issue that could not be fetched, a reviewer that did not return) and run the workflow again, or the by-hand fallback above for the failed axis. Never move on to `compost:finish` from an incomplete review.
+
+   Each axis also returns an `unjudged` list: blocker and major findings whose skeptics all failed, so nobody tried to refute them. Treat every unjudged finding as a survivor in the steps below.
+
 2. **Keep the two axes apart.** Read the Standards and Spec survivors side by side. Don't merge them into one ranked list: code can follow every standard and still build the wrong thing, and one axis must not mask the other. Skim the refuted lists too. When a skeptic refuted a blocker with reasoning you can see is wrong, check the code yourself and treat the finding as a survivor if it holds.
 
 3. **Verify each survivor against the code before you act on it.** A survivor is a claim, not an order. For each one:
@@ -47,7 +51,7 @@ Some changes the user wants to read with their own eyes. When they say so, run `
 
 ## Next moves
 
-- `compost:finish` when no survivors remain and verify passes.
+- `compost:finish` when the review came back complete, no survivors or unjudged findings remain, and verify passes.
 - `compost:verify` after any fix, before you call the review done.
 - `compost:diagnose` when a finding exposes a defect whose cause you can't see from the cited line.
 - `compost:deepen` when approach fit, or a cluster of Standards findings in one module, says the design is the problem.

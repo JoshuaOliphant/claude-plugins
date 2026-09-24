@@ -1,9 +1,9 @@
 // ABOUTME: Compost's review workflow: Standards and Spec reviewers in parallel over a branch diff.
-// ABOUTME: Skeptic agents try to refute each blocker and major finding; survivors and refutations come back side by side.
+// ABOUTME: Skeptic agents try to refute each blocker and major finding; survivors, refutations, and unjudged findings come back side by side.
 export const meta = {
   name: 'review-changes',
   description: 'Review a branch along two axes, Standards and Spec, then have skeptics try to refute every blocker and major finding',
-  whenToUse: 'After verify passes on an issue, or whenever a branch or work-in-progress diff needs review. Pass {base, head, issue}; all are optional, and head defaults to HEAD.',
+  whenToUse: 'After verify passes on an issue, or whenever a branch or work-in-progress diff needs review. Pass {base, head, issue, skeptics}, all optional: base defaults to the merge-base with the default branch, head to HEAD, issue to one found in the commits or branch name, skeptics (votes per blocker or major finding) to 1. A bare string is treated as base.',
   phases: [
     { title: 'Scope', detail: 'pin the base, the diff, the spec, and the standards sources' },
     { title: 'Standards', detail: 'reviewer against instructions files, CONTEXT.md, ADRs, and the canon; skeptics refute each blocker and major' },
@@ -32,6 +32,7 @@ const SCOPE_SCHEMA = {
         found: { type: 'boolean' },
         source: { type: 'string', description: 'Issue URL, issue number, or file path; empty when not found' },
         text: { type: 'string', description: 'User stories, AC-N, and interfaces verbatim; empty when not found' },
+        problem: { type: 'string', description: 'Why a given issue could not be fetched; empty otherwise' },
       },
     },
     problem: { type: 'string', description: 'Why scoping failed; empty on success' },
@@ -97,18 +98,23 @@ const scope = await agent(
 
 ${baseHint} The head under review is \`${head}\`.
 1. Resolve the fixed point and the head with \`git rev-parse\`. Record diffCommand as \`git diff <base-sha>...<head-sha>\` (three dots, against the merge-base), the commits from \`git log --oneline <base-sha>..<head-sha>\`, and the changed files from \`git diff --name-only <base-sha>...<head-sha>\`.
-2. ${issueHint} Fetch the issue the way docs/agents/issue-tracker.md says; if that file is missing, use \`gh issue view <n> --comments\`. Copy its user stories, every AC-N, and any interfaces verbatim into spec.text.
+2. ${issueHint} Fetch the issue the way docs/agents/issue-tracker.md says; if that file is missing, use \`gh issue view <n> --comments\`. Copy its user stories, every AC-N, and any interfaces verbatim into spec.text. If an issue number was given and fetching it fails, set spec to \`{found: false, source: "", text: "", problem: "<the error you got>"}\` and carry on with the rest.
 3. List the standards sources that exist: CLAUDE.md and AGENTS.md at the root and in directories the diff touches, CONTEXT.md or CONTEXT-MAP.md, docs/adr/*.md, CODING_STANDARDS.md, CONTRIBUTING.md, and linter or formatter configs (so reviewers know what tooling already enforces).
 
-If the fixed point does not resolve or the diff is empty, say so in problem and leave the other fields empty.`,
+If the fixed point does not resolve or the diff is empty, say so in problem and return every other field empty: base, head, and diffCommand as "", commits, files, and standardsSources as [], and spec as \`{found: false, source: "", text: ""}\`.`,
   { label: 'scope', phase: 'Scope', schema: SCOPE_SCHEMA, effort: 'low' },
 )
 
 if (!scope || scope.problem || scope.files.length === 0) {
   const problem = scope ? scope.problem || 'The diff is empty.' : 'The scoping agent did not return.'
   log(problem)
-  return { problem }
+  return { complete: false, problem }
 }
+
+const specProblem = input.issue && !scope.spec.found
+  ? `issue #${input.issue} could not be fetched: ${scope.spec.problem || 'the scoping agent returned no spec'}`
+  : ''
+if (specProblem) log(specProblem)
 
 log(`Reviewing ${scope.files.length} files across ${scope.commits.length} commits since ${scope.base.slice(0, 8)}`)
 
@@ -147,6 +153,7 @@ Skip anything a linter, formatter, or type checker configured in this repo alrea
   {
     name: 'Spec',
     active: scope.spec.found,
+    problem: specProblem,
     prompt: `Review this diff on the Spec axis: does the code do what the originating issue asked, no more and no less?
 
 ${diffContext}
@@ -176,7 +183,7 @@ Read the code at that location and whatever it depends on. Check that the quoted
 Set refuted to true unless you confirmed the finding yourself against the code. When you are uncertain, it is refuted.`
 }
 
-async function survives(axis, finding, index) {
+async function judge(axis, finding, index) {
   const votes = await parallel(
     Array.from({ length: skepticsPerFinding }, (_, vote) => () =>
       agent(skepticPrompt(axis, finding), {
@@ -188,11 +195,23 @@ async function survives(axis, finding, index) {
   )
   const cast = votes.filter(Boolean)
   const upheld = cast.filter(v => !v.refuted).length
+  let verdict = 'refuted'
+  if (cast.length === 0) verdict = 'unjudged'
+  else if (upheld * 2 > cast.length) verdict = 'survived'
   return {
     finding,
-    survived: cast.length > 0 && upheld * 2 > cast.length,
+    verdict,
+    failed: votes.length - cast.length,
     reasons: cast.map(v => v.reason),
   }
+}
+
+function unjudgedAfterThrow(finding) {
+  return { finding, verdict: 'unjudged', failed: skepticsPerFinding, reasons: ['the skeptic stage threw'] }
+}
+
+function failedAxis(name, status) {
+  return { axis: name, status: `failed: ${status}`, complete: false, survivors: [], refuted: [], unjudged: [] }
 }
 
 const results = await pipeline(
@@ -207,31 +226,35 @@ const results = await pipeline(
     })
   },
   async (review, axis) => {
-    if (review && review.skipped) return { axis: axis.name, status: 'skipped: no spec found', survivors: [], refuted: [] }
-    if (!review) return { axis: axis.name, status: 'failed: the reviewer did not return', survivors: [], refuted: [] }
+    if (review && review.skipped && axis.problem) return failedAxis(axis.name, axis.problem)
+    if (review && review.skipped) {
+      return { axis: axis.name, status: 'skipped: no spec found', complete: true, survivors: [], refuted: [], unjudged: [] }
+    }
+    if (!review) return failedAxis(axis.name, 'the reviewer did not return')
     const serious = review.findings.filter(finding => finding.severity !== 'minor')
     const unverified = review.findings
       .filter(finding => finding.severity === 'minor')
       .map(finding => ({ ...finding, unverified: true }))
-    const judged = await pipeline(serious, (finding, _item, index) => survives(axis, finding, index))
-    const complete = judged.filter(Boolean)
-    const lost = judged.length - complete.length
-    if (lost > 0) log(`${axis.name}: ${lost} findings lost their skeptic run and are left out`)
+    const judged = (await pipeline(serious, (finding, _item, index) => judge(axis, finding, index)))
+      .map((j, i) => j || unjudgedAfterThrow(serious[i]))
+    const withVerdict = verdict => judged.filter(j => j.verdict === verdict)
+    const unjudged = withVerdict('unjudged')
+    if (unjudged.length > 0) log(`${axis.name}: ${unjudged.length} findings have no skeptic verdict`)
     return {
       axis: axis.name,
       status: `reviewed: ${review.findings.length} findings raised, ${unverified.length} minor left unverified`,
+      complete: true,
       survivors: [
-        ...complete.filter(j => j.survived).map(j => ({ ...j.finding, upheldBecause: j.reasons })),
+        ...withVerdict('survived').map(j => ({ ...j.finding, upheldBecause: j.reasons, failedVotes: j.failed })),
         ...unverified,
       ],
-      refuted: complete.filter(j => !j.survived).map(j => ({ ...j.finding, refutedBecause: j.reasons })),
+      refuted: withVerdict('refuted').map(j => ({ ...j.finding, refutedBecause: j.reasons, failedVotes: j.failed })),
+      unjudged: unjudged.map(j => ({ ...j.finding, reasons: j.reasons, failedVotes: j.failed })),
     }
   },
 )
 
-const [standards, spec] = results.map((result, i) =>
-  result || { axis: AXES[i].name, status: 'failed: the review stage threw', survivors: [], refuted: [] },
-)
+const [standards, spec] = results.map((result, i) => result || failedAxis(AXES[i].name, 'the review stage threw'))
 
 function worst(axisResult) {
   const order = ['blocker', 'major', 'minor']
@@ -243,9 +266,10 @@ return {
   base: scope.base,
   head: scope.head,
   specSource: scope.spec.source,
+  complete: standards.complete && spec.complete,
   standards,
   spec,
   summary: [standards, spec]
-    .map(a => `${a.axis}: ${a.status}, ${a.survivors.length} survived, ${a.refuted.length} refuted; worst ${worst(a)}`)
+    .map(a => `${a.axis}: ${a.status}, ${a.survivors.length} survived, ${a.refuted.length} refuted, ${a.unjudged.length} unjudged; worst ${worst(a)}`)
     .join('\n'),
 }
