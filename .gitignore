@@ -10,6 +10,7 @@ __pycache__/
 *.so
 .Python
 build/
+!plugins/compost/skills/build/
 develop-eggs/
 dist/
 downloads/

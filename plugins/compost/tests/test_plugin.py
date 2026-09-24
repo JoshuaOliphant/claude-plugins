@@ -1,18 +1,23 @@
-# ABOUTME: Checks the plugin as shipped: skill frontmatter, relative links, compost:<name> references,
-# ABOUTME: and that NOTICE matches pile.toml. Runs on the real files, so a broken cross-reference fails CI.
+# ABOUTME: Checks the plugin as shipped: frontmatter, links, compost:<name> and ${CLAUDE_PLUGIN_ROOT} references,
+# ABOUTME: pile.toml feeds and NOTICE, and that git tracks every shipped file. Runs on the real files.
+import os
 import re
+import subprocess
 
 import pile
 import pytest
 import yaml
 from conftest import PLUGIN_ROOT
 
+LOCAL_ONLY = {"tests", ".venv", ".pytest_cache", "__pycache__"}
+SHIPPED = (".claude-plugin", "agents", "canon", "scripts", "skills", "workflows", "NOTICE", "pile.toml", "README.md")
 SKILLS = sorted(path.parent for path in (PLUGIN_ROOT / "skills").glob("*/SKILL.md"))
 MARKDOWN = sorted(
-    path for path in PLUGIN_ROOT.rglob("*.md") if not {"tests", ".venv"} & set(path.relative_to(PLUGIN_ROOT).parts)
+    path for path in PLUGIN_ROOT.rglob("*.md") if not LOCAL_ONLY & set(path.relative_to(PLUGIN_ROOT).parts)
 )
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 REFERENCE = re.compile(r"compost:([a-z][a-z0-9-]*)")
+PLUGIN_PATH = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/([\w./-]+[\w/])")
 WORKFLOW_NAME = re.compile(r"export const meta = \{\s*name: '([^']+)'")
 
 
@@ -61,3 +66,21 @@ def test_pile_feeds_only_existing_skills_or_the_canon_and_notice_is_current():
     fed = {skill for source in sources for skills in source.feeds.values() for skill in skills}
     assert fed - targets == set()
     assert (PLUGIN_ROOT / "NOTICE").read_text() == pile.render_notice(sources)
+
+
+def test_plugin_root_paths_exist_and_scripts_are_executable():
+    referenced = {path for document in MARKDOWN for path in PLUGIN_PATH.findall(document.read_text())}
+    assert referenced, "no ${CLAUDE_PLUGIN_ROOT} paths found; the pattern no longer matches the skills"
+    assert sorted(path for path in referenced if not (PLUGIN_ROOT / path).exists()) == []
+    scripts = sorted(PLUGIN_ROOT.glob("skills/*/scripts/*.sh"))
+    assert [script.name for script in scripts if not os.access(script, os.X_OK)] == []
+
+
+def test_git_ignores_no_shipped_file():
+    ignored = subprocess.run(
+        ["git", "-C", str(PLUGIN_ROOT), "ls-files", "--others", "--ignored", "--exclude-standard", *SHIPPED],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split("\n")
+    assert [path for path in ignored if path and not LOCAL_ONLY & set(path.split("/"))] == []
