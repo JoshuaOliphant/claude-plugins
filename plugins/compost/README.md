@@ -86,10 +86,12 @@ live API for a few cents; without one, those tests skip.
 
 Then run `/compost:setup` in each repo.
 
-compost replaces several collections that cover the same stages. Leaving them on gives Claude
-two answers to every request, so switch them off: disable their plugins in `/plugin`, and for
-skills installed outside a plugin add `"<skill-name>": "off"` under `skillOverrides` in
-`~/.claude/settings.json`. Nothing is deleted, so turning one back on is a settings change.
+compost replaces several collections that cover the same stages, listed in the `[replaces]` table
+of `pile.toml`. Leaving them on gives Claude two answers to every request, so setup finds the ones
+still active on the machine and, with your yes, turns them off: it disables their plugins and sets
+their personal and skills-CLI skills to `"off"` under `skillOverrides` in `~/.claude/settings.json`.
+Plugins synced from claude.ai have to be turned off there. Nothing is deleted, so turning one back
+on is a settings change. To check a machine directly: `uv run scripts/pile.py replaced [--apply]`.
 
 ## Development
 

@@ -1,5 +1,7 @@
 # Autonomous SDLC Plugin
 
+> **Deprecated.** Superseded by [compost](../compost/README.md). compost carries its record keeping (rulings as issue comments, decide-log-proceed), its BDD acceptance criteria, and its autonomy into skills that point to each other instead of a state machine, with work tracked in GitHub issues instead of beads. No further updates are planned. `compost:setup` finds this plugin on a machine and offers to disable it.
+
 Autonomous software development as a **state machine on disk driven by a loop**, not a
 pipeline. `/sdlc "<request>"` initializes `.sdlc/state.json`, writes `.claude/loop.md`, and
 then iterates — one verified, committed unit of work per turn — until the state machine

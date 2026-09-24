@@ -83,7 +83,18 @@ edits the user made by hand.
    for example as `! security add-generic-password -s typesafe -a "$USER" -w`. Never ask for the key
    in chat or write it anywhere. The key belongs to the machine, not the repo, so record nothing.
 
-8. **Check and commit.** Re-read every file you wrote. List the directories above the repo that
+8. **Switch off what compost replaces.** Run
+   `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/pile.py replaced`. It reads the `[replaces]` table in
+   compost's `pile.toml` and reports which superseded plugins and skills are still active on this
+   machine; it changes nothing. Leaving them on gives Claude two answers to every request. Show
+   the user the report and, with their yes, run it again with `--apply`: it disables the plugins
+   through `claude plugin disable` and sets the skills to `"off"` in `skillOverrides` in
+   `~/.claude/settings.json`, keeping everything else there. Plugins synced from claude.ai can
+   only be turned off in the user's claude.ai settings, so pass those on. Nothing is deleted:
+   re-enabling a plugin or removing an override turns it back on. This is per machine, so on a
+   second repo the report usually says nothing is active.
+
+9. **Check and commit.** Re-read every file you wrote. List the directories above the repo that
    still hold a `CLAUDE.md`, since any of them stops `AGENTS.md` from loading. Commit the changes
    as one `chore: configure agent skills` commit. Tell the user which compost skills now read
    these files, that they can edit `docs/agents/*.md` directly, and, after a migration, to look
