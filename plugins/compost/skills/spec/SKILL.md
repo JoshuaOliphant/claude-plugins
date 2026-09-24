@@ -24,7 +24,9 @@ a quick lookup can answer.
    If the request already lives in an issue, thread, or doc that settles the decisions, synthesize
    the spec from it without an interview: classify it (step 2), then skip to step 6.
 
-2. **Classify in one line, out loud,** so the user can override it:
+2. **Classify in one line, out loud,** so the user can override it. Ask Jev first: run `spec-class`
+   with the request and what the survey found ([jev](references/jev.md)), state its `class` and its
+   probability, and act on it. Exit 3 means Jev is unavailable: classify by the definitions below.
    - **Spike**: a feasibility question ("can we...", "is it possible..."). Its output is an
      answer, not code you keep.
    - **Bounded**: a well-scoped change to a flow that already exists in this repo (a flag, a small
@@ -46,7 +48,10 @@ a quick lookup can answer.
    decisions whose prerequisites are all settled, as lettered multiple-choice questions, each with
    your recommended answer, in the format in [questions](references/questions.md). A question that
    depends on one still open waits for a later round. Ask fewer when the frontier is smaller;
-   never pad a round.
+   never pad a round. Draft the candidates, then ask Jev which make the round: `question-value`
+   ranks them by how much the answer changes what gets built and returns the `round` to ask and the
+   ones to `assume` ([jev](references/jev.md)). Exit 3: cut by the rules in
+   [questions](references/questions.md).
 
    Gaps too small to be worth a question become assumptions: pick the conservative reading, list
    it, and keep going. The user corrects assumptions by reading the spec.
@@ -71,7 +76,9 @@ a quick lookup can answer.
    - Write each resolved term into `CONTEXT.md` right away, creating the file with the first term.
      It is a glossary and nothing else.
    - Write an ADR in `docs/adr/` only when a decision is hard to reverse, surprising without
-     context, and the result of a real trade-off. Missing any one of the three, skip it.
+     context, and the result of a real trade-off. Missing any one of the three, skip it. Ask Jev
+     first with `adr-worthy` and offer the ADR only on `offer_adr` ([jev](references/jev.md));
+     exit 3, apply the three tests yourself.
 
    When prose cannot settle a decision (a state model that looks fine on paper, a layout nobody
    can picture), build a throwaway prototype, keep it on a `prototype/<slug>` branch as evidence,
@@ -109,6 +116,11 @@ a quick lookup can answer.
    - scope: one spec's worth, or several independent pieces
    - ambiguity: any requirement two readers could build differently; pick one reading and state it
    - verifiability: every Then observable by a test
+
+   For the criteria, ask Jev first: `ac-quality` grades each AC-N on an observable Then, a
+   specific Given, and one behavior, and flags the ones to `rewrite` with their `weakest`
+   dimension ([jev](references/jev.md)). Rewrite those. Exit 3: check every criterion against
+   [acceptance criteria](references/acceptance-criteria.md) yourself.
 
    Then list any open questions, each quoting the spec line it concerns, in the format in
    [questions](references/questions.md). Answers go back into the spec and the refined prompt. No

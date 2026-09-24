@@ -67,6 +67,9 @@ Write one only when all three hold:
 2. **Surprising without context:** a future reader will wonder why it was done this way.
 3. **A real trade-off:** there were genuine alternatives and one was picked for reasons.
 
+Jev's `adr-worthy` asks these three as separate probabilities and offers an ADR only when all three
+clear ([jev](jev.md)); use it first and fall back to judging them yourself when it exits 3.
+
 Examples that qualify: the architectural shape, how contexts integrate, technology with lock-in,
 ownership and scope boundaries, deliberate departures from the obvious path, constraints the code
 can't show, and rejections that aren't obvious.
