@@ -42,7 +42,11 @@ ${CLAUDE_PLUGIN_ROOT}/skills/diagnose/scripts/find-polluter.sh stray-output.db '
 ${CLAUDE_PLUGIN_ROOT}/skills/diagnose/scripts/find-polluter.sh stray-output.db 'npx vitest run' src/**/*.test.ts
 ```
 
-It stops at the first file that creates the path and prints it.
+It stops at the first file that creates the path and prints it. A test file that exits non-zero
+is reported as `[i/n] <file> exited <status>`, with its stderr kept in a temp log the line names.
+Exit status: 0 when it found the polluter, 1 when no file created the path, 2 on a usage error or a
+path that already exists, and 3 when the test command is missing or not executable (exit 126 or
+127), which stops the search before a broken runner can report every file clean.
 
 ## Several components in one path
 

@@ -4,6 +4,11 @@
 
 set -euo pipefail
 
+if [ ! -t 0 ]; then
+  echo "hitl-loop needs an interactive terminal; ask the person to run it" >&2
+  exit 2
+fi
+
 step() {
   printf '\n>>> %s\n' "$1"
   read -r -p "    [Enter when done] " _
