@@ -25,7 +25,7 @@ dev = [
 # review-diff's coverage-gated config lives in its own pyproject and only applies
 # when pytest is invoked from that directory; at the repo root those tests still
 # run (without the coverage gate), so nothing is excluded here.
-testpaths = ["plugins"]
+testpaths = ["plugins", "evals"]
 
 [tool.ruff]
 line-length = 100

@@ -1,0 +1,63 @@
+{
+  "id": "candidate-000",
+  "skill": "*",
+  "parents": [],
+  "operator": null,
+  "idea": "Hand-crafted incumbent: the committed descriptions of every mapped skill. Genome is the repo tree at the recorded SHA rather than copies, to avoid drift.",
+  "genome": {
+    "ref": "git",
+    "sha": "00f976d"
+  },
+  "judge": "claude-haiku-4-5-20251001",
+  "scores": {
+    "bdd-generate": {
+      "dev": 0.9167,
+      "holdout": 0.875,
+      "dev_fp_rate": 0.0,
+      "desc_words": 58
+    },
+    "bdd-spec": {
+      "dev": 1.0,
+      "holdout": 1.0,
+      "dev_fp_rate": 0.0,
+      "desc_words": 77
+    },
+    "beads-workflow": {
+      "dev": 0.8333,
+      "holdout": 0.875,
+      "dev_fp_rate": 0.0,
+      "desc_words": 56
+    },
+    "tdd-workflow": {
+      "dev": 1.0,
+      "holdout": 1.0,
+      "dev_fp_rate": 0.0,
+      "desc_words": 48
+    },
+    "compound-capture": {
+      "dev": 1.0,
+      "holdout": 1.0,
+      "dev_fp_rate": 0.0,
+      "desc_words": 76
+    },
+    "compound-retrieve": {
+      "dev": 0.85,
+      "holdout": 1.0,
+      "dev_fp_rate": 0.1,
+      "desc_words": 72
+    },
+    "hexagonal-agents": {
+      "dev": 1.0,
+      "holdout": 1.0,
+      "dev_fp_rate": 0.0,
+      "desc_words": 73
+    },
+    "mochi-creator": {
+      "dev": 0.9286,
+      "holdout": 1.0,
+      "dev_fp_rate": 0.1429,
+      "desc_words": 66
+    }
+  },
+  "experience": "Baseline. Saturated (dev=1.0): bdd-spec, tdd-workflow, compound-capture, hexagonal-agents. Headroom: beads-workflow .833, compound-retrieve .850, bdd-generate .917, mochi-creator .929 (only one with dev false positives)."
+}
