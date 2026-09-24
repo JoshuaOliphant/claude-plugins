@@ -92,7 +92,9 @@ where seams go, and keeps heavy architecture out unless a dependency earns it. T
    from `CONTEXT.md`: add the term, creating the file if needed. Sharpen a fuzzy term: update it there.
    When the user rejects a candidate for a reason a future reviewer would need in order not to suggest
    it again, offer an ADR; skip reasons that are temporary ("not now") or obvious. Offer ADRs only for
-   decisions that meet the test in [domain docs](../spec/references/domain-docs.md).
+   decisions that meet the test in [domain docs](../spec/references/domain-docs.md). Ask Jev first:
+   run `adr-worthy` on the decision (what, why, alternatives, cost if wrong) and offer only on
+   `offer_adr` ([jev](../spec/references/jev.md)). Exit 3 means Jev is unavailable: apply the test yourself.
 
 8. **Refactor by replacing, not layering.** Move every caller to the deepened interface in the same
    change and delete the old modules; no compatibility shims or deprecated paths. Write tests at the

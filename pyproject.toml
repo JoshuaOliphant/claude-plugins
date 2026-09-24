@@ -24,8 +24,11 @@ dev = [
 # `uv run --group dev pytest` from the repo root discovers every plugin's tests.
 # review-diff's coverage-gated config lives in its own pyproject and only applies
 # when pytest is invoked from that directory; at the repo root those tests still
-# run (without the coverage gate), so nothing is excluded here.
+# run (without the coverage gate). compost's live Jev evals call the TypeSafe API and need a key,
+# so they stay out of the default run here too.
 testpaths = ["plugins"]
+addopts = "-m \"not jev\""
+markers = ["jev: live evals against the TypeSafe API (uv run --group dev pytest -m jev)"]
 
 [tool.ruff]
 line-length = 100

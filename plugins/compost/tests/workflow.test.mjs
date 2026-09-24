@@ -56,7 +56,41 @@ test('a confirmed blocker survives and a minor finding is kept unverified withou
   assert.deepEqual(result.standards.survivors.map(f => f.severity), ['blocker', 'minor'])
   assert.equal(result.standards.survivors[1].unverified, true)
   assert.deepEqual(Object.keys(prompts).filter(label => label.includes('skeptic')), ['Standards skeptic 1.1'])
-  assert.match(result.summary, /Standards: reviewed: 2 findings raised, 1 minor left unverified, 2 survived, 0 refuted, 0 unjudged; worst blocker/)
+  assert.match(result.summary, /Standards: reviewed: 2 findings raised, 1 left unverified, 2 survived, 0 refuted, 0 unjudged; worst blocker/)
+})
+
+test('with Jev triage, the skeptic flag decides who gets a skeptic, whatever the severity', async () => {
+  const confidentMajor = { ...BLOCKER, severity: 'major', line: 20, skeptic: false }
+  const unsureMinor = { ...MINOR, skeptic: true }
+  const { result, prompts } = await run({}, reviewers({ standards: { findings: [confidentMajor, unsureMinor] } }))
+  assert.deepEqual(Object.keys(prompts).filter(label => label.includes('skeptic')), ['Standards skeptic 1.1'])
+  assert.match(prompts['Standards skeptic 1.1'], /name drifts from CONTEXT\.md/)
+  assert.deepEqual(result.standards.survivors.map(f => [f.line, f.unverified === true]), [[3, false], [20, true]])
+})
+
+test('given a jev path, scope ranks files by structural risk and reviewers read the riskiest first', async () => {
+  const risk = {
+    ranked: true,
+    structural: true,
+    files: [{ file: 'app/cache.py', score: 3.4, structural: true }, { file: 'app/export.py', score: 1.2, structural: false }],
+  }
+  const { result, prompts } = await run({ jev: '/plugin/scripts/jev.py' }, reviewers({ scope: { ...SCOPE, risk } }))
+  assert.match(prompts.scope, /uv run \/plugin\/scripts\/jev\.py review-risk --input/)
+  assert.match(prompts['Standards reviewer'], /riskiest first[^\n]*\napp\/cache\.py \(3\.40, structural\)\napp\/export\.py \(1\.20\)/)
+  assert.deepEqual(result.risk, risk)
+})
+
+test('without a jev path, or when review-risk fails, files keep scope order and structural risk is unknown', async () => {
+  const plain = await run({}, reviewers())
+  assert.doesNotMatch(plain.prompts.scope, /review-risk/)
+  assert.match(plain.prompts['Standards reviewer'], /Changed files:\napp\/export\.py/)
+  assert.deepEqual(plain.result.risk, { ranked: false, structural: null, files: [], problem: 'no jev path given' })
+  const failedRisk = { ranked: false, structural: false, files: [], problem: 'jev unavailable: no key' }
+  const failed = await run({ jev: '/plugin/scripts/jev.py' }, reviewers({ scope: { ...SCOPE, risk: failedRisk } }))
+  assert.equal(failed.result.risk.structural, null)
+  assert.equal(failed.result.risk.problem, 'jev unavailable: no key')
+  const silent = await run({ jev: '/plugin/scripts/jev.py' }, reviewers({ scope: { ...SCOPE, risk: { ...failedRisk, problem: undefined } } }))
+  assert.equal(silent.result.risk.problem, 'review-risk failed')
 })
 
 test('a blocker whose every skeptic failed is unjudged, not refuted', async () => {

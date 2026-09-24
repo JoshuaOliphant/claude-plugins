@@ -29,7 +29,10 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    When a subagent did the work, read `git diff` yourself rather than trusting its report.
 
 3. **Hold the coverage gate.** The gate is 100% line coverage, for example
-   `uv run pytest --cov --cov-report=term-missing --cov-fail-under=100`. For each missing line:
+   `uv run pytest --cov --cov-report=term-missing --cov-fail-under=100`. Ask Jev first: write the
+   report as JSON (`--cov-report=json`) and run `test-value` on it ([jev](references/jev.md)).
+   Blocks in `exclude` are the proposed exclusions for the third case below; the rest need a
+   test. Exit 3 means Jev is unavailable: sort them yourself. For each missing line:
    - It is behavior: go back to `compost:build` and fit a test in.
    - It is dead: delete it.
    - Covering it would take a test that proves nothing (asserting a constant, re-testing the
@@ -44,7 +47,10 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    AC-N, the test's node id, and pass or fail. Find the tests in the placement map
    `compost:build` posted on the issue (AC-N to node id). A criterion with no test is unmet, with no judgment call. So is one
    whose test was skipped, deselected, or marked xfail in this run, because a test that did not
-   run proves nothing.
+   run proves nothing. A passing test can still miss its criterion, so ask Jev whether each
+   test asserts its Then: run `ac-exercised` with the table ([jev](references/jev.md)) and read
+   every criterion in `to_read` against its test. One whose test never checks the Then is unmet.
+   Exit 3: read each test's assertions against its Then yourself.
 
 5. **Prove the one fact the change is safe because of.** Most changes that look risky are safe
    because of one fact, such as "this call only evicts entries that are already expired". Name
@@ -84,7 +90,10 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
 8. **Report the evidence.** Give the commands and their counts (`214 passed, 0 failed`), the
    coverage result and any proposed exclusion, the AC table, the safety fact with its rung and
    the proof output, and the comments removed. Post the AC table on the issue; on a re-run, edit
-   the AC-table comment you posted before instead of adding another. Say "done" only
+   the AC-table comment you posted before instead of adding another. Before saying "done", ask
+   Jev whether the output you captured backs each claim: run `claim-backed` with every claim
+   and its command's output ([jev](references/jev.md)), and fix or drop each one in `unbacked`.
+   Exit 3: reread each output against its claim yourself. Say "done" only
    when every row is met and every gate is green. Otherwise state the actual status.
 
 ## Next moves

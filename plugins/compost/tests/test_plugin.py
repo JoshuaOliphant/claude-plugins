@@ -10,7 +10,18 @@ import yaml
 from conftest import PLUGIN_ROOT
 
 LOCAL_ONLY = {"tests", ".venv", ".pytest_cache", "__pycache__"}
-SHIPPED = (".claude-plugin", "agents", "canon", "scripts", "skills", "workflows", "NOTICE", "pile.toml", "README.md")
+SHIPPED = (
+    ".claude-plugin",
+    "agents",
+    "canon",
+    "hooks",
+    "scripts",
+    "skills",
+    "workflows",
+    "NOTICE",
+    "pile.toml",
+    "README.md",
+)
 SKILLS = sorted(path.parent for path in (PLUGIN_ROOT / "skills").glob("*/SKILL.md"))
 MARKDOWN = sorted(
     path for path in PLUGIN_ROOT.rglob("*.md") if not LOCAL_ONLY & set(path.relative_to(PLUGIN_ROOT).parts)

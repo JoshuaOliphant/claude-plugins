@@ -94,11 +94,21 @@ the work so each step can be checked before the next builds on it
    **Cost if wrong:** what it takes to undo
    ```
 
+   Then ask Jev whether the ruling deserves an ADR: run `adr-worthy` with the ruling's fields and
+   write one in `docs/adr/` only on `offer_adr` ([jev](../spec/references/jev.md)). Exit 3 means Jev
+   is unavailable: apply the three tests in [domain docs](../spec/references/domain-docs.md) yourself.
+
    A wrong ruling costs a review comment; a stalled run costs the user's day. Stop only for:
    - merging to the default branch;
    - irreversible or outward-facing actions: force-push, history rewrites on shared branches,
      deploys, data deletion, messages that reach people;
-   - approval of an architectural spec, when the work shows the approved design has to change.
+   - approval of an architectural spec, when the work shows the approved design has to change;
+   - starting a Claude Code workflow you wrote yourself (the plugin's own `/compost:review-changes`
+     needs no ask).
+
+   compost's Stop hook holds you to this list during an implement run: when your last message waits
+   on the user for anything else, Jev flags it and the hook sends you back to post a ruling and
+   continue.
 
    When the run repeats a mistake (a command that needs a flag, a fixture that lies, a service that
    must be up), record the gotcha with `compound-knowledge:compound-capture` if it is installed, so

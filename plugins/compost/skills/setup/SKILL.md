@@ -75,7 +75,15 @@ edits the user made by hand.
    Then add or update the `## Agent skills` block in whichever file holds the project
    instructions. Replace an existing block in place; leave the surrounding sections alone.
 
-7. **Switch off what compost replaces.** Run
+7. **Check the Jev key.** Run `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py status`. It only
+   looks for a TypeSafe key (`TYPESAFE_API_KEY`, then the macOS Keychain item `typesafe`) and calls
+   nothing. Exit 0 means the Jev tools will answer. Exit 3 means every Jev step will fall back to
+   your own judgment: tell the user what they lose (cheaper test placement, review triage, the
+   Stop guard in unattended runs) and pass on the command it printed, for them to run themselves,
+   for example as `! security add-generic-password -s typesafe -a "$USER" -w`. Never ask for the key
+   in chat or write it anywhere. The key belongs to the machine, not the repo, so record nothing.
+
+8. **Switch off what compost replaces.** Run
    `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/pile.py replaced`. It reads the `[replaces]` table in
    compost's `pile.toml` and reports which superseded plugins and skills are still active on this
    machine; it changes nothing. Leaving them on gives Claude two answers to every request. Show
@@ -86,7 +94,7 @@ edits the user made by hand.
    re-enabling a plugin or removing an override turns it back on. This is per machine, so on a
    second repo the report usually says nothing is active.
 
-8. **Check and commit.** Re-read every file you wrote. List the directories above the repo that
+9. **Check and commit.** Re-read every file you wrote. List the directories above the repo that
    still hold a `CLAUDE.md`, since any of them stops `AGENTS.md` from loading. Commit the changes
    as one `chore: configure agent skills` commit. Tell the user which compost skills now read
    these files, that they can edit `docs/agents/*.md` directly, and, after a migration, to look

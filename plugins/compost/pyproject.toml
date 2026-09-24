@@ -1,7 +1,7 @@
 [project]
 name = "compost-dev"
 version = "0.1.0"
-description = "Dev tooling for the compost plugin (runtime is stdlib-only)"
+description = "Dev tooling for the compost plugin (pile.py is stdlib-only; jev.py brings typesafe-sdk via inline metadata)"
 requires-python = ">=3.11"
 dependencies = []
 
@@ -9,10 +9,17 @@ dependencies = []
 package = false
 
 [dependency-groups]
-dev = ["pytest>=8", "pytest-cov>=5", "pyyaml>=6", "ruff>=0.6"]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "pyyaml>=6",
+    "ruff>=0.6",
+    "typesafe-sdk>=0.7.1",
+]
 
 [tool.pytest.ini_options]
-addopts = "--cov=pile --cov-report=term-missing"
+addopts = "-m \"not jev\" --cov=pile --cov=jev --cov=jevtools --cov=stop_guard --cov-report=term-missing"
+markers = ["jev: live evals against the TypeSafe API (uv run --group dev pytest -m jev)"]
 testpaths = ["tests"]
 
 [tool.coverage.report]
