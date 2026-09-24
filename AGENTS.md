@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents (Claude Code reads it natively) when working in this repository.
 
 ## Project Overview
 
@@ -32,7 +32,7 @@ claude-plugins/
 ├── ai_docs/                        # Background research/reference docs (not shipped in plugins)
 ├── docs/                           # Planning and specifications
 ├── README.md                       # Marketplace installation instructions
-└── CLAUDE.md                       # This file
+└── AGENTS.md                       # This file
 ```
 
 ## Plugin Inventory
@@ -221,3 +221,20 @@ When developing or modifying plugins:
 3. Ensure `plugin.json` metadata is complete, then re-sync `marketplace.json` and run the version check
 4. Test installation from the marketplace structure
 5. Keep subagent model assignments consistent across agent frontmatter, `README.md`, and command docs
+
+## Agent skills
+
+### Issue tracker
+
+GitHub issues via `gh`; specs are parent issues labelled `spec`, slices are sub-issues. See
+`docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Multiple contexts, one per plugin plus the marketplace, listed in `CONTEXT-MAP.md`. See
+`docs/agents/domain.md`.
+
+### Tests and gates
+
+pytest per plugin; `scripts/check_all.py` plus the 100% coverage gates in compost, review-diff,
+and jev-lint. See `docs/agents/testing.md`.

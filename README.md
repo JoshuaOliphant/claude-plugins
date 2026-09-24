@@ -114,7 +114,7 @@ adopts an in-progress autonomous-sdlc session and stands its loop down.
 Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json`; that version is
 copied into `.claude-plugin/marketplace.json` at publication time. Run
 `python scripts/check_marketplace_versions.py` to confirm they match. See
-[`CLAUDE.md`](CLAUDE.md) for full development and versioning guidance.
+[`AGENTS.md`](AGENTS.md) for full development and versioning guidance.
 
 ## Contributing
 
