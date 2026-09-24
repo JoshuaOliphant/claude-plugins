@@ -4,6 +4,30 @@
 #   frozen: an input that will not change again (a retired plugin); listed for attribution only.
 #   reference: watched for ideas; nothing taken yet, so it is not in NOTICE.
 # scripts/pile.py rewrites the pins and generates NOTICE; sources and feeds are edited by hand.
+#
+# [replaces] lists what compost supersedes on a machine, so Claude is never torn between two
+# versions: plugin ids to disable, and personal or skills-CLI skills to set "off" in
+# skillOverrides. compost:setup runs `pile.py replaced` to find the active ones and offers to
+# turn them off.
+
+[replaces]
+plugins = [
+  "superpowers@claude-plugins-official",
+  "autonomous-sdlc@oliphant-plugins",
+  "stick-shift@oliphant-plugins",
+  "imbue-code-guardian@imbue-code-guardian",
+  "pstack@skills-dir",
+  "engineering@synced",
+  "autonomous-sdlc@synced",
+]
+skills = [
+  "tdd", "grilling", "grill-me", "grill-with-docs", "to-spec", "to-tickets", "implement",
+  "implement-spec", "handoff", "claude-handoff", "wayfinder", "triage", "domain-modeling",
+  "codebase-design", "improve-codebase-architecture", "diagnosing-bugs", "prototype",
+  "setup-matt-pocock-skills", "code-review", "blueprint", "blueprint-generate",
+  "efficient-fable", "efficient-frontier", "agent-watchdog", "plow-ahead", "plan-arbiter",
+  "visual-plan", "visual-recap",
+]
 
 [[source]]
 name = "mattpocock"
