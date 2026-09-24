@@ -1,7 +1,7 @@
 # Autonomous SDLC Plugin
 
 Autonomous software development as a **state machine on disk driven by a loop**, not a
-pipeline. `/sdlc "<request>"` initializes `.sdlc/state.json`, arms a loop driver, and
+pipeline. `/sdlc "<request>"` initializes `.sdlc/state.json`, writes `.claude/loop.md`, and
 then iterates — one verified, committed unit of work per turn — until the state machine
 says `DONE` (PR open) or `BLOCKED` (one written escalation). No questions in between.
 
@@ -41,7 +41,7 @@ on `DONE` is a no-op resume; a loop still mid-flight always resumes its live wor
 | INIT | Branch, state files, tooling detection | committed |
 | SPEC | Acceptance criteria via `bdd-spec` (autonomous mode) | `specs/{slug}-spec.md` committed |
 | BUILD | **One task** via the Builder (TDD + hook gates); parallel builders with `isolation: "worktree"` when tasks are independent | `bd ready` is empty |
-| VERIFY | Built-in **verify** skill / project test stack + spec compliance (AC by AC) + telemetry check when an observability harness exists | green (red → fix task → BUILD) |
+| VERIFY | Project test stack (tests, lint, types) + spec compliance (AC by AC) + telemetry check when an observability harness exists | green (red → fix task → BUILD) |
 | REVIEW | Built-in **code-review**, optional **security-review**, then **simplify** + re-verify | no high-confidence findings (max 2 round-trips) |
 | SHIP | Push + `gh pr create` with the decision journal in the PR body | PR URL recorded |
 | REPAIR | Fix or revert a broken branch | green again |
@@ -55,14 +55,24 @@ compaction, session death, and restarts.
   iteration ritual until the state is terminal. Drives while `.sdlc/state.json` has
   `"driver": "auto"` (the init default) or `"stop-hook"`. It is **wait-aware**: in BUILD
   with builders in flight it allows the stop and lets the completion notification
-  re-enter the loop, so waiting on a multi-minute builder doesn't spin a re-prompt per
-  second (the skill's in-turn blocking wait is the first line of defense).
-- **`/goal` (optional upgrade, user-armed, Claude Code ≥ v2.1.139)**: `/goal` is a
-  user-only slash command — Claude cannot invoke it. `/sdlc`'s kickoff message shows
-  the exact goal to run (condition: `sdlc_state.py state` prints DONE or BLOCKED); if
-  you arm it, say so and Claude records `set-driver goal`, standing the Stop hook down.
-  The goal evaluator (a separate small model) then judges completion — a model that
-  didn't do the work.
+  re-enter the loop, so waiting on a multi-minute builder never spins a re-prompt per
+  second. Zero-latency re-entry; works headless (`claude -p`).
+- **Bare `/loop` (optional, user-armed, self-paced)**: `init` writes `.claude/loop.md`
+  with the iteration ritual, which is the prompt a bare `/loop` runs. Claude then picks
+  the delay between iterations itself (one minute while work is ready, 5 to 15 minutes
+  while builders run) and ends the loop when `tick` prints DONE or BLOCKED. The loop
+  survives `--resume` for seven days and keeps firing in a backgrounded session. `/loop`
+  is user-invoked; `/sdlc`'s kickoff prints it, and if you run it, say so and Claude
+  records `set-driver loop`, standing the Stop hook down. Requires Claude Code
+  v2.1.248 or later on Bedrock, Foundry, or Google Cloud (self-paced `/loop` works on
+  every version elsewhere). `.claude/loop.md` is machine-local: it bakes the absolute
+  path of this install's `sdlc_state.py`, every `/sdlc` (fresh, resume, or increment)
+  rewrites it with the current feature and path, and DONE or BLOCKED removes it so a
+  later bare `/loop` runs the built-in PR-maintenance prompt. Add it to `.gitignore`.
+  A `loop.md` without the plugin's marker line is yours and is never touched.
+- **`/goal`** is still accepted as a driver value for loops recorded before `/loop`
+  existed, but `/sdlc` no longer offers it: the goal evaluator has no pacing, so it
+  re-prompts as fast as the Stop hook without the hook's wait-awareness.
 
 Budgets guard both: max iterations (default 50), max attempts per task (default 3),
 and no-progress detection (2 idle iterations force `BLOCKED`).
@@ -76,12 +86,68 @@ autonomously"** section of the PR for batch review. Escalation (`BLOCKED` +
 branch, credential/security boundaries, genuine requirement contradictions, and budget
 exhaustion.
 
-Safety rails for unattended operation:
-- The permission hook **denylists** force-push, pushing/deleting `main`, hard resets to
-  remote, recursive deletes outside the worktree, package publishing, and repo deletion
-  — and auto-approves routine work.
-- Builders cannot stop until a completion verifier confirms tests pass, code is
+Safety rails for unattended operation. All of them are hooks declared in the
+`sdlc-loop` skill's frontmatter, so they register only in sessions that invoked the loop
+(`/sdlc` invokes it) and every script stands down unless `.sdlc/state.json` holds a live
+loop. There is no plugin-level `hooks.json`: installing the plugin changes nothing in
+projects that never run a loop.
+
+- **Destructive-command denylist** (`PreToolUse` on Bash, `deny-destructive.sh`):
+  force-push, pushing to or deleting `main`/`master` in any spelling (`origin main`,
+  `HEAD:main`, `refs/heads/main`, `+main`), hard resets to remote, recursive deletes of
+  any absolute or `~` path (relative `rm -rf build` still passes), package publishing,
+  repo deletion. PreToolUse runs before
+  permission checks in every mode, so it binds even for the `bypassPermissions` Builder,
+  which carries the same hook in its own frontmatter.
+- **Test-lock on fix tasks** (`PreToolUse` on Write/Edit, `test-lock.sh`): while a task
+  registered with `sdlc-state fix-task <id>` is in flight, test files are read-only. The
+  lead commits the reproducing test first, so a green run proves the bug is gone rather
+  than that the test changed.
+- **Routine approval** (`PermissionRequest`, `auto-approve.sh`): allows while a loop is
+  live so headless and manual-mode sessions never stall on a prompt. It never denies.
+- **Completion verifier**: Builders cannot stop until it confirms tests pass, code is
   committed, hooks are clean, and the task is closed.
+
+A subset of the denylist also works outside the plugin. Paste this into a managed or
+project `settings.json` to enforce it for every session, loop or not. It is weaker
+than the hook: permission rules are prefix matches, so they cannot express refspec
+pushes (`HEAD:main`) or absolute-path `rm -rf`; the hook stays the real rail.
+
+```json
+{
+  "permissions": {
+    "deny": [
+      "Bash(git push --force*)", "Bash(git push -f*)",
+      "Bash(git push origin main*)", "Bash(git push origin master*)",
+      "Bash(git push --delete*)", "Bash(git branch -D main*)", "Bash(git branch -D master*)",
+      "Bash(git reset --hard origin*)",
+      "Bash(npm publish*)", "Bash(pnpm publish*)", "Bash(yarn publish*)",
+      "Bash(twine upload*)", "Bash(cargo publish*)", "Bash(gh repo delete*)"
+    ]
+  }
+}
+```
+
+## Intent Documents and Approval Gates
+
+Every loop has an **intent document** at `specs/{slug}-intent.md` (the playbook's
+`intent.md`): pain points, proposed outcome, affected systems, open questions. Pass one
+in (`/sdlc specs/foo-intent.md`, from a teammate or a monitoring stage) and the loop
+uses it as written; give a sentence and INIT writes it from the request. SPEC derives
+the acceptance criteria from it, and SHIP links it from the PR.
+
+**Approval gates** are opt-in pauses for teams that want a human between plan and code
+or before the PR. Both reuse BLOCKED, so nothing new to learn:
+
+```bash
+sdlc-state init --feature x --request "..." --gate plan        # pause after the plan commits
+sdlc-state init --feature x --request "..." --gate plan,ship   # and again before the PR
+```
+
+At the gate the loop writes `.sdlc/escalation.md` naming what to review (the plan, or
+the branch diff and decision log), and stops. Review, edit in place if you like, and
+re-run `/sdlc`: the resume records the gate as passed and continues. The autonomous
+default has no gates.
 
 ## Agents
 
@@ -90,8 +156,8 @@ Safety rails for unattended operation:
 | **Architect** | Opus | PLAN | Plan document + task decomposition (docs are tasks too) |
 | **Builder** | Opus | BUILD | One task with TDD; PostToolUse validators + Stop-hook completion gate |
 
-Verification and review are **states that call built-in skills** (verify, code-review,
-security-review, simplify), not agents. Merging is the REPAIR state plus native
+Verification is a state that runs the project's own test stack; review is a state
+that calls built-in skills (code-review, security-review, simplify), not agents. Merging is the REPAIR state plus native
 worktree isolation. PR creation is one `gh pr create` call.
 
 ## Commands
@@ -118,18 +184,22 @@ worktree isolation. PR creation is one `gh pr create` call.
 
 ```
 .sdlc/
-├── state.json        # single source of truth: state, iteration, budgets, attempts
+├── state.json        # single source of truth: state, iteration, budgets, attempts, intent, gates, fix tasks
 ├── progress.md       # append-only log every iteration orients from
 ├── decisions.jsonl   # autonomous decisions, rendered into the PR
 ├── signs.md          # guardrails accumulated from observed mistakes
-└── escalation.md     # written only on BLOCKED
+└── escalation.md     # written on BLOCKED, including approval gates
+.claude/loop.md       # the iteration ritual a bare /loop runs (machine-local; rewritten by /sdlc, removed on DONE/BLOCKED; gitignore it)
+specs/{slug}-intent.md  # intent document (given, or written by INIT)
 specs/{slug}-spec.md  # acceptance criteria
 specs/{slug}-plan.md  # architect plan
 ```
 
-`python3 scripts/sdlc_state.py --help` documents the state CLI (init, tick [--waiting],
-transition, increment, task [--done], attempt, decide, note-progress, set-budget,
-set-driver, status, state).
+`sdlc-state --help` documents the state CLI (init, tick [--waiting], transition, gate,
+fix-task [--unlock], increment, task [--done], attempt, decide, note-progress,
+set-budget, set-driver, status, state). `sdlc-state` is the plugin's `bin/` wrapper, on
+PATH while the plugin is enabled; `python3 scripts/sdlc_state.py` is the same program
+for installs without `bin/` (plugins distributed through claude.ai organization settings).
 
 ## Composes With (soft dependencies — skipped silently when absent)
 
@@ -143,8 +213,9 @@ set-driver, status, state).
 
 ## Prerequisites
 
-- Optional: Claude Code ≥ v2.1.139 if you want to arm the `/goal` driver yourself (the Stop hook needs nothing)
+- Optional: Claude Code ≥ v2.1.248 on Bedrock, Foundry, or Google Cloud if you want the self-paced `/loop` driver (the Stop hook needs nothing)
 - Git, `gh` or `glab` CLI, `uv` for Python projects
+- Plugin `bin/` (for `sdlc-state` on PATH) is not available to plugins distributed through claude.ai organization settings; the docs give the script-path fallback
 - Optional: Beads CLI (`bd`) for the task graph; TaskCreate is the fallback
 
 ## Recommended Settings
@@ -188,7 +259,51 @@ BUILD. A blank `--reviewers` value falls back to the default so the gate is neve
 
 ## Version History
 
-### v2.3.0 (Current)
+### v2.5.0 (Current)
+- **Hooks live in the `sdlc-loop` skill's frontmatter.** `hooks.json` is gone; the
+  permission rails, driver, and StopFailure logger register when the skill is invoked
+  and exist only in sessions running a loop. `/sdlc` and `.claude/loop.md` invoke the
+  skill (Skill tool) for that reason.
+- **Denylist moved to `PreToolUse`** (`deny-destructive.sh`, documented output shape),
+  which binds in every permission mode; `auto-approve.sh` only allows now, with the
+  documented `PermissionRequest` shape. The Builder keeps `bypassPermissions` and carries
+  both PreToolUse rails itself. A pasteable `permissions.deny` block is in the README.
+- **Test-lock for fix tasks.** `sdlc-state fix-task <id>` registers a fix task; while it
+  is in flight, `test-lock.sh` makes test files read-only. VERIFY and REVIEW commit the
+  reproducing test before registering the task. `task --done` lifts the lock;
+  `fix-task --unlock --reason` lifts it early.
+- **Intent documents.** `init --intent <path>` records a given intent doc; otherwise
+  `specs/{slug}-intent.md` is recorded and INIT writes it from the request. `/sdlc`
+  accepts a path to an intent document as its argument. SPEC derives AC from it.
+- **Approval gates.** `init --gate plan[,ship]`; `sdlc-state gate <name>` pauses via
+  BLOCKED with a review-instructions escalation file, and the next `/sdlc` passes it.
+- **`bin/sdlc-state`.** Skills and commands call `sdlc-state`; agents keep the explicit
+  script path.
+
+### v2.4.0
+- **Native self-paced `/loop` replaces the `/goal` offer.** `init` writes `.claude/loop.md`
+  with the iteration ritual and the state CLI's absolute path, so a bare `/loop` drives
+  the loop with Claude choosing the delay between iterations (short while work is ready,
+  minutes while builders run) and ending it on DONE or BLOCKED. New `loop` driver value;
+  `set-driver loop` stands the Stop hook down. `goal` stays accepted for old loops.
+  The file is machine-local: every `/sdlc` rewrites it (feature and CLI path stay
+  current across increments and plugin upgrades) and DONE or BLOCKED removes it, so the
+  SHIP handoff's bare `/loop` reaches the built-in PR prompt instead of re-running the
+  ritual. Files without the plugin's marker line are left alone. Gitignore it.
+- **No in-turn busy-waiting.** The `sdlc-loop` skill no longer holds a turn open with
+  `Monitor` or a bash `until` loop while builders run: it stops, and the completion
+  notification (Stop-hook driver) or the next wakeup (`/loop` driver) re-enters.
+- **VERIFY no longer names the bundled `/verify` skill.** That skill is user-only
+  (`disable-model-invocation`), so the loop could never call it; VERIFY runs the
+  project's own test stack, as it always did in practice.
+- **Worktree hooks removed.** A registered `WorktreeCreate` hook replaces git's worktree
+  creation and must print the new worktree's path on stdout; the plugin's logging-only hooks broke
+  `EnterWorktree` and `isolation: "worktree"`. Both hooks and their `hooks.json` entries
+  are gone; nothing read the `.sdlc/events/` log they wrote.
+- SHIP prints a bare `/loop` (the built-in PR-maintenance prompt) as the babysitting
+  handoff instead of a custom prompt.
+
+### v2.3.0
 - **Next-increment lifecycle** (the loop is no longer single-use per project): a finished
   (`DONE`) session re-invoked with a new feature now starts increment 2 instead of silently
   resuming `DONE` and dropping the request. New `increment` subcommand archives the finished

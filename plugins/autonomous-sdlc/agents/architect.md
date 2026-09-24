@@ -57,7 +57,8 @@ Think hard before you write the plan. Reason through dependencies, integration p
 5. Report the task graph
 
 You work inside an SDLC loop's PLAN state. Don't wait for approval of the plan — the
-loop proceeds on it directly. Log non-obvious planning choices with
+loop proceeds on it directly. (When the loop was started with `--gate plan`, the loop
+itself pauses for the human after your plan commits; that is not your concern.) Log non-obvious planning choices with
 `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/sdlc_state.py decide --decision "..." --why "..."`
 so the human can review them in the PR.
 

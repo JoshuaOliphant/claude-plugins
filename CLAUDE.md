@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Claude Code plugin marketplace (`oliphant-plugins`). It distributes eleven plugins that extend Claude Code with specialized skills, subagents, commands, and hooks. Each plugin is self-contained under `plugins/` and registered in `.claude-plugin/marketplace.json`.
+This is a Claude Code plugin marketplace (`oliphant-plugins`). It distributes twelve plugins that extend Claude Code with specialized skills, subagents, commands, and hooks. Each plugin is self-contained under `plugins/` and registered in `.claude-plugin/marketplace.json`.
 
 ## Repository Structure
 
@@ -42,7 +42,7 @@ Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json` (the
 | Plugin | Purpose | Notable pieces |
 |---|---|---|
 | **mochi-creator** | Create cognitive-science-based flashcards via the Mochi API | `scripts/mochi_api.py` (module + CLI), prompt-quality validation, knowledge-type references |
-| **autonomous-sdlc** | Autonomous SDLC as a state machine on disk driven by a loop | `sdlc-loop` skill + `sdlc_state.py` state CLI, 6 skills, 2 subagents (Architect/Builder), loop Stop hook + denylisted auto-approve |
+| **autonomous-sdlc** | Autonomous SDLC as a state machine on disk driven by a loop | `sdlc-loop` skill + `sdlc_state.py` state CLI (`bin/sdlc-state`), 6 skills, 2 subagents (Architect/Builder); the loop's hooks (Stop driver, PreToolUse denylist and fix-task test-lock, PermissionRequest allow) live in the skill's frontmatter, not a `hooks.json` |
 | **hexagonal-agents** | Web apps where an agent generates HTML UI | Ports-and-adapters arch, MCP tools, Claude Agent SDK, extensive `references/` |
 | **compound-knowledge** | Institutional memory: capture → retrieve → graduate | YAML-frontmatter solution files, grep-based retrieval, `knowledge-researcher` subagent |
 | **autoloop** | Generate Karpathy-style optimization loops | Produces `program.md` + immutable `auto/run.sh`, `codebase-scout` subagent |
@@ -69,14 +69,17 @@ Each plugin follows a consistent layout:
 ### The SDLC Loop (autonomous-sdlc)
 
 v2 replaced the agent-team pipeline with a state machine on disk (`.sdlc/state.json`,
-owned by `scripts/sdlc_state.py`) driven by the plugin's Stop-hook loop (`/goal` is a
-user-only command — users may arm it as an alternative driver; Claude cannot). States: INIT → SPEC → PLAN → BUILD ⇄ VERIFY → REVIEW →
+owned by `scripts/sdlc_state.py`) driven by the plugin's Stop-hook loop (`init` also writes
+`.claude/loop.md`, rewritten on every init and removed on DONE/BLOCKED, so a user may arm a bare self-paced `/loop` as the driver instead; Claude cannot). States: INIT → SPEC → PLAN → BUILD ⇄ VERIFY → REVIEW →
 SHIP → DONE, plus REPAIR and BLOCKED. Two agents remain, both **Opus**: **Architect**
 (PLAN state) and **Builder** (BUILD state, keeps its PostToolUse validators and
-Stop-hook completion gate). VERIFY/REVIEW are states that call Claude Code's built-in
-verify/code-review/simplify/security-review skills — don't reintroduce custom
+Stop-hook completion gate). VERIFY runs the project's own test stack (the bundled
+`/verify` skill is user-only and cannot be called from a loop); REVIEW calls Claude
+Code's built-in code-review/simplify/security-review skills — don't reintroduce custom
 equivalents. Agents follow decide-log-proceed (`sdlc_state.py decide`); questions to
-the human only exist as the BLOCKED state. Design rationale:
+the human only exist as the BLOCKED state, which opt-in approval gates (`init --gate
+plan,ship`) reuse. Every loop has an intent document (`specs/{slug}-intent.md`), and fix
+tasks (`fix-task <id>`) lock test files while in flight. Design rationale:
 `docs/sdlc-loop-redesign.md`.
 
 When changing an agent's role significantly, keep `README.md` and the `sdlc-loop`

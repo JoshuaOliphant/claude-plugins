@@ -1,0 +1,16 @@
+{
+  "name": "jev-lint",
+  "version": "0.1.0",
+  "description": "Semantic Python linter backed by TypeSafe's Jev: plain-language rules for comments, silent failures, I/O mixed with logic, docstrings, log exposure, test smells, and risky diffs, with pointers to the ruff rules that can take over syntactic findings",
+  "author": {
+    "name": "Joshua Oliphant"
+  },
+  "keywords": [
+    "lint",
+    "python",
+    "code-review",
+    "comments",
+    "typesafe",
+    "jev"
+  ]
+}

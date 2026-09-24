@@ -19,7 +19,21 @@ tools:
   - TaskGet
   - TaskUpdate
   - Task(autonomous-sdlc:builder)
+# permissionMode stays bypassPermissions rather than auto: it works on every account
+# type and headless, and the two PreToolUse rails below bind in every mode (PreToolUse
+# runs before permission checks), so the loop's safety does not depend on the mode.
 hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/deny-destructive.sh"
+          timeout: 5
+    - matcher: "Write|Edit|MultiEdit|NotebookEdit"
+      hooks:
+        - type: command
+          command: bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/test-lock.sh"
+          timeout: 5
   PostToolUse:
     - matcher: "Write|Edit"
       if: "Write(*.py)|Edit(*.py)"
@@ -86,6 +100,11 @@ You may be working in different configurations. Adapt accordingly:
 - **TDD workflow**: Write a failing test, make it pass, refactor. This is non-negotiable.
 - **Validation hooks**: Ruff and type checking run automatically after every Write/Edit. Trust them. Fix issues immediately when they appear.
 - **Stop hook**: A completion verifier runs when you try to finish. It checks: tests passing, code committed, hook errors resolved, task closed. Complete all steps before wrapping up.
+- **Test-lock on fix tasks**: When your task is a registered fix task, a PreToolUse hook
+  makes every test file read-only. The reproducing test is already committed; your job is
+  to make it pass by changing source. If you are convinced the test is wrong, stop and
+  report that with evidence — the loop lead decides whether to unlock. Never work around
+  the lock (no renaming test files, no writing tests elsewhere).
 - **Beads workflow**: If `bd` is available, update task status. If not, use TaskUpdate.
 - **Plan documents**: Check `specs/*-plan.md` for acceptance criteria and context.
 
