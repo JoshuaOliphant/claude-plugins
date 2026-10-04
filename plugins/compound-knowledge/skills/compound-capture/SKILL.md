@@ -5,8 +5,11 @@ description: >
   debugging sessions, or when the user confirms something works ("that worked", "it's fixed",
   "finally"). Do NOT wait to be asked — if a debugging session just ended successfully, proactively
   invoke this. Also trigger on: "document this solution", "capture this pattern", "save this for
-  next time", "we should remember this". Saves structured YAML-frontmatter files for grep-based
-  retrieval. Not for searching — use compound-retrieve for that.
+  next time", "we should remember this". ALSO trigger when a keep/drop, deletion, benchmark, or
+  durable config decision is reached from measurement — those sessions end in a verdict rather than
+  a fix, so no confirmation phrase is ever spoken and the capture is otherwise missed; record the
+  verdict, the evidence, and what would invalidate it. Saves structured YAML-frontmatter files for
+  grep-based retrieval. Not for searching — use compound-retrieve for that.
 allowed-tools: [Read, Write, Edit, Grep, Glob]
 ---
 
