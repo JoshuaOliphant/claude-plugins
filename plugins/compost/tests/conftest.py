@@ -25,6 +25,31 @@ def evals_dir() -> Path:
     return Path(configured).expanduser()
 
 
+def rates(scored: list[tuple[float, bool]], threshold: float) -> tuple[float, float, float]:
+    flagged = [label for value, label in scored if value >= threshold]
+    hits = sum(flagged)
+    positives = sum(label for _, label in scored)
+    correct = hits + sum(not label for value, label in scored if value < threshold)
+    precision = hits / len(flagged) if flagged else 1.0
+    return correct / len(scored), precision, hits / positives
+
+
+def sweep(scored: list[tuple[float, bool]], thresholds: list[float]) -> None:
+    print("threshold  accuracy  precision  recall")
+    for threshold in thresholds:
+        accuracy, precision, recall = rates(scored, threshold)
+        print(f"{threshold:9.2f}  {accuracy:8.2f}  {precision:9.2f}  {recall:6.2f}")
+
+
+TENTHS = [round(0.05 * step, 2) for step in range(1, 20)]
+
+
+def skill_drift_judgments() -> dict:
+    """The skill-drift mod's questions and thresholds; the text after `export default` is plain JSON."""
+    text = (PLUGIN_ROOT / "hooks" / "skill-drift-judgments.ts").read_text()
+    return json.loads(text.split("\nexport default", 1)[1])
+
+
 @pytest.fixture(autouse=True)
 def private_jev_cache(tmp_path, monkeypatch):
     monkeypatch.setattr(core, "CACHE", tmp_path / "jev-cache.json")

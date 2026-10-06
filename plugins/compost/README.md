@@ -71,6 +71,18 @@ calling the API; `compost:setup` runs it and tells you how to store one.
 | `route` | Choice | turn, description changes | 27/30 (30 real prompts) |
 | `rulings-lint` | Noul ×8 | turn, compost's own text | 10/13 violations, 2–4 false flags (36 passages) |
 | `stop-guard` | Noul ×2 | Stop hook in implement runs | 23/23 (23 final messages) |
+| `skill-drift` mod | Noul ×3 | every skill-using turn | deviated recall 10/11, precision 0.77–0.83; missing guidance 2/2 and corrected 1/1 flagged, thresholds provisional (60 turns) |
+
+compost also ships the `skill-drift` mod (`hooks/skill-drift.ts`), the collector behind
+`compost:skill-drift`. After each turn that loaded a skill it sends one Jev request per skill
+loaded, asking whether the turn deviated from the skill or lacked its guidance; when your next
+prompt follows such a turn it sends one more per skill, asking whether you are correcting that
+work. A request averages about 5,000 input tokens, a fraction of a cent. Hits go to
+`~/.claude/skill-drift/`, and `/drift` lists them by skill. It never shows anything or holds a
+prompt back: your prompt enters before the correction check runs, and a TypeSafe outage is
+skipped. Without a key it asks and writes nothing. It is an in-process hooks module, so it loads
+only where Claude Code runs plugin hooks modules (`CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` while
+they roll out); without them compost works as before and the log stays empty.
 
 Thresholds were chosen from the same labeled cases they are measured on, so treat the numbers as
 upper bounds until the tools have run on real work. The labeled cases are drawn from private
