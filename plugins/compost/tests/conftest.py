@@ -44,6 +44,12 @@ def sweep(scored: list[tuple[float, bool]], thresholds: list[float]) -> None:
 TENTHS = [round(0.05 * step, 2) for step in range(1, 20)]
 
 
+def skill_drift_judgments() -> dict:
+    """The skill-drift mod's questions and thresholds; the text after `export default` is plain JSON."""
+    text = (PLUGIN_ROOT / "hooks" / "skill-drift-judgments.ts").read_text()
+    return json.loads(text.split("\nexport default", 1)[1])
+
+
 @pytest.fixture(autouse=True)
 def private_jev_cache(tmp_path, monkeypatch):
     monkeypatch.setattr(core, "CACHE", tmp_path / "jev-cache.json")
