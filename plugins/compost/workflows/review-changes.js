@@ -176,6 +176,7 @@ Check the diff against:
 - Every rule in the instructions files and contributing guides above. Cite the file and the rule.
 - CONTEXT.md vocabulary: names in the diff that contradict or bypass the glossary's terms.
 - ADRs in docs/adr/: changes that go against a recorded decision without a superseding ADR.
+- Doc drift: a line in an instructions file, README, or other doc that describes the changed code and no longer matches it after this diff. Cite the doc's file and line.
 - The compost canon essays your agent definition points you to, where one applies.
 - The smell baseline below.
 

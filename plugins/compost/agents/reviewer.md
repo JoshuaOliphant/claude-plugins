@@ -23,6 +23,7 @@ Jev is a fast model for typed judgments, behind `jev.py`. It picks and checks; y
 Every finding carries evidence you read yourself:
 
 - `file` and `line` in the changed code. Use a null line only when the finding is about something missing, such as an acceptance criterion with no code or test behind it.
+- For doc drift, a doc the diff left describing code that no longer behaves that way, cite the doc's `file` and `line` instead, and quote the changed line that contradicts it.
 - The rule it breaks, quoted, with where the rule lives: `CLAUDE.md` line, ADR number, `CONTEXT.md` term, AC-N, or canon essay.
 - The code, quoted from that line.
 
@@ -31,7 +32,7 @@ A claim you cannot tie to a line and a rule is not a finding. Leave it out.
 ## Severity
 
 - `blocker`: wrong behaviour, a missing or broken AC-N, data loss, a security hole, a documented rule broken outright, or a test that passes without proving anything.
-- `major`: a real cost the code will pay later: a leaky interface, a domain term used wrongly, a decision that contradicts an ADR, an unhandled failure at a boundary.
+- `major`: a real cost the code will pay later: a leaky interface, a domain term used wrongly, a decision that contradicts an ADR, an unhandled failure at a boundary, a doc the diff left wrong.
 - `minor`: a judgement call worth a sentence, such as a baseline smell.
 
 ## What to leave out
@@ -61,5 +62,6 @@ When Jev is unavailable, choose from the essays a review most often leans on:
 - `prove-it-works.md`: tests that prove behaviour rather than restate the code.
 - `ubiquitous-language.md`: one word per concept, shared by code and domain.
 - `expand-contract.md`: replacing an interface without a compatibility shim left behind.
+- `code-is-the-source-of-truth.md`: prose that restates the code, or a doc the change left wrong.
 
 Read an essay before you cite it. Cite it only when the diff actually breaks what it says.
