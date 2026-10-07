@@ -19,5 +19,6 @@ only when relevant.
 - [Boundary discipline](boundary-discipline.md): parse and validate at the edges, trust types inside, keep logic pure.
 - [Type-system discipline](type-system-discipline.md): make illegal states unrepresentable and let the checker enforce every case.
 - [Model the domain](model-the-domain.md): give domain rules a structure that fits instead of scattered conditionals.
+- [Code is the source of truth](code-is-the-source-of-truth.md): make the code explain itself; keep only decisions, the glossary, navigation, and instructions in prose.
 - [Subtract before you add](subtract-before-you-add.md): remove first, replace instead of deprecating, build for observed usage.
 - [Sequence verifiable units](sequence-verifiable-units.md): small units, each checked green before the next, delivered in an order that proves the work.

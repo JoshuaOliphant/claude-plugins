@@ -72,6 +72,14 @@ edits the user made by hand.
    - Neither present: ask which to create, recommending `AGENTS.md`.
    - Never create one file while the other exists without offering first.
 
+   Sort the instructions file's lines into Project, Personal, Superseded, and Derivable, and show
+   the piles before changing anything. Derivable lines restate what the code already says, and
+   each one is a second source of truth waiting to go stale
+   ([code is the source of truth](../../canon/code-is-the-source-of-truth.md)). Check each one
+   against the tree and say which are already wrong. Give other docs that explain code, such as
+   architecture overviews and module READMEs, the same test, and list the sections that fail it.
+   Delete or move anything only with the user's yes.
+
    Then add or update the `## Agent skills` block in whichever file holds the project
    instructions. Replace an existing block in place; leave the surrounding sections alone.
 

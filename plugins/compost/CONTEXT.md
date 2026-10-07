@@ -9,6 +9,11 @@ _Avoid_: drift (alone), upstream changes.
 work it covers (`corrected`). `compost:skill-drift` reviews it. In code: `skill_drift`.
 _Avoid_: drift (alone), skill failure.
 
+**Doc drift**: a doc saying something about the code that the code no longer does. The cost of
+prose that restates code ([code is the source of truth](canon/code-is-the-source-of-truth.md)).
+`compost:setup` flags it as Derivable lines; the Standards reviewer reports it.
+_Avoid_: drift (alone), stale docs.
+
 **Hit**: one Jev judgment that a turn showed skill drift of one kind, above that kind's threshold,
 as the `skill-drift` mod writes it to `~/.claude/skill-drift/`.
 
