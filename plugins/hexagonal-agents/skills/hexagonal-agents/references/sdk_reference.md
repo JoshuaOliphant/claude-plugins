@@ -36,7 +36,7 @@ The main client for interacting with Claude.
 from claude_agent_sdk import ClaudeSDKClient, ClaudeAgentOptions
 
 options = ClaudeAgentOptions(
-    model="claude-sonnet-4-6",  # or "claude-opus-4-8" for harder reasoning
+    model="claude-sonnet-5-5",  # or "claude-opus-5-5" for harder reasoning
     system_prompt="Your skill file content here",
     mcp_servers={"server_name": mcp_server},
     allowed_tools=["mcp__server_name__tool_name"],
@@ -74,7 +74,7 @@ To actually benefit:
 | `mcp_servers` | `dict[str, MCPServer]` | MCP servers keyed by name |
 | `allowed_tools` | `list[str]` | Tool names the agent can call |
 | `permission_mode` | `str` | `"acceptEdits"` auto-approves tool calls |
-| `model` | `str` | Model to use (default: claude-sonnet-4-6) |
+| `model` | `str` | Model ID, e.g. `claude-sonnet-5-5`; `None` (the default) uses the CLI's default model |
 
 **Methods:**
 

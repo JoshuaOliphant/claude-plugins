@@ -78,11 +78,11 @@ It uses HTTP Basic Auth (API key as username), a custom `MochiAPIError`, automat
 
 ### Hexagonal Agents + the Agent SDK
 
-`hexagonal-agents` scaffolds apps where a `ClaudeSDKClient` is the UI layer: its system prompt is a large, static "skill file" teaching the entire UI vocabulary. Because that prefix is identical every turn, connect the client **once and reuse it** so the SDK serves the system prompt and tool definitions from prompt cache. Default model `claude-sonnet-4-6` (use `claude-opus-4-8` for harder reasoning). See `skills/hexagonal-agents/references/sdk_reference.md`.
+`hexagonal-agents` scaffolds apps where a `ClaudeSDKClient` is the UI layer: its system prompt is a large, static "skill file" teaching the entire UI vocabulary. Because that prefix is identical every turn, connect the client **once and reuse it** so the SDK serves the system prompt and tool definitions from prompt cache. Default model `claude-sonnet-5-5` (use `claude-opus-5-5` for harder reasoning). See `skills/hexagonal-agents/references/sdk_reference.md`.
 
 ### Model IDs
 
-Use the current family in examples and generated code: `claude-opus-4-8`, `claude-sonnet-4-6`, `claude-haiku-4-5`. Subagent frontmatter uses the aliases `opus` / `sonnet` / `haiku`.
+Use the current family in examples and generated code: `claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-5-5`, and `claude-fable-5-1` for the most demanding reasoning. Subagent frontmatter uses the aliases `opus` / `sonnet` / `haiku` / `fable`.
 
 ## Development Commands
 
