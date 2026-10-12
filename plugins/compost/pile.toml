@@ -155,3 +155,11 @@ repo = "vercel-labs/skills"
 role = "reference"
 license = "MIT"
 pin = "7407f3893ad4dceab546ac002c3ef806e4000c73"
+
+[[source]]
+name = "claude-code-mods"
+repo = "ray-amjad/claude-code-mods"
+role = "reference"
+license = "MIT"
+pin = "812a5e91bf14f70f210d3f93b7a99f7737b5d38e"
+note = "Mods (hooks modules), not skills. Watched for jev-skill-suggestion (two-pass Jev skill routing, against compost's route eval and skill-drift mod), prompt-bouncer (glossary-term check at prompt submit, against spec's CONTEXT.md rule), and decision-tree (regex-then-Haiku 'does the user have to decide' gate, against stop_guard.py)."
