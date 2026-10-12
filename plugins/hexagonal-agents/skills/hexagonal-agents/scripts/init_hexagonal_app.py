@@ -17,7 +17,6 @@ Usage:
 """
 
 import argparse
-import os
 from pathlib import Path
 from textwrap import dedent
 

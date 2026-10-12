@@ -11,7 +11,7 @@ import os
 import sys
 import json
 from typing import Dict, List, Optional, Any
-from urllib.parse import urljoin, urlencode
+from urllib.parse import urljoin
 import requests
 from requests.auth import HTTPBasicAuth
 
@@ -386,7 +386,7 @@ class MochiAPI:
                 error_data = {}
                 try:
                     error_data = response.json()
-                except:
+                except ValueError:
                     pass
 
                 error_msg = f"API request failed with status {response.status_code}"
