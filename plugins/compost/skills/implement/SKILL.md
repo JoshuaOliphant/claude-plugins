@@ -123,9 +123,9 @@ the work so each step can be checked before the next builds on it
 10. **Close out.** When the frontier is empty and every sub-issue is ticked, run `compost:verify` on
     the whole feature branch, push, and hand off through `compost:finish`, whose recap is Goal,
     Decisions, Changes, Validation, Risk. The Decisions section lists every ruling comment, each with
-    its cost if wrong. Without a PR, close the parent the same way as step 7 and report the feature
-    branch by name, since no PR link points to it. Clean up worker worktrees whose branches are
-    merged into the feature branch.
+    its cost if wrong. Without a PR, report the feature branch by name, since no PR link points to
+    it, and leave the parent open: `compost:finish` closes it once the branch merges. Clean up
+    worker worktrees whose branches are merged into the feature branch.
 
 For a run that outlives the session, `compost:pause` writes the checkpoint and resuming starts at
 step 1.

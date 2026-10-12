@@ -73,7 +73,8 @@ yours to do without asking.
      `git -C "$main_root" switch <target>`, `git -C "$main_root" pull --ff-only`, then
      `git -C "$main_root" merge --no-ff "$branch"`. Run the suite on the result. If it is red,
      stop with the branch and worktree in place and nothing pushed. If it is green, push the
-     target.
+     target, then close the issue, or the parent, the way the tracker says (for a local tracker,
+     `Status: closed` and a closing note naming the merge commit).
 
    Then remove the worktree from `$main_root`. Use the harness's exit tool (such as
    `ExitWorktree` with remove) if it created the worktree; otherwise
