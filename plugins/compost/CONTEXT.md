@@ -11,7 +11,8 @@ _Avoid_: drift (alone), skill failure.
 
 **Doc drift**: a doc saying something the code no longer does. A doc that restates the code has
 none yet, and will. `compost:prune` finds it, takes the code as the likely truth, and moves what
-is worth keeping into the code. In code: `doc_refs`.
+is worth keeping into the code. The Standards reviewer reports drift a diff introduces. In code:
+`doc_refs`.
 _Avoid_: drift (alone), stale docs, doc rot.
 
 **Core docs**: the few docs that hold what code can't say: `README.md`, `AGENTS.md`, `CONTEXT.md`,
