@@ -129,4 +129,4 @@ Register this knowledge base in the cross-project registry so solutions are disc
    - **primary_components**: []
    ```
 
-See `references/registry-format.md` for the full schema and update rules.
+See `${CLAUDE_PLUGIN_ROOT}/skills/compound-capture/references/registry-format.md` for the full schema and update rules.
