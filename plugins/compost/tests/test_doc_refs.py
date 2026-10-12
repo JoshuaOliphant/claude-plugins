@@ -87,6 +87,14 @@ def test_scan_skips_excluded_and_broken_docs_and_honours_extra_core_patterns(rep
     assert [(d.path, d.core) for d in docs] == [("notes.md", False), ("docs/arch.md", True)]
 
 
+def test_scan_excludes_whole_directories_but_never_a_core_doc(repo):
+    commit(repo, {"plugins/a/README.md": "", "plugins/a/skills/x/notes.md": "", "docs/plugins/plan.md": ""}, "first")
+
+    docs = doc_refs.scan(repo, exclude=("plugins/**",))
+
+    assert [(d.path, d.core) for d in docs] == [("docs/plugins/plan.md", False), ("plugins/a/README.md", True)]
+
+
 def test_scan_never_calls_an_uncommitted_doc_stale(repo):
     commit(repo, {"src/app.py": ""}, "first")
     commit(repo, {"src/app.py": "x\n"}, "change")

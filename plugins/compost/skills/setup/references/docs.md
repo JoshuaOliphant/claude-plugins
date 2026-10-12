@@ -3,7 +3,8 @@
 Template for `docs/agents/docs.md`. List the core docs that exist in the repo, add any the repo
 needs beyond the defaults (a runbook, a published docs site), and list what is not documentation.
 `compost:prune` reads the two pattern blocks and passes them to `doc_refs.py` as `--core` and
-`--exclude`; patterns match from the right, so `README.md` covers every README at any depth.
+`--exclude`. A pattern matches from the right, so `README.md` covers every README at any depth;
+one ending in `/**` covers everything under that directory. A core doc is never excluded.
 
 ````markdown
 # Docs

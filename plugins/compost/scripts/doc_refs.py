@@ -8,7 +8,8 @@ import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path, PurePosixPath
 
-# Docs that hold what code can't say. Matched from the right, like PurePosixPath.match, so they apply at any depth.
+# Docs that hold what code can't say. A pattern matches from the right, like PurePosixPath.match, so it applies at any
+# depth; one ending in /** matches everything under that directory, from the repo root.
 CORE = (
     "README.md",
     "AGENTS.md",
@@ -78,9 +79,10 @@ def scan(root: Path, core: tuple[str, ...] = CORE, exclude: tuple[str, ...] = ()
     tracked = list(filter(None, _git(root, "ls-files", "-z").split("\0")))
     for name in [name for name in tracked if name.endswith(".md")]:
         path = PurePosixPath(name)
-        if not (root / name).is_file() or any(path.match(pattern) for pattern in exclude):
+        is_core = any(_matches(path, pattern) for pattern in core)
+        if not (root / name).is_file() or (not is_core and any(_matches(path, pattern) for pattern in exclude)):
             continue
-        doc = Doc(name, any(path.match(pattern) for pattern in core))
+        doc = Doc(name, is_core)
         refs = path_refs((root / name).read_text(errors="replace"))
         doc.refs = len(refs)
         last = _git(root, "log", "-1", "--format=%H", "--", name).strip()
@@ -92,6 +94,12 @@ def scan(root: Path, core: tuple[str, ...] = CORE, exclude: tuple[str, ...] = ()
                 doc.stale[target] = commits
         docs.append(doc)
     return sorted(docs, key=lambda d: (d.core, -len(d.missing), -sum(d.stale.values()), d.path))
+
+
+def _matches(path: PurePosixPath, pattern: str) -> bool:
+    if pattern.endswith("/**"):
+        return path.as_posix().startswith(pattern.removesuffix("**"))
+    return path.match(pattern)
 
 
 def _commits_since(root: Path, commit: str, path: str) -> int:
@@ -111,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:
     run = sub.add_parser("scan", help="list every tracked markdown doc with its missing and stale references")
     run.add_argument("--root", type=Path, default=Path.cwd())
     run.add_argument("--core", action="append", default=[], help="another core doc pattern (repeatable)")
-    run.add_argument("--exclude", action="append", default=[], help="a doc pattern to leave out (repeatable)")
+    run.add_argument("--exclude", action="append", default=[], help="a pattern to leave out, unless core (repeatable)")
     args = parser.parse_args(argv)
     try:
         docs = scan(args.root, CORE + tuple(args.core), tuple(args.exclude))
