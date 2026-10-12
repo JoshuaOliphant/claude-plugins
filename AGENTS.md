@@ -4,7 +4,7 @@ This file provides guidance to coding agents (Claude Code reads it natively) whe
 
 ## Project Overview
 
-This is a Claude Code plugin marketplace (`oliphant-plugins`). It distributes twelve plugins that extend Claude Code with specialized skills, subagents, commands, and hooks. Each plugin is self-contained under `plugins/` and registered in `.claude-plugin/marketplace.json`.
+This is a Claude Code plugin marketplace (`oliphant-plugins`). It distributes six plugins that extend Claude Code with specialized skills, subagents, commands, and hooks. Each plugin is self-contained under `plugins/` and registered in `.claude-plugin/marketplace.json`.
 
 ## Repository Structure
 
@@ -14,21 +14,16 @@ claude-plugins/
 │   └── marketplace.json            # Catalog of all published plugins (registry)
 ├── plugins/
 │   ├── mochi-creator/              # Evidence-based spaced-repetition flashcards (Mochi API)
-│   ├── autonomous-sdlc/            # SDLC as a Stop-hook-driven state-machine loop: TDD, BDD, Beads
 │   ├── hexagonal-agents/           # Agent-driven HTML-UI web apps (Agent SDK + FastAPI + HTMX)
 │   ├── compound-knowledge/         # Capture / retrieve / graduate engineering knowledge
-│   ├── autoloop/                   # Generate autonomous experiment-optimization loops
 │   ├── observability-harness/      # Local Docker-free OTLP stack (OTel → Vector → JSONL/Victoria*)
 │   ├── understand/                 # Explain-back learning loop (graded recall → Mochi cards)
-│   ├── review-diff/                # Local web-based diff review fed back to Claude Code
-│   ├── stick-shift/                # Manually-driven ("disassembled") SDLC via slash commands
 │   └── compost/                    # One SDLC workflow composted from several skill collections
 ├── scripts/
 │   ├── check_all.py                   # One-command repo health check (versions + sync + tests)
 │   ├── check_marketplace_versions.py  # Asserts marketplace.json ⇄ plugin.json (versions + registration)
 │   ├── sync_shared.py                 # Asserts/regenerates per-plugin copies of shared artifacts
 │   └── shared/                        # Canonical sources for artifacts duplicated across plugins
-├── evals/                          # Skill-trigger eval datasets (fixtures, not a plugin)
 ├── ai_docs/                        # Background research/reference docs (not shipped in plugins)
 ├── docs/                           # Planning and specifications
 ├── README.md                       # Marketplace installation instructions
@@ -42,17 +37,13 @@ Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json` (the
 | Plugin | Purpose | Notable pieces |
 |---|---|---|
 | **mochi-creator** | Create cognitive-science-based flashcards via the Mochi API | `scripts/mochi_api.py` (module + CLI), prompt-quality validation, knowledge-type references |
-| **autonomous-sdlc** | Deprecated (superseded by compost). Autonomous SDLC as a state machine on disk driven by a loop | `sdlc-loop` skill + `sdlc_state.py` state CLI (`bin/sdlc-state`), 6 skills, 2 subagents (Architect/Builder); the loop's hooks (Stop driver, PreToolUse denylist and fix-task test-lock, PermissionRequest allow) live in the skill's frontmatter, not a `hooks.json` |
 | **hexagonal-agents** | Web apps where an agent generates HTML UI | Ports-and-adapters arch, MCP tools, Claude Agent SDK, extensive `references/` |
 | **compound-knowledge** | Institutional memory: capture → retrieve → graduate | YAML-frontmatter solution files, grep-based retrieval, `knowledge-researcher` subagent |
-| **autoloop** | Generate Karpathy-style optimization loops | Produces `program.md` + immutable `auto/run.sh`, `codebase-scout` subagent |
-| **observability-harness** | Local Docker-free OTLP stack (OTel → Vector → JSONL/Victoria*) + instrumentation | setup skill with scan-and-propose, `observability-query` skill, `status.sh --json` detection contract, scripted `verify.sh`; composed by autonomous-sdlc as a soft dependency |
+| **observability-harness** | Local Docker-free OTLP stack (OTel → Vector → JSONL/Victoria*) + instrumentation | setup skill with scan-and-propose, `observability-query` skill, `status.sh --json` detection contract, scripted `verify.sh` |
 | **understand** | Process information for real understanding (antidote to the illusion of clarity) | `explain-back` skill: graded recall, struggle-then-teach per gap, Mochi-card output, resumable session record |
-| **review-diff** | Local browser-based diff review fed back to Claude Code | web UI for commenting on working-tree/branch diffs |
-| **compost** | One SDLC workflow made from Matt Pocock's skills, superpowers, pstack, blueprint, and autonomous-sdlc | 15 skills linked by Next moves, `canon/` essays, `compost:prune` + `scripts/doc_refs.py` keeping docs to the core, `/compost:review-changes` workflow + `reviewer` agent, `pile.toml` + `scripts/pile.py` tracking upstream sources for `compost:turn` |
-| **stick-shift** | Deprecated (superseded by compost). Manually-driven ("disassembled") SDLC for legible live demos | 5 slash commands (`/spec` `/plan` `/build` `/verify` `/journal`) over a shared `.sdlc/` session; trimmed `session_state.py`; no loop/hooks |
+| **compost** | One SDLC workflow made from Matt Pocock's skills, superpowers, pstack, blueprint, and the retired autonomous-sdlc and stick-shift plugins | 15 skills linked by Next moves, `canon/` essays, `compost:prune` + `scripts/doc_refs.py` keeping docs to the core, `/compost:review-changes` workflow + `reviewer` agent, Jev tools (`scripts/jev.py`), browser diff review (`scripts/review_diff/`), semantic Python lint (`scripts/lint/`), `pile.toml` + `scripts/pile.py` tracking upstream sources for `compost:turn` |
 
-Every plugin also ships a `feedback` skill backed by `scripts/feedback_manager.py` to persist user preferences across sessions.
+The older plugins (mochi-creator, hexagonal-agents, compound-knowledge) also ship a `feedback` skill backed by `scripts/feedback_manager.py` to persist user preferences across sessions.
 
 ## Key Architectural Concepts
 
@@ -66,24 +57,13 @@ Each plugin follows a consistent layout:
 - `hooks/` + `hooks.json` — event-driven validators (e.g. ruff/type checks on Write/Edit)
 - `scripts/` — Python helpers, importable and/or CLI-executable
 
-### The SDLC Loop (autonomous-sdlc)
+### compost
 
-v2 replaced the agent-team pipeline with a state machine on disk (`.sdlc/state.json`,
-owned by `scripts/sdlc_state.py`) driven by the plugin's Stop-hook loop (`init` also writes
-`.claude/loop.md`, rewritten on every init and removed on DONE/BLOCKED, so a user may arm a bare self-paced `/loop` as the driver instead; Claude cannot). States: INIT → SPEC → PLAN → BUILD ⇄ VERIFY → REVIEW →
-SHIP → DONE, plus REPAIR and BLOCKED. Two agents remain, both **Opus**: **Architect**
-(PLAN state) and **Builder** (BUILD state, keeps its PostToolUse validators and
-Stop-hook completion gate). VERIFY runs the project's own test stack (the bundled
-`/verify` skill is user-only and cannot be called from a loop); REVIEW calls Claude
-Code's built-in code-review/simplify/security-review skills — don't reintroduce custom
-equivalents. Agents follow decide-log-proceed (`sdlc_state.py decide`); questions to
-the human only exist as the BLOCKED state, which opt-in approval gates (`init --gate
-plan,ship`) reuse. Every loop has an intent document (`specs/{slug}-intent.md`), and fix
-tasks (`fix-task <id>`) lock test files while in flight. Design rationale:
-`docs/sdlc-loop-redesign.md`.
-
-When changing an agent's role significantly, keep `README.md` and the `sdlc-loop`
-skill's dispatch table in sync with the agent frontmatter.
+compost has no state machine: each skill ends with Next moves naming the skills that usually
+follow, and work is tracked in the repo's issue tracker. Its `[replaces]` table in `pile.toml`
+lists the plugins and skills it supersedes, which `compost:setup` offers to switch off. Its own
+vocabulary is in `plugins/compost/CONTEXT.md`; the workflow is described in
+`plugins/compost/README.md`.
 
 ### Mochi API Client Architecture
 
@@ -136,7 +116,7 @@ python scripts/check_marketplace_versions.py   # exits non-zero on any drift
 ### Shared-source sync (generate from one source)
 
 Some artifacts must be physically present in multiple self-contained plugins but should never
-diverge — e.g. `feedback_manager.py` (shipped by 5 plugins), `config_loader.py` (the
+diverge — e.g. `feedback_manager.py` (shipped by 3 plugins), `config_loader.py` (the
 `.claude/<name>.local.md` reader shared by `compound-knowledge` and `understand`), and
 `prompt_design_principles.md` (shared by `mochi-creator` and `understand`). The canonical copy
 lives under `scripts/shared/`; each plugin's copy is generated from it.
@@ -236,5 +216,4 @@ Multiple contexts, one per plugin plus the marketplace, listed in `CONTEXT-MAP.m
 
 ### Tests and gates
 
-pytest per plugin; `scripts/check_all.py` plus the 100% coverage gates in compost, review-diff,
-and jev-lint. See `docs/agents/testing.md`.
+pytest per plugin; `scripts/check_all.py` plus the 100% coverage gate in compost. See `docs/agents/testing.md`.

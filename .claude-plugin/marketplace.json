@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by Joshua Oliphant for productivity and learning workflows",
-    "version": "1.0.11"
+    "version": "1.1.0"
   },
   "plugins": [
     {
@@ -24,27 +24,6 @@
         "learning"
       ],
       "category": "productivity",
-      "license": "MIT"
-    },
-    {
-      "name": "autonomous-sdlc",
-      "source": "./plugins/autonomous-sdlc",
-      "description": "Deprecated: superseded by compost, no further updates. Autonomous SDLC as a state machine on disk driven by a Stop-hook loop (or a user-armed self-paced /loop) — one verified unit of work per iteration, decide-log-proceed autonomy with opt-in plan/ship approval gates, intent documents, a fix-task test-lock, built-in code-review/simplify gates",
-      "version": "2.5.1",
-      "author": {
-        "name": "Joshua Oliphant"
-      },
-      "keywords": [
-        "sdlc",
-        "tdd",
-        "bdd",
-        "verification",
-        "worktrees",
-        "beads",
-        "autonomous",
-        "parallel"
-      ],
-      "category": "development",
       "license": "MIT"
     },
     {
@@ -82,24 +61,6 @@
         "grep-retrieval"
       ],
       "category": "productivity",
-      "license": "MIT"
-    },
-    {
-      "name": "autoloop",
-      "source": "./plugins/autoloop",
-      "description": "Generate autonomous experiment loops with immutable runner scripts, tiered quality gates, secondary metrics, and structured METRIC output.",
-      "version": "0.6.1",
-      "author": {
-        "name": "Joshua Oliphant"
-      },
-      "keywords": [
-        "autoloop",
-        "autoresearch",
-        "experiment-loop",
-        "optimization",
-        "agentic"
-      ],
-      "category": "development",
       "license": "MIT"
     },
     {
@@ -143,84 +104,10 @@
       "license": "MIT"
     },
     {
-      "name": "review-diff",
-      "source": "./plugins/review-diff",
-      "description": "Local web-based diff review — comment on your working-tree or committed-branch diff in the browser and feed the comments back to Claude Code",
-      "version": "0.3.2",
-      "author": {
-        "name": "Joshua Oliphant"
-      },
-      "keywords": [
-        "diff",
-        "review",
-        "code-review",
-        "developer-productivity",
-        "local"
-      ],
-      "category": "development",
-      "license": "MIT"
-    },
-    {
-      "name": "stick-shift",
-      "source": "./plugins/stick-shift",
-      "description": "Deprecated: superseded by compost, no further updates. Manually-driven (\"disassembled\") SDLC: the same .sdlc/ session format as autonomous-sdlc, but you drive each phase by hand via slash commands \u2014 /spec \u2192 /plan \u2192 /build (TDD) \u2192 /verify \u2192 /journal. Built for legible, narratable live demos.",
-      "version": "0.5.1",
-      "author": {
-        "name": "Joshua Oliphant"
-      },
-      "keywords": [
-        "sdlc",
-        "tdd",
-        "manual",
-        "session",
-        "harness",
-        "developer-experience",
-        "demo"
-      ],
-      "category": "development",
-      "license": "MIT"
-    },
-    {
-      "name": "agent-skills",
-      "source": "./plugins/agent-skills",
-      "description": "Small, composable workflow skills for coding agents: docs-first discipline, plan arbitration, clear status recaps, usage-limit awareness, and local self-contained HTML visual plan/recap modes.",
-      "version": "0.2.0",
-      "author": {
-        "name": "Joshua Oliphant"
-      },
-      "keywords": [
-        "skills",
-        "agent-workflows",
-        "planning",
-        "code-review",
-        "orchestration",
-        "developer-productivity"
-      ],
-      "category": "development",
-      "license": "MIT"
-    },
-    {
-      "name": "jev-lint",
-      "source": "./plugins/jev-lint",
-      "description": "Semantic Python linter backed by TypeSafe's Jev: plain-language rules for comments, silent failures, I/O mixed with logic, docstrings, log exposure, test smells, and risky diffs, with pointers to the ruff rules that can take over syntactic findings",
-      "version": "0.1.0",
-      "author": {
-        "name": "Joshua Oliphant"
-      },
-      "keywords": [
-        "lint",
-        "python",
-        "code-review",
-        "comments",
-        "typesafe",
-        "jev"
-      ]
-    },
-    {
       "name": "compost",
       "source": "./plugins/compost",
-      "description": "One software-engineering workflow composted from Matt Pocock's skills, superpowers, pstack, Imbue's blueprint, and autonomous-sdlc: specs with BDD acceptance criteria, tracer-bullet issues in your tracker, builds that fit tests into the existing suite, automatic subagent review, and a prune skill that keeps docs to what the code can't say, and a turn skill that works in upstream changes.",
-      "version": "0.5.0",
+      "description": "One software-engineering workflow composted from Matt Pocock's skills, superpowers, pstack, Imbue's blueprint, and autonomous-sdlc: specs with BDD acceptance criteria, tracer-bullet issues in your tracker, builds that fit tests into the existing suite, automatic subagent review, browser diff review, semantic lint for Python, a prune skill that keeps docs to what the code can't say, and a turn skill that works in upstream changes.",
+      "version": "0.6.0",
       "author": {
         "name": "Joshua Oliphant"
       },
