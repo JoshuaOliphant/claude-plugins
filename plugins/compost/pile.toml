@@ -34,7 +34,7 @@ name = "mattpocock"
 repo = "mattpocock/skills"
 role = "input"
 license = "MIT"
-pin = "c55ee46073ed923f86ce59a5eb3b6d895095d1b7"
+pin = "49dd158d1076134a641b33efb035946536778336"
 
 [source.feeds]
 "skills/engineering/to-spec" = ["spec"]
@@ -52,7 +52,9 @@ pin = "c55ee46073ed923f86ce59a5eb3b6d895095d1b7"
 "skills/engineering/codebase-design" = ["deepen", "canon"]
 "skills/engineering/improve-codebase-architecture" = ["deepen"]
 "skills/engineering/implement" = ["implement"]
-"skills/in-progress/implement-spec" = ["implement"]
+"skills/engineering/implement-spec" = ["implement"]
+"skills/engineering/pr" = ["finish"]
+"skills/engineering/retro" = ["review", "canon"]
 "skills/productivity/handoff" = ["pause"]
 
 [[source]]
@@ -60,7 +62,7 @@ name = "superpowers"
 repo = "obra/superpowers"
 role = "input"
 license = "MIT"
-pin = "5bf4e78011075bcfc0dc295f0724994cd123ee71"
+pin = "bb92a77741419a4ab5f06e711a283343f1ada0c3"
 
 [source.feeds]
 "skills/brainstorming" = ["spec"]
@@ -79,7 +81,7 @@ name = "pstack"
 repo = "cursor/plugins"
 role = "input"
 license = "MIT"
-pin = "12d587dfb20741cafc376c42c696c5f6e2a64487"
+pin = "11713c683fe4add4fd403ea880580abbc9e0875f"
 
 [source.feeds]
 "pstack/skills/blast-radius" = ["verify"]
@@ -93,6 +95,9 @@ pin = "12d587dfb20741cafc376c42c696c5f6e2a64487"
 "pstack/skills/principle-subtract-before-you-add" = ["canon"]
 "pstack/skills/principle-sequence-verifiable-units" = ["canon"]
 "pstack/skills/architect" = ["deepen"]
+"pstack/skills/correct" = ["review", "canon"]
+"pstack/skills/benchmark-checklist" = ["diagnose", "verify"]
+"pstack/skills/principle-explain-the-number" = ["canon"]
 "pstack/skills/poteto-mode/playbooks/orchestrate.md" = ["implement"]
 "pstack/skills/poteto-mode/playbooks/pause-safely.md" = ["pause"]
 "pstack/skills/poteto-mode/playbooks/session-pickup.md" = ["pause"]
