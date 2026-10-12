@@ -141,7 +141,12 @@ test('a given issue is the only spec source, whatever issue the scoping agent pi
   assert.equal(refused.prompts['Spec reviewer'], undefined)
 })
 
-test('without an issue, a missing spec skips the Spec axis and the review can still complete', async () => {
+test('without an issue, the spec source is what scope found, and a missing spec skips the Spec axis', async () => {
+  const specFile = { ...SCOPE, spec: { found: true, source: 'docs/specs/export.md', number: null, text: 'AC-1: Given a list' } }
+  const found = await run({}, reviewers({ scope: specFile }))
+  assert.equal(found.result.specSource, 'docs/specs/export.md')
+  assert.match(found.prompts['Spec reviewer'], /Spec source: docs\/specs\/export\.md\n/)
+
   const scope = { ...SCOPE, spec: { found: false, source: '', number: null, text: '' } }
   const { result } = await run({}, reviewers({ scope }))
   assert.equal(result.spec.status, 'skipped: no spec found')
