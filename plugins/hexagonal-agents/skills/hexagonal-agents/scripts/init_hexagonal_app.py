@@ -55,7 +55,7 @@ def create_pyproject(project_dir: Path, project_name: str) -> None:
 
 def create_readme(project_dir: Path, project_name: str, domain: str) -> None:
     """Create README.md with usage instructions."""
-    content = dedent(f'''\
+    content = dedent(f"""\
         # {project_name}
 
         A hexagonal agent application for managing {domain}.
@@ -93,7 +93,7 @@ def create_readme(project_dir: Path, project_name: str, domain: str) -> None:
         # Run evaluations
         uv run python -m evals.test_agent
         ```
-    ''')
+    """)
     (project_dir / "README.md").write_text(content)
 
 
@@ -449,7 +449,9 @@ def create_agent(project_dir: Path, entity: str, entities: str) -> None:
     (project_dir / "app" / "agent.py").write_text(content)
 
 
-def create_main(project_dir: Path, project_name: str, domain: str, entity: str, entities: str) -> None:
+def create_main(
+    project_dir: Path, project_name: str, domain: str, entity: str, entities: str
+) -> None:
     """Create main.py FastAPI application."""
     title = project_name.replace("-", " ").title()
     content = dedent(f'''\
@@ -629,7 +631,7 @@ def create_main(project_dir: Path, project_name: str, domain: str, entity: str, 
 
 def create_skill_file(project_dir: Path, domain: str, entity: str, entities: str) -> None:
     """Create the UI skill file."""
-    content = dedent(f'''\
+    content = dedent(f"""\
         # {domain.title()} UI Skill
 
         You are an AI application that generates user interfaces for managing {domain}. You receive natural language requests and respond with HTML that will be displayed to the user.
@@ -865,26 +867,22 @@ def create_skill_file(project_dir: Path, domain: str, entity: str, entities: str
         Example: Form with name="title" and message="create {entity} with name"
         When user enters "Buy groceries", you receive: message="create {entity} with name", title="Buy groceries"
         Action: Call create_{entity} with name="Buy groceries"
-    ''')
+    """)
     (project_dir / "app" / "skills" / "ui.md").write_text(content)
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Scaffold a hexagonal agent application"
-    )
+    parser = argparse.ArgumentParser(description="Scaffold a hexagonal agent application")
     parser.add_argument(
-        "project_name",
-        help="Name of the project (used for directory and package name)"
+        "project_name", help="Name of the project (used for directory and package name)"
     )
     parser.add_argument(
         "--domain",
         default="items",
-        help="Domain name (e.g., books, tasks, recipes). Defaults to 'items'"
+        help="Domain name (e.g., books, tasks, recipes). Defaults to 'items'",
     )
     parser.add_argument(
-        "--entity",
-        help="Singular entity name. Defaults to domain without trailing 's'"
+        "--entity", help="Singular entity name. Defaults to domain without trailing 's'"
     )
 
     args = parser.parse_args()

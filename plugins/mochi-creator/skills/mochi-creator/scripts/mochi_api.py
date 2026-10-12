@@ -18,11 +18,13 @@ from requests.auth import HTTPBasicAuth
 
 class MochiAPIError(Exception):
     """Custom exception for Mochi API errors."""
+
     pass
 
 
 class PromptQualityError(Exception):
     """Exception raised when a prompt fails quality validation."""
+
     pass
 
 
@@ -74,20 +76,13 @@ def validate_prompt_quality(question: str, answer: str, strict: bool = False) ->
         suggestions.append("Keep questions short and simple")
 
     # Check 6: Trivial (too easy, no retrieval)
-    trivial_indicators = [
-        "what does", "is", "acronym", "stands for",
-        "true or false", "correct"
-    ]
+    trivial_indicators = ["what does", "is", "acronym", "stands for", "true or false", "correct"]
     if any(indicator in question.lower() for indicator in trivial_indicators) and len(answer) < 20:
         suggestions.append("Verify this requires memory retrieval, not trivial knowledge")
 
     valid = len(issues) == 0
 
-    result = {
-        "valid": valid,
-        "issues": issues,
-        "suggestions": suggestions
-    }
+    result = {"valid": valid, "issues": issues, "suggestions": suggestions}
 
     if strict and not valid:
         error_msg = "Prompt quality validation failed:\n"
@@ -104,7 +99,7 @@ def create_conceptual_lens_cards(
     concept: str,
     deck_id: str,
     lenses: Optional[Dict[str, str]] = None,
-    base_tags: Optional[List[str]] = None
+    base_tags: Optional[List[str]] = None,
 ) -> List[Dict]:
     """
     Create multiple cards for a concept using the 5 conceptual lenses approach.
@@ -154,7 +149,7 @@ def create_conceptual_lens_cards(
         "similarities": f"How does {concept} differ from similar concepts?",
         "parts": f"Give a concrete example of {concept}",
         "causes": f"What problem does {concept} solve?",
-        "significance": f"When would you use {concept} in your work?"
+        "significance": f"When would you use {concept} in your work?",
     }
 
     cards = []
@@ -173,11 +168,7 @@ def create_conceptual_lens_cards(
         # Create the card
         content = f"# {question}\n---\n{answer}"
 
-        card = api.create_card(
-            content=content,
-            deck_id=deck_id,
-            manual_tags=all_tags + [lens_name]
-        )
+        card = api.create_card(content=content, deck_id=deck_id, manual_tags=all_tags + [lens_name])
         cards.append(card)
 
     return cards
@@ -213,14 +204,15 @@ def break_into_atomic_prompts(complex_prompt: str, answer: str) -> List[Dict[str
             # Try to split answer as well
             answer_parts = answer.split(",")
             if len(answer_parts) >= 2:
-                suggestions.append({
-                    "question": parts[0].strip() + "?",
-                    "answer": answer_parts[0].strip()
-                })
-                suggestions.append({
-                    "question": "What " + parts[1].strip(),
-                    "answer": ", ".join(answer_parts[1:]).strip()
-                })
+                suggestions.append(
+                    {"question": parts[0].strip() + "?", "answer": answer_parts[0].strip()}
+                )
+                suggestions.append(
+                    {
+                        "question": "What " + parts[1].strip(),
+                        "answer": ", ".join(answer_parts[1:]).strip(),
+                    }
+                )
 
     # Pattern 2: Multiple comma-separated items in answer
     if "," in answer:
@@ -228,11 +220,13 @@ def break_into_atomic_prompts(complex_prompt: str, answer: str) -> List[Dict[str
         if len(items) > 2:
             # Suggest creating one card per item
             for item in items:
-                suggestions.append({
-                    "question": f"{complex_prompt} (focus on {item.split()[0]})",
-                    "answer": item,
-                    "note": "Break into individual cards, one per item"
-                })
+                suggestions.append(
+                    {
+                        "question": f"{complex_prompt} (focus on {item.split()[0]})",
+                        "answer": item,
+                        "note": "Break into individual cards, one per item",
+                    }
+                )
 
     return suggestions
 
@@ -244,7 +238,7 @@ def create_procedural_cards(
     transitions: Optional[List[Dict[str, str]]] = None,
     rationales: Optional[List[Dict[str, str]]] = None,
     timings: Optional[List[Dict[str, str]]] = None,
-    base_tags: Optional[List[str]] = None
+    base_tags: Optional[List[str]] = None,
 ) -> List[Dict]:
     """
     Create cards for procedural knowledge focusing on transitions, rationales, and timing.
@@ -293,9 +287,7 @@ def create_procedural_cards(
         for trans in transitions:
             content = f"# When do you know it's time to {trans['next_step']} in {procedure_name}?\n---\n{trans['condition']}"
             card = api.create_card(
-                content=content,
-                deck_id=deck_id,
-                manual_tags=all_tags + ["transitions"]
+                content=content, deck_id=deck_id, manual_tags=all_tags + ["transitions"]
             )
             cards.append(card)
 
@@ -304,9 +296,7 @@ def create_procedural_cards(
         for rat in rationales:
             content = f"# Why do you {rat['action']} in {procedure_name}?\n---\n{rat['reason']}"
             card = api.create_card(
-                content=content,
-                deck_id=deck_id,
-                manual_tags=all_tags + ["rationale"]
+                content=content, deck_id=deck_id, manual_tags=all_tags + ["rationale"]
             )
             cards.append(card)
 
@@ -315,9 +305,7 @@ def create_procedural_cards(
         for timing in timings:
             content = f"# How long does {timing['phase']} take in {procedure_name}?\n---\n{timing['duration']}"
             card = api.create_card(
-                content=content,
-                deck_id=deck_id,
-                manual_tags=all_tags + ["timing"]
+                content=content, deck_id=deck_id, manual_tags=all_tags + ["timing"]
             )
             cards.append(card)
 
@@ -345,12 +333,11 @@ class MochiAPI:
                 "No API key provided. Set MOCHI_API_KEY environment variable or pass api_key parameter."
             )
         self.auth = HTTPBasicAuth(self.api_key, "")
-        self.headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        }
+        self.headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
-    def _request(self, method: str, endpoint: str, data: Optional[Dict] = None, params: Optional[Dict] = None) -> Any:
+    def _request(
+        self, method: str, endpoint: str, data: Optional[Dict] = None, params: Optional[Dict] = None
+    ) -> Any:
         """
         Make a request to the Mochi API.
 
@@ -376,7 +363,7 @@ class MochiAPI:
                 headers=self.headers,
                 json=data,
                 params=params,
-                timeout=30
+                timeout=30,
             )
 
             if response.status_code == 204:
@@ -412,7 +399,7 @@ class MochiAPI:
         archived: bool = False,
         review_reverse: bool = False,
         pos: Optional[str] = None,
-        manual_tags: Optional[List[str]] = None
+        manual_tags: Optional[List[str]] = None,
     ) -> Dict:
         """
         Create a new card.
@@ -442,7 +429,7 @@ class MochiAPI:
             "content": content,
             "deck-id": deck_id,
             "archived?": archived,
-            "review-reverse?": review_reverse
+            "review-reverse?": review_reverse,
         }
 
         if template_id:
@@ -469,10 +456,7 @@ class MochiAPI:
         return self._request("GET", f"/cards/{card_id}")
 
     def list_cards(
-        self,
-        deck_id: Optional[str] = None,
-        limit: int = 10,
-        bookmark: Optional[str] = None
+        self, deck_id: Optional[str] = None, limit: int = 10, bookmark: Optional[str] = None
     ) -> Dict:
         """
         List cards with optional filtering and pagination.
@@ -504,7 +488,7 @@ class MochiAPI:
         trashed: Optional[str] = None,
         review_reverse: Optional[bool] = None,
         pos: Optional[str] = None,
-        manual_tags: Optional[List[str]] = None
+        manual_tags: Optional[List[str]] = None,
     ) -> Dict:
         """
         Update an existing card.
@@ -569,7 +553,7 @@ class MochiAPI:
         cards_view: str = "list",
         show_sides: bool = True,
         sort_by_direction: bool = False,
-        review_reverse: bool = False
+        review_reverse: bool = False,
     ) -> Dict:
         """
         Create a new deck.
@@ -595,7 +579,7 @@ class MochiAPI:
             "cards-view": cards_view,
             "show-sides?": show_sides,
             "sort-by-direction": sort_by_direction,
-            "review-reverse?": review_reverse
+            "review-reverse?": review_reverse,
         }
 
         if parent_id:
@@ -645,7 +629,7 @@ class MochiAPI:
         cards_view: Optional[str] = None,
         show_sides: Optional[bool] = None,
         sort_by_direction: Optional[bool] = None,
-        review_reverse: Optional[bool] = None
+        review_reverse: Optional[bool] = None,
     ) -> Dict:
         """
         Update an existing deck.
@@ -711,7 +695,7 @@ class MochiAPI:
         fields: Dict[str, Dict[str, Any]],
         pos: Optional[str] = None,
         style: Optional[Dict[str, str]] = None,
-        options: Optional[Dict[str, bool]] = None
+        options: Optional[Dict[str, bool]] = None,
     ) -> Dict:
         """
         Create a new template.
@@ -749,11 +733,7 @@ class MochiAPI:
             ...     fields=fields
             ... )
         """
-        data = {
-            "name": name,
-            "content": content,
-            "fields": fields
-        }
+        data = {"name": name, "content": content, "fields": fields}
 
         if pos:
             data["pos"] = pos

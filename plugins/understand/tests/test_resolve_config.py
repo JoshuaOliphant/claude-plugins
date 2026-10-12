@@ -35,13 +35,16 @@ def test_full_override(tmp_path):
     home.mkdir()
     proj = tmp_path / "proj"
     proj.mkdir()
-    _write_cfg(proj, (
-        "mochi_deck: Learning\n"
-        "session_dir: /vault/areas/learning/sessions/\n"
-        "follow_references: false\n"
-        "strictness: pure-examiner\n"
-        "card_cap: 5\n"
-    ))
+    _write_cfg(
+        proj,
+        (
+            "mochi_deck: Learning\n"
+            "session_dir: /vault/areas/learning/sessions/\n"
+            "follow_references: false\n"
+            "strictness: pure-examiner\n"
+            "card_cap: 5\n"
+        ),
+    )
     result = resolve_config.resolve(proj, home)
     assert result["mochi_deck"] == "Learning"
     assert result["session_dir"] == "/vault/areas/learning/sessions/"

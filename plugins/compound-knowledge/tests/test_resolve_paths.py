@@ -46,10 +46,16 @@ def test_read_write_split(tmp_path):
     home.mkdir()
     proj = tmp_path / "proj"
     proj.mkdir()
-    _write_cfg(proj, "write_path: /vault/knowledge/solutions/\nread_paths: /vault/wiki/, /vault/journal/\n")
+    _write_cfg(
+        proj, "write_path: /vault/knowledge/solutions/\nread_paths: /vault/wiki/, /vault/journal/\n"
+    )
     result = resolve_paths.resolve(proj, home)
     assert result["write_path"] == "/vault/knowledge/solutions/"
-    assert result["read_paths"] == ["/vault/knowledge/solutions/", "/vault/wiki/", "/vault/journal/"]
+    assert result["read_paths"] == [
+        "/vault/knowledge/solutions/",
+        "/vault/wiki/",
+        "/vault/journal/",
+    ]
 
 
 def test_read_paths_dedup_write(tmp_path):
@@ -57,7 +63,10 @@ def test_read_paths_dedup_write(tmp_path):
     home.mkdir()
     proj = tmp_path / "proj"
     proj.mkdir()
-    _write_cfg(proj, "write_path: /vault/knowledge/solutions/\nread_paths: /vault/knowledge/solutions/, /vault/wiki/\n")
+    _write_cfg(
+        proj,
+        "write_path: /vault/knowledge/solutions/\nread_paths: /vault/knowledge/solutions/, /vault/wiki/\n",
+    )
     result = resolve_paths.resolve(proj, home)
     assert result["read_paths"] == ["/vault/knowledge/solutions/", "/vault/wiki/"]
 
