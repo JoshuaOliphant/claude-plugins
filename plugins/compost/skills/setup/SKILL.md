@@ -43,7 +43,9 @@ edits the user made by hand.
    [GitHub](references/issue-tracker-github.md), [GitLab](references/issue-tracker-gitlab.md),
    or [local](references/issue-tracker-local.md). Each carries the label vocabulary compost uses;
    if the tracker already has labels for the same roles, map them in the table rather than
-   creating duplicates.
+   creating duplicates. For GitHub or GitLab, list the tracker's labels (`gh label list` /
+   `glab label list`) and create every label in the table that it lacks (`gh label create` /
+   `glab label create`) now, so the first `--label spec` doesn't fail.
 
 4. **Domain docs.** Default to a single context: one `CONTEXT.md` and `docs/adr/` at the root.
    Write that without asking. Offer a `CONTEXT-MAP.md` with one `CONTEXT.md` per context only
