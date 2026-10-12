@@ -6,10 +6,12 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { MemoryAction, MemoryChange, MemorySnapshot } from '../types'
 import {
   GATE,
+  GROUNDING,
   INDEX,
   forkRequest,
   frontmatterField,
   gateRequest,
+  groundingRequest,
   indexLineFor,
   indexLineOf,
   isYes,
@@ -17,6 +19,7 @@ import {
   memoryDirOf,
   memoryText,
   parseProposals,
+  userWords,
   withIndexLine,
 } from './memory'
 import type { MemoryFile, Proposal } from './memory'
@@ -96,7 +99,8 @@ export const register: Register = on => {
 }
 
 async function review($: EngineInterface, dir: string): Promise<void> {
-  const turn = lastTurn(await $.session.messages())
+  const messages = await $.session.messages()
+  const turn = lastTurn(messages)
   if (turn === '') return
 
   const memories = await memoryFiles($, dir)
@@ -125,7 +129,12 @@ async function review($: EngineInterface, dir: string): Promise<void> {
     for (const why of rejected) $.ui.log(`memory-keeper: skipped a proposal: ${why}`)
 
     const made: MemoryChange[] = []
+    const said = userWords(messages)
     for (const proposal of proposals) {
+      if (!(await isGrounded($, said, proposal))) {
+        $.ui.log(`memory-keeper: dropped a change to ${proposal.file}: what the user said does not support it`)
+        continue
+      }
       const change = await apply($, dir, proposal, `${await $.clock.now()}-${made.length}`)
       if (change !== null) made.push(change)
     }
@@ -138,6 +147,17 @@ async function review($: EngineInterface, dir: string): Promise<void> {
     $.ui.status(undefined)
     await update($, isReviewing, () => false)
   }
+}
+
+async function isGrounded($: EngineInterface, said: string, proposal: Proposal): Promise<boolean> {
+  const check = await $.model.complete({
+    model: 'haiku',
+    prompt: [{ text: GROUNDING, cache: true }, { text: groundingRequest(said, proposal) }],
+    maxTokens: 8,
+    timeoutMs: 30_000,
+  })
+
+  return check.isAnswered && isYes(check.text)
 }
 
 async function memoryFiles($: EngineInterface, dir: string): Promise<MemoryFile[]> {
