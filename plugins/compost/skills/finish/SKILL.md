@@ -51,8 +51,9 @@ yours to do without asking.
 5. **Open or update the pull request.** Push the branch and open a draft PR against the target,
    or update the open one. The body has five sections: Goal, Decisions, Changes, Validation,
    Risk. Decisions summarizes the rulings posted as issue comments. Validation carries
-   `compost:verify`'s evidence and the merge-result run. Risk names whatever is unproven,
-   deferred, or excluded from coverage. End the body with a `Closes` line for the issue, or for
+   `compost:verify`'s evidence and the merge-result run. Risk calls the change a one-way or
+   two-way door with its blast radius, and names whatever is unproven, deferred, or excluded
+   from coverage. End the body with a `Closes` line for the issue, or for
    the parent and every sub-issue (`Closes #12, closes #13, closes #14`), keeping any the PR
    already has. Use the
    [PR body template](references/pr-body.md) and the tracker's own CLI (`gh pr create --draft`,
