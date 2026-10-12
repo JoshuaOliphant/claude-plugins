@@ -5,8 +5,9 @@
 pytest, adopted from the existing suites.
 
 - Each plugin owns its tests: `plugins/<plugin>/tests/` (a few older plugins keep
-  `scripts/test_*.py` beside the code). Shared fixtures live in that plugin's
-  `tests/conftest.py`, which also puts the plugin's `scripts/` on the import path.
+  `scripts/test_*.py` beside the code). compost keeps shared fixtures in `tests/conftest.py`,
+  which also puts its `scripts/` on the import path; the other `tests/` suites insert `scripts/`
+  into `sys.path` in each test file.
 - Plugins with their own `pyproject.toml` (compost) run their suite from
   their directory with their own dev group and coverage gate.
 - Each acceptance criterion AC-N maps to a test node id or parametrize id, recorded in the

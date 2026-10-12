@@ -24,8 +24,11 @@ claude-plugins/
 │   ├── check_marketplace_versions.py  # Asserts marketplace.json ⇄ plugin.json (versions + registration)
 │   ├── sync_shared.py                 # Asserts/regenerates per-plugin copies of shared artifacts
 │   └── shared/                        # Canonical sources for artifacts duplicated across plugins
+├── knowledge/                      # Captured solutions (compound-knowledge output for this repo)
 ├── ai_docs/                        # Background research/reference docs (not shipped in plugins)
-├── docs/                           # Planning and specifications
+├── docs/agents/                    # How the compost skills work in this repo (tracker, domain docs, gates, core docs)
+├── pyproject.toml                  # Repo-wide dev group (pytest, ruff) and their config
+├── CONTEXT-MAP.md                  # Bounded contexts and their glossaries
 ├── README.md                       # Marketplace installation instructions
 └── AGENTS.md                       # This file
 ```
@@ -54,7 +57,7 @@ Each plugin follows a consistent layout:
 - `skills/<skill>/SKILL.md` — the instruction set / trigger surface for each skill; deep content lives in adjacent `references/*.md` rather than inline
 - `agents/*.md` — subagent definitions (frontmatter sets `model`, `tools`, `hooks`, `skills`)
 - `commands/*.md` — slash-command entry points
-- `hooks/` + `hooks.json` — event-driven validators (e.g. ruff/type checks on Write/Edit)
+- `hooks/` + `hooks.json`: plugin-wide hooks (compost's implement-run Stop guard and skill-drift module)
 - `scripts/` — Python helpers, importable and/or CLI-executable
 
 ### compost
@@ -83,29 +86,7 @@ Use the current family in examples and generated code: `claude-opus-4-8`, `claud
 
 ## Development Commands
 
-### Mochi API client
-
-```bash
-export MOCHI_API_KEY="your_api_key_here"
-python plugins/mochi-creator/skills/mochi-creator/scripts/mochi_api.py list-decks
-python plugins/mochi-creator/skills/mochi-creator/scripts/mochi_api.py create-deck "Test Deck"
-python plugins/mochi-creator/skills/mochi-creator/scripts/mochi_api.py list-cards <deck-id>
-python plugins/mochi-creator/skills/mochi-creator/scripts/mochi_api.py create-card <deck-id> "# Question\n---\nAnswer"
-```
-
-Importable usage:
-
-```python
-from scripts.mochi_api import MochiAPI, MochiAPIError
-
-api = MochiAPI()                                  # reads MOCHI_API_KEY
-deck = api.create_deck(name="Python Programming")
-card = api.create_card(
-    content="# What is a decorator?\n---\nA function that modifies another function",
-    deck_id=deck["id"],
-    manual_tags=["python", "decorators"],
-)
-```
+Mochi client: run `python plugins/mochi-creator/skills/mochi-creator/scripts/mochi_api.py` with no arguments for its commands; the API is documented in its docstrings and the mochi-creator SKILL.md.
 
 ### Version sync check
 
@@ -129,29 +110,6 @@ python scripts/sync_shared.py --write     # regenerate every copy from its canon
 Edit only the canonical file in `scripts/shared/`, then run `--write`. Register a new shared
 artifact by appending to `SHARED_ARTIFACTS` in `scripts/sync_shared.py`.
 
-## Important Implementation Details
-
-### Card Content Format
-
-Cards use markdown with `---` separating sides:
-```markdown
-# Question text
----
-Answer text with **formatting**
-```
-
-### Field Naming Convention (Mochi / Clojure-style)
-
-- Kebab-case: `deck-id`, `template-id`, `parent-id`
-- Boolean suffixes: `archived?`, `trashed?`, `review-reverse?`
-
-The Python client handles this conversion automatically.
-
-### Soft vs Hard Delete
-
-- Soft (reversible, preferred): `api.update_card(card_id, trashed=datetime.utcnow().isoformat())`
-- Hard (permanent): `api.delete_card(card_id)`
-
 ## Versioning
 
 Two version scopes must stay in sync:
@@ -169,29 +127,6 @@ When changing a plugin:
    check is bidirectional: it also fails if a directory under `plugins/` has no
    marketplace entry, or if a non-plugin directory (no `.claude-plugin/plugin.json`)
    is sitting under `plugins/`.
-
-## Plugin Installation
-
-```bash
-# Add the marketplace
-/plugin marketplace add joshuaoliphant/claude-plugins
-
-# Install a plugin
-/plugin install mochi-creator@oliphant-plugins
-```
-
-## Error Handling
-
-All Mochi API operations can raise `MochiAPIError`; wrap calls in try/except:
-
-```python
-from scripts.mochi_api import MochiAPIError
-
-try:
-    card = api.create_card(content=content, deck_id=deck_id)
-except MochiAPIError as e:
-    print(f"Failed to create card: {e}")
-```
 
 ## Testing and Development
 
@@ -217,3 +152,8 @@ Multiple contexts, one per plugin plus the marketplace, listed in `CONTEXT-MAP.m
 ### Tests and gates
 
 pytest per plugin; `scripts/check_all.py` plus the 100% coverage gate in compost. See `docs/agents/testing.md`.
+
+### Docs
+
+Code is the source of truth; docs hold only what it can't say, in the core docs. Put a new fact in
+a name, type, test, or comment before a core doc, and never in a new file. See `docs/agents/docs.md`.

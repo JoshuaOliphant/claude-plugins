@@ -52,6 +52,6 @@ Lite can be upgraded to full later by re-running install in full mode and swappi
 
 ## What's bundled
 
-`scripts/` (mode-aware `install`/`start`/`stop`/`status` + both `vector.*.toml`),
-`assets/` (`otel.py` template, `harness.env`, path-scoped rules template), and `references/`
+`scripts/` (mode-aware `install`/`start`/`stop`/`status`, `verify.sh`, and both `vector.*.toml`),
+`assets/` (`otel.py` and `probe.py` templates, `harness.env`, path-scoped rules template), and `references/`
 (instrumentation-scanning guide + LogsQL/PromQL/jq query recipes).
