@@ -19,7 +19,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-m \"not jev\" --cov=pile --cov=jev --cov=jevtools --cov=stop_guard --cov=skill_drift --cov=jev_lint --cov=extract --cov=rules --cov=run_eval --cov=collect --cov=serve --cov-report=term-missing"
+addopts = "-m \"not jev\" --cov=pile --cov=jev --cov=jevtools --cov=stop_guard --cov=skill_drift --cov=doc_refs --cov=jev_lint --cov=extract --cov=rules --cov=run_eval --cov=collect --cov=serve --cov-report=term-missing"
 markers = ["jev: live evals against the TypeSafe API (uv run --group dev pytest -m jev)"]
 testpaths = ["tests"]
 
