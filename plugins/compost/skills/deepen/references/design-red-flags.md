@@ -51,7 +51,7 @@ every way keeps gaining callers. Pick one, migrate the callers, and delete the o
 
 Helpers, types, or modules meant for the module's own use are reachable from outside it. An agent
 takes the shortest path that compiles, so it imports them directly and they become part of the
-interface. Make the boundary something the language or a lint rule enforces, not a naming
+interface. Make the interface something the language or a lint rule enforces, not a naming
 convention.
 
 ## Hand-synced list
