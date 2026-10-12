@@ -24,18 +24,20 @@ with review done by subagents every time, and records its rulings on the issue.
 | `finish` | Integrate: re-run on the merge target, PR recap, clean up |
 | `diagnose` | Any bug or failing test, before a fix |
 | `deepen` | Module and interface design, refactoring for testability |
+| `prune` | Docs that drifted from the code: move what's worth keeping into the code, keep only the core docs |
 | `pause` | Stop at a safe point and pick the work back up later |
 | `fan-out` | Competing designs or hypotheses, tried in parallel and judged |
 | `turn` | Check the upstream sources for changes worth working in |
 | `skill-drift` | Daily: turn repeated skill drift, judged by the `skill-drift` mod, into proposed skill fixes |
 
 `canon/` holds short essays on the ideas the skills lean on: tracer bullets, ubiquitous
-language, deep modules, seams, expand-contract, proving it works, and more. Skills link to the
+language, deep modules, seams, expand-contract, proving it works, core docs, and more. Skills link to the
 ones they use.
 
 Work is tracked in the repo's issue tracker (GitHub by default), recorded by `compost:setup` in
 `docs/agents/issue-tracker.md`. Domain vocabulary lives in `CONTEXT.md`, decisions in
-`docs/adr/`.
+`docs/adr/`. Those, the README, and `AGENTS.md` are the core docs; everything else is said in the
+code, and `compost:prune` keeps it that way.
 
 ## Jev tools
 
