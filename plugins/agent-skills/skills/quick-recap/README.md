@@ -11,7 +11,7 @@ blocked.
 - Adds a single final status line.
 - Defines when to use green, yellow, or red.
 - Keeps the status user-facing and under 100 characters.
-- Installs cleanly into `AGENTS.md` or `CLAUDE.md` through a managed block.
+- Has the agent add the convention to `AGENTS.md` or `CLAUDE.md` as a managed block, since it only applies automatically from project or user instructions.
 
 ## When To Use It
 

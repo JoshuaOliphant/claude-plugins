@@ -86,6 +86,8 @@ Where `{vault_root}` is the parent directory of the solutions path (e.g., if sol
 
 You can run both in parallel — grep for structured frontmatter matching, semantic for conceptual discovery — and merge the results.
 
+If `vault-recommender` isn't installed or fails, fall back to grep-only results and say which search ran.
+
 ### Critical patterns
 
 You MUST always read `{solutions_path}/critical-patterns.md` if it exists. This file contains high-severity warnings that apply across all tasks. Check it every time, regardless of what grep finds. If it doesn't exist, skip silently.

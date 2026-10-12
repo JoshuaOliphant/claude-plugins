@@ -12,18 +12,14 @@ It solves for plans that are too important to bury in chat. The output is
 scannable, commentable, and intuitive enough for a human to approve before code
 changes start.
 
-<picture>
-  <img alt="Visual plan review surface" src="../../media/visual-plan.png">
-</picture>
-
 Produces a self-contained `plan.html` you open locally — no account, no server,
 no external services.
 
 ## What It Does
 
 - Grounds plans in real repo files, schemas, actions, and symbols.
-- Chooses the right visual surface: document-only, wireframe canvas, prototype,
-  design direction, or visual intake.
+- Chooses the right visual surface: no visual surface (document-only), wireframes
+  only, wireframes plus an interactive flow, or flow-first.
 - Uses custom components for diagrams, UI flows, API specs, schema maps,
   diffs, code annotations, and reviewer questions.
 - Produces a self-contained interactive review document instead of inline chat Markdown.
@@ -51,4 +47,6 @@ actual codebase.
 ## Install
 
 Install via the Claude Code plugin marketplace (see the root README), or copy
-`skills/visual-plan/` into your agent's skills directory.
+`skills/visual-plan/` into your agent's skills directory. If you copy it by hand,
+also copy the plugin's `scripts/validate_artifact.py`, which the skill runs via
+`${CLAUDE_PLUGIN_ROOT}`.

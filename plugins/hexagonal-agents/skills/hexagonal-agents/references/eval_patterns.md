@@ -542,6 +542,8 @@ if __name__ == "__main__":
 
 ### Multiple Trials
 
+pass@k means at least one of k trials succeeds (fits tasks where one good answer is enough, like exploratory generation); pass^k means all k succeed (fits user-facing behavior that must be reliable every time).
+
 ```python
 # Run each case 3 times for consistency
 report = await dataset.evaluate(

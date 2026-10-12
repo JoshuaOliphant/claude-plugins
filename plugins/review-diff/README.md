@@ -41,7 +41,8 @@ visible inline as a "✓ Saved" row — click one to edit or remove it.
 - If you have **uncommitted changes**, it reviews those (working tree vs `HEAD`,
   including untracked files).
 - If your working tree is **clean**, it falls back to reviewing the **committed
-  branch vs its base** (merge-base with `origin/main`, falling back to `main`) — the
+  branch vs its base** (merge-base with the first of `origin/main`, `origin/master`, `main`, `master` that
+  exists) — the
   same diff a GitLab/GitHub MR shows. So "review this" works on an already-committed,
   pushed branch too.
 - Ask Claude to "review against `<ref>`" to force a specific base.
@@ -71,8 +72,6 @@ visible inline as a "✓ Saved" row — click one to edit or remove it.
   per-repo `review.json` in a temp dir (kept out of your repo).
 - `skills/review-diff/SKILL.md` — drives Claude: launch → wait → read `review.json` →
   address comments → stop the server.
-
-No third-party runtime dependencies — just Python 3.11+ and `git`.
 
 ## Privacy & safety
 

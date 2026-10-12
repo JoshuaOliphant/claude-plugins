@@ -7,9 +7,6 @@ pipeline. `/sdlc "<request>"` initializes `.sdlc/state.json`, writes `.claude/lo
 then iterates — one verified, committed unit of work per turn — until the state machine
 says `DONE` (PR open) or `BLOCKED` (one written escalation). No questions in between.
 
-Design rationale: [`docs/sdlc-loop-redesign.md`](../../docs/sdlc-loop-redesign.md) in
-this repository.
-
 ## Quick Start
 
 ```bash
@@ -98,7 +95,7 @@ projects that never run a loop.
   force-push, pushing to or deleting `main`/`master` in any spelling (`origin main`,
   `HEAD:main`, `refs/heads/main`, `+main`), hard resets to remote, recursive deletes of
   any absolute or `~` path (relative `rm -rf build` still passes), package publishing,
-  repo deletion. PreToolUse runs before
+  repo deletion, remote branch deletion (`git push --delete`, any branch). PreToolUse runs before
   permission checks in every mode, so it binds even for the `bypassPermissions` Builder,
   which carries the same hook in its own frontmatter.
 - **Test-lock on fix tasks** (`PreToolUse` on Write/Edit, `test-lock.sh`): while a task
@@ -197,9 +194,7 @@ specs/{slug}-spec.md  # acceptance criteria
 specs/{slug}-plan.md  # architect plan
 ```
 
-`sdlc-state --help` documents the state CLI (init, tick [--waiting], transition, gate,
-fix-task [--unlock], increment, task [--done], attempt, decide, note-progress,
-set-budget, set-driver, status, state). `sdlc-state` is the plugin's `bin/` wrapper, on
+`sdlc-state --help` documents the state CLI. `sdlc-state` is the plugin's `bin/` wrapper, on
 PATH while the plugin is enabled; `python3 scripts/sdlc_state.py` is the same program
 for installs without `bin/` (plugins distributed through claude.ai organization settings).
 
@@ -241,13 +236,13 @@ REVIEW iteration:
 
 ```bash
 # Default — equivalent to omitting both flags (preserves v2.0.0 behavior):
-python3 $STATE init --feature x --reviewers code-review --review-mode block
+sdlc-state init --feature x --reviewers code-review --review-mode block
 
 # Security-sensitive feature, still blocking:
-python3 $STATE init --feature x --reviewers code-review,security-review
+sdlc-state init --feature x --reviewers code-review,security-review
 
 # Heavier gate using pr-review-toolkit agents, advisory only:
-python3 $STATE init --feature x \
+sdlc-state init --feature x \
   --reviewers code-review,pr-test-analyzer,type-design-analyzer \
   --review-mode annotate
 ```
@@ -261,7 +256,10 @@ BUILD. A blank `--reviewers` value falls back to the default so the gate is neve
 
 ## Version History
 
-### v2.5.0 (Current)
+### v2.5.1 (Current)
+- Deprecated in favor of compost; no further updates.
+
+### v2.5.0
 - **Hooks live in the `sdlc-loop` skill's frontmatter.** `hooks.json` is gone; the
   permission rails, driver, and StopFailure logger register when the skill is invoked
   and exist only in sessions running a loop. `/sdlc` and `.claude/loop.md` invoke the

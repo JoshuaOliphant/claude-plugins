@@ -27,8 +27,8 @@ Or trigger naturally:
 The skill walks through 5 phases:
 
 1. **Scout** — Haiku agent explores your project (build system, tests, metrics)
-2. **Design** — Maps your goal onto the 5 essential loop components
-3. **Verify** — Runs the metric extraction once to confirm it works
+2. **Design** — Maps your goal onto the 7 essential loop components
+3. **Verify** — Generates the immutable runner `auto/run.sh` (quality gates + `METRIC` output) and runs it once as the baseline
 4. **Generate** — Creates `program.md` and `results.tsv`
 5. **Launch** — Prints the exact command to start the autonomous loop
 
@@ -41,7 +41,7 @@ The skill walks through 5 phases:
 - **Prompt engineering** — few-shot examples, structure, sampling parameters
 - **Configuration tuning** — parameter sweeps, load testing
 
-## The Five Essential Components
+## The Seven Essential Components
 
 Every autoloop needs these mapped correctly:
 
@@ -49,9 +49,11 @@ Every autoloop needs these mapped correctly:
 |---|-----------|---------|
 | 1 | Mutable artifact | `train.py`, `src/model.py` |
 | 2 | Immutable context | `README.md`, config files, eval harness |
-| 3 | Scalar metric | `val_bpb`, coverage %, lint errors |
-| 4 | Execution step | `uv run pytest --cov`, `cargo bench` |
-| 5 | Checkpoint/rollback | `git commit` / `git reset` |
+| 3 | Primary metric | `val_bpb`, coverage %, lint errors |
+| 4 | Secondary metrics | runtime, memory use, binary size |
+| 5 | Runner script | `auto/run.sh` emitting `METRIC key=value` lines |
+| 6 | Quality gates | fast tests, then lint, then benchmark |
+| 7 | Checkpoint/rollback | `git commit` / `git reset` |
 
 ## Running the Loop
 
@@ -66,8 +68,6 @@ The agent creates a branch, establishes a baseline, then loops indefinitely.
 ## Background
 
 - [Karpathy's autoresearch](https://github.com/karpathy/autoresearch) — 126 experiments overnight
-- [Agentic Experiment Loop Pattern](../../resources/learning/agentic-experiment-loop-pattern.md) — full analysis
-- [Program.md Template](../../resources/learning/agentic-experiment-loop-template.md) — generic template
 
 ## License
 

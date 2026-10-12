@@ -62,7 +62,7 @@ calling the API; `compost:setup` runs it and tells you how to store one.
 | `triage-finding` | Choice | reviewer, review-changes | serious findings sent to a skeptic 15/15, minor spared 8/11 (26) |
 | `review-risk` | Score | review-changes, review | 24–25/28 structural calls (28 files) |
 | `canon-pick` | Choice | reviewer | precision and recall ~0.6 (22) |
-| `locate` | Choice + Noul | reviewer, spec | anchored 17/18, absent 8/8 (26) |
+| `locate` | Choice + Noul | reviewer | anchored 17/18, absent 8/8 (26) |
 | `spec-class` | Choice | spec | 21/22, never lighter than labeled (22) |
 | `question-value` | Score | spec | 24–25/25 (25 questions) |
 | `ac-quality` | Score ×3 | spec | 24/24 (24) |

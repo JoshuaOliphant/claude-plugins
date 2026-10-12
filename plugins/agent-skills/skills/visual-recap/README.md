@@ -18,10 +18,6 @@ the things raw diffs are bad at explaining: annotated diffs, diagrams, visual
 schema maps, OpenAPI-style API diffs, file maps, UI state summaries, and focused
 review notes.
 
-<picture>
-  <img alt="Visual recap review surface animation" src="../../media/visual-recap.gif">
-</picture>
-
 Produces a self-contained `recap.html` from a branch/PR/commit diff, opened
 locally — no account, no server, no external services.
 
@@ -50,5 +46,6 @@ the risky lines are. Then they can review the raw diff with a map in their head.
 
 Install via the Claude Code plugin marketplace (see the root README). This skill
 shares its reference docs with `visual-plan` (it reads
-`../visual-plan/references/`), so if you copy folders by hand, copy both
-`skills/visual-plan/` and `skills/visual-recap/` together.
+`../visual-plan/references/`) and runs the plugin's `scripts/validate_artifact.py`, so if
+you copy folders by hand, copy `skills/visual-plan/`, `skills/visual-recap/`, and
+`scripts/validate_artifact.py` together.

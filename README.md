@@ -15,7 +15,7 @@ workflows.
 
 ## Available Plugins
 
-Nine plugins, grouped by focus. Current versions live in
+Twelve plugins, grouped by focus. Current versions live in
 [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) and each plugin's
 `plugin.json` (the source of truth) — they are intentionally not duplicated here so this
 list can't drift.
@@ -61,6 +61,15 @@ tracer-bullet issues in your tracker, builds that fit tests into the existing su
 by subagents on every change. `compost:setup` configures a repo and offers to switch off the
 collections compost replaces. See [plugins/compost](plugins/compost/README.md).
 
+#### agent-skills
+
+Small, composable workflow skills for coding agents: docs-first discipline, plan arbitration,
+clear status recaps, usage-limit awareness, and local self-contained HTML visual plan and recap
+modes.
+
+**Skills:** `read-the-damn-docs`, `plan-arbiter`, `quick-recap`, `stay-within-limits`,
+`visual-plan`, `visual-recap`.
+
 #### autonomous-sdlc
 
 **Deprecated: superseded by compost, no further updates.** Autonomous SDLC as a state machine on disk, driven by a Stop-hook loop (or a
@@ -101,6 +110,14 @@ dependency.
 
 Local web-based diff review: comment on your working-tree or committed-branch diff in the
 browser and feed the comments back to Claude Code.
+
+#### jev-lint
+
+A semantic linter for Python backed by TypeSafe's Jev. Rules are plain-language questions
+(comments, silent failures, I/O mixed with logic, docstrings, log exposure, test smells, and
+risky diffs), with pointers to the ruff rules that can take over syntactic findings.
+
+**Requires:** `TYPESAFE_API_KEY`.
 
 #### stick-shift
 
