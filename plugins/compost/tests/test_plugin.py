@@ -28,6 +28,7 @@ MARKDOWN = sorted(
 )
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 REFERENCE = re.compile(r"compost:([a-z][a-z0-9-]*)")
+LOCAL_EVAL_CASES = re.compile(r"[\w./-]*\bevals/[\w-]+\.json")
 PLUGIN_PATH = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/([\w./-]+[\w/])")
 WORKFLOW_NAME = re.compile(r"export const meta = \{\s*name: '([^']+)'")
 
@@ -57,6 +58,15 @@ def test_relative_links_resolve(document):
     targets = [target for target in LINK.findall(document.read_text()) if "://" not in target]
     missing = [target for target in targets if not (document.parent / target).exists()]
     assert missing == []
+
+
+def test_labeled_eval_cases_are_named_in_compost_evals_not_as_a_local_path():
+    local = {
+        (str(path.relative_to(PLUGIN_ROOT)), found)
+        for path in MARKDOWN
+        for found in LOCAL_EVAL_CASES.findall(path.read_text())
+    }
+    assert local == set()
 
 
 def test_every_compost_reference_names_a_skill_workflow_or_agent():

@@ -42,8 +42,9 @@ Input: `source` (a name in `pile.toml`) and `paths` (upstream paths from `pile.p
 Which compost skill each prompt should load, or `none`, from the skills' descriptions alone: the
 same choice Claude makes when it picks a skill. `margin` is the gap between the top two skills;
 `close` marks a margin under 0.15, where a description edit could tip the choice. The regression set
-is `tests/evals/route.json` (30 real prompts with the skills acceptable for each); it routed 27 of
-30 to an acceptable skill and all 4 unrelated prompts to `none`.
+is `$COMPOST_EVALS/route.json` in the private compost-evals checkout (30 real prompts with the
+skills acceptable for each); it routed 27 of 30 to an acceptable skill and all 4 unrelated prompts
+to `none`. Without a checkout the eval skips, and nothing has measured the routing.
 
 Input: `prompt` or `prompts`. Output per prompt: `skill`, `margin`, `close`, `probabilities`.
 

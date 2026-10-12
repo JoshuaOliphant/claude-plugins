@@ -353,7 +353,7 @@ document.getElementById('submit').addEventListener('click', async () => {
   try {
     const r = await fetch('/api/review', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json', 'X-Review-Token': REVIEW_TOKEN},
       body: JSON.stringify(payload),
     });
     if (r.ok) {

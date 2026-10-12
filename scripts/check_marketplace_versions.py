@@ -10,6 +10,7 @@ This script enforces that rule so the catalog never advertises a stale version.
 Usage:
     python scripts/check_marketplace_versions.py
 """
+
 from __future__ import annotations
 
 import json

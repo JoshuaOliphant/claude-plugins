@@ -13,7 +13,7 @@
       "name": "mochi-creator",
       "source": "./plugins/mochi-creator",
       "description": "Create evidence-based spaced repetition flashcards using cognitive science principles. Applies the 5 properties of effective prompts for long-term retention.",
-      "version": "1.4.2",
+      "version": "1.4.3",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -30,7 +30,7 @@
       "name": "hexagonal-agents",
       "source": "./plugins/hexagonal-agents",
       "description": "Build web apps where an AI agent dynamically generates HTML UI using hexagonal architecture with HTMX",
-      "version": "1.4.3",
+      "version": "1.5.0",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -50,7 +50,7 @@
       "name": "compound-knowledge",
       "source": "./plugins/compound-knowledge",
       "description": "Capture solved problems, retrieve past solutions, and graduate accumulated knowledge into living context. Skills: compound-capture, compound-retrieve, compound-graduate.",
-      "version": "0.8.4",
+      "version": "0.8.5",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -89,7 +89,7 @@
       "name": "understand",
       "source": "./plugins/understand",
       "description": "Process information for real understanding with the explain-back skill: explain from memory, grade against the real source, struggle-then-teach per gap, output Mochi cards and a resumable session record. An antidote to the illusion of clarity.",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -107,7 +107,7 @@
       "name": "compost",
       "source": "./plugins/compost",
       "description": "One software-engineering workflow composted from Matt Pocock's skills, superpowers, pstack, Imbue's blueprint, and autonomous-sdlc: specs with BDD acceptance criteria, tracer-bullet issues in your tracker, builds that fit tests into the existing suite, automatic subagent review, browser diff review, semantic lint for Python, a prune skill that keeps docs to what the code can't say, and a turn skill that works in upstream changes.",
-      "version": "0.8.0",
+      "version": "0.8.1",
       "author": {
         "name": "Joshua Oliphant"
       },

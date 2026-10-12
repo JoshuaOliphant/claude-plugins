@@ -73,11 +73,15 @@ An adopted change rewrites a skill, and a description edit changes which skill C
 any change to a skill's text or description, run the plugin's two regression evals before the
 change merges ([Jev tools](references/jev-tools.md)):
 
-1. **Routing.** From `plugins/compost` in the source repo, run
-   `uv run --group dev pytest -m jev tests/test_evals_meta.py -k route -s`. It routes the 30 real
-   prompts in `tests/evals/route.json` through every skill's description and fails below 27 of 30.
-   A new miss, or a prompt now marked `close`, points at the description that moved; fix the
-   description, not the eval.
+1. **Routing.** The 30 labeled prompts live in the private compost-evals repo, as
+   `$COMPOST_EVALS/route.json`, where `COMPOST_EVALS` points at that checkout's `evals/` directory.
+   From `plugins/compost` in the source repo, run
+   `COMPOST_EVALS=<checkout>/evals uv run --group dev pytest -m jev tests/test_evals_meta.py -k route -s`.
+   It routes every prompt through every skill's description and fails below 27 of 30. A new miss,
+   or a prompt now marked `close`, points at the description that moved; fix the description, not
+   the eval. Without a checkout the test skips rather than fails, so a skip is not a pass: say in
+   the turn report that the routing eval did not run, and read the changed descriptions against
+   the skills they compete with yourself.
 2. **Rulings.** Write `{"paths": [<the changed markdown files, relative to the plugin root>]}` to a
    temp file and run `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py rulings-lint --input <file>`
    (`{}` lints the whole plugin). Read each flagged passage against the rulings it names: reword

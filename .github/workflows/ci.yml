@@ -15,7 +15,7 @@ jobs:
         uses: astral-sh/setup-uv@v4
       - name: Install Claude Code, which runs compost's hooks-module tests
         run: npm install -g @anthropic-ai/claude-code
-      - name: Run version, shared-sync, and test checks
+      - name: Run version, shared-sync, test, lint, and format checks
         run: uv run --group dev python scripts/check_all.py
 
   compost-coverage:

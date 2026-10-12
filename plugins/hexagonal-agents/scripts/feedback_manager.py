@@ -75,7 +75,11 @@ def save_feedback(plugin_name: str, data: dict) -> dict:
     with open(feedback_file, mode, encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
 
-    return {"status": "saved", "entry": entry, "total_feedback": len(load_feedback_entries(plugin_name))}
+    return {
+        "status": "saved",
+        "entry": entry,
+        "total_feedback": len(load_feedback_entries(plugin_name)),
+    }
 
 
 def show_feedback(plugin_name: str) -> dict:
@@ -122,11 +126,15 @@ def clear_feedback(plugin_name: str, category: str | None = None) -> dict:
 
 def main():
     if len(sys.argv) < 3:
-        print(json.dumps({
-            "error": "Usage: feedback_manager.py <plugin-name> <command> [args]",
-            "commands": ["save-feedback", "show-feedback", "clear-feedback"],
-            "example": "echo '{\"category\": \"general\", \"feedback\": \"...\"}' | python feedback_manager.py my-plugin save-feedback",
-        }))
+        print(
+            json.dumps(
+                {
+                    "error": "Usage: feedback_manager.py <plugin-name> <command> [args]",
+                    "commands": ["save-feedback", "show-feedback", "clear-feedback"],
+                    "example": 'echo \'{"category": "general", "feedback": "..."}\' | python feedback_manager.py my-plugin save-feedback',
+                }
+            )
+        )
         sys.exit(1)
 
     plugin_name = sys.argv[1]
