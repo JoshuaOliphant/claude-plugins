@@ -62,11 +62,6 @@ specs.backup.*
 # Worktree isolation
 trees/
 
-# Beads runtime artifacts (DB and lock files tracked in .beads/.gitignore,
-# but dolt/ dir and server lock need repo-level exclusion)
-.beads/dolt/
-.beads/dolt-server.lock
-
 # Vault recommender generated index
 .vault-recommender-index/
 
