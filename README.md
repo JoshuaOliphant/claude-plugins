@@ -15,7 +15,7 @@ workflows.
 
 ## Available Plugins
 
-Six plugins, grouped by focus. Current versions live in
+Seven plugins, grouped by focus. Current versions live in
 [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) and each plugin's
 `plugin.json` (the source of truth) — they are intentionally not duplicated here so this
 list can't drift.
@@ -50,6 +50,19 @@ Process information for *real* understanding — an antidote to the illusion of 
 `explain-back` skill makes you explain from memory, grades you against the real source,
 teaches struggle-then-teach per gap, and outputs Mochi cards plus a resumable session
 record.
+
+#### memory-keeper
+
+Keeps Claude Code's auto-memory current without interrupting you. After each turn, a cheap
+Haiku call asks whether the turn calls for a memory to be added, changed or removed. When it
+does, a fork of the session (the same conversation, tools off, served from the prompt cache)
+proposes the changes, and the mod writes them to the project's memory folder and `MEMORY.md`.
+A **Memory changes** side pane lists each change with its reason and an **Undo**;
+`/memory-changes` opens it.
+
+```bash
+/plugin install memory-keeper@oliphant-plugins
+```
 
 ### Software development
 

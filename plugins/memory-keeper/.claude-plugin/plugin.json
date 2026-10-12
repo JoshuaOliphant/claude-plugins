@@ -1,0 +1,13 @@
+{
+  "name": "memory-keeper",
+  "version": "0.1.0",
+  "description": "After each turn, a Haiku gate asks whether Claude's auto-memory should change; when it should, a fork of the session proposes the adds, updates and removals, the mod writes them to the memory folder, and a side pane lists them with Undo.",
+  "author": {
+    "name": "Joshua Oliphant",
+    "email": "joshua.oliphant@hey.com"
+  },
+  "keywords": ["memory", "auto-memory", "fork", "haiku", "mod", "function-hooks"],
+  "license": "MIT",
+  "repository": "https://github.com/JoshuaOliphant/claude-plugins",
+  "types": "./types/index.d.ts"
+}

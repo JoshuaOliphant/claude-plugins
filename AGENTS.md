@@ -4,7 +4,7 @@ This file provides guidance to coding agents (Claude Code reads it natively) whe
 
 ## Project Overview
 
-This is a Claude Code plugin marketplace (`oliphant-plugins`). It distributes six plugins that extend Claude Code with specialized skills, subagents, commands, and hooks. Each plugin is self-contained under `plugins/` and registered in `.claude-plugin/marketplace.json`.
+This is a Claude Code plugin marketplace (`oliphant-plugins`). It distributes seven plugins that extend Claude Code with specialized skills, subagents, commands, and hooks. Each plugin is self-contained under `plugins/` and registered in `.claude-plugin/marketplace.json`.
 
 ## Repository Structure
 
@@ -18,6 +18,7 @@ claude-plugins/
 │   ├── compound-knowledge/         # Capture / retrieve / graduate engineering knowledge
 │   ├── observability-harness/      # Local Docker-free OTLP stack (OTel → Vector → JSONL/Victoria*)
 │   ├── understand/                 # Explain-back learning loop (graded recall → Mochi cards)
+│   ├── memory-keeper/              # Mod: Haiku gate + session fork keep auto-memory current
 │   └── compost/                    # One SDLC workflow composted from several skill collections
 ├── scripts/
 │   ├── check_all.py                   # One-command repo health check (versions + sync + tests)
@@ -44,6 +45,7 @@ Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json` (the
 | **compound-knowledge** | Institutional memory: capture → retrieve → graduate | YAML-frontmatter solution files, grep-based retrieval, `knowledge-researcher` subagent |
 | **observability-harness** | Local Docker-free OTLP stack (OTel → Vector → JSONL/Victoria*) + instrumentation | setup skill with scan-and-propose, `observability-query` skill, `status.sh --json` detection contract, scripted `verify.sh` |
 | **understand** | Process information for real understanding (antidote to the illusion of clarity) | `explain-back` skill: graded recall, struggle-then-teach per gap, Mochi-card output, resumable session record |
+| **memory-keeper** | Keep Claude's auto-memory current without interrupting the session | Function-hooks mod (`hooks/register.tsx`): a `classic.Stop` hook queues a Haiku gate, then a `$.model.fork` that proposes changes; the mod writes them through `$.fs` and lists them in a pane with Undo. Engine tests in `tests/memory-keeper.test.ts`, run from pytest |
 | **compost** | One SDLC workflow made from Matt Pocock's skills, superpowers, pstack, blueprint, and the retired autonomous-sdlc and stick-shift plugins | 15 skills linked by Next moves, `canon/` essays, `compost:prune` + `scripts/doc_refs.py` keeping docs to the core, `/compost:review-changes` workflow + `reviewer` agent, Jev tools (`scripts/jev.py`), browser diff review (`scripts/review_diff/`), semantic Python lint (`scripts/lint/`), `pile.toml` + `scripts/pile.py` tracking upstream sources for `compost:turn` |
 
 The older plugins (mochi-creator, hexagonal-agents, compound-knowledge) also ship a `feedback` skill backed by `scripts/feedback_manager.py` to persist user preferences across sessions.
