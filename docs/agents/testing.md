@@ -16,14 +16,14 @@ pytest, adopted from the existing suites.
 
 ## Gates
 
-`compost:verify` runs these in order and stops at the first failure. CI runs the first three.
+`compost:verify` runs these in order and stops at the first failure. CI runs all four (Lint and Format through `check_all.py`).
 
 | Gate | Command | Status |
 |---|---|---|
-| Repo checks | `uv run --group dev python scripts/check_all.py` (marketplace versions, shared-artifact sync, every plugin's tests) | passing |
+| Repo checks | `uv run --group dev python scripts/check_all.py` (marketplace versions, shared-artifact sync, every plugin's tests, lint, format) | passing |
 | compost coverage | `cd plugins/compost && uv run --group dev pytest` | passing |
-| Lint | `uv run --group dev ruff check .` | broken: 41 errors, first `plugins/compound-knowledge/tests/test_resolve_paths.py:20:29 E702` (34 are E702 in compound-knowledge and understand tests) |
-| Format | `uv run --group dev ruff format --check .` | broken: 20 files would be reformatted |
+| Lint | `uv run --group dev ruff check .` (run by `check_all.py`) | passing |
+| Format | `uv run --group dev ruff format --check .` (run by `check_all.py`) | passing |
 
 The live Jev evals in compost (`pytest -m jev`) are not a gate: they need a TypeSafe key and the
 private compost-evals checkout.

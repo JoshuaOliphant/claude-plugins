@@ -17,8 +17,10 @@ def _write_cfg(dir_path: Path, body: str) -> None:
 
 
 def test_default_when_no_config(tmp_path):
-    home = tmp_path / "home"; home.mkdir()
-    proj = tmp_path / "proj"; proj.mkdir()
+    home = tmp_path / "home"
+    home.mkdir()
+    proj = tmp_path / "proj"
+    proj.mkdir()
     result = resolve_paths.resolve(proj, home)
     expected = str(proj / "knowledge" / "solutions") + "/"
     assert result["write_path"] == expected
@@ -28,8 +30,10 @@ def test_default_when_no_config(tmp_path):
 
 
 def test_solutions_path_back_compat(tmp_path):
-    home = tmp_path / "home"; home.mkdir()
-    proj = tmp_path / "proj"; proj.mkdir()
+    home = tmp_path / "home"
+    home.mkdir()
+    proj = tmp_path / "proj"
+    proj.mkdir()
     _write_cfg(proj, "# Settings\nsolutions_path: /vault/knowledge/solutions/\n")
     result = resolve_paths.resolve(proj, home)
     assert result["write_path"] == "/vault/knowledge/solutions/"
@@ -38,25 +42,40 @@ def test_solutions_path_back_compat(tmp_path):
 
 
 def test_read_write_split(tmp_path):
-    home = tmp_path / "home"; home.mkdir()
-    proj = tmp_path / "proj"; proj.mkdir()
-    _write_cfg(proj, "write_path: /vault/knowledge/solutions/\nread_paths: /vault/wiki/, /vault/journal/\n")
+    home = tmp_path / "home"
+    home.mkdir()
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    _write_cfg(
+        proj, "write_path: /vault/knowledge/solutions/\nread_paths: /vault/wiki/, /vault/journal/\n"
+    )
     result = resolve_paths.resolve(proj, home)
     assert result["write_path"] == "/vault/knowledge/solutions/"
-    assert result["read_paths"] == ["/vault/knowledge/solutions/", "/vault/wiki/", "/vault/journal/"]
+    assert result["read_paths"] == [
+        "/vault/knowledge/solutions/",
+        "/vault/wiki/",
+        "/vault/journal/",
+    ]
 
 
 def test_read_paths_dedup_write(tmp_path):
-    home = tmp_path / "home"; home.mkdir()
-    proj = tmp_path / "proj"; proj.mkdir()
-    _write_cfg(proj, "write_path: /vault/knowledge/solutions/\nread_paths: /vault/knowledge/solutions/, /vault/wiki/\n")
+    home = tmp_path / "home"
+    home.mkdir()
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    _write_cfg(
+        proj,
+        "write_path: /vault/knowledge/solutions/\nread_paths: /vault/knowledge/solutions/, /vault/wiki/\n",
+    )
     result = resolve_paths.resolve(proj, home)
     assert result["read_paths"] == ["/vault/knowledge/solutions/", "/vault/wiki/"]
 
 
 def test_project_over_user_precedence(tmp_path):
-    home = tmp_path / "home"; home.mkdir()
-    proj = tmp_path / "proj"; proj.mkdir()
+    home = tmp_path / "home"
+    home.mkdir()
+    proj = tmp_path / "proj"
+    proj.mkdir()
     _write_cfg(home, "solutions_path: /user/level/solutions/\n")
     _write_cfg(proj, "solutions_path: /project/level/solutions/\n")
     result = resolve_paths.resolve(proj, home)
@@ -65,8 +84,10 @@ def test_project_over_user_precedence(tmp_path):
 
 
 def test_user_level_when_no_project_config(tmp_path):
-    home = tmp_path / "home"; home.mkdir()
-    proj = tmp_path / "proj"; proj.mkdir()
+    home = tmp_path / "home"
+    home.mkdir()
+    proj = tmp_path / "proj"
+    proj.mkdir()
     _write_cfg(home, "solutions_path: /user/level/solutions/\n")
     result = resolve_paths.resolve(proj, home)
     assert result["write_path"] == "/user/level/solutions/"
@@ -74,16 +95,20 @@ def test_user_level_when_no_project_config(tmp_path):
 
 
 def test_vault_root_parsed(tmp_path):
-    home = tmp_path / "home"; home.mkdir()
-    proj = tmp_path / "proj"; proj.mkdir()
+    home = tmp_path / "home"
+    home.mkdir()
+    proj = tmp_path / "proj"
+    proj.mkdir()
     _write_cfg(proj, "solutions_path: /vault/knowledge/solutions/\nvault_root: /vault\n")
     result = resolve_paths.resolve(proj, home)
     assert result["vault_root"] == "/vault/"
 
 
 def test_tilde_path_expanded(tmp_path):
-    home = tmp_path / "home"; home.mkdir()
-    proj = tmp_path / "proj"; proj.mkdir()
+    home = tmp_path / "home"
+    home.mkdir()
+    proj = tmp_path / "proj"
+    proj.mkdir()
     _write_cfg(proj, "solutions_path: ~/knowledge/solutions/\n")
     result = resolve_paths.resolve(proj, home)
     assert not result["write_path"].startswith("~")
@@ -91,8 +116,10 @@ def test_tilde_path_expanded(tmp_path):
 
 
 def test_read_paths_write_forced_first(tmp_path):
-    home = tmp_path / "home"; home.mkdir()
-    proj = tmp_path / "proj"; proj.mkdir()
+    home = tmp_path / "home"
+    home.mkdir()
+    proj = tmp_path / "proj"
+    proj.mkdir()
     _write_cfg(proj, "write_path: /vault/solutions/\nread_paths: /vault/wiki/, /vault/solutions/\n")
     result = resolve_paths.resolve(proj, home)
     assert result["read_paths"] == ["/vault/solutions/", "/vault/wiki/"]

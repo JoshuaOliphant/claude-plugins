@@ -20,7 +20,7 @@ claude-plugins/
 │   ├── understand/                 # Explain-back learning loop (graded recall → Mochi cards)
 │   └── compost/                    # One SDLC workflow composted from several skill collections
 ├── scripts/
-│   ├── check_all.py                   # One-command repo health check (versions + sync + tests)
+│   ├── check_all.py                   # One-command repo health check (versions + sync + tests + lint + format)
 │   ├── check_marketplace_versions.py  # Asserts marketplace.json ⇄ plugin.json (versions + registration)
 │   ├── sync_shared.py                 # Asserts/regenerates per-plugin copies of shared artifacts
 │   └── shared/                        # Canonical sources for artifacts duplicated across plugins

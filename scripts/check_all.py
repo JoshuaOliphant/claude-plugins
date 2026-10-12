@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ABOUTME: One-command repo health check: version sync, shared-artifact sync, and tests.
+# ABOUTME: One-command repo health check: version sync, shared-artifact sync, tests, lint, format.
 # ABOUTME: The single entrypoint CI and contributors run before publishing.
 """Run every repo-wide guard in one place and report a combined result.
 
@@ -7,6 +7,8 @@ Checks, in order:
   1. ``check_marketplace_versions.py`` — marketplace.json matches each plugin.json
   2. ``sync_shared.py --check``        — generated shared copies match their canonical source
   3. ``pytest``                        — every plugin's test suite
+  4. ``ruff check .``                  — lint the whole repo
+  5. ``ruff format --check .``         — formatting matches ruff format
 
 Usage:
     python scripts/check_all.py            # run all checks, exit non-zero on any failure
@@ -29,6 +31,8 @@ CHECKS: list[tuple[str, list[str]]] = [
     ("marketplace versions", [sys.executable, "scripts/check_marketplace_versions.py"]),
     ("shared-artifact sync", [sys.executable, "scripts/sync_shared.py", "--check"]),
     ("test suite", [sys.executable, "-m", "pytest", "-q"]),
+    ("lint", [sys.executable, "-m", "ruff", "check", "."]),
+    ("format", [sys.executable, "-m", "ruff", "format", "--check", "."]),
 ]
 
 
