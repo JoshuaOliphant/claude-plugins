@@ -19,6 +19,9 @@ unproven facts, or judgment calls.
 - <Behavior that changed, not a file list. Name files only where a reviewer needs to look.>
 - <What was removed or replaced, with no shim left behind.>
 
+<Optional: one sketch (a call tree, diff sketch, or file tree) when the change has a shape worth
+seeing. Pick the smallest view that makes the key point clear.>
+
 ## Validation
 
 - Suite: `<command>`: <N passed, 0 failed> on the branch, and <N passed> on the merge result
@@ -35,6 +38,7 @@ unproven facts, or judgment calls.
 
 ## Risk
 
+- Door: <one-way or two-way>; blast radius: <what this change can break, and for whom>.
 - <Anything unproven, with the rung it reached.>
 - <Anything deferred, with the issue that tracks it.>
 - <Coverage exclusions proposed and why the lines earn no test.>

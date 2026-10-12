@@ -67,6 +67,8 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    Look where grep stops: the library's own source, JSON a service returns, a database column, a
    feature flag, another program reading the same bytes. Report the rung you reached. Below
    "ran", call the fact unproven. See [the proof ladder](references/proof-ladder.md) for examples.
+   When the fact is a performance claim, run
+   [the benchmark checklist](../diagnose/references/benchmarks.md) and report its verdict.
 
 6. **Make silent checks prove they ran.** A check that prints nothing when it fails looks the
    same as one that never ran. Before counting it as a pass, show it did work: the number of

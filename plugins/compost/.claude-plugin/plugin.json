@@ -1,6 +1,6 @@
 {
   "name": "compost",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "One software-engineering workflow composted from Matt Pocock's skills, superpowers, pstack, Imbue's blueprint, and autonomous-sdlc: specs with BDD acceptance criteria, tracer-bullet issues in your tracker, builds that fit tests into the existing suite, automatic subagent review, browser diff review, semantic lint for Python, a prune skill that keeps docs to what the code can't say, and a turn skill that works in upstream changes.",
   "author": {
     "name": "Joshua Oliphant",

@@ -61,8 +61,9 @@ Each decision is a sub-issue of the map, labelled `decision`, with the question 
   signing up for a service to judge its API). Done alone where possible, otherwise handed to the
   user as a precise checklist.
 
-Wire blocking edges in a second pass, once every sub-issue has a number. The frontier is the open,
-unblocked, unassigned decisions.
+Wire blocking edges in a second pass, once every sub-issue has a number, and write cross-references
+between sub-issues in that same pass, with real numbers: a placeholder `#<n>` auto-links to an
+unrelated issue. The frontier is the open, unblocked, unassigned decisions.
 
 ## Fog or decision?
 
@@ -81,7 +82,8 @@ there and give it a line under Out of scope.
 2. Survey the whole space breadth-first for open decisions and the first steps takeable now. If
    this turns up no fog, you don't need a map: slice the work directly.
 3. Create the map with Destination, Notes, and Not yet specified filled in.
-4. Create the decision sub-issues you can state sharply, then wire their blocking edges.
+4. Create the decision sub-issues you can state sharply, then wire their blocking edges and
+   cross-references in a second pass, with real numbers.
 5. Send a subagent after each research decision in parallel; each posts its finding as the
    resolution comment.
 

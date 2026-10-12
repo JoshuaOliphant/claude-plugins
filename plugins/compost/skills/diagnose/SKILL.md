@@ -70,7 +70,8 @@ comes first, the theory second, and the fix last, at the root. The why is in
    then targeted logs at the seams that tell hypotheses apart; never log everything and grep. Tag
    every debug line with a unique prefix such as `[DEBUG-a4f2]` so cleanup is one grep. For a
    performance regression, measure a baseline first (timer, profiler, query plan) and bisect against
-   it; logs rarely find perf bugs.
+   it; logs rarely find perf bugs. Vet any number you report against
+   [the benchmark checklist](references/benchmarks.md).
 
    When hypotheses are independent and their probes don't share files or state, test them at once:
    one subagent per hypothesis, each in its own worktree, or teammates when agent teams are enabled.
@@ -85,13 +86,14 @@ comes first, the theory second, and the fix last, at the root. The why is in
    chain gives false confidence. If no real seam exists, that is the finding: note it and hand it to
    `compost:deepen`.
 
-   With a seam, fit the minimised repro into the existing suite as a test beside its neighbours,
-   watch it fail, apply the fix, watch it pass, then re-run the original loop against the full
-   scenario. To find the neighbours, ask Jev first: run `find-test` with the repo and the bug as a
-   criterion, "Given <the minimal repro>, When <the call>, Then <the correct result>"
-   ([jev](../build/references/jev.md)), and extend or sit beside the test it names. Exit 3 means
-   Jev is unavailable: grep the suite for the code under the fix. Fix the pattern, not the instance: search for the same mistake elsewhere and fix those
-   too.
+   With a seam, fit the minimised repro into the existing suite as a test beside its neighbours and
+   watch it fail. If you forced the red by mutating code or a fixture, diff against a pristine copy
+   to prove the mutation landed before you trust the red. Then apply the fix, watch it pass, and
+   re-run the original loop against the full scenario. To find the neighbours, ask Jev first: run
+   `find-test` with the repo and the bug as a criterion, "Given <the minimal repro>, When <the
+   call>, Then <the correct result>" ([jev](../build/references/jev.md)), and extend or sit beside
+   the test it names. Exit 3 means Jev is unavailable: grep the suite for the code under the fix.
+   Fix the pattern, not the instance: search for the same mistake elsewhere and fix those too.
 
    Don't silence a symptom with a guard. A null check that stops a crash leaves the bad value in
    flight. Validation belongs at the system boundary ([boundary discipline](../../canon/boundary-discipline.md)),
