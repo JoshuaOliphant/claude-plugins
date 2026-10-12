@@ -59,9 +59,15 @@ The tracker is the only plan. No markdown plan files, no second task list.
    No placeholders: "add error handling", "similar to #12", "tests for the above", or a name that
    no issue produces are all failures. Write out what the reader needs.
 
+   The bar is unambiguous, not complete: the reader can write exactly one reasonable thing from
+   the issue. Over-specification fails it from the other side. An issue that holds a function body
+   its Interfaces signature and acceptance criteria already determine has written the code. A body
+   belongs in an issue only when the spec fixes an algorithm or exact text.
+
 5. **Self-review the set once** against the spec, and fix what you find inline:
    - Coverage: point to the issue for every AC-N and every user story. Add an issue for any gap.
    - Placeholders: none of the patterns above.
+   - Over-specification: no code that the signature and criteria already pin.
    - Interfaces: every name an issue consumes is produced, with the same spelling and types, by an
      issue it is blocked by.
    - Edges: no cycles; issues that share a file are ordered; nothing is blocked without cause.
