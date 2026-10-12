@@ -116,7 +116,9 @@ the work so each step can be checked before the next builds on it
 
    When the run repeats a mistake (a command that needs a flag, a fixture that lies, a service that
    must be up), record the gotcha with `compound-knowledge:compound-capture` if it is installed, so
-   the next run starts knowing it; otherwise note it on the parent issue.
+   the next run starts knowing it; otherwise note it on the parent issue. A note is the lowest level
+   of fix: when a check could catch the mistake instead, file an issue for that check
+   ([make mistakes impossible](../../canon/make-mistakes-impossible.md)).
 
 10. **Close out.** When the frontier is empty and every sub-issue is ticked, run `compost:verify` on
     the whole feature branch, push, and hand off through `compost:finish`, whose recap is Goal,
