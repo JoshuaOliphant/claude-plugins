@@ -122,6 +122,13 @@ a quick lookup can answer.
    dimension ([jev](references/jev.md)). Rewrite those. Exit 3: check every criterion against
    [acceptance criteria](references/acceptance-criteria.md) yourself.
 
+   Then run the builder check: a fresh subagent reads the spec as someone who must plan the build
+   without talking to you, and reports the questions where a wrong guess would matter, ranked.
+   Sort each one: already answered goes into the spec, minor gets settled and marked `(assumed)`
+   in the refined prompt, and the user's to decide joins the open questions. The prompt, the
+   sort, and the fallback without a subagent tool are in
+   [builder check](references/builder-check.md).
+
    Then list any open questions, each quoting the spec line it concerns, in the format in
    [questions](references/questions.md). Answers go back into the spec and the refined prompt. No
    open questions is a fine result; say so.
