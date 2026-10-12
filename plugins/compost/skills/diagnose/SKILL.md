@@ -68,7 +68,8 @@ comes first, the theory second, and the fix last, at the root. The why is in
    then targeted logs at the seams that tell hypotheses apart; never log everything and grep. Tag
    every debug line with a unique prefix such as `[DEBUG-a4f2]` so cleanup is one grep. For a
    performance regression, measure a baseline first (timer, profiler, query plan) and bisect against
-   it; logs rarely find perf bugs.
+   it; logs rarely find perf bugs. Vet any number you report against
+   [the benchmark checklist](references/benchmarks.md).
 
    When hypotheses are independent and their probes don't share files or state, test them at once:
    one subagent per hypothesis, each in its own worktree, or teammates when agent teams are enabled.
