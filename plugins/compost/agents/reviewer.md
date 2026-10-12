@@ -62,6 +62,6 @@ When Jev is unavailable, choose from the essays a review most often leans on:
 - `prove-it-works.md`: tests that prove behaviour rather than restate the code.
 - `ubiquitous-language.md`: one word per concept, shared by code and domain.
 - `expand-contract.md`: replacing an interface without a compatibility shim left behind.
-- `code-is-the-source-of-truth.md`: prose that restates the code, or a doc the change left wrong.
+- `core-docs.md`: prose that restates the code, or a doc the change left wrong.
 
 Read an essay before you cite it. Cite it only when the diff actually breaks what it says.

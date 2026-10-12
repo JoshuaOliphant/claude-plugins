@@ -15,10 +15,12 @@ only when relevant.
 ## Working principles
 
 - [Prove it works](prove-it-works.md): observe the real artifact working; proxies and self-reports are not checks.
+- [Read the docs](read-the-docs.md): read current docs for the installed version before coding against what you did not write.
 - [Fix root causes](fix-root-causes.md): reproduce, trace to the cause, fix it there, and find its siblings.
+- [Make mistakes impossible](make-mistakes-impossible.md): turn a repeated mistake into a check at the highest level that works, and prove the check catches it.
 - [Boundary discipline](boundary-discipline.md): parse and validate at the edges, trust types inside, keep logic pure.
 - [Type-system discipline](type-system-discipline.md): make illegal states unrepresentable and let the checker enforce every case.
 - [Model the domain](model-the-domain.md): give domain rules a structure that fits instead of scattered conditionals.
-- [Code is the source of truth](code-is-the-source-of-truth.md): make the code explain itself; keep only decisions, the glossary, navigation, and instructions in prose.
 - [Subtract before you add](subtract-before-you-add.md): remove first, replace instead of deprecating, build for observed usage.
+- [Core docs](core-docs.md): say it in the code; keep docs to what code can't say, and trust the code when they disagree.
 - [Sequence verifiable units](sequence-verifiable-units.md): small units, each checked green before the next, delivered in an order that proves the work.

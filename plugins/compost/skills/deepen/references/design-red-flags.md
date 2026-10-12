@@ -1,7 +1,8 @@
 # Design red flags
 
 Screen every candidate interface against these before choosing one. A red flag is a reason to revise
-the shape or reject it.
+the shape or reject it. Assume the next contributor is an agent that sees only the files it opened,
+copies the nearest example, and takes the shortest path that compiles.
 
 ## Shallow module
 
@@ -32,6 +33,32 @@ around the decision it protects; methods that run at different times can belong 
 A method that forwards its arguments to another method of the same shape. It adds a layer and hides
 nothing. Remove it, or move the responsibility to the module that can complete the operation. Keep a
 forwarding seam only when it adds policy, adaptation, or a distinct abstraction.
+
+## Split ownership
+
+More than one module writes the same state, or keeps its own copy of it. An agent that edits one
+writer can't see the others, so their rules diverge. Give the state one owner and have the others
+call it; if two writers must stay, say what happens when they disagree
+([design it twice](design-it-twice.md)).
+
+## Two ways to do one task
+
+Two functions, paths, or formats do the same job. An agent copies whichever way it finds first, so
+every way keeps gaining callers. Pick one, migrate the callers, and delete the other
+([expand-contract](../../../canon/expand-contract.md)).
+
+## Importable internals
+
+Helpers, types, or modules meant for the module's own use are reachable from outside it. An agent
+takes the shortest path that compiles, so it imports them directly and they become part of the
+interface. Make the interface something the language or a lint rule enforces, not a naming
+convention.
+
+## Hand-synced list
+
+The same list (of plugins, routes, fields, enum values) is written out in more than one place. An
+agent that sees one list updates only that one. Keep one list and derive the others from it. A list
+that can't be derived gets a build check that fails when the lists disagree.
 
 ## Loose types
 

@@ -15,7 +15,7 @@ workflows.
 
 ## Available Plugins
 
-Nine plugins, grouped by focus. Current versions live in
+Six plugins, grouped by focus. Current versions live in
 [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) and each plugin's
 `plugin.json` (the source of truth) — they are intentionally not duplicated here so this
 list can't drift.
@@ -56,17 +56,12 @@ record.
 #### compost
 
 One software-engineering workflow made from Matt Pocock's skills, superpowers, pstack, Imbue's
-blueprint, and the two SDLC plugins below: specs with Given/When/Then acceptance criteria,
-tracer-bullet issues in your tracker, builds that fit tests into the existing suite, and review
-by subagents on every change. `compost:setup` configures a repo and offers to switch off the
-collections compost replaces. See [plugins/compost](plugins/compost/README.md).
-
-#### autonomous-sdlc
-
-**Deprecated: superseded by compost, no further updates.** Autonomous SDLC as a state machine on disk, driven by a Stop-hook loop (or a
-user-armed self-paced `/loop`) — one verified, committed unit of work per iteration with
-decide-log-proceed autonomy and built-in code-review / simplify gates. Architect
-and Builder subagents; TDD, BDD, and Beads skills.
+blueprint, and the retired autonomous-sdlc and stick-shift plugins: specs with Given/When/Then
+acceptance criteria, tracer-bullet issues in your tracker, builds that fit tests into the existing
+suite, and review by subagents on every change. It also carries what used to be the review-diff
+plugin (comment on a diff in your browser) and jev-lint (semantic lint for Python).
+`compost:setup` configures a repo and offers to switch off the collections compost replaces.
+See [plugins/compost](plugins/compost/README.md).
 
 #### hexagonal-agents
 
@@ -81,33 +76,13 @@ data operations.
 export ANTHROPIC_API_KEY="your_key_here"
 ```
 
-#### autoloop
-
-Generate autonomous experiment loops (Karpathy-style autoresearch) that edit → run →
-measure a scalar metric → keep improvements via git. Produces `program.md` plus an
-immutable `auto/run.sh` with tiered quality gates and structured `METRIC` output, ready to
-run with `claude --dangerously-skip-permissions`.
-
 #### observability-harness
 
 Install a local, Docker-free OTLP observability stack (OpenTelemetry → Vector → JSONL,
 optionally VictoriaLogs + VictoriaMetrics) into a project and instrument the code — with a
 scan-and-propose step for domain-appropriate spans and metrics — then query that telemetry
 as a development feedback signal (`observability-query` skill, `status.sh --json` detection
-contract, scripted end-to-end `verify.sh`). Composed by autonomous-sdlc as a soft
-dependency.
-
-#### review-diff
-
-Local web-based diff review: comment on your working-tree or committed-branch diff in the
-browser and feed the comments back to Claude Code.
-
-#### stick-shift
-
-**Deprecated: superseded by compost, no further updates.** A manually-driven ("disassembled") SDLC — the same `.sdlc/` session format as
-autonomous-sdlc, but you drive each phase by hand via slash commands
-(`/spec → /plan → /build → /verify → /journal`). Built for legible, narratable live demos;
-adopts an in-progress autonomous-sdlc session and stands its loop down.
+contract, scripted end-to-end `verify.sh`).
 
 ## Repository Conventions
 

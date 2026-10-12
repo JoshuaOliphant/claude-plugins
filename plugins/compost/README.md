@@ -24,18 +24,20 @@ with review done by subagents every time, and records its rulings on the issue.
 | `finish` | Integrate: re-run on the merge target, PR recap, clean up |
 | `diagnose` | Any bug or failing test, before a fix |
 | `deepen` | Module and interface design, refactoring for testability |
+| `prune` | Docs that drifted from the code: move what's worth keeping into the code, keep only the core docs |
 | `pause` | Stop at a safe point and pick the work back up later |
 | `fan-out` | Competing designs or hypotheses, tried in parallel and judged |
 | `turn` | Check the upstream sources for changes worth working in |
 | `skill-drift` | Daily: turn repeated skill drift, judged by the `skill-drift` mod, into proposed skill fixes |
 
 `canon/` holds short essays on the ideas the skills lean on: tracer bullets, ubiquitous
-language, deep modules, seams, expand-contract, proving it works, and more. Skills link to the
+language, deep modules, seams, expand-contract, proving it works, core docs, and more. Skills link to the
 ones they use.
 
 Work is tracked in the repo's issue tracker (GitHub by default), recorded by `compost:setup` in
 `docs/agents/issue-tracker.md`. Domain vocabulary lives in `CONTEXT.md`, decisions in
-`docs/adr/`.
+`docs/adr/`. Those, the README, and `AGENTS.md` are the core docs; everything else is said in the
+code, and `compost:prune` keeps it that way.
 
 ## Jev tools
 
@@ -62,7 +64,7 @@ calling the API; `compost:setup` runs it and tells you how to store one.
 | `triage-finding` | Choice | reviewer, review-changes | serious findings sent to a skeptic 15/15, minor spared 8/11 (26) |
 | `review-risk` | Score | review-changes, review | 24–25/28 structural calls (28 files) |
 | `canon-pick` | Choice | reviewer | precision and recall ~0.6 (22) |
-| `locate` | Choice + Noul | reviewer, spec | anchored 17/18, absent 8/8 (26) |
+| `locate` | Choice + Noul | reviewer | anchored 17/18, absent 8/8 (26) |
 | `spec-class` | Choice | spec | 21/22, never lighter than labeled (22) |
 | `question-value` | Score | spec | 24–25/25 (25 questions) |
 | `ac-quality` | Score ×3 | spec | 24/24 (24) |
@@ -89,6 +91,20 @@ upper bounds until the tools have run on real work. The labeled cases are drawn 
 projects and sessions, so they live in a separate private repo, `compost-evals`. With a checkout,
 `COMPOST_EVALS=<checkout>/evals uv run --group dev pytest -m jev` re-runs every eval against the
 live API for a few cents; without one, those tests skip.
+
+## Diff review and lint
+
+Two tools that used to be their own plugins ship inside compost now:
+
+- **Browser diff review** (`scripts/review_diff/`, formerly review-diff). When you want to read a
+  change yourself, `compost:review` opens the diff in a local, self-contained page for inline,
+  merge-request style comments and works through what you submit. Stdlib only. See
+  [review-diff](skills/review/references/review-diff.md).
+- **Semantic lint for Python** (`scripts/lint/`, formerly jev-lint). Plain-language rules judged by
+  Jev: narrating comments, silent failures, I/O mixed with logic, misleading docstrings, secrets in
+  logs, test smells, weakened tests, and symptom workarounds in a diff. `compost:verify` runs it on
+  the branch; it finds the key the same way `jev.py` does and exits 3 without one. See
+  [jev-lint](skills/verify/references/jev-lint.md) for the rules and their measured precision.
 
 ## Install
 

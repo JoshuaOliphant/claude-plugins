@@ -19,6 +19,9 @@ plugins = [
   "pstack@skills-dir",
   "engineering@synced",
   "autonomous-sdlc@synced",
+  "agent-skills@oliphant-plugins",
+  "review-diff@oliphant-plugins",
+  "jev-lint@oliphant-plugins",
 ]
 skills = [
   "tdd", "grilling", "grill-me", "grill-with-docs", "to-spec", "to-tickets", "implement",
@@ -26,7 +29,7 @@ skills = [
   "codebase-design", "improve-codebase-architecture", "diagnosing-bugs", "prototype",
   "setup-matt-pocock-skills", "code-review", "blueprint", "blueprint-generate",
   "efficient-fable", "efficient-frontier", "agent-watchdog", "plow-ahead", "plan-arbiter",
-  "visual-plan", "visual-recap",
+  "visual-plan", "visual-recap", "read-the-damn-docs", "review-diff", "jev-lint",
 ]
 
 [[source]]
@@ -54,6 +57,7 @@ pin = "c55ee46073ed923f86ce59a5eb3b6d895095d1b7"
 "skills/engineering/implement" = ["implement"]
 "skills/in-progress/implement-spec" = ["implement"]
 "skills/productivity/handoff" = ["pause"]
+"skills/engineering/retro" = ["review", "canon"]
 
 [[source]]
 name = "superpowers"
@@ -98,6 +102,7 @@ pin = "12d587dfb20741cafc376c42c696c5f6e2a64487"
 "pstack/skills/poteto-mode/playbooks/session-pickup.md" = ["pause"]
 "pstack/skills/arena" = ["fan-out"]
 "pstack/skills/swarm" = ["fan-out"]
+"pstack/skills/correct" = ["review", "canon"]
 
 [[source]]
 name = "blueprint"
@@ -116,7 +121,7 @@ repo = "JoshuaOliphant/claude-plugins"
 role = "frozen"
 license = "MIT"
 pin = "3ad48fd22015717b922a86b53c1087316d2d7302"
-note = "autonomous-sdlc (bdd-spec, bdd-generate, sdlc-loop), stick-shift, and review-diff; compost replaces the first two."
+note = "autonomous-sdlc (bdd-spec, bdd-generate, sdlc-loop), stick-shift, agent-skills (read-the-damn-docs), and review-diff, all retired from the marketplace; review-diff and jev-lint now ship inside compost."
 
 [source.feeds]
 "plugins/autonomous-sdlc/skills/bdd-spec" = ["spec"]
@@ -127,6 +132,7 @@ note = "autonomous-sdlc (bdd-spec, bdd-generate, sdlc-loop), stick-shift, and re
 "plugins/stick-shift/commands/verify.md" = ["verify", "setup"]
 "plugins/stick-shift/references" = ["build", "verify", "setup"]
 "plugins/review-diff/skills/review-diff" = ["review"]
+"plugins/agent-skills/skills/read-the-damn-docs" = ["canon"]
 
 [[source]]
 name = "code-guardian"

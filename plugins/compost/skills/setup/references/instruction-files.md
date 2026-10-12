@@ -32,7 +32,7 @@ apart. Every move is an offer the user accepts first.
 | `CLAUDE.local.md` | It counts, so it blocks `AGENTS.md`. Offer to move general lines to `~/.claude/CLAUDE.md`, or to set Project instructions to `claude-md-and-agents-md` so both load. |
 | A `CLAUDE.md` in a directory above the repo | It blocks `AGENTS.md` for this repo too. Report its path; it isn't this repo's file to move. |
 | A `SessionStart` hook that prints `AGENTS.md` | Once `AGENTS.md` loads natively the hook adds a second copy. Offer to remove it. |
-| Only `AGENTS.md` | Nothing to migrate. Still sort its lines (below). |
+| Only `AGENTS.md` | Nothing to migrate. |
 | Neither | Ask which to create, recommending `AGENTS.md`. |
 
 If the user declines a migration, edit whichever file holds the project instructions today and
@@ -51,12 +51,11 @@ files ignore it:
 }
 ```
 
-## Sorting the lines
+## Sorting personal from project lines
 
-Sort the lines into four piles and show them before writing anything. Do this while moving, and
-also when `AGENTS.md` was already the only file:
+While moving, sort the lines into three piles and show them before writing anything:
 
-- **Project:** true for anyone working in this repo (build commands, conventions, where things live).
+- **Project:** true for anyone working in this repo (build commands, architecture, conventions).
   These go to `AGENTS.md`.
 - **Personal:** true for this user in every repo (how to address them, their preferred tools,
   their workflow habits). Propose moving these to `~/.claude/CLAUDE.md`, dropping any that already
@@ -64,13 +63,6 @@ also when `AGENTS.md` was already the only file:
 - **Superseded:** instructions that contradict or restate the compost skills: a different issue
   tracker or task list than `docs/agents/issue-tracker.md` names, a test ritual, a spec or plan
   file location. Propose removing these so Claude isn't torn between two versions.
-- **Derivable:** prose that restates what the code already says: inventories of modules or
-  plugins, counts, descriptions of how a component works inside, version numbers, file trees
-  deeper than the top level. Check each against the tree as you sort; a line that is already wrong
-  is the strongest case. Propose deleting these, or replacing a list with a pointer to the script
-  that checks it ([code is the source of truth](../../../canon/code-is-the-source-of-truth.md)).
-  Decisions with their reasons go to `docs/adr/` and domain terms to `CONTEXT.md` instead of being
-  deleted.
 
 `~/.claude/CLAUDE.md` is the user's own file outside the repo; change it only with their yes.
 
@@ -95,6 +87,11 @@ CONTEXT-MAP.md.">. See `docs/agents/domain.md`.
 ### Tests and gates
 
 <One line: the test convention and the coverage threshold.> See `docs/agents/testing.md`.
+
+### Docs
+
+Code is the source of truth; docs hold only what it can't say, in the core docs. Put a new fact in
+a name, type, test, or comment before a core doc, and never in a new file. See `docs/agents/docs.md`.
 ```
 
 ## After a migration

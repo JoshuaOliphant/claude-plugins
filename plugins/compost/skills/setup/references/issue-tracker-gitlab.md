@@ -33,7 +33,9 @@ request.
 | Map | `map` | A map issue for long, foggy work |
 | Decision | `decision` | A decision sub-issue of a map |
 
-Edit the middle column if the project already uses other names for these roles.
+Edit the middle column if the project already uses other names for these roles. `compost:setup`
+creates every label in the middle column that the project lacks with
+`glab label create --name <name>`.
 
 ## Records
 
