@@ -1,12 +1,13 @@
 ---
 name: setup
-description: Configures a repo once for the compost skills, recording its issue tracker, domain doc layout, test convention, and verify gates under docs/agents/, and offers to move CLAUDE.md into AGENTS.md. Use when the user says "set up compost", "configure this repo", "set up the issue tracker", "migrate CLAUDE.md to AGENTS.md", "record our test gates", or a compost skill finds docs/agents/issue-tracker.md missing.
+description: Configures a repo once for the compost skills, recording its issue tracker, domain doc layout, core docs, test convention, and verify gates under docs/agents/, and offers to move CLAUDE.md into AGENTS.md. Use when the user says "set up compost", "configure this repo", "set up the issue tracker", "migrate CLAUDE.md to AGENTS.md", "record our test gates", or a compost skill finds docs/agents/issue-tracker.md missing.
 ---
 
 # Setup
 
 The other compost skills assume a few facts about the repo: where issues live, where the glossary
-and ADRs live, how tests are written, and which gates must pass before anything counts as done.
+and ADRs live, which docs are core, how tests are written, and which gates must pass before
+anything counts as done.
 Setup finds those facts, confirms the ones that branch, and writes them to `docs/agents/`, where
 every skill reads them. It also points the repo's instructions file at those docs and offers to
 consolidate the instructions into `AGENTS.md`.
@@ -24,6 +25,9 @@ edits the user made by hand.
    - `docs/agents/`: the output of an earlier run.
    - `CONTEXT.md`, `CONTEXT-MAP.md`, `docs/adr/`, and any `*/docs/adr/` in subpackages.
    - `.scratch/`: a sign a local tracker is already in use.
+   - Markdown outside the core docs (`docs/`, architecture notes, plan files), files that are
+     product rather than prose (skill or prompt files, templates), and a published docs site
+     (`mkdocs.yml`, `docusaurus.config.*`).
    - Monorepo signals: `pnpm-workspace.yaml`, a `workspaces` field in `package.json`,
      `[tool.uv.workspace]` in `pyproject.toml`, a Cargo `[workspace]`, `go.work`, or a populated
      `packages/*` whose members have their own sources.
@@ -54,7 +58,17 @@ edits the user made by hand.
    [domain](references/domain.md). Don't create `CONTEXT.md` or `docs/adr/` now; `compost:spec`
    creates them when the first term or decision settles.
 
-5. **Test convention and gates.** Work out the convention with the detection ladder in
+5. **Core docs.** Write `docs/agents/docs.md` from [docs](references/docs.md): the core docs that
+   exist, any the repo needs beyond the defaults, and the patterns that are product rather than
+   documentation. Don't ask; the user edits the file if a default is wrong. Then run
+   `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/doc_refs.py scan` with those patterns. If it lists
+   non-core docs, tell the user how many, how many name paths that no longer exist or files that
+   changed since, and that `compost:prune` will check them against the code, move what is worth
+   keeping into names, types, tests, and comments, and delete the rest. Offer it as the next move
+   after setup; pruning is its own change, never part of this commit
+   ([core docs](../../canon/core-docs.md)).
+
+6. **Test convention and gates.** Work out the convention with the detection ladder in
    [testing](references/testing.md): adopt the pattern already in use, default by stack when there
    are no tests, and ask only for a greenfield repo with no clear stack. Then list the gates
    `compost:verify` will run: the suite command, the coverage command and threshold (100% line
@@ -63,7 +77,7 @@ edits the user made by hand.
    or doesn't run as broken, with its output's first error, rather than dropping it. Write
    `docs/agents/testing.md` from the template in the same reference.
 
-6. **Instructions file and the AGENTS.md migration.** Claude Code reads `AGENTS.md` natively only
+7. **Instructions file and the AGENTS.md migration.** Claude Code reads `AGENTS.md` natively only
    when no `CLAUDE.md`, `.claude/CLAUDE.md`, or `CLAUDE.local.md` exists in the working directory
    or above it; `~/.claude/CLAUDE.md` doesn't count and still loads alongside. Follow
    [instruction files](references/instruction-files.md) for each combination you found. In short:
@@ -77,7 +91,7 @@ edits the user made by hand.
    Then add or update the `## Agent skills` block in whichever file holds the project
    instructions. Replace an existing block in place; leave the surrounding sections alone.
 
-7. **Check the Jev key.** Run `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py status`. It only
+8. **Check the Jev key.** Run `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py status`. It only
    looks for a TypeSafe key (`TYPESAFE_API_KEY`, then the macOS Keychain item `typesafe`) and calls
    nothing. Exit 0 means the Jev tools will answer. Exit 3 means every Jev step will fall back to
    your own judgment: tell the user what they lose (cheaper test placement, review triage, the
@@ -85,7 +99,7 @@ edits the user made by hand.
    for example as `! security add-generic-password -s typesafe -a "$USER" -w`. Never ask for the key
    in chat or write it anywhere. The key belongs to the machine, not the repo, so record nothing.
 
-8. **Switch off what compost replaces.** Run
+9. **Switch off what compost replaces.** Run
    `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/pile.py replaced`. It reads the `[replaces]` table in
    compost's `pile.toml` and reports which superseded plugins and skills are still active on this
    machine; it changes nothing. Leaving them on gives Claude two answers to every request. Show
@@ -96,7 +110,7 @@ edits the user made by hand.
    re-enabling a plugin or removing an override turns it back on. This is per machine, so on a
    second repo the report usually says nothing is active.
 
-9. **Check and commit.** Re-read every file you wrote. List the directories above the repo that
+10. **Check and commit.** Re-read every file you wrote. List the directories above the repo that
    still hold a `CLAUDE.md`, since any of them stops `AGENTS.md` from loading. Commit the changes
    as one `chore: configure agent skills` commit. Tell the user which compost skills now read
    these files, that they can edit `docs/agents/*.md` directly, and, after a migration, to look
@@ -107,6 +121,8 @@ edits the user made by hand.
 
 ## Next moves
 
+- `compost:prune` when the core-docs step found docs outside the core, so the repo starts with
+  docs the code backs.
 - `compost:spec` when there is a feature or change to define.
 - `compost:slice` when a spec already exists as an issue or doc.
 - `compost:diagnose` when a gate came back broken and the repo should be green before other work.

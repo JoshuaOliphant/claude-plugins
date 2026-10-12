@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Health check for the observability stack — reports UP/DOWN/STALE per service.
-# `status.sh --json` is the machine-readable integration contract for other tools
-# (e.g. the autonomous-sdlc loop): {"installed","running","mode","service","services"}.
+# `status.sh --json` is the machine-readable integration contract for other tools:
+# {"installed","running","mode","service","services"}.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -10,7 +10,7 @@ dependencies = []
 package = false
 
 [dependency-groups]
-# Repo-wide dev tooling. Individual plugins that need more (e.g. review-diff's
+# Repo-wide dev tooling. Individual plugins that need more (e.g. compost's
 # coverage gate) declare their own dependency-group in their own pyproject.toml.
 dev = [
     "pytest>=8",
@@ -22,7 +22,7 @@ dev = [
 
 [tool.pytest.ini_options]
 # `uv run --group dev pytest` from the repo root discovers every plugin's tests.
-# review-diff's coverage-gated config lives in its own pyproject and only applies
+# compost's coverage-gated config lives in its own pyproject and only applies
 # when pytest is invoked from that directory; at the repo root those tests still
 # run (without the coverage gate). compost's live Jev evals call the TypeSafe API and need a key,
 # so they stay out of the default run here too.

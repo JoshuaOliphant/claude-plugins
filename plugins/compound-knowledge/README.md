@@ -12,15 +12,8 @@ Inspired by [EveryInc's compound-engineering plugin](https://github.com/EveryInc
 ### 1. Install the plugin
 
 ```bash
-claude plugin add joshuaoliphant/claude-plugins --path plugins/compound-knowledge
-```
-
-Or clone and link locally:
-
-```bash
-git clone https://github.com/joshuaoliphant/claude-plugins.git
-cd claude-plugins
-claude plugin link plugins/compound-knowledge
+/plugin marketplace add joshuaoliphant/claude-plugins
+/plugin install compound-knowledge@oliphant-plugins
 ```
 
 ### 2. Initialize in your project
@@ -29,7 +22,7 @@ claude plugin link plugins/compound-knowledge
 /compound-knowledge:setup
 ```
 
-This creates the `knowledge/solutions/` directory structure with 10 category subdirectories and a `critical-patterns.md` file.
+This creates the `knowledge/solutions/` directory structure with 10 category subdirectories, a `principles/` directory, and a `critical-patterns.md` file.
 
 ### 3. Cross-project discovery (automatic)
 
@@ -40,7 +33,7 @@ Setup also registers the knowledge base in `~/.claude/compound-knowledge-registr
 After solving a non-trivial problem, say:
 - "That worked, capture it"
 - "Problem solved"
-- `/compound-knowledge`
+- `/compound-knowledge:compound-capture`
 
 The skill creates a structured solution file with YAML frontmatter in the appropriate category directory.
 
@@ -78,9 +71,11 @@ solutions_path: /absolute/path/to/knowledge/solutions/
 
 **Resolution order**: project-level → user-level → default.
 
-### Extending the component enum
+**Other keys**: `write_path` (where captures go), `read_paths` (comma-separated extra directories to search), and `vault_root` (the whole vault for wide reads) are also accepted. `solutions_path` is a back-compat alias for `write_path`; if both are set, `write_path` wins.
 
-The `component` field in YAML frontmatter has a default vocabulary of 22 common technologies. You can use any value — the enum is a starting vocabulary, not a constraint. Add project-specific components (e.g., `postfix`, `kafka`, `helm`) freely.
+### Component values
+
+The `component` field in YAML frontmatter is free-form. You can use any value. Add project-specific components (e.g., `postfix`, `kafka`, `helm`) freely.
 
 ## Cross-Project Knowledge
 
@@ -99,7 +94,6 @@ The knowledge-researcher agent searches the primary knowledge base first. If it 
 Knowledge bases are registered when:
 - You run `/compound-knowledge:setup` in a project
 - A solution is captured (updates count and components)
-- The researcher first accesses a knowledge base
 
 ### Example registry
 
@@ -125,7 +119,7 @@ Knowledge bases are registered when:
 Problem solved → Gather context → Check for duplicates → Validate YAML → Write solution file → Update registry
 ```
 
-1. **Detect** confirmation ("that worked", "it's fixed", `/compound-knowledge`)
+1. **Detect** confirmation ("that worked", "it's fixed", `/compound-knowledge:compound-capture`)
 2. **Extract** title, project, component, symptoms, severity from conversation
 3. **Deduplicate** — grep existing solutions for similar symptoms/titles
 4. **Validate** YAML fields against schema enums
@@ -140,7 +134,7 @@ New task → Read registry → Extract keywords → Parallel grep → Score cand
 ```
 
 1. **Resolve** solutions path from config
-2. **Delegate** to `knowledge-researcher` agent (runs on haiku for speed)
+2. **Search** directly, or via the `knowledge-researcher` agent (haiku) when a caller dispatches it
 3. **Read registry** to identify all knowledge bases on the machine
 4. **Grep** frontmatter fields in parallel (project, component, symptoms, tags)
 5. **Read** `critical-patterns.md` (always)
@@ -168,6 +162,7 @@ knowledge/solutions/
 ├── configuration/    # Config management, env vars, settings
 ├── migration/        # System transitions, format changes
 ├── integration/      # Cross-system compatibility
+├── principles/       # Engineering wisdom and governing principles
 └── critical-patterns.md
 ```
 
@@ -197,20 +192,16 @@ environment: "Python 3.12, Gunicorn 21.2, FastAPI"
 ...
 ```
 
-See `references/yaml-schema.md` for the full schema and enum values.
-
 ## Schema Reference
 
 ### Required fields
 `title`, `project`, `date`, `problem_type`, `component`, `symptoms`, `solution_summary`, `severity`
 
 ### Problem types
-`debugging`, `infrastructure`, `patterns`, `workflow`, `performance`, `security`, `ci_cd`, `configuration`, `migration`, `integration`
+`debugging`, `infrastructure`, `patterns`, `workflow`, `performance`, `security`, `ci_cd`, `configuration`, `migration`, `integration`, `principles`
 
 ### Severity levels
 `critical`, `high`, `medium`, `low`
-
-See the full schema in [`skills/compound-knowledge/references/yaml-schema.md`](skills/compound-knowledge/references/yaml-schema.md).
 
 ## License
 

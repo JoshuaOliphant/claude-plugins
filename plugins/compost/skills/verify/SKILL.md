@@ -76,8 +76,9 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    Common cases, such as pytest collecting nothing or coverage measuring the wrong package, are
    in [the proof ladder](references/proof-ladder.md).
 
-7. **Check the comments in the diff.** For Python, run the `jev-lint` skill when it is available.
-   If it reports that `TYPESAFE_API_KEY` is not set, say so and do the manual pass. Otherwise read every comment the diff adds. Keep only:
+7. **Check the comments in the diff.** For Python, run [jev-lint](references/jev-lint.md) over
+   the branch first. If it exits 3 (no key), say so and do the manual pass. Either way, read every
+   comment the diff adds. Keep only:
    - legal or license headers
    - behavior forced by an external dependency, platform, or protocol we cannot reshape
    - a lint suppression whose rule is wrong for that line (a suppression hiding a correctness or

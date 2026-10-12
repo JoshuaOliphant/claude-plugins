@@ -9,6 +9,15 @@ _Avoid_: drift (alone), upstream changes.
 work it covers (`corrected`). `compost:skill-drift` reviews it. In code: `skill_drift`.
 _Avoid_: drift (alone), skill failure.
 
+**Doc drift**: a doc saying something the code no longer does. A doc that restates the code has
+none yet, and will. `compost:prune` finds it, takes the code as the likely truth, and moves what
+is worth keeping into the code. In code: `doc_refs`.
+_Avoid_: drift (alone), stale docs, doc rot.
+
+**Core docs**: the few docs that hold what code can't say: `README.md`, `AGENTS.md`, `CONTEXT.md`,
+`docs/adr/`, plus what a repo lists in `docs/agents/docs.md`. Checked by `compost:prune`, fixed in
+place, never deleted.
+
 **Hit**: one Jev judgment that a turn showed skill drift of one kind, above that kind's threshold,
 as the `skill-drift` mod writes it to `~/.claude/skill-drift/`.
 

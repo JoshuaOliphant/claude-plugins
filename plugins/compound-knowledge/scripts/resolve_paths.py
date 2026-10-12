@@ -20,6 +20,8 @@ def _norm(path: str) -> str:
 
 def resolve(project_root: Path, home: Path) -> dict:
     """Resolve write_path, read_paths, and vault_root from config or defaults."""
+    # Reads go wide (the whole vault via read_paths/vault_root) so retrieval finds everything;
+    # writes stay in one structured, schema'd location (write_path) so capture stays consistent.
     settings, source = config_loader.find_config(project_root, home, CONFIG_NAME)
 
     # write_path: explicit > solutions_path alias > default

@@ -10,6 +10,8 @@ import pytest
 from typesafe_sdk import SystemOneResponse
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts" / "lint"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts" / "review_diff"))
 
 import pile
 from jevtools import core
