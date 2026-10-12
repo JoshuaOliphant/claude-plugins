@@ -67,3 +67,6 @@ trees/
 
 # Skill eval run workspaces (scratch artifacts from eval executions)
 /trigger-eval-workspace/
+
+# compost plugin-eval suite: lives in private compost-evals, linked in locally to run
+/plugins/compost/evals
