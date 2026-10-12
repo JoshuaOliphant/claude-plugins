@@ -111,8 +111,14 @@ edits the user made by hand.
    second repo the report usually says nothing is active.
 
 10. **Check and commit.** Re-read every file you wrote. List the directories above the repo that
-   still hold a `CLAUDE.md`, since any of them stops `AGENTS.md` from loading. Commit the changes
-   as one `chore: configure agent skills` commit. Tell the user which compost skills now read
+   still hold a `CLAUDE.md`, since any of them stops `AGENTS.md` from loading. Run
+   `git check-ignore -v` on every file you wrote in the repo: each `docs/agents/*.md`, the
+   instructions file, and any `CONTEXT-MAP.md` or `CONTEXT.md`. It prints a
+   `source:line:pattern` line for each ignored path, and a broad rule (`agents/` also matches
+   `docs/agents/`) leaves a file out of the commit without a word. For each hit, show the user the
+   rule and offer to anchor it (`/agents/`) or narrow it, editing the file it came from only with
+   their yes; if they keep it, say which files the commit leaves out. Commit the changes as one
+   `chore: configure agent skills` commit. Tell the user which compost skills now read
    these files, that they can edit `docs/agents/*.md` directly, and, after a migration, to look
    for the `AGENTS.md loaded` line at the start of their next session. Also tell them that in
    manual permission mode the `/compost:review-changes` workflow asks for permission on every run
