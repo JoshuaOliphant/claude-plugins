@@ -71,8 +71,4 @@ trees/
 .vault-recommender-index/
 
 # Skill eval run workspaces (scratch artifacts from eval executions)
-plugins/autonomous-sdlc/skills/*-workspace/
 /trigger-eval-workspace/
-
-# autonomous-sdlc: machine-local /loop prompt (absolute path baked in)
-.claude/loop.md

@@ -23,8 +23,7 @@ on session start.
 ## Integration contract
 
 `bash .claude/harness/observability/status.sh --json` →
-`{"installed", "running", "mode", "service", "services"}` — how any tool (including the
-`autonomous-sdlc` loop, which composes with this plugin as a soft dependency) detects a
+`{"installed", "running", "mode", "service", "services"}` — how any tool detects a
 harness without knowing its internals. File absent → no harness.
 
 ## Modes

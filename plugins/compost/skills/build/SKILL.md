@@ -18,7 +18,9 @@ no test counts until you have seen it fail for the right reason.
    missing, run `compost:setup` now, then continue. Read the acceptance criteria (AC-N), the Files
    and Interfaces blocks, and the "Blocked by" links. Confirm every blocker is closed; if one is
    open, pick another issue or report the block. Read `CONTEXT.md` and any ADR in `docs/adr/`
-   that touches the area, so names in code and tests match the domain's words.
+   that touches the area, so names in code and tests match the domain's words. When the issue
+   touches a package, SDK, CLI, or service you did not write, read its current docs for the
+   installed version before writing code against it ([read the docs](../../canon/read-the-docs.md)).
 
 2. **Isolate the work.** Check for existing isolation before creating anything:
 

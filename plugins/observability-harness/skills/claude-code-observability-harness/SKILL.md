@@ -66,7 +66,7 @@ the reason this skill exists.
 - Pick a `SERVICE_NAME` (default: the repo/package name). This becomes the OTel
   `service.name` resource attribute and the log/metric stream label.
 - **Detection contract**: `bash .claude/harness/observability/status.sh --json` is how
-  any tool (including this skill on re-runs, and the autonomous-sdlc loop) checks for an
+  any tool (including this skill on re-runs) checks for an
   existing harness — it emits `{"installed", "running", "mode", "service", "services"}`.
   File absent → no harness.
 

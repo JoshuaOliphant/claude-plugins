@@ -51,7 +51,7 @@ For a large or ambiguous change, `vet` is a further independent pass over the di
 
 ## When the user wants to sign off themselves
 
-Some changes the user wants to read with their own eyes. When they say so, run `/review-diff:review-diff` from the review-diff plugin. It opens the branch diff in a local browser for inline, merge-request style comments and waits while they review. Their comments are the user's own review: understand each, ask about anything unclear before changing code, then fix, re-verify, and record them on the issue as in steps 4 to 6.
+Some changes the user wants to read with their own eyes. When they say so, follow [review-diff](references/review-diff.md). It opens the branch diff in a local browser for inline, merge-request style comments and waits while they review. Their comments are the user's own review: understand each, ask about anything unclear before changing code, then fix, re-verify, and record them on the issue as in steps 4 to 6.
 
 ## Next moves
 
