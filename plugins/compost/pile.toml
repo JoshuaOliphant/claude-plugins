@@ -54,6 +54,7 @@ pin = "c55ee46073ed923f86ce59a5eb3b6d895095d1b7"
 "skills/engineering/implement" = ["implement"]
 "skills/in-progress/implement-spec" = ["implement"]
 "skills/productivity/handoff" = ["pause"]
+"skills/engineering/retro" = ["review", "canon"]
 
 [[source]]
 name = "superpowers"
@@ -98,6 +99,7 @@ pin = "12d587dfb20741cafc376c42c696c5f6e2a64487"
 "pstack/skills/poteto-mode/playbooks/session-pickup.md" = ["pause"]
 "pstack/skills/arena" = ["fan-out"]
 "pstack/skills/swarm" = ["fan-out"]
+"pstack/skills/correct" = ["review", "canon"]
 
 [[source]]
 name = "blueprint"

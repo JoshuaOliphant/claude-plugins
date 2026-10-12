@@ -16,6 +16,7 @@ only when relevant.
 
 - [Prove it works](prove-it-works.md): observe the real artifact working; proxies and self-reports are not checks.
 - [Fix root causes](fix-root-causes.md): reproduce, trace to the cause, fix it there, and find its siblings.
+- [Make mistakes impossible](make-mistakes-impossible.md): turn a repeated mistake into a check at the highest level that works, and prove the check catches it.
 - [Boundary discipline](boundary-discipline.md): parse and validate at the edges, trust types inside, keep logic pure.
 - [Type-system discipline](type-system-discipline.md): make illegal states unrepresentable and let the checker enforce every case.
 - [Model the domain](model-the-domain.md): give domain rules a structure that fits instead of scattered conditionals.
