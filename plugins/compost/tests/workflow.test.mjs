@@ -15,7 +15,7 @@ const SCOPE = {
   commits: ['abc1234 add export'],
   files: ['app/export.py'],
   standardsSources: ['CLAUDE.md'],
-  spec: { found: true, source: '#7', text: 'AC-1: Given a list, When exported, Then a CSV downloads' },
+  spec: { found: true, source: '#7', number: 7, text: 'AC-1: Given a list, When exported, Then a CSV downloads' },
 }
 const BLOCKER = { file: 'app/export.py', line: 12, severity: 'blocker', claim: 'CSV is not escaped', evidence: 'AC-1 at #7; app/export.py:12' }
 const MINOR = { file: 'app/export.py', line: 3, severity: 'minor', claim: 'name drifts from CONTEXT.md', evidence: 'CONTEXT.md: Reading list' }
@@ -120,17 +120,32 @@ test('a reviewer that returns nothing or throws marks its axis and the review in
 })
 
 test('an issue that cannot be fetched fails the Spec axis instead of skipping it', async () => {
-  const scope = { ...SCOPE, spec: { found: false, source: '', text: '', problem: 'gh: not authenticated' } }
+  const scope = { ...SCOPE, spec: { found: false, source: '', number: null, text: '', problem: 'gh: not authenticated' } }
   const { result, prompts } = await run({ issue: 42 }, reviewers({ scope }))
   assert.equal(result.spec.status, 'failed: issue #42 could not be fetched: gh: not authenticated')
   assert.equal(result.complete, false)
   assert.equal(prompts['Spec reviewer'], undefined)
 })
 
+test('a given issue is the only spec source, whatever issue the scoping agent picked from the conversation', async () => {
+  const relayed = { ...SCOPE, spec: { ...SCOPE.spec, source: '#53' } }
+  const graded = await run({ issue: 7 }, reviewers({ scope: relayed }))
+  assert.equal(graded.result.specSource, '#7')
+  assert.match(graded.prompts['Spec reviewer'], /Spec source: #7\n/)
+
+  const swapped = { ...SCOPE, spec: { found: true, source: '#53', number: 53, text: 'AC-1: Given issue 53' } }
+  const refused = await run({ issue: 7 }, reviewers({ scope: swapped }))
+  assert.equal(refused.result.specSource, '#7')
+  assert.equal(refused.result.spec.status, 'failed: issue #7 could not be fetched: the scoping agent fetched #53 instead')
+  assert.equal(refused.result.complete, false)
+  assert.equal(refused.prompts['Spec reviewer'], undefined)
+})
+
 test('without an issue, a missing spec skips the Spec axis and the review can still complete', async () => {
-  const scope = { ...SCOPE, spec: { found: false, source: '', text: '' } }
+  const scope = { ...SCOPE, spec: { found: false, source: '', number: null, text: '' } }
   const { result } = await run({}, reviewers({ scope }))
   assert.equal(result.spec.status, 'skipped: no spec found')
+  assert.equal(result.specSource, '')
   assert.equal(result.complete, true)
 })
 
