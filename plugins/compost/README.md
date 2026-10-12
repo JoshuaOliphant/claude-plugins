@@ -90,6 +90,20 @@ projects and sessions, so they live in a separate private repo, `compost-evals`.
 `COMPOST_EVALS=<checkout>/evals uv run --group dev pytest -m jev` re-runs every eval against the
 live API for a few cents; without one, those tests skip.
 
+## Diff review and lint
+
+Two tools that used to be their own plugins ship inside compost now:
+
+- **Browser diff review** (`scripts/review_diff/`, formerly review-diff). When you want to read a
+  change yourself, `compost:review` opens the diff in a local, self-contained page for inline,
+  merge-request style comments and works through what you submit. Stdlib only. See
+  [review-diff](skills/review/references/review-diff.md).
+- **Semantic lint for Python** (`scripts/lint/`, formerly jev-lint). Plain-language rules judged by
+  Jev: narrating comments, silent failures, I/O mixed with logic, misleading docstrings, secrets in
+  logs, test smells, weakened tests, and symptom workarounds in a diff. `compost:verify` runs it on
+  the branch; it finds the key the same way `jev.py` does and exits 3 without one. See
+  [jev-lint](skills/verify/references/jev-lint.md) for the rules and their measured precision.
+
 ## Install
 
 ```

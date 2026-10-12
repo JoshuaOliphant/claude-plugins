@@ -33,9 +33,6 @@ SHARED_ARTIFACTS: list[tuple[str, str, list[str]]] = [
         "feedback_manager.py",
         "scripts/shared/feedback_manager.py",
         [
-            "plugins/agent-skills/scripts/feedback_manager.py",
-            "plugins/autoloop/scripts/feedback_manager.py",
-            "plugins/autonomous-sdlc/scripts/feedback_manager.py",
             "plugins/compound-knowledge/scripts/feedback_manager.py",
             "plugins/hexagonal-agents/scripts/feedback_manager.py",
             "plugins/mochi-creator/scripts/feedback_manager.py",

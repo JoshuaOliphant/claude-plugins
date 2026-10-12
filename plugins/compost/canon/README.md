@@ -15,6 +15,7 @@ only when relevant.
 ## Working principles
 
 - [Prove it works](prove-it-works.md): observe the real artifact working; proxies and self-reports are not checks.
+- [Read the docs](read-the-docs.md): read current docs for the installed version before coding against what you did not write.
 - [Fix root causes](fix-root-causes.md): reproduce, trace to the cause, fix it there, and find its siblings.
 - [Boundary discipline](boundary-discipline.md): parse and validate at the edges, trust types inside, keep logic pure.
 - [Type-system discipline](type-system-discipline.md): make illegal states unrepresentable and let the checker enforce every case.

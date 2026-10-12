@@ -16,7 +16,9 @@ comes first, the theory second, and the fix last, at the root. The why is in
 1. **Read before you touch anything.** Read the whole error and stack trace, warnings included; they
    often name the fault outright. Read `CONTEXT.md` and any ADRs in `docs/adr/` for the area so you
    use the project's names for things. Check what changed recently: `git log` and `git diff` over the
-   paths involved, dependency bumps, config and environment changes.
+   paths involved, dependency bumps, config and environment changes. When the error names a
+   third-party API or follows an upgrade, read that dependency's docs and changelog for the
+   installed version before forming a theory ([read the docs](../../canon/read-the-docs.md)).
 
 2. **Build the feedback loop.** This is the skill; spend disproportionate effort here. You are done
    when you can name one command you have already run that is:
