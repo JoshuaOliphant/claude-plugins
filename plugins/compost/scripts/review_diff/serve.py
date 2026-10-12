@@ -2,8 +2,10 @@
 
 import argparse
 import hashlib
+import hmac
 import json
 import os
+import secrets
 import signal
 import subprocess
 import sys
@@ -20,7 +22,7 @@ _TEMPLATE = Path(__file__).parent / "viewer.html"
 _PLACEHOLDER = "/*__EMBEDDED_DATA__*/"
 
 
-def render_html(diff_data):
+def render_html(diff_data, review_token):
     template = _TEMPLATE.read_text()
     # Escape characters that could break out of the <script> context. The diff
     # data is arbitrary file content, so a reviewed file containing "</script>"
@@ -34,7 +36,9 @@ def render_html(diff_data):
         .replace(" ", "\\u2028")
         .replace(" ", "\\u2029")
     )
-    return template.replace(_PLACEHOLDER, f"const EMBEDDED_DATA = {payload};")
+    return template.replace(
+        _PLACEHOLDER, f"const EMBEDDED_DATA = {payload};\nconst REVIEW_TOKEN = {json.dumps(review_token)};"
+    )
 
 
 def validate_review(data):
@@ -47,10 +51,19 @@ def validate_review(data):
 
 
 class ReviewHandler(BaseHTTPRequestHandler):
-    def __init__(self, diff_data, review_path, *args, **kwargs):
+    def __init__(self, diff_data, review_path, review_token, *args, **kwargs):
         self.diff_data = diff_data
         self.review_path = review_path
+        self.review_token = review_token
         super().__init__(*args, **kwargs)
+
+    def _host_is_loopback(self):
+        port = self.server.server_address[1]
+        return self.headers.get("Host") in (f"127.0.0.1:{port}", f"localhost:{port}")
+
+    def _has_review_token(self):
+        supplied = self.headers.get("X-Review-Token", "")
+        return hmac.compare_digest(supplied.encode(), self.review_token.encode())
 
     def _send(self, code, content, ctype):
         body = content if isinstance(content, bytes) else content.encode()
@@ -64,8 +77,10 @@ class ReviewHandler(BaseHTTPRequestHandler):
         self._send(code, json.dumps({"error": str(exc)}).encode(), "application/json")
 
     def do_GET(self):
-        if self.path in ("/", "/index.html"):
-            self._send(200, render_html(self.diff_data), "text/html; charset=utf-8")
+        if not self._host_is_loopback():
+            self.send_error(403)
+        elif self.path in ("/", "/index.html"):
+            self._send(200, render_html(self.diff_data, self.review_token), "text/html; charset=utf-8")
         elif self.path == "/api/review":
             data = self.review_path.read_bytes() if self.review_path.exists() else b"{}"
             self._send(200, data, "application/json")
@@ -73,7 +88,14 @@ class ReviewHandler(BaseHTTPRequestHandler):
             self.send_error(404)
 
     def do_POST(self):
-        if self.path == "/api/review":
+        if not self._host_is_loopback():
+            self.send_error(403)
+        elif self.path == "/api/review":
+            # The custom header is what makes a cross-origin fetch need a CORS
+            # preflight, which this server never approves.
+            if not self._has_review_token():
+                self.send_error(403)
+                return
             length = int(self.headers.get("Content-Length") or 0)
             body = self.rfile.read(length)
             try:
@@ -112,7 +134,7 @@ def _kill_port(port):
 
 
 def start_server(diff_data, review_path, port):
-    handler = partial(ReviewHandler, diff_data, review_path)
+    handler = partial(ReviewHandler, diff_data, review_path, secrets.token_urlsafe(32))
     try:
         return HTTPServer(("127.0.0.1", port), handler)
     except OSError:
@@ -175,7 +197,7 @@ def main(argv=None):
     if args.static:
         out = Path(args.static)
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(render_html(diff_data))
+        out.write_text(render_html(diff_data, review_token=""))
         print(f"Static review written to: {out}")
         return 0
 

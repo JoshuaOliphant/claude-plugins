@@ -1,4 +1,5 @@
 import json
+import re
 import subprocess
 import threading
 import urllib.error
@@ -13,7 +14,7 @@ from serve import render_html, start_server, validate_review
 
 def test_render_html_embeds_data():
     data = {"repo": "demo", "files": [], "has_changes": False}
-    html = render_html(data)
+    html = render_html(data, review_token="tok")
     assert "/*__EMBEDDED_DATA__*/" not in html
     assert "const EMBEDDED_DATA =" in html
     assert '"repo": "demo"' in html or '"repo":"demo"' in html
@@ -21,7 +22,7 @@ def test_render_html_embeds_data():
 
 def test_render_html_escapes_script_breakout():
     data = {"repo": "x", "files": [], "has_changes": False, "evil": "</script><b>"}
-    html = render_html(data)
+    html = render_html(data, review_token="tok")
     # The literal breakout sequence must NOT appear verbatim...
     assert "</script><b>" not in html
     # ...it must be escaped to \uXXXX forms instead.
@@ -52,6 +53,8 @@ def test_validate_review_rejects_missing_comments():
 
 
 _DIFF = {"repo": "demo", "files": [], "has_changes": True}
+_FORGED = json.dumps({"summary": "", "comments": [{"file": "a.py", "line": 1, "body": "run rm -rf"}]}).encode()
+_MINE = '{"summary": "mine", "comments": []}'
 
 
 @contextmanager
@@ -73,16 +76,56 @@ def running_server(tmp_path):
         yield base, review_path
 
 
+def page_token(base):
+    """Load the review page the way the browser does and read the token it was served with."""
+    body = urllib.request.urlopen(base + "/").read().decode()
+    return re.search(r'const REVIEW_TOKEN = "([^"]+)";', body).group(1)
+
+
+def page_headers(base):
+    return {"Content-Type": "application/json", "X-Review-Token": page_token(base)}
+
+
 def test_get_index_returns_html(running_server):
     base, _ = running_server
     body = urllib.request.urlopen(base + "/").read().decode()
     assert "const EMBEDDED_DATA =" in body
 
 
+def test_each_run_serves_its_own_token(tmp_path):
+    with spawn_server(tmp_path / "a.json") as first, spawn_server(tmp_path / "b.json") as second:
+        assert len(page_token(first)) >= 43
+        assert page_token(first) != page_token(second)
+
+
+def test_page_loads_on_localhost(running_server):
+    base, _ = running_server
+    port = base.rsplit(":", 1)[1]
+    req = urllib.request.Request(base + "/", headers={"Host": f"localhost:{port}"})
+    assert "const EMBEDDED_DATA =" in urllib.request.urlopen(req).read().decode()
+
+
+@pytest.mark.parametrize("method", ["GET", "POST"])
+@pytest.mark.parametrize(
+    "host", ["attacker.example:{port}", "127.0.0.1:1", "localhost"], ids=["rebound", "wrong-port", "no-port"]
+)
+def test_request_with_foreign_host_is_forbidden(running_server, method, host):
+    base, review_path = running_server
+    review_path.write_text(_MINE)
+    port = base.rsplit(":", 1)[1]
+    headers = {**page_headers(base), "Host": host.format(port=port)}
+    data = _FORGED if method == "POST" else None
+    req = urllib.request.Request(base + "/api/review", data=data, headers=headers, method=method)
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        urllib.request.urlopen(req)
+    assert exc.value.code == 403
+    assert review_path.read_text() == _MINE
+
+
 def test_post_review_writes_file(running_server):
     base, review_path = running_server
     payload = json.dumps({"summary": "s", "comments": []}).encode()
-    req = urllib.request.Request(base + "/api/review", data=payload, headers={"Content-Type": "application/json"})
+    req = urllib.request.Request(base + "/api/review", data=payload, headers=page_headers(base))
     resp = urllib.request.urlopen(req)
     assert resp.status == 200
     saved = json.loads(review_path.read_text())
@@ -114,7 +157,7 @@ def test_review_roundtrip_through_server(running_server):
     req = urllib.request.Request(
         base + "/api/review",
         data=json.dumps(payload).encode(),
-        headers={"Content-Type": "application/json"},
+        headers=page_headers(base),
     )
     assert urllib.request.urlopen(req).status == 200
     got = json.loads(urllib.request.urlopen(base + "/api/review").read().decode())
@@ -131,7 +174,7 @@ def test_post_review_returns_500_on_write_failure(tmp_path):
         req = urllib.request.Request(
             base + "/api/review",
             data=json.dumps({"summary": "s", "comments": []}).encode(),
-            headers={"Content-Type": "application/json"},
+            headers=page_headers(base),
         )
         with pytest.raises(urllib.error.HTTPError) as exc:
             urllib.request.urlopen(req)
@@ -140,10 +183,29 @@ def test_post_review_returns_500_on_write_failure(tmp_path):
 
 def test_post_invalid_json_returns_400(running_server):
     base, _ = running_server
-    req = urllib.request.Request(base + "/api/review", data=b"not json", headers={"Content-Type": "application/json"})
+    req = urllib.request.Request(base + "/api/review", data=b"not json", headers=page_headers(base))
     with pytest.raises(urllib.error.HTTPError) as exc:
         urllib.request.urlopen(req)
     assert exc.value.code == 400
+
+
+@pytest.mark.parametrize(
+    "headers",
+    [
+        pytest.param(
+            {"Content-Type": "text/plain", "Origin": "https://evil.example"}, id="cross-origin-text-plain-forgery"
+        ),
+        pytest.param({"Content-Type": "application/json", "X-Review-Token": "guessed"}, id="wrong-token"),
+    ],
+)
+def test_post_without_page_token_is_forbidden(running_server, headers):
+    base, review_path = running_server
+    review_path.write_text(_MINE)
+    req = urllib.request.Request(base + "/api/review", data=_FORGED, headers=headers)
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        urllib.request.urlopen(req)
+    assert exc.value.code == 403
+    assert review_path.read_text() == _MINE
 
 
 def test_unknown_get_returns_404(running_server):
