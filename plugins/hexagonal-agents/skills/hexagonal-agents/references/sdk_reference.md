@@ -17,9 +17,12 @@ uv add claude-agent-sdk
 ```
 
 **Prerequisites:**
-- Python 3.11+
-- Claude Code CLI installed (`npm install -g @anthropic-ai/claude-code`)
+- Python 3.10+
 - `ANTHROPIC_API_KEY` environment variable set
+
+The package bundles the Claude Code CLI (`claude_agent_sdk/_bundled/claude`), so
+no separate install is needed. To use a different CLI binary, pass
+`ClaudeAgentOptions(cli_path="/path/to/claude")`.
 
 ---
 
@@ -134,19 +137,50 @@ class ToolUseBlock:
     input: dict       # Arguments passed to the tool
 ```
 
+### ToolResultBlock
+
+The output of a tool call. It arrives as a content block inside a `UserMessage`,
+matched to its call by `tool_use_id`.
+
+```python
+from claude_agent_sdk import ToolResultBlock, UserMessage
+
+if isinstance(msg, UserMessage) and isinstance(msg.content, list):
+    for block in msg.content:
+        if isinstance(block, ToolResultBlock):
+            print(f"Tool use ID: {block.tool_use_id}")
+            print(f"Tool result: {block.content}")
+            if block.is_error:
+                print("Tool returned an error")
+```
+
+```python
+class ToolResultBlock:
+    tool_use_id: str                              # Matches ToolUseBlock.id
+    content: str | list[dict[str, Any]] | None = None
+    is_error: bool | None = None
+```
+
 ### ResultMessage
 
-Contains the result of a tool call.
+The end-of-turn summary. `receive_response()` yields it last, after every
+`AssistantMessage` and `UserMessage` of the turn.
 
 ```python
 from claude_agent_sdk import ResultMessage
 
 if isinstance(msg, ResultMessage):
-    print(f"Tool result: {msg.content}")
-    print(f"Tool use ID: {msg.tool_use_id}")
+    print(f"Outcome: {msg.subtype}")            # e.g. "success"
+    print(f"Final text: {msg.result}")
+    print(f"Cost: ${msg.total_cost_usd}")
+    print(f"Turns: {msg.num_turns}, took {msg.duration_ms} ms")
     if msg.is_error:
-        print("Tool returned an error")
+        print(f"Turn failed: {msg.errors}")
 ```
+
+Main fields: `subtype`, `is_error`, `num_turns`, `duration_ms`,
+`duration_api_ms`, `session_id`, `result`, `total_cost_usd`, `usage`,
+`stop_reason`, `errors`.
 
 ---
 
