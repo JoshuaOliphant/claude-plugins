@@ -7,7 +7,7 @@ description: Drives filed issues to a reviewed, draft-PR-ready branch, running b
 
 Issues are a task graph, not a to-do list. At any moment some of them are unblocked; that set is the
 frontier, and this skill's job is to keep it moving until every issue under the parent is built,
-verified, and reviewed on one branch with a draft PR. You pick the flow from here without being led:
+verified, and reviewed on one feature branch. You pick the flow from here without being led:
 each issue goes through `compost:build`, `compost:verify`, and `compost:review`, and you decide
 everything a reasonable colleague would decide, writing each ruling down on the issue instead of
 stopping to ask.
@@ -32,7 +32,9 @@ the work so each step can be checked before the next builds on it
    How many issues you take on at once is your judgment; there is no size rule.
 
 3. **Set up the feature branch.** Work in a worktree on a feature branch named for the parent
-   issue; if you are already in one, use it. The draft PR waits until the first issue lands on the
+   issue; if you are already in one, use it. Open a draft PR only when the tracker closes work
+   through PRs (its reference in `docs/agents/issue-tracker.md` says an issue closes when its pull
+   request merges) or the user asks for one. That PR waits until the first issue lands on the
    branch (step 5), because the forge rejects a PR with no commits over its base. Committing,
    pushing this branch, and opening the draft PR need no one's OK; merging it does.
 
@@ -57,8 +59,8 @@ the work so each step can be checked before the next builds on it
    Read the worker's short report; if it says `DONE_WITH_CONCERNS`, read the concerns first. Merge
    its branch into the feature branch with `--no-ff`, then run the suite on the feature branch; a
    merge is a change like any other. A red suite after a merge goes to `compost:diagnose`. After the
-   first landing, push the branch and open a draft PR whose body closes the parent and every
-   sub-issue ("Closes #12, closes #13").
+   first landing, push the branch and, when step 3 calls for a PR, open a draft PR whose body
+   closes the parent and every sub-issue ("Closes #12, closes #13").
 
 6. **Review every issue.** Load `compost:review` for the issue's commits. It runs the
    `/compost:review-changes` workflow through subagents; you never wait to be asked. Scope it to
@@ -76,8 +78,10 @@ the work so each step can be checked before the next builds on it
 
 7. **Record progress.** When an issue passes review, tick it on the parent's checklist (only this
    skill ticks the parent; workers tick their own issue's AC boxes) and comment on
-   the issue with its commits and the verification you ran. Then recompute the frontier and go back to
-   step 4. The checklist and git log are the progress record; there is no other.
+   the issue with its commits and the verification you ran. With no PR to close it, close the issue
+   the way the tracker says; with a local tracker that is `Status: closed` and a closing note in the
+   issue file. Then recompute the frontier and go back to step 4. The checklist and git log are the
+   progress record; there is no other.
 
 8. **Step sideways when the work calls for it.** A defect you can't fix on sight goes to
    `compost:diagnose`; a question about a module's shape or an interface goes to `compost:deepen`.
@@ -117,7 +121,9 @@ the work so each step can be checked before the next builds on it
 10. **Close out.** When the frontier is empty and every sub-issue is ticked, run `compost:verify` on
     the whole feature branch, push, and hand off through `compost:finish`, whose recap is Goal,
     Decisions, Changes, Validation, Risk. The Decisions section lists every ruling comment, each with
-    its cost if wrong. Clean up worker worktrees whose branches are merged into the feature branch.
+    its cost if wrong. Without a PR, close the parent the same way as step 7 and report the feature
+    branch by name, since no PR link points to it. Clean up worker worktrees whose branches are
+    merged into the feature branch.
 
 For a run that outlives the session, `compost:pause` writes the checkpoint and resuming starts at
 step 1.
