@@ -87,11 +87,11 @@ comes first, the theory second, and the fix last, at the root. The why is in
    With a seam, fit the minimised repro into the existing suite as a test beside its neighbours and
    watch it fail. If you forced the red by mutating code or a fixture, diff against a pristine copy
    to prove the mutation landed before you trust the red. Then apply the fix, watch it pass, and
-   re-run the original loop against the full scenario. To find the neighbours, ask Jev first: run `find-test` with the repo and the bug as a
-   criterion, "Given <the minimal repro>, When <the call>, Then <the correct result>"
-   ([jev](../build/references/jev.md)), and extend or sit beside the test it names. Exit 3 means
-   Jev is unavailable: grep the suite for the code under the fix. Fix the pattern, not the instance: search for the same mistake elsewhere and fix those
-   too.
+   re-run the original loop against the full scenario. To find the neighbours, ask Jev first: run
+   `find-test` with the repo and the bug as a criterion, "Given <the minimal repro>, When <the
+   call>, Then <the correct result>" ([jev](../build/references/jev.md)), and extend or sit beside
+   the test it names. Exit 3 means Jev is unavailable: grep the suite for the code under the fix.
+   Fix the pattern, not the instance: search for the same mistake elsewhere and fix those too.
 
    Don't silence a symptom with a guard. A null check that stops a crash leaves the bad value in
    flight. Validation belongs at the system boundary ([boundary discipline](../../canon/boundary-discipline.md)),
