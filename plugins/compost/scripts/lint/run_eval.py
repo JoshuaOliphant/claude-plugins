@@ -15,10 +15,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from cases import CASES
 from extract import Unit, extract_hunks, extract_source_units
-from jev_lint import open_client, run
+from jev_lint import DEFAULT_CONCURRENCY, run
+from jevtools.core import open_client
 from rules import RULES
 
 RULES_BY_ID = {rule.id: rule for rule in RULES}
@@ -82,7 +84,7 @@ async def judge(cases: list[LabeledCase], client_factory=open_client) -> list[Sc
     scored = []
     for rule_id, rule_cases in by_rule.items():
         units = [case.unit for case in rule_cases]
-        judgments, failures = await run(units, [RULES_BY_ID[rule_id]], 16, client_factory)
+        judgments, failures = await run(units, [RULES_BY_ID[rule_id]], DEFAULT_CONCURRENCY, client_factory)
         if failures:
             failed = [f"{f.unit.path}:{f.unit.line}: {f.error}" for f in failures]
             raise RuntimeError(f"Jev failed on {len(failures)} {rule_id} cases: {failed[:3]}")

@@ -213,13 +213,14 @@ def test_main_reports_findings_highest_probability_first(cli, capsys):
     ]
 
 
-def test_main_flags_at_the_threshold_and_honors_zero_override(cli, capsys):
+def test_main_flags_at_the_threshold_honors_zero_override_and_a_rerun_is_answered_from_the_saved_cache(cli, capsys):
     client = by_handler({"pass": 0.7, "return 0": 0.01})
 
     assert cli(["--rules", "silent-failure"], client) == 1
     assert "1 findings from 2 judgments" in capsys.readouterr().out
     assert cli(["--rules", "silent-failure", "--threshold", "0"], client) == 1
     assert "2 findings from 2 judgments" in capsys.readouterr().out
+    assert len(client.calls) == 2
 
 
 def test_main_exits_zero_below_every_threshold(cli, capsys):
