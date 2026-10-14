@@ -68,12 +68,19 @@ def _case(path, should_flag=True, rule_id="silent-failure"):
 
 
 @pytest.mark.asyncio
-async def test_judge_pairs_each_case_with_its_judgment():
-    scored = await run_eval.judge([_case("a"), _case("b", should_flag=False)], answering())
+async def test_judge_pairs_each_case_with_its_judgment_and_every_run_asks_the_live_api(private_jev_cache):
+    factory = answering()
+    cases = [_case("a"), _case("b", should_flag=False)]
+
+    scored = await run_eval.judge(cases, factory)
+    await run_eval.judge(cases, factory)
+
     assert [(row.source, row.should_flag, row.probability) for row in scored] == [
         ("a", True, 0.9),
         ("b", False, 0.9),
     ]
+    assert len(factory().calls) == 2
+    assert not private_jev_cache.exists()
 
 
 @pytest.mark.asyncio

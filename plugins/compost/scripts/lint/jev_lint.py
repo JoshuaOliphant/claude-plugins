@@ -179,9 +179,9 @@ def findings_above_threshold(judgments: list[Judgment], rules: list[Rule], overr
 
 
 async def run(
-    units: list[Unit], rules: list[Rule], concurrency: int, client_factory=open_client
+    units: list[Unit], rules: list[Rule], concurrency: int, client_factory=open_client, cache: Cache | None = None
 ) -> tuple[list[Judgment], list[Failure]]:
-    cache = Cache()
+    cache = cache or Cache()
     async with client_factory() as client:
         outcome = await judge_units(Jev(client, cache, concurrency), units, rules)
     cache.save()
