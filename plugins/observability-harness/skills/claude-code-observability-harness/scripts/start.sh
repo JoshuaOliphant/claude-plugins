@@ -112,5 +112,4 @@ if [ "$OBS_MODE" = "full" ]; then
     echo "VictoriaMetrics http://127.0.0.1:8428  (PromQL)"
 fi
 echo "JSONL data     $DATA_DIR/jsonl/"
-echo "Query this telemetry while debugging and verifying changes: the observability-query skill has the recipes."
 echo "==========================="

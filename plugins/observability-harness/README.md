@@ -13,12 +13,18 @@ on session start.
   it classifies candidate sites (boundary/tool calls, dispatch/routing, result/LLM sites),
   proposes domain-appropriate spans and metrics, and waits for confirmation before writing —
   because different apps need different instruments. (In an unattended run it applies the
-  conservative core and records the full proposal instead of asking.) Setup ends with a **scripted end-to-end verify**:
-  `verify.sh` runs the rendered probe and polls all three sinks, so "harness installed"
-  is an exit code.
+  conservative core and records the full proposal instead of asking.) Setup ends with a
+  **scripted end-to-end verify**: `verify.sh` runs the rendered probe and polls all three
+  sinks, so "harness installed" is an exit code.
 - **observability-query** — The consuming half: triggers when debugging, verifying a
   change ran, or doing performance work in a project that has the harness. Detects it
   via the status contract, then reads telemetry instead of guessing.
+
+## Session hook
+
+The plugin's own `SessionStart` hook (`hooks/telemetry_nudge.sh`) adds one line of context to
+every session in a project that has the harness: whether it is running, and to query its
+telemetry while debugging and verifying. It is silent elsewhere.
 
 ## Integration contract
 
