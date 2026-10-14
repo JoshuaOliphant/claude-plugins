@@ -74,7 +74,7 @@ class Jev:
 
     async def ask(self, tool: str, state: dict, questions: dict) -> dict:
         key = cache_key(tool, state, questions)
-        if (hit := self.cache.get(key)) is not None:
+        if (hit := self.cache.get(key)) is not None and questions.keys() <= hit.keys():
             self.cached += 1
             return hit
         async with self.semaphore:

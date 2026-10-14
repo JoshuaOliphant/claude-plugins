@@ -100,5 +100,15 @@ def test_a_dropped_answer_is_unavailable_and_nothing_is_cached(tmp_path):
     assert jev.cache.entries == {}
 
 
+def test_a_partial_answer_cached_before_is_asked_again(tmp_path):
+    questions = {**QUESTIONS, "other": Noul(instructions="Is `text` long?")}
+    cache = core.Cache(tmp_path / "c.json")
+    cache.put(core.cache_key("t", {"text": "a"}, questions), {"flag": noul(0.7)})
+    client = StubClient(lambda state, asked: {"flag": noul(0.7), "other": noul(0.1)})
+    answers = asyncio.run(core.Jev(client, cache).ask("t", {"text": "a"}, questions))
+    assert answers == {"flag": noul(0.7), "other": noul(0.1)}
+    assert len(client.calls) == 1
+
+
 def test_top_orders_by_probability():
     assert core.top({"a": 0.2, "b": 0.5, "c": 0.3}, 2) == [("b", 0.5), ("c", 0.3)]
