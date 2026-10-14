@@ -27,7 +27,9 @@ later reads as a refactor, and refactors get deferred.
 
 - A state machine instead of lifecycle booleans and phase checks.
 - A typed model instead of loose parameters or dicts passed around by convention.
-- A lookup table, registry, or tagged union instead of branching spread across files.
+- A lookup table, registry, or tagged union instead of branching spread across files. When the
+  table's rules change more often than the code, move them into a data file: a
+  [domain language](domain-languages.md).
 - A reducer or command/event model instead of ad hoc mutation.
 - A module that owns one body of domain knowledge and its invariants.
 - When none of these fits: write down what the code must never allow and how the data is read,
