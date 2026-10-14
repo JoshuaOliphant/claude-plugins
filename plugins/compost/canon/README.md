@@ -10,6 +10,7 @@ only when relevant.
 - [Ubiquitous language](ubiquitous-language.md): one domain vocabulary in talk and code, scoped by bounded contexts, recorded in `CONTEXT.md` and `CONTEXT-MAP.md`.
 - [Deep modules](deep-modules.md): much behavior behind a small interface; hide decisions likely to change; design the interface twice.
 - [Seams](seams.md): places to change behavior without editing there, where tests get in and where you see them fail.
+- [Domain languages](domain-languages.md): when rules repeat in one shape and change often, write them as data in the domain's terms; an external grammar almost never.
 - [Expand, migrate, contract](expand-contract.md): change a depended-on interface in green steps, and always finish the contract step.
 
 ## Working principles

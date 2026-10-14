@@ -80,6 +80,13 @@ a quick lookup can answer.
      first with `adr-worthy` and offer the ADR only on `offer_adr` ([jev](references/jev.md));
      exit 3, apply the three tests yourself.
 
+   When the answers turn out to be mostly rules (pricing, routing, permissions, schedules:
+   combinations of inputs and the outcome each gets), capture them as one table in the glossary's
+   terms, the Examples of a single scenario outline, rather than a run of near-identical criteria.
+   Note in the spec that the table is a candidate for a
+   [domain language](../../canon/domain-languages.md), so the build reads the rules as data
+   instead of hand-coding a branch per row.
+
    When prose cannot settle a decision (a state model that looks fine on paper, a layout nobody
    can picture), build a throwaway prototype, keep it on a `prototype/<slug>` branch as evidence,
    and link the branch from the spec ([prototype](references/prototype.md)).
