@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from jevtools import meta, review, spec, testing  # noqa: F401  (importing registers the tools)
-from jevtools.core import MISSING_KEY, Cache, Jev, Unavailable, open_client, resolve_key
+from jevtools.core import MISSING_KEY, Cache, Unavailable, open_client, resolve_key, session
 from jevtools.registry import TOOLS, BadInput
 
 EXIT_BAD_INPUT = 2
@@ -35,11 +35,8 @@ def read_input(source: str | None) -> dict:
 async def run(name: str, payload: dict, client_factory=open_client, cache: Cache | None = None) -> dict:
     selected = TOOLS[name]
     gathered = selected.gather(payload)
-    cache = cache or Cache()
-    async with client_factory() as client:
-        jev = Jev(client, cache)
+    async with session(client_factory, cache) as jev:
         result = await selected.judge(jev, gathered)
-    cache.save()
     return {"tool": name, **result, "jev": {"input_tokens": jev.input_tokens, "cached": jev.cached}}
 
 

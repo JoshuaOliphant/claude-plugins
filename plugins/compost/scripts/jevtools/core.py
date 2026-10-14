@@ -6,6 +6,8 @@ import json
 import os
 import subprocess
 import tempfile
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from typesafe_sdk import AsyncTypeSafeClient, TypeSafeError
@@ -103,6 +105,14 @@ def open_client() -> AsyncTypeSafeClient:
     if key is None:
         raise Unavailable(MISSING_KEY)
     return AsyncTypeSafeClient(api_key=key)
+
+
+@asynccontextmanager
+async def session(client_factory=open_client, cache: Cache | None = None, concurrency: int = 8) -> AsyncIterator[Jev]:
+    cache = cache or Cache()
+    async with client_factory() as client:
+        yield Jev(client, cache, concurrency)
+    cache.save()
 
 
 def top(probabilities: dict[str, float], count: int = 3) -> list[tuple[str, float]]:

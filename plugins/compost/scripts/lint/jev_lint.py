@@ -25,7 +25,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from extract import Unit, extract_hunks, extract_source_units
-from jevtools.core import MISSING_KEY, Cache, Jev, Unavailable, open_client, resolve_key
+from jevtools.core import MISSING_KEY, Cache, Jev, Unavailable, open_client, resolve_key, session
 from rules import RULES, Rule
 
 EXIT_CLEAN = 0
@@ -181,11 +181,8 @@ def findings_above_threshold(judgments: list[Judgment], rules: list[Rule], overr
 async def run(
     units: list[Unit], rules: list[Rule], concurrency: int, client_factory=open_client, cache: Cache | None = None
 ) -> tuple[list[Judgment], list[Failure]]:
-    cache = cache or Cache()
-    async with client_factory() as client:
-        outcome = await judge_units(Jev(client, cache, concurrency), units, rules)
-    cache.save()
-    return outcome
+    async with session(client_factory, cache, concurrency) as jev:
+        return await judge_units(jev, units, rules)
 
 
 def main(argv: list[str] | None = None, client_factory=open_client) -> int:
