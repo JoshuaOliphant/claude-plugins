@@ -41,6 +41,10 @@ where seams go, and keeps heavy architecture out unless a dependency earns it. T
    - Pure functions were extracted for testability, but the bugs hide in how they are called.
    - Modules leak a shared decision (a representation, a policy, a wire format) across their seams.
    - Code is untested, or hard to test through its current interface.
+   - Rules in one shape (an if/elif chain, a dict of cases) grow by an entry per feature, or the
+     same rule is restated in several files. That is a candidate for a
+     [domain language](../../canon/domain-languages.md): the rules as data in `CONTEXT.md`'s terms,
+     one engine behind the interface. Start with a data file; propose a grammar almost never.
 
    Apply the deletion test to anything that looks shallow: imagine deleting the module. If complexity
    vanishes, it was a pass-through. If it reappears across its callers, it was earning its keep.
