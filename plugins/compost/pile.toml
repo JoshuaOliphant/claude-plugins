@@ -27,7 +27,7 @@ skills = [
   "tdd", "grilling", "grill-me", "grill-with-docs", "to-spec", "to-tickets", "implement",
   "implement-spec", "handoff", "claude-handoff", "wayfinder", "triage", "domain-modeling",
   "codebase-design", "improve-codebase-architecture", "diagnosing-bugs", "prototype",
-  "setup-matt-pocock-skills", "code-review", "blueprint", "blueprint-generate",
+  "setup-matt-pocock-skills", "wait-what", "code-review", "blueprint", "blueprint-generate",
   "efficient-fable", "efficient-frontier", "agent-watchdog", "plow-ahead", "plan-arbiter",
   "visual-plan", "visual-recap", "read-the-damn-docs", "review-diff", "jev-lint",
 ]
@@ -58,6 +58,7 @@ pin = "c55ee46073ed923f86ce59a5eb3b6d895095d1b7"
 "skills/in-progress/implement-spec" = ["implement"]
 "skills/productivity/handoff" = ["pause"]
 "skills/engineering/retro" = ["retro", "review", "canon"]
+"skills/productivity/wait-what" = ["wait-what"]
 
 [[source]]
 name = "superpowers"
