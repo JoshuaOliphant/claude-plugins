@@ -1,6 +1,6 @@
 ---
 name: retro
-description: Looks back over one finished coding session and files the changes to the agent's environment (checks, pointers, instruction files, tooling, access) that would have made it go better. Use when the user says "retro", "run a retrospective", "what slowed you down", "what should we change so this goes smoother next time", or a run has just finished through compost:finish.
+description: Looks back over a coding session and files the changes to the agent's environment (checks, pointers, instruction files, tooling, access) that would have made it go better. Use when the user says "retro", "run a retrospective", "what slowed you down", or "what should we change so this goes smoother next time"; when a run has just finished through compost:finish; and, without being asked, once a task is done that was harder than it should have been, such as the same mistake made twice, a long hunt for a file or fact, a fact you had to guess because you could not reach it, an error no check caught, or a tool call that cost far more than its answer.
 ---
 
 # Retro
@@ -14,6 +14,12 @@ the session's own work: that went through review already.
 This differs from `compost:skill-drift`, which watches one skill's text across many sessions, and
 from `compost:prune`, which checks docs against the code. A candidate that is really one of theirs
 goes to them.
+
+The user can ask for a retro at any time. Start one yourself when a task you just finished cost
+more than it should have, for one of the reasons in the description. Finish the task first:
+a retro mid-task derails the work it is about, and only a finished session shows the whole cost.
+Scope it to the stretch that struggled, not the whole session. A retro that finds nothing worth
+fixing files nothing and says so in one line.
 
 ## Steps
 
