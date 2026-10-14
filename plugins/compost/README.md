@@ -90,7 +90,8 @@ they roll out); without them compost works as before and the log stays empty.
 The same hooks module (`hooks/compost.ts`) carries the `architecture-review` mod
 (`hooks/architecture-review.tsx`). It gives `compost:deepen` an `architecture_review` tool that
 draws the deepening candidates as cards in a pane, top recommendation first. Each card has an
-Explore button that sends the pick as your prompt, and `/architecture-review` reopens the last
+Explore button that sends the pick as a message from compost (never as your own words, since the
+candidate names are model-written), and `/architecture-review` reopens the last
 set. It does not call any outside service. Without hooks modules, deepen gives the candidates in
 the conversation only.
 

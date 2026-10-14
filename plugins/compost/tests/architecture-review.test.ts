@@ -100,13 +100,16 @@ test('every surface can draw the cards', async ($, on) => {
   }
 })
 
-test('Explore submits the pick as the person would type it', async ($, on) => {
+test("Explore submits the pick framed as compost's, never as the person's words, since the name is model-written", async ($, on) => {
   const world = engine(on)
   await $.session.start(START)
   await callTool($, REVIEW)
   const ui = await $.ui.mount({ ...PANE, props: PANE_PROPS as never })
   await ui.press({ key: 'explore-Billing sync' })
-  expect(world.submitted).toMatchObject([{ text: 'Explore the deepening candidate "Billing sync".' }])
+  expect(world.submitted).toMatchObject([
+    { text: 'Explore the deepening candidate "Billing sync".', origin: { kind: 'plugin', name: 'compost' } },
+  ])
+  expect((world.submitted[0] as { origin: { asUser?: true } }).origin.asUser).toBeUndefined()
 })
 
 test('a recommendation that names no candidate is refused and nothing is shown', async ($, on) => {

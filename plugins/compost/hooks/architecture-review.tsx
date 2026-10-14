@@ -1,5 +1,5 @@
 // ABOUTME: The architecture-review pane: compost:deepen hands its deepening candidates to the architecture_review tool and they draw as cards.
-// ABOUTME: Each card's Explore button submits the pick as the person's prompt; /architecture-review reopens the last set.
+// ABOUTME: Each card's Explore button submits the pick as a compost message; /architecture-review reopens the last set.
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
@@ -120,7 +120,7 @@ export const register: Register = on => {
               key={`explore-${candidate.name}`}
               label="Explore"
               onPress={() => {
-                void $.prompt.submit({ text: `Explore the deepening candidate "${candidate.name}".`, asUser: true })
+                void $.prompt.submit({ text: `Explore the deepening candidate "${candidate.name}".` })
               }}
             />
           </Box>
