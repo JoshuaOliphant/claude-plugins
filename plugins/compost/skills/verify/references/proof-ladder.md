@@ -26,7 +26,9 @@ That fact moves down the ladder like this:
    fails, the fact is false and the grace period was covering for skew. The change then needs a
    decision, not a merge.
 5. **Reproduced live.** Start the app with the bundled `/run`, log in, shift the client clock,
-   and watch the request log for a refresh followed by a 200.
+   and watch the request log for a refresh followed by a 200. With telemetry recorded in
+   `docs/agents/observability.md`, query that request's trace instead: the refresh span comes
+   before the request span, and the request span's status is 200.
 
 Stop at the cheapest rung that settles the fact, and report where you stopped. Below rung 4, the
 fact is unproven. Say so in the report and in the PR's Risk section.
@@ -56,6 +58,7 @@ ran.
 | pre-commit hook | Its `files:` pattern misses the changed files and it reports "Skipped" | The hook's line shows "Passed", not "(no files to check)Skipped" |
 | a shell pipeline | `cmd \| grep x` exits with the status of `grep` | `set -o pipefail`, or check `cmd`'s own exit code |
 | a hook or CI step | It never triggered for this path or event | Its own log line for this run |
+| a telemetry query | It returns an earlier run's data, or nothing because the pipeline is down, read as "no errors" | The query is scoped to this run's trace id or start time, and returns the span you expected |
 | editing then re-running Python | An edit of the same size in the same second can leave stale bytecode running | `PYTHONDONTWRITEBYTECODE=1`, or clear `__pycache__` between runs |
 
 When nothing on this list fits, plant a defect: break the line the check protects, run the

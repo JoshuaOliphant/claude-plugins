@@ -15,6 +15,7 @@ only when relevant.
 ## Working principles
 
 - [Prove it works](prove-it-works.md): observe the real artifact working; proxies and self-reports are not checks.
+- [Read the running system](read-the-running-system.md): query the telemetry the code already emits before reasoning about what it did.
 - [Read the docs](read-the-docs.md): read current docs for the installed version before coding against what you did not write.
 - [Fix root causes](fix-root-causes.md): reproduce, trace to the cause, fix it there, and find its siblings.
 - [Make mistakes impossible](make-mistakes-impossible.md): turn a repeated mistake into a check at the highest level that works, and prove the check catches it.

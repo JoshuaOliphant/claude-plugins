@@ -14,7 +14,7 @@ with review done by subagents every time, and records its rulings on the issue.
 
 | Skill | When |
 | --- | --- |
-| `setup` | Once per repo: issue tracker, domain docs, test gates, AGENTS.md migration |
+| `setup` | Once per repo: issue tracker, domain docs, test gates, observability stack, AGENTS.md migration |
 | `spec` | A fuzzy idea becomes user stories with Given/When/Then acceptance criteria |
 | `slice` | A spec becomes tracer-bullet issues in the tracker |
 | `implement` | The entry point once issues exist; picks the flow from there |

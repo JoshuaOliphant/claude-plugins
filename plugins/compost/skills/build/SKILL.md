@@ -103,7 +103,16 @@ no test counts until you have seen it fail for the right reason.
    cannot land at once belong to `compost:slice` as an
    [expand-contract](../../canon/expand-contract.md) sequence, not to a shim here.
 
-9. **Mutate the code in your head.** For each realistic mutation, name the test that fails:
+9. **Instrument new boundaries.** When `docs/agents/observability.md` records a stack and the
+   change adds a boundary (a request handler, an external call, a job or queue consumer, an agent
+   tool), give it a span or metric in the instrumentation module that file names, beside the
+   instruments already there. Name it in the domain's words and attach the attributes a later
+   diagnosis would filter on, such as the ids the operation acts on; never a secret or personal
+   data. `compost:verify` cites this telemetry as live proof the path ran
+   ([read the running system](../../canon/read-the-running-system.md)). With no stack recorded,
+   skip this step.
+
+10. **Mutate the code in your head.** For each realistic mutation, name the test that fails:
    - a wrong constant, argument, or comparison (`>` for `>=`)
    - the wrong branch taken
    - a missing state change or side effect
@@ -113,7 +122,7 @@ no test counts until you have seen it fail for the right reason.
    A mutation that nothing catches is an unprotected behavior. Close it with a case in an
    existing table or test, following step 4 again.
 
-10. **Commit with the issue number.** Before committing, ask Jev whether a new or changed test
+11. **Commit with the issue number.** Before committing, ask Jev whether a new or changed test
     re-covers an existing one: run `duplicate-test` with the base the branch started from
     ([jev](references/jev.md)), and fold every `fold into <test>` into that test as step 4 says.
     Exit 3: compare each new test against its neighbours in the file yourself. Run the full

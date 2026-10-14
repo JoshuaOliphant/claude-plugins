@@ -1,13 +1,13 @@
 ---
 name: setup
-description: Configures a repo once for the compost skills, recording its issue tracker, domain doc layout, core docs, test convention, and verify gates under docs/agents/, and offers to move CLAUDE.md into AGENTS.md. Use when the user says "set up compost", "configure this repo", "set up the issue tracker", "migrate CLAUDE.md to AGENTS.md", "record our test gates", or a compost skill finds docs/agents/issue-tracker.md missing.
+description: Configures a repo once for the compost skills, recording its issue tracker, domain doc layout, core docs, test convention, verify gates, and observability stack under docs/agents/, and offers to move CLAUDE.md into AGENTS.md. Use when the user says "set up compost", "configure this repo", "set up the issue tracker", "migrate CLAUDE.md to AGENTS.md", "record our test gates", "set up observability", or a compost skill finds docs/agents/issue-tracker.md missing.
 ---
 
 # Setup
 
 The other compost skills assume a few facts about the repo: where issues live, where the glossary
-and ADRs live, which docs are core, how tests are written, and which gates must pass before
-anything counts as done.
+and ADRs live, which docs are core, how tests are written, which gates must pass before
+anything counts as done, and how to read what the running code emits.
 Setup finds those facts, confirms the ones that branch, and writes them to `docs/agents/`, where
 every skill reads them. It also points the repo's instructions file at those docs and offers to
 consolidate the instructions into `AGENTS.md`.
@@ -34,6 +34,8 @@ edits the user made by hand.
    - Tests and gates: the test layout and framework in use, coverage configuration, linters, type
      checkers, formatters, `.pre-commit-config.yaml`, `Makefile` or `justfile` targets, package
      scripts, and the commands CI runs in `.github/workflows/` or `.gitlab-ci.yml`.
+   - Telemetry: `.claude/harness/observability/`, and Logfire, Sentry, or OpenTelemetry in the
+     dependencies or the app's startup code.
 
 2. **Present findings and ask only where the answer branches.** Summarize what is present and
    what is missing, then take the sections below in order, one answer each. Lead with the
@@ -77,7 +79,14 @@ edits the user made by hand.
    or doesn't run as broken, with its output's first error, rather than dropping it. Write
    `docs/agents/testing.md` from the template in the same reference.
 
-7. **Instructions file and the AGENTS.md migration.** Claude Code reads `AGENTS.md` natively only
+7. **Observability.** Find the telemetry the repo's running code emits with the detection ladder
+   in [observability](references/observability.md): the observability harness, another stack
+   already wired, or, with nothing found, one question offering the harness, the user's own
+   stack, or none. Run one query against what you record, and record a stack you cannot read as
+   broken with its first error. Write `docs/agents/observability.md` from the template in the same
+   reference ([read the running system](../../canon/read-the-running-system.md)).
+
+8. **Instructions file and the AGENTS.md migration.** Claude Code reads `AGENTS.md` natively only
    when no `CLAUDE.md`, `.claude/CLAUDE.md`, or `CLAUDE.local.md` exists in the working directory
    or above it; `~/.claude/CLAUDE.md` doesn't count and still loads alongside. Follow
    [instruction files](references/instruction-files.md) for each combination you found. In short:
@@ -91,7 +100,7 @@ edits the user made by hand.
    Then add or update the `## Agent skills` block in whichever file holds the project
    instructions. Replace an existing block in place; leave the surrounding sections alone.
 
-8. **Check the Jev key.** Run `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py status`. It only
+9. **Check the Jev key.** Run `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py status`. It only
    looks for a TypeSafe key (`TYPESAFE_API_KEY`, then the macOS Keychain item `typesafe`) and calls
    nothing. Exit 0 means the Jev tools will answer. Exit 3 means every Jev step will fall back to
    your own judgment: tell the user what they lose (cheaper test placement, review triage, the
@@ -99,7 +108,7 @@ edits the user made by hand.
    for example as `! security add-generic-password -s typesafe -a "$USER" -w`. Never ask for the key
    in chat or write it anywhere. The key belongs to the machine, not the repo, so record nothing.
 
-9. **Switch off what compost replaces.** Run
+10. **Switch off what compost replaces.** Run
    `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/pile.py replaced`. It reads the `[replaces]` table in
    compost's `pile.toml` and reports which superseded plugins and skills are still active on this
    machine; it changes nothing. Leaving them on gives Claude two answers to every request. Show
@@ -110,7 +119,7 @@ edits the user made by hand.
    re-enabling a plugin or removing an override turns it back on. This is per machine, so on a
    second repo the report usually says nothing is active.
 
-10. **Check and commit.** Re-read every file you wrote. List the directories above the repo that
+11. **Check and commit.** Re-read every file you wrote. List the directories above the repo that
    still hold a `CLAUDE.md`, since any of them stops `AGENTS.md` from loading. Run
    `git check-ignore -v` on every file you wrote in the repo: each `docs/agents/*.md`, the
    instructions file, and any `CONTEXT-MAP.md` or `CONTEXT.md`. It prints a
