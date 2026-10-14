@@ -102,3 +102,4 @@ yours to do without asking.
 - `compost:build` when review or the user asks for changes on the open PR.
 - `compost:diagnose` when the merge result is red.
 - `compost:pause` when stopping with the PR open and work still in flight.
+- `compost:retro` once the PR is merged, to file what in the environment would have made the run go better.

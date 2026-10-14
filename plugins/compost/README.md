@@ -28,6 +28,7 @@ with review done by subagents every time, and records its rulings on the issue.
 | `pause` | Stop at a safe point and pick the work back up later |
 | `fan-out` | Competing designs or hypotheses, tried in parallel and judged |
 | `turn` | Check the upstream sources for changes worth working in |
+| `retro` | After a run: file the environment changes that would have made the session go better |
 | `skill-drift` | Daily: turn repeated skill drift, judged by the `skill-drift` mod, into proposed skill fixes |
 
 `canon/` holds short essays on the ideas the skills lean on: tracer bullets, ubiquitous
