@@ -138,10 +138,7 @@ Add to `.claude/settings.json` so the stack auto-starts each session (idempotent
 }
 ```
 
-Merge into any existing `hooks.SessionStart` array rather than overwriting it. This hook only
-starts the stack. The plugin's own SessionStart hook (`hooks/telemetry_nudge.sh`) tells the agent
-each session whether the harness is running and to query it, so that line updates with the plugin
-rather than with this project's copy of the scripts.
+Merge into any existing `hooks.SessionStart` array rather than overwriting it.
 
 ### 5. Gitignore the runtime artifacts
 

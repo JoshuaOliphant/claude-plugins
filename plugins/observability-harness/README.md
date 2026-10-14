@@ -20,12 +20,6 @@ on session start.
   change ran, or doing performance work in a project that has the harness. Detects it
   via the status contract, then reads telemetry instead of guessing.
 
-## Session hook
-
-The plugin's own `SessionStart` hook (`hooks/telemetry_nudge.sh`) adds one line of context to
-every session in a project that has the harness: whether it is running, and to query its
-telemetry while debugging and verifying. It is silent elsewhere.
-
 ## Integration contract
 
 `bash .claude/harness/observability/status.sh --json` →
