@@ -19,6 +19,9 @@ comes first, the theory second, and the fix last, at the root. The why is in
    paths involved, dependency bumps, config and environment changes. When the error names a
    third-party API or follows an upgrade, read that dependency's docs and changelog for the
    installed version before forming a theory ([read the docs](../../canon/read-the-docs.md)).
+   If `docs/agents/observability.md` is missing, run `compost:setup`'s observability step first.
+   When it records a stack, query it for the failing run: its errors, the spans around the failure,
+   and whether the code path ran at all ([read the running system](../../canon/read-the-running-system.md)).
 
 2. **Build the feedback loop.** This is the skill; spend disproportionate effort here. You are done
    when you can name one command you have already run that is:
@@ -30,8 +33,8 @@ comes first, the theory second, and the fix last, at the root. The why is in
      [`scripts/hitl-loop.sh`](scripts/hitl-loop.sh).
 
    Work down the ladder in [references/feedback-loops.md](references/feedback-loops.md) (failing
-   test, HTTP script, CLI diff, browser script, trace replay, harness, fuzz, bisection, differential,
-   human-driven script), then tighten it: faster, sharper assertion, more deterministic. If you catch
+   test, HTTP script, telemetry query, CLI diff, browser script, trace replay, harness, fuzz,
+   bisection, differential, human-driven script), then tighten it: faster, sharper assertion, more deterministic. If you catch
    yourself forming a theory before this command exists, stop and go back to building it.
 
    If you truly cannot build one, say so, list what you tried, and ask for one of: access to an
@@ -66,7 +69,8 @@ comes first, the theory second, and the fix last, at the root. The why is in
    or drop it. Post the ranked list where the user will see it (the issue, when there is one) and
    carry on; if they re-rank from domain knowledge, take it.
 
-6. **Probe one variable at a time.** Every probe maps to one prediction. Prefer a debugger or REPL,
+6. **Probe one variable at a time.** Every probe maps to one prediction. Read what the recorded
+   telemetry already shows for the run before adding anything. Then prefer a debugger or REPL,
    then targeted logs at the seams that tell hypotheses apart; never log everything and grep. Tag
    every debug line with a unique prefix such as `[DEBUG-a4f2]` so cleanup is one grep. For a
    performance regression, measure a baseline first (timer, profiler, query plan) and bisect against
@@ -116,8 +120,9 @@ comes first, the theory second, and the fix last, at the root. The why is in
 
    If the investigation shows the cause is truly environmental or external (a timing dependency on
    another service, a platform quirk), record what you ruled out, handle it at the boundary with a
-   clear error or bounded retry, and add the logging that would catch it next time. Most "no root
-   cause" verdicts are unfinished investigations, so check the trace once more first.
+   clear error or bounded retry, and add the logging or span that would catch it next time, in the
+   instrumentation module `docs/agents/observability.md` names. Most "no root cause" verdicts are
+   unfinished investigations, so check the trace once more first.
 
 ## Next moves
 

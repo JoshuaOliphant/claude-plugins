@@ -67,7 +67,7 @@
       "name": "observability-harness",
       "source": "./plugins/observability-harness",
       "description": "Install a local, Docker-free OTLP observability stack (OpenTelemetry → Vector → JSONL, optionally VictoriaLogs + VictoriaMetrics) into a project and instrument the code, with a scan-and-propose step for domain-appropriate spans and metrics — then query that telemetry as a development feedback signal (observability-query skill, status --json contract, scripted end-to-end verify).",
-      "version": "0.2.1",
+      "version": "0.3.0",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -107,7 +107,7 @@
       "name": "compost",
       "source": "./plugins/compost",
       "description": "One software-engineering workflow composted from Matt Pocock's skills, superpowers, pstack, Imbue's blueprint, and autonomous-sdlc: specs with BDD acceptance criteria, tracer-bullet issues in your tracker, builds that fit tests into the existing suite, automatic subagent review, browser diff review, semantic lint for Python, a prune skill that keeps docs to what the code can't say, and a turn skill that works in upstream changes.",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "author": {
         "name": "Joshua Oliphant"
       },

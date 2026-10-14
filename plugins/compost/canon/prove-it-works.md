@@ -34,7 +34,8 @@ end. Keep the evidence with the number, so a reader can check it without rerunni
 ## In practice
 
 - Before saying done, run the thing the user will run: the command, the endpoint, the page. Use
-  `/run` to drive the app when a test cannot show the behavior.
+  `/run` to drive the app when a test cannot show the behavior, and read its telemetry to see
+  what it did inside ([read the running system](read-the-running-system.md)).
 - Report what you checked and what you saw, including checks that failed. "Tests pass" without the
   output is a claim, not a result.
 - Prefer a check you can script and rerun (a test, a comparison script, a query) over a one-time

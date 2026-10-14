@@ -17,7 +17,9 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    test command, the coverage threshold and any recorded exclusions, linters, and type checkers.
    If the file is missing, run `compost:setup` now, then continue. Until it exists, the
    project's CI workflow defines green: what `.github/workflows/*` runs, plus any `pre-commit`,
-   `Makefile` or `justfile` check target.
+   `Makefile` or `justfile` check target. Read `docs/agents/observability.md` too; if it is
+   missing, run `compost:setup`'s observability step now, which records none when the repo has
+   nothing running to observe and commits the file.
 
 2. **Run the full suite and every gate, fresh.** Run them in this worktree now, not earlier and
    not somewhere else. Read each exit code and the whole output. Stop at the first failure and
@@ -64,6 +66,12 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
       The bundled `/verify` does the same but only the user can run it; suggest it when they
       want to see it themselves.
 
+   When `docs/agents/observability.md` records a stack and the change runs at runtime, reach the
+   last rung through it: exercise the changed path once, then query for its span, log, or metric
+   carrying the values the fact depends on ([read the running system](../../canon/read-the-running-system.md)).
+   An empty result means the path did not run or the pipeline is down; find out which before
+   claiming anything.
+
    Look where grep stops: the library's own source, JSON a service returns, a database column, a
    feature flag, another program reading the same bytes. Report the rung you reached. Below
    "ran", call the fact unproven. See [the proof ladder](references/proof-ladder.md) for examples.
@@ -92,7 +100,7 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
 
 8. **Report the evidence.** Give the commands and their counts (`214 passed, 0 failed`), the
    coverage result and any proposed exclusion, the AC table, the safety fact with its rung and
-   the proof output, and the comments removed. Post the AC table on the issue; on a re-run, edit
+   the proof output (the telemetry query and what it returned, when a stack is recorded), and the comments removed. Post the AC table on the issue; on a re-run, edit
    the AC-table comment you posted before instead of adding another. Before saying "done", ask
    Jev whether the output you captured backs each claim: run `claim-backed` with every claim
    and its command's output ([jev](references/jev.md)), and fix or drop each one in `unbacked`.

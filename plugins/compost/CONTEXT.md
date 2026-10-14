@@ -19,6 +19,11 @@ _Avoid_: drift (alone), stale docs, doc rot.
 `docs/adr/`, plus what a repo lists in `docs/agents/docs.md`. Checked by `compost:prune`, fixed in
 place, never deleted.
 
+**Telemetry**: the traces, logs, and metrics a repo's running code emits, read through the stack
+`docs/agents/observability.md` records. `compost:diagnose` and `compost:verify` query it;
+`compost:build` adds to it at new boundaries.
+_Avoid_: observability data, monitoring.
+
 **Hit**: one Jev judgment that a turn showed skill drift of one kind, above that kind's threshold,
 as the `skill-drift` mod writes it to `~/.claude/skill-drift/`.
 

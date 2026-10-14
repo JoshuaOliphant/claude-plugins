@@ -21,6 +21,7 @@ no test counts until you have seen it fail for the right reason.
    that touches the area, so names in code and tests match the domain's words. When the issue
    touches a package, SDK, CLI, or service you did not write, read its current docs for the
    installed version before writing code against it ([read the docs](../../canon/read-the-docs.md)).
+   If `docs/agents/observability.md` is missing, run `compost:setup`'s observability step now.
 
 2. **Isolate the work.** Check for existing isolation before creating anything:
 
@@ -103,17 +104,26 @@ no test counts until you have seen it fail for the right reason.
    cannot land at once belong to `compost:slice` as an
    [expand-contract](../../canon/expand-contract.md) sequence, not to a shim here.
 
-9. **Mutate the code in your head.** For each realistic mutation, name the test that fails:
-   - a wrong constant, argument, or comparison (`>` for `>=`)
-   - the wrong branch taken
-   - a missing state change or side effect
-   - an empty or default return
-   - missing validation for zero, empty, None, unauthorized, or malformed input
+9. **Instrument new boundaries.** When `docs/agents/observability.md` records a stack and the
+   change adds a boundary (a request handler, an external call, a job or queue consumer, an agent
+   tool), give it a span or metric in the instrumentation module that file names, beside the
+   instruments already there. Name it in the domain's words and attach the attributes a later
+   diagnosis would filter on, such as the ids the operation acts on; never a secret or personal
+   data. `compost:verify` cites this telemetry as live proof the path ran
+   ([read the running system](../../canon/read-the-running-system.md)). With no stack recorded,
+   skip this step.
 
-   A mutation that nothing catches is an unprotected behavior. Close it with a case in an
-   existing table or test, following step 4 again.
+10. **Mutate the code in your head.** For each realistic mutation, name the test that fails:
+    - a wrong constant, argument, or comparison (`>` for `>=`)
+    - the wrong branch taken
+    - a missing state change or side effect
+    - an empty or default return
+    - missing validation for zero, empty, None, unauthorized, or malformed input
 
-10. **Commit with the issue number.** Before committing, ask Jev whether a new or changed test
+    A mutation that nothing catches is an unprotected behavior. Close it with a case in an
+    existing table or test, following step 4 again.
+
+11. **Commit with the issue number.** Before committing, ask Jev whether a new or changed test
     re-covers an existing one: run `duplicate-test` with the base the branch started from
     ([jev](references/jev.md)), and fold every `fold into <test>` into that test as step 4 says.
     Exit 3: compare each new test against its neighbours in the file yourself. Run the full
