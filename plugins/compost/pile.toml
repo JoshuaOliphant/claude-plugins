@@ -57,7 +57,7 @@ pin = "c55ee46073ed923f86ce59a5eb3b6d895095d1b7"
 "skills/engineering/implement" = ["implement"]
 "skills/in-progress/implement-spec" = ["implement"]
 "skills/productivity/handoff" = ["pause"]
-"skills/engineering/retro" = ["review", "canon"]
+"skills/engineering/retro" = ["retro", "review", "canon"]
 
 [[source]]
 name = "superpowers"

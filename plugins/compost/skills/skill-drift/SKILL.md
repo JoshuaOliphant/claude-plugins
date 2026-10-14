@@ -89,3 +89,5 @@ message.
   issue and build it.
 - `compost:turn` when a pattern shows compost's copy of a skill drifted because its upstream
   source already fixed the same thing.
+- `compost:retro` when the drift traces back to the environment rather than the skill: a missing
+  check, a hidden file, a rule in the wrong instruction file.
