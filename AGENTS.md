@@ -153,6 +153,10 @@ Multiple contexts, one per plugin plus the marketplace, listed in `CONTEXT-MAP.m
 
 pytest per plugin; `scripts/check_all.py` plus the 100% coverage gate in compost. See `docs/agents/testing.md`.
 
+### Observability
+
+None: nothing here runs long enough to observe. See `docs/agents/observability.md`.
+
 ### Docs
 
 Code is the source of truth; docs hold only what it can't say, in the core docs. Put a new fact in
