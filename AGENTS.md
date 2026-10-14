@@ -26,7 +26,7 @@ claude-plugins/
 │   └── shared/                        # Canonical sources for artifacts duplicated across plugins
 ├── knowledge/                      # Captured solutions (compound-knowledge output for this repo)
 ├── ai_docs/                        # Background research/reference docs (not shipped in plugins)
-├── docs/agents/                    # How the compost skills work in this repo (tracker, domain docs, gates, core docs)
+├── docs/agents/                    # How the compost skills work in this repo (tracker, domain docs, gates, core docs, observability)
 ├── pyproject.toml                  # Repo-wide dev group (pytest, ruff) and their config
 ├── CONTEXT-MAP.md                  # Bounded contexts and their glossaries
 ├── README.md                       # Marketplace installation instructions

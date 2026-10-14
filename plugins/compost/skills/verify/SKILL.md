@@ -19,7 +19,7 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    project's CI workflow defines green: what `.github/workflows/*` runs, plus any `pre-commit`,
    `Makefile` or `justfile` check target. Read `docs/agents/observability.md` too; if it is
    missing, run `compost:setup`'s observability step now, which records none when the repo has
-   nothing running to observe.
+   nothing running to observe and commits the file.
 
 2. **Run the full suite and every gate, fresh.** Run them in this worktree now, not earlier and
    not somewhere else. Read each exit code and the whole output. Stop at the first failure and

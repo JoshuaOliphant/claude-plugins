@@ -20,5 +20,8 @@ when the first one settles.
 
 - compost supersedes the retired autonomous-sdlc, stick-shift, and agent-skills plugins, and its
   `pile.toml` lists them as frozen sources. It absorbed review-diff and jev-lint.
+- compost reads telemetry through `docs/agents/observability.md`, which `compost:setup` writes;
+  it recommends observability-harness when a repo has no stack, and the harness's last setup step
+  hands back to `compost:setup`.
 - mochi-creator and understand share `prompt_design_principles.md`; compound-knowledge and
   understand share `config_loader.py`. The canonical copies live in `scripts/shared/`.

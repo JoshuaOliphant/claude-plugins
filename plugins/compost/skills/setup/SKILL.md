@@ -84,7 +84,10 @@ edits the user made by hand.
    already wired, or, with nothing found, one question offering the harness, the user's own
    stack, or none. Run one query against what you record, and record a stack you cannot read as
    broken with its first error. Write `docs/agents/observability.md` from the template in the same
-   reference ([read the running system](../../canon/read-the-running-system.md)).
+   reference ([read the running system](../../canon/read-the-running-system.md)). Another skill
+   that finds the file missing runs this step on its own: then also add the `### Observability`
+   entry to the `## Agent skills` block (step 8) and commit both as
+   `chore: record the observability stack`, so the next skill finds them.
 
 8. **Instructions file and the AGENTS.md migration.** Claude Code reads `AGENTS.md` natively only
    when no `CLAUDE.md`, `.claude/CLAUDE.md`, or `CLAUDE.local.md` exists in the working directory
@@ -109,30 +112,30 @@ edits the user made by hand.
    in chat or write it anywhere. The key belongs to the machine, not the repo, so record nothing.
 
 10. **Switch off what compost replaces.** Run
-   `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/pile.py replaced`. It reads the `[replaces]` table in
-   compost's `pile.toml` and reports which superseded plugins and skills are still active on this
-   machine; it changes nothing. Leaving them on gives Claude two answers to every request. Show
-   the user the report and, with their yes, run it again with `--apply`: it disables the plugins
-   through `claude plugin disable` and sets the skills to `"off"` in `skillOverrides` in
-   `~/.claude/settings.json`, keeping everything else there. Plugins synced from claude.ai can
-   only be turned off in the user's claude.ai settings, so pass those on. Nothing is deleted:
-   re-enabling a plugin or removing an override turns it back on. This is per machine, so on a
-   second repo the report usually says nothing is active.
+    `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/pile.py replaced`. It reads the `[replaces]` table in
+    compost's `pile.toml` and reports which superseded plugins and skills are still active on this
+    machine; it changes nothing. Leaving them on gives Claude two answers to every request. Show
+    the user the report and, with their yes, run it again with `--apply`: it disables the plugins
+    through `claude plugin disable` and sets the skills to `"off"` in `skillOverrides` in
+    `~/.claude/settings.json`, keeping everything else there. Plugins synced from claude.ai can
+    only be turned off in the user's claude.ai settings, so pass those on. Nothing is deleted:
+    re-enabling a plugin or removing an override turns it back on. This is per machine, so on a
+    second repo the report usually says nothing is active.
 
 11. **Check and commit.** Re-read every file you wrote. List the directories above the repo that
-   still hold a `CLAUDE.md`, since any of them stops `AGENTS.md` from loading. Run
-   `git check-ignore -v` on every file you wrote in the repo: each `docs/agents/*.md`, the
-   instructions file, and any `CONTEXT-MAP.md` or `CONTEXT.md`. It prints a
-   `source:line:pattern` line for each ignored path, and a broad rule (`agents/` also matches
-   `docs/agents/`) leaves a file out of the commit without a word. For each hit, show the user the
-   rule and offer to anchor it (`/agents/`) or narrow it, editing the file it came from only with
-   their yes; if they keep it, say which files the commit leaves out. Commit the changes as one
-   `chore: configure agent skills` commit. Tell the user which compost skills now read
-   these files, that they can edit `docs/agents/*.md` directly, and, after a migration, to look
-   for the `AGENTS.md loaded` line at the start of their next session. Also tell them that in
-   manual permission mode the `/compost:review-changes` workflow asks for permission on every run
-   until they pick "Yes, and don't ask again", or until they add `Workflow(compost:review-changes)`
-   to their allow rules.
+    still hold a `CLAUDE.md`, since any of them stops `AGENTS.md` from loading. Run
+    `git check-ignore -v` on every file you wrote in the repo: each `docs/agents/*.md`, the
+    instructions file, and any `CONTEXT-MAP.md` or `CONTEXT.md`. It prints a
+    `source:line:pattern` line for each ignored path, and a broad rule (`agents/` also matches
+    `docs/agents/`) leaves a file out of the commit without a word. For each hit, show the user the
+    rule and offer to anchor it (`/agents/`) or narrow it, editing the file it came from only with
+    their yes; if they keep it, say which files the commit leaves out. Commit the changes as one
+    `chore: configure agent skills` commit. Tell the user which compost skills now read
+    these files, that they can edit `docs/agents/*.md` directly, and, after a migration, to look
+    for the `AGENTS.md loaded` line at the start of their next session. Also tell them that in
+    manual permission mode the `/compost:review-changes` workflow asks for permission on every run
+    until they pick "Yes, and don't ask again", or until they add `Workflow(compost:review-changes)`
+    to their allow rules.
 
 ## Next moves
 

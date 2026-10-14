@@ -34,6 +34,8 @@ Run top to bottom and stop at the first rung that matches. Only the last one ask
 ````markdown
 # Observability
 
+How compost's skills read and extend what this repo's running code emits.
+
 Stack: <observability harness, lite mode, service `<name>` | Logfire project `<name>` | Sentry |
 none, because <reason>>.
 
@@ -52,12 +54,6 @@ none, because <reason>>.
 ## Instrumentation
 
 New spans, metrics, and log fields go in `<module path>`, following the instruments already there.
-
-## How the skills use it
-
-- `compost:diagnose` reads the failing run's telemetry before adding any debug logging.
-- `compost:verify` cites the span, log, or metric that shows the changed path ran.
-- `compost:build` instruments each new boundary in the module above.
 ````
 
 For the harness in lite mode the rows are, for example:

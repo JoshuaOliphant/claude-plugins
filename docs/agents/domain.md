@@ -15,7 +15,8 @@ If a file doesn't exist, proceed without it. Don't flag the absence or create th
 ## Layout: multiple contexts
 
 Each plugin is its own bounded context: a flashcard is a Mochi term, a spec is a compost term,
-a span is an observability term, and none of them means anything in the others.
+a span is an observability term, and none of them means anything in the others. Where two
+contexts meet, as compost's telemetry steps meet the harness, CONTEXT-MAP.md records the link.
 
 ```
 /

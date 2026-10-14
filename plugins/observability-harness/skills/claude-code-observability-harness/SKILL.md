@@ -57,7 +57,8 @@ the reason this skill exists.
 
 - Decide lite vs full (above). **Interactive sessions**: if unsure, ask the user in one
   line. **Unattended sessions** (`compost:implement`, or any run with no one to answer):
-  never ask; default to lite and post the choice as a ruling comment on the issue.
+  never ask; default to lite and record the choice where the run records its decisions: a comment
+  on the issue when there is one, otherwise the PR description or the final report.
 - Find the project root (`git rev-parse --show-toplevel`), the package manager (prefer
   `uv` if `pyproject.toml` exists), and the language. These templates target **Python**;
   for other languages, adapt the OTel SDK calls but keep the Vector/script layer verbatim
@@ -114,8 +115,8 @@ confirms — patterns in this project may differ enough that a silent write woul
 one to confirm with.
 Apply the conservative core of the proposal — the 3–6 instruments with the clearest
 detection signals, never speculative ones — and post the full proposal (applied and
-skipped, with one-line rationale each) as a ruling comment on the issue so the human reviews
-it in the PR.
+skipped, with one-line rationale each) in the same place, so the human reviews it before
+merging.
 
 The rendered `otel.py` ships with the no-op-when-absent pattern (zero cost when the OTel
 SDK isn't installed) and a stdlib-logging→OTLP bridge. Add the confirmed domain

@@ -19,9 +19,9 @@ comes first, the theory second, and the fix last, at the root. The why is in
    paths involved, dependency bumps, config and environment changes. When the error names a
    third-party API or follows an upgrade, read that dependency's docs and changelog for the
    installed version before forming a theory ([read the docs](../../canon/read-the-docs.md)).
-   When `docs/agents/observability.md` records a stack, query it for the failing run: its errors,
-   the spans around the failure, and whether the code path ran at all
-   ([read the running system](../../canon/read-the-running-system.md)).
+   If `docs/agents/observability.md` is missing, run `compost:setup`'s observability step first.
+   When it records a stack, query it for the failing run: its errors, the spans around the failure,
+   and whether the code path ran at all ([read the running system](../../canon/read-the-running-system.md)).
 
 2. **Build the feedback loop.** This is the skill; spend disproportionate effort here. You are done
    when you can name one command you have already run that is:

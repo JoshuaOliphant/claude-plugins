@@ -12,8 +12,8 @@ on session start.
   artifacts, and instruments the app. The instrumentation step is a **scan-and-propose**:
   it classifies candidate sites (boundary/tool calls, dispatch/routing, result/LLM sites),
   proposes domain-appropriate spans and metrics, and waits for confirmation before writing —
-  because different apps need different instruments. (Inside an autonomous SDLC loop it
-  decides-and-logs instead of asking.) Setup ends with a **scripted end-to-end verify**:
+  because different apps need different instruments. (In an unattended run it applies the
+  conservative core and records the full proposal instead of asking.) Setup ends with a **scripted end-to-end verify**:
   `verify.sh` runs the rendered probe and polls all three sinks, so "harness installed"
   is an exit code.
 - **observability-query** — The consuming half: triggers when debugging, verifying a
