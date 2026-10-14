@@ -1,12 +1,13 @@
 # ABOUTME: Tests for jev_lint.py: file discovery, rule selection, request fan-out, failure reporting, and CLI exit codes.
-# ABOUTME: A stand-in async client replaces Jev; git diff runs against a real temporary repository.
+# ABOUTME: Requests go through jevtools.core.Jev to a stub client; git diff runs against a real temporary repository.
 import json
 import subprocess
 
 import jev_lint
 import pytest
+from conftest import StubClient, noul
 from extract import Unit
-from lint_fakes import FakeJev, noul
+from jevtools import core
 from rules import COMMENT_KIND, IO_MIXED_WITH_LOGIC, NAME_HIDES_SIDE_EFFECTS, SILENT_FAILURE
 from typesafe_sdk import TypeSafeAPIConnectionError
 
@@ -27,14 +28,18 @@ def parse(text):
 
 
 def by_handler(probabilities):
-    """Answer silent-failure by which handler is asked about."""
+    """A client answering silent-failure by which handler is asked about."""
 
-    def answer(state, question_id):
+    def answer(state, questions):
         for fragment, probability in probabilities.items():
             if fragment in state["handler"]:
-                return noul(probability)
+                return {question_id: noul(probability) for question_id in questions}
 
-    return answer
+    return StubClient(answer)
+
+
+def jev_for(client):
+    return core.Jev(client, core.Cache(), concurrency=4)
 
 
 def test_python_files_walks_directories_skips_tooling_dirs_and_dedupes(tmp_path):
@@ -74,56 +79,58 @@ def test_select_rules_defaults_to_all_and_rejects_unknown_ids():
 
 
 @pytest.mark.asyncio
-async def test_one_request_per_unit_carries_every_applicable_rule():
-    client = FakeJev({"io-mixed-with-logic": noul(0.9), "name-hides-side-effects": noul(0.2)})
+async def test_one_request_per_unit_carries_every_applicable_rule_and_a_repeat_comes_from_the_cache():
+    client = StubClient(
+        lambda state, questions: {"io-mixed-with-logic": noul(0.9), "name-hides-side-effects": noul(0.2)}
+    )
+    jev = jev_for(client)
     function = Unit("function", "m.py", 3, "load", {"function": "def load(): ..."})
     comment = Unit("comment", "m.py", 1, "# hi", {"comment": "# hi"})
     rules = [IO_MIXED_WITH_LOGIC, NAME_HIDES_SIDE_EFFECTS]
 
-    judgments, failures = await jev_lint.judge_units(client, [function, comment], rules, 4)
+    judgments, failures = await jev_lint.judge_units(jev, [function, comment], rules)
+    repeated, _ = await jev_lint.judge_units(jev, [function], rules)
 
     assert failures == []
-    assert [(j.rule, j.probability) for j in judgments] == [
-        ("io-mixed-with-logic", 0.9),
-        ("name-hides-side-effects", 0.2),
-    ]
-    assert len(client.requests) == 1
-    assert list(client.requests[0]["questions"]) == [
-        "io-mixed-with-logic",
-        "name-hides-side-effects",
-    ]
+    expected = [("io-mixed-with-logic", 0.9), ("name-hides-side-effects", 0.2)]
+    assert [(j.rule, j.probability) for j in judgments] == expected
+    assert [(j.rule, j.probability) for j in repeated] == expected
+    assert [list(questions) for _, questions in client.calls] == [["io-mixed-with-logic", "name-hides-side-effects"]]
+    assert jev.cached == 1
 
 
 @pytest.mark.asyncio
 async def test_failed_units_are_reported_without_losing_finished_judgments():
-    def answer(state, question_id):
+    def answer(state, questions):
         if "boom" in state["handler"]:
             raise TypeSafeAPIConnectionError("connection reset")
+        if "disk" in state["handler"]:
+            raise OSError("ssl handshake")
         if "silent" in state["handler"]:
-            return None
-        return noul(0.8)
+            return {}
+        return {"silent-failure": noul(0.8)}
 
-    units = [
-        Unit("handler", "m.py", line, name, {"handler": name}) for line, name in ((1, "ok"), (2, "boom"), (3, "silent"))
-    ]
+    names = ((1, "ok"), (2, "boom"), (3, "disk"), (4, "silent"))
+    units = [Unit("handler", "m.py", line, name, {"handler": name}) for line, name in names]
 
-    judgments, failures = await jev_lint.judge_units(FakeJev(answer), units, [SILENT_FAILURE], 4)
+    judgments, failures = await jev_lint.judge_units(jev_for(StubClient(answer)), units, [SILENT_FAILURE])
 
     assert [j.name for j in judgments] == ["ok"]
     assert [(f.unit.name, f.error) for f in failures] == [
-        ("boom", "connection reset"),
+        ("boom", "Jev request failed: connection reset"),
+        ("disk", "Jev request failed: ssl handshake"),
         ("silent", "Jev returned no answer for silent-failure"),
     ]
 
 
 @pytest.mark.asyncio
 async def test_unexpected_errors_are_not_swallowed():
-    def answer(state, question_id):
+    def answer(state, questions):
         raise RuntimeError("bug in rule code")
 
     unit = Unit("handler", "m.py", 1, "h", {"handler": "h"})
     with pytest.raises(RuntimeError, match="bug in rule code"):
-        await jev_lint.judge_units(FakeJev(answer), [unit], [SILENT_FAILURE], 4)
+        await jev_lint.judge_units(jev_for(StubClient(answer)), [unit], [SILENT_FAILURE])
 
 
 def test_format_finding_names_ruff_rules_when_present():
@@ -180,21 +187,19 @@ def test_git_diff_error_falls_back_to_exit_status_when_git_is_silent(monkeypatch
 
 @pytest.fixture
 def cli(tmp_path, monkeypatch):
+    """Runs jev_lint.main in a directory holding SOURCE as m.py, with `client` at the network edge."""
     monkeypatch.setattr(jev_lint, "resolve_key", lambda: "test-key")
     monkeypatch.chdir(tmp_path)
     (tmp_path / "m.py").write_text(SOURCE)
 
-    def use(client):
-        monkeypatch.setattr(jev_lint, "open_client", lambda: client)
-        return client
+    def lint(args, client=None):
+        return jev_lint.main(args, client_factory=lambda: client)
 
-    return use
+    return lint
 
 
 def test_main_reports_findings_highest_probability_first(cli, capsys):
-    cli(FakeJev(by_handler({"pass": 0.75, "return 0": 0.95})))
-
-    assert jev_lint.main(["--rules", "silent-failure"]) == 1
+    assert cli(["--rules", "silent-failure"], by_handler({"pass": 0.75, "return 0": 0.95})) == 1
     assert capsys.readouterr().out.splitlines() == [
         ("m.py:12: silent-failure [yes p=0.95] except clause hides the failure from callers (ValueError)"),
         (
@@ -208,25 +213,23 @@ def test_main_reports_findings_highest_probability_first(cli, capsys):
     ]
 
 
-def test_main_flags_at_the_threshold_and_honors_zero_override(cli, capsys):
-    cli(FakeJev(by_handler({"pass": 0.7, "return 0": 0.01})))
+def test_main_flags_at_the_threshold_honors_zero_override_and_a_rerun_is_answered_from_the_saved_cache(cli, capsys):
+    client = by_handler({"pass": 0.7, "return 0": 0.01})
 
-    assert jev_lint.main(["--rules", "silent-failure"]) == 1
+    assert cli(["--rules", "silent-failure"], client) == 1
     assert "1 findings from 2 judgments" in capsys.readouterr().out
-    assert jev_lint.main(["--rules", "silent-failure", "--threshold", "0"]) == 1
+    assert cli(["--rules", "silent-failure", "--threshold", "0"], client) == 1
     assert "2 findings from 2 judgments" in capsys.readouterr().out
+    assert len(client.calls) == 2
 
 
 def test_main_exits_zero_below_every_threshold(cli, capsys):
-    cli(FakeJev(by_handler({"pass": 0.69, "return 0": 0.1})))
-    assert jev_lint.main(["m.py", "--rules", "silent-failure"]) == 0
+    assert cli(["m.py", "--rules", "silent-failure"], by_handler({"pass": 0.69, "return 0": 0.1})) == 0
     assert capsys.readouterr().out == "0 findings from 2 judgments over 4 units\n"
 
 
 def test_main_json_prints_every_judgment_and_still_exits_on_findings(cli, capsys):
-    cli(FakeJev(by_handler({"pass": 0.9, "return 0": 0.1})))
-
-    assert jev_lint.main(["--rules", "silent-failure", "--json"]) == 1
+    assert cli(["--rules", "silent-failure", "--json"], by_handler({"pass": 0.9, "return 0": 0.1})) == 1
     judgments = json.loads(capsys.readouterr().out)
     assert set(judgments[0]) == {
         "path",
@@ -244,35 +247,35 @@ def test_main_json_prints_every_judgment_and_still_exits_on_findings(cli, capsys
 def test_main_with_only_a_diff_judges_hunks_alone(cli, monkeypatch, capsys):
     hunk_diff = "--- a/m.py\n+++ b/m.py\n@@ -1 +1 @@\n-x = 1\n+x = 2\n"
     monkeypatch.setattr(jev_lint, "git_diff", lambda ref: hunk_diff)
-    client = cli(FakeJev({"symptom-workaround": noul(0.2)}))
+    client = StubClient(lambda state, questions: {"symptom-workaround": noul(0.2)})
 
-    assert jev_lint.main(["--diff", "HEAD", "--rules", "symptom-workaround"]) == 0
-    assert client.requests[0]["state"]["added"] == "x = 2"
+    assert cli(["--diff", "HEAD", "--rules", "symptom-workaround"], client) == 0
+    assert client.calls[0][0]["added"] == "x = 2"
     assert capsys.readouterr().out == "0 findings from 1 judgments over 1 units\n"
 
 
 def test_main_skips_without_api_key(cli, monkeypatch, capsys):
     monkeypatch.setattr(jev_lint, "resolve_key", lambda: None)
-    assert jev_lint.main([]) == 3
+    assert cli([]) == 3
     assert capsys.readouterr().out == f"skipped: {jev_lint.MISSING_KEY}\n"
 
 
 def test_main_rejects_unknown_rule_even_without_a_key(cli, monkeypatch, capsys):
     monkeypatch.setattr(jev_lint, "resolve_key", lambda: None)
     with pytest.raises(SystemExit) as exit_info:
-        jev_lint.main(["--rules", "nope"])
+        cli(["--rules", "nope"])
     assert exit_info.value.code == 2
     assert "unknown rules: nope" in capsys.readouterr().err
 
 
 def test_main_rejects_missing_paths(cli, capsys):
-    assert jev_lint.main(["m.py", "does/not/exist"]) == 4
+    assert cli(["m.py", "does/not/exist"]) == 4
     assert capsys.readouterr().err == "no such path: does/not/exist\n"
 
 
 def test_main_refuses_to_report_clean_when_nothing_was_linted(cli, tmp_path, capsys):
     (tmp_path / "empty").mkdir()
-    assert jev_lint.main(["empty"]) == 4
+    assert cli(["empty"]) == 4
     assert capsys.readouterr().err == "nothing to lint: no Python units found\n"
 
 
@@ -281,38 +284,34 @@ def test_main_reports_git_diff_failure(cli, monkeypatch, capsys):
         raise jev_lint.GitDiffError("fatal: bad revision 'nope'")
 
     monkeypatch.setattr(jev_lint, "git_diff", failing_diff)
-    assert jev_lint.main(["--diff", "nope"]) == 4
+    assert cli(["--diff", "nope"]) == 4
     assert capsys.readouterr().err == "git diff failed: fatal: bad revision 'nope'\n"
 
 
 def test_main_fails_the_run_when_files_were_skipped(cli, tmp_path, capsys):
     (tmp_path / "bad.py").write_text("def broken(:\n")
-    cli(FakeJev(by_handler({"pass": 0.9, "return 0": 0.1})))
 
-    assert jev_lint.main(["--rules", "silent-failure"]) == 4
+    assert cli(["--rules", "silent-failure"], by_handler({"pass": 0.9, "return 0": 0.1})) == 4
     output = capsys.readouterr()
     assert output.out.splitlines()[-1] == ("1 findings from 2 judgments over 4 units; 1 files skipped")
     assert output.err.startswith("skipped bad.py:")
 
 
 def test_main_reports_units_jev_failed_on(cli, capsys):
-    def answer(state, question_id):
+    def answer(state, questions):
         if "pass" in state["handler"]:
             raise TypeSafeAPIConnectionError("connection reset")
-        return noul(0.1)
+        return {"silent-failure": noul(0.1)}
 
-    cli(FakeJev(answer))
-
-    assert jev_lint.main(["--rules", "silent-failure"]) == 2
+    assert cli(["--rules", "silent-failure"], StubClient(answer)) == 2
     output = capsys.readouterr()
     assert output.out == "0 findings from 1 judgments over 4 units; 1 units failed\n"
-    assert output.err == "jev failed on m.py:5 (Exception): connection reset\n"
+    assert output.err == "jev failed on m.py:5 (Exception): Jev request failed: connection reset\n"
 
 
-def test_main_reports_jev_unavailable(cli, monkeypatch, capsys):
+def test_main_reports_jev_unavailable(cli, capsys):
     def unavailable():
-        raise TypeSafeAPIConnectionError("connection refused")
+        raise core.Unavailable("no client")
 
-    monkeypatch.setattr(jev_lint, "open_client", unavailable)
-    assert jev_lint.main(["--rules", "silent-failure"]) == 2
-    assert capsys.readouterr().err == "jev unavailable: connection refused\n"
+    assert jev_lint.main(["--rules", "silent-failure"], client_factory=unavailable) == 2
+    assert capsys.readouterr().err == "jev unavailable: no client\n"

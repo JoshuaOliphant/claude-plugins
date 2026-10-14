@@ -1,25 +1,25 @@
 # ABOUTME: Tests for scripts/lint/run_eval.py: case-to-unit conversion, comment records, scoring, and the printed report.
-# ABOUTME: A stand-in for jev_lint.run replaces the live API, so these tests cost nothing and stay deterministic.
+# ABOUTME: Judging runs through jev_lint and jevtools.core.Jev to a stub client, so these tests cost nothing and stay deterministic.
 import json
 
 import pytest
 import run_eval
-from jev_lint import Failure, Judgment
+from conftest import StubClient, choice, noul
+from rules import COMMENT_KIND
+from typesafe_sdk import TypeSafeAPIConnectionError
 
 
-def judgments_for(units, probability=0.9, label="yes"):
-    return [Judgment(unit.path, unit.line, unit.name, "silent-failure", label, probability, "msg") for unit in units]
+def answering(probability=0.9):
+    """A client factory whose client says yes at `probability` to Noul rules and `narrates` to comment-kind."""
 
+    def answer(state, questions):
+        return {
+            rule_id: choice("narrates", question.criteria) if rule_id == COMMENT_KIND.id else noul(probability)
+            for rule_id, question in questions.items()
+        }
 
-@pytest.fixture
-def fake_run(monkeypatch):
-    def use(judgments_of=judgments_for, failures=()):
-        async def run(units, rules, concurrency):
-            return judgments_of(units), list(failures)
-
-        monkeypatch.setattr(run_eval, "run", run)
-
-    return use
+    client = StubClient(answer)
+    return lambda: client
 
 
 def test_source_case_becomes_a_unit_tagged_with_its_case_index():
@@ -68,28 +68,32 @@ def _case(path, should_flag=True, rule_id="silent-failure"):
 
 
 @pytest.mark.asyncio
-async def test_judge_pairs_each_case_with_its_judgment(fake_run):
-    fake_run()
-    scored = await run_eval.judge([_case("a"), _case("b", should_flag=False)])
+async def test_judge_pairs_each_case_with_its_judgment_and_every_run_asks_the_live_api(private_jev_cache):
+    factory = answering()
+    cases = [_case("a"), _case("b", should_flag=False)]
+
+    scored = await run_eval.judge(cases, factory)
+    await run_eval.judge(cases, factory)
+
     assert [(row.source, row.should_flag, row.probability) for row in scored] == [
         ("a", True, 0.9),
         ("b", False, 0.9),
     ]
+    assert len(factory().calls) == 2
+    assert not private_jev_cache.exists()
 
 
 @pytest.mark.asyncio
-async def test_judge_refuses_cases_that_share_a_path_and_line(fake_run):
-    fake_run()
+async def test_judge_refuses_cases_that_share_a_path_and_line():
     with pytest.raises(ValueError, match="share a path and line"):
-        await run_eval.judge([_case("a"), _case("a")])
+        await run_eval.judge([_case("a"), _case("a")], answering())
 
 
 @pytest.mark.asyncio
-async def test_judge_stops_when_jev_failed_rather_than_scoring_a_partial_run(fake_run):
-    case = _case("a")
-    fake_run(judgments_of=lambda units: [], failures=[Failure(case.unit, "connection reset")])
-    with pytest.raises(RuntimeError, match="Jev failed on 1 silent-failure cases"):
-        await run_eval.judge([case])
+async def test_judge_stops_when_jev_failed_rather_than_scoring_a_partial_run():
+    failing = StubClient(error=TypeSafeAPIConnectionError("connection reset"))
+    with pytest.raises(RuntimeError, match="Jev failed on 1 silent-failure cases.*connection reset"):
+        await run_eval.judge([_case("a")], lambda: failing)
 
 
 def test_report_prints_precision_recall_and_the_disagreements(capsys):
@@ -116,23 +120,22 @@ def test_report_handles_a_rule_with_no_positive_cases(capsys):
     assert "precision nan  recall nan" in capsys.readouterr().out
 
 
-def test_main_scores_the_bundled_cases(fake_run, monkeypatch, capsys):
+def test_main_scores_the_bundled_cases(monkeypatch, capsys):
     monkeypatch.setattr(
         run_eval,
         "CASES",
         [{"rule": "silent-failure", "flag": True, "source": "try:\n    x()\nexcept:\n    pass\n"}],
     )
     monkeypatch.setattr(run_eval.sys, "argv", ["run_eval.py"])
-    fake_run()
 
-    run_eval.main()
+    run_eval.main(answering())
 
     output = capsys.readouterr().out
     assert "== silent-failure: 1 cases, 1 should flag ==" in output
     assert "1 judgments in " in output
 
 
-def test_main_also_scores_a_comments_file(fake_run, monkeypatch, tmp_path, capsys):
+def test_main_also_scores_a_comments_file(monkeypatch, tmp_path, capsys):
     record = {
         "repo": "demo",
         "sha": "abc123",
@@ -147,9 +150,8 @@ def test_main_also_scores_a_comments_file(fake_run, monkeypatch, tmp_path, capsy
     comments.write_text(json.dumps(record) + "\n")
     monkeypatch.setattr(run_eval, "CASES", [])
     monkeypatch.setattr(run_eval.sys, "argv", ["run_eval.py", str(comments)])
-    fake_run()
 
-    run_eval.main()
+    run_eval.main(answering())
 
     assert "== comment-kind: 1 cases, 1 should flag ==" in capsys.readouterr().out
 

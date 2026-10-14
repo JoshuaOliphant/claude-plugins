@@ -9,16 +9,19 @@
 import asyncio
 import json
 import sys
+import tempfile
 import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from cases import CASES
 from extract import Unit, extract_hunks, extract_source_units
-from jev_lint import run
+from jev_lint import DEFAULT_CONCURRENCY, run
+from jevtools.core import Cache, open_client
 from rules import RULES
 
 RULES_BY_ID = {rule.id: rule for rule in RULES}
@@ -71,7 +74,7 @@ def comment_cases(path: Path) -> list[LabeledCase]:
     return cases
 
 
-async def judge(cases: list[LabeledCase]) -> list[Scored]:
+async def judge(cases: list[LabeledCase], client_factory=open_client) -> list[Scored]:
     keys = Counter((case.unit.path, case.unit.line) for case in cases)
     duplicated = [key for key, count in keys.items() if count > 1]
     if duplicated:
@@ -80,16 +83,20 @@ async def judge(cases: list[LabeledCase]) -> list[Scored]:
     for case in cases:
         by_rule[case.rule_id].append(case)
     scored = []
-    for rule_id, rule_cases in by_rule.items():
-        units = [case.unit for case in rule_cases]
-        judgments, failures = await run(units, [RULES_BY_ID[rule_id]], concurrency=16)
-        if failures:
-            failed = [f"{f.unit.path}:{f.unit.line}: {f.error}" for f in failures]
-            raise RuntimeError(f"Jev failed on {len(failures)} {rule_id} cases: {failed[:3]}")
-        by_unit = {(j.path, j.line): j for j in judgments}
-        for case in rule_cases:
-            judgment = by_unit[(case.unit.path, case.unit.line)]
-            scored.append(Scored(rule_id, case.should_flag, judgment.probability, judgment.label, case.source))
+    with tempfile.TemporaryDirectory() as scratch:
+        run_cache = Cache(Path(scratch) / "jev-cache.json")
+        for rule_id, rule_cases in by_rule.items():
+            units = [case.unit for case in rule_cases]
+            judgments, failures = await run(
+                units, [RULES_BY_ID[rule_id]], DEFAULT_CONCURRENCY, client_factory, run_cache
+            )
+            if failures:
+                failed = [f"{f.unit.path}:{f.unit.line}: {f.error}" for f in failures]
+                raise RuntimeError(f"Jev failed on {len(failures)} {rule_id} cases: {failed[:3]}")
+            by_unit = {(j.path, j.line): j for j in judgments}
+            for case in rule_cases:
+                judgment = by_unit[(case.unit.path, case.unit.line)]
+                scored.append(Scored(rule_id, case.should_flag, judgment.probability, judgment.label, case.source))
     return scored
 
 
@@ -112,7 +119,7 @@ def report(scored: list[Scored]) -> None:
             print(f"    {kind:11} p={row.probability:.2f} [{row.label}] {row.source}")
 
 
-def main() -> None:
+def main(client_factory=open_client) -> None:
     cases = []
     for index, case in enumerate(CASES):
         snippet = (case.get("source") or case["diff"]).strip().splitlines()
@@ -125,7 +132,7 @@ def main() -> None:
         cases.extend(comment_cases(comments_path))
 
     start = time.perf_counter()
-    scored = asyncio.run(judge(cases))
+    scored = asyncio.run(judge(cases, client_factory))
     elapsed = time.perf_counter() - start
     report(scored)
     print(f"\n{len(scored)} judgments in {elapsed:.1f}s")
