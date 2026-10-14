@@ -57,7 +57,7 @@ Each plugin follows a consistent layout:
 - `skills/<skill>/SKILL.md` — the instruction set / trigger surface for each skill; deep content lives in adjacent `references/*.md` rather than inline
 - `agents/*.md` — subagent definitions (frontmatter sets `model`, `tools`, `hooks`, `skills`)
 - `commands/*.md` — slash-command entry points
-- `hooks/` + `hooks.json`: plugin-wide hooks (compost's implement-run Stop guard and skill-drift module)
+- `hooks/` + `hooks.json`: plugin-wide hooks (compost's implement-run Stop guard, and its one hooks module `compost.ts` carrying the skill-drift and architecture-review mods)
 - `scripts/` — Python helpers, importable and/or CLI-executable
 
 ### compost

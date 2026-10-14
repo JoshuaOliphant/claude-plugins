@@ -8,5 +8,6 @@
   },
   "keywords": ["sdlc", "spec", "bdd", "issues", "code-review", "subagents", "domain-driven-design", "tracer-bullets"],
   "license": "MIT",
+  "types": "./types/index.d.ts",
   "repository": "https://github.com/JoshuaOliphant/claude-plugins"
 }

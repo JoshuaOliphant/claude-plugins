@@ -88,6 +88,14 @@ skipped. Without a key it asks and writes nothing. It is an in-process hooks mod
 only where Claude Code runs plugin hooks modules (`CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` while
 they roll out); without them compost works as before and the log stays empty.
 
+The same hooks module (`hooks/compost.ts`) carries the `architecture-review` mod
+(`hooks/architecture-review.tsx`). It gives `compost:deepen` an `architecture_review` tool that
+draws the deepening candidates as cards in a pane, top recommendation first. Each card has an
+Explore button that sends the pick as a message from compost (never as your own words, since the
+candidate names are model-written), and `/architecture-review` reopens the last
+set. It does not call any outside service. Without hooks modules, deepen gives the candidates in
+the conversation only.
+
 Thresholds were chosen from the same labeled cases they are measured on, so treat the numbers as
 upper bounds until the tools have run on real work. The labeled cases are drawn from private
 projects and sessions, so they live in a separate private repo, `compost-evals`. With a checkout,

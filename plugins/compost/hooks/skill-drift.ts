@@ -120,14 +120,11 @@ async function readLog($: EngineInterface): Promise<Hit[]> {
   return texts.flatMap(text => String(text).split('\n').filter(Boolean).map(line => JSON.parse(line) as Hit))
 }
 
+export const DRIFT_COMMAND = { name: 'drift', description: 'List skill drift the mod has recorded, by skill' }
+
 export const register: Register = on => {
   const loaded = new Map<string, string>()
   let pending: Watched[] = []
-
-  on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'drift', description: 'List skill drift the mod has recorded, by skill' })
-    return next(e)
-  })
 
   on('skill.prompt', async ($, e, next) => {
     const result = await next(e)
