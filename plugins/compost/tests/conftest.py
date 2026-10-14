@@ -58,10 +58,14 @@ def private_jev_cache(tmp_path, monkeypatch):
     return tmp_path / "jev-cache.json"
 
 
-def choice(chosen: str, options, confidence: float = 0.9) -> dict:
-    options = list(options)
-    rest = (1 - confidence) / max(len(options) - 1, 1)
-    probabilities = {option: (confidence if option == chosen else rest) for option in options}
+def choice(chosen: str, options=(), confidence: float = 0.9, *, probabilities: dict | None = None) -> dict:
+    """The other `options` share `1 - confidence`; `probabilities` instead gives every label's probability."""
+    if probabilities is not None:
+        confidence = probabilities[chosen]
+    else:
+        options = list(options)
+        rest = (1 - confidence) / max(len(options) - 1, 1)
+        probabilities = {option: (confidence if option == chosen else rest) for option in options}
     return {"type": "choice", "choice": chosen, "probabilities": probabilities, "confidence": confidence}
 
 

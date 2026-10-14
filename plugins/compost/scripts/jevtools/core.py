@@ -1,5 +1,5 @@
 # ABOUTME: The one door to TypeSafe Jev for compost's tools: key lookup, a content-hash cache, and bounded concurrency.
-# ABOUTME: Tools call Jev.ask(state, questions) and get plain dicts back; SDK types stay inside this module.
+# ABOUTME: Tools call Jev.ask(tool, state, questions) and get an answer dict per question, or Unavailable; SDK types stay here.
 import asyncio
 import hashlib
 import json
@@ -84,6 +84,9 @@ class Jev:
                 raise Unavailable(f"Jev request failed: {error}") from error
         answers = {name: answer.model_dump(mode="json") for name, answer in response.answers.items()}
         self.input_tokens += response.usage.input_tokens
+        missing = [name for name in questions if name not in answers]
+        if missing:
+            raise Unavailable(f"Jev returned no answer for {', '.join(missing)}")
         self.cache.put(key, answers)
         return answers
 

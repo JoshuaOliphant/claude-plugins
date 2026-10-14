@@ -1,10 +1,10 @@
 # ABOUTME: Tests for rules.py: how answers become finding probabilities, rule validation, ruff mapping, and prompt contracts.
-# ABOUTME: Answers are real SDK objects built by conftest helpers.
+# ABOUTME: Answers are the plain answer dicts Jev.ask returns, built by conftest helpers.
 import re
 
 import pytest
+from conftest import choice, noul
 from extract import STATE_KEYS, Unit
-from lint_fakes import choice, noul
 from rules import (
     COMMENT_KIND,
     DOCSTRING_QUALITY,
@@ -30,14 +30,15 @@ def test_noul_rule_flags_on_yes_probability():
 
 
 def test_choice_rule_sums_mass_outside_acceptable_and_names_top_problem():
-    answer = choice({"why": 0.4, "todo": 0.05, "narrates": 0.3, "section_banner": 0.2, "misleading": 0.05})
+    probabilities = {"why": 0.4, "todo": 0.05, "narrates": 0.3, "section_banner": 0.2, "misleading": 0.05}
+    answer = choice("why", probabilities=probabilities)
     probability, label = COMMENT_KIND.probability(answer)
     assert round(probability, 2) == 0.55
     assert label == "narrates"
 
 
 def test_choice_answer_with_only_acceptable_labels_scores_zero():
-    assert COMMENT_KIND.probability(choice({"why": 0.9, "todo": 0.1})) == (0.0, "why")
+    assert COMMENT_KIND.probability(choice("why", probabilities={"why": 0.9, "todo": 0.1})) == (0.0, "why")
 
 
 def test_docstring_rule_applies_only_with_a_docstring():

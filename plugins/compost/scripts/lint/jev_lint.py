@@ -25,9 +25,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from extract import Unit, extract_hunks, extract_source_units
-from jevtools.core import MISSING_KEY, open_client, resolve_key
+from jevtools.core import MISSING_KEY, Cache, Jev, Unavailable, open_client, resolve_key
 from rules import RULES, Rule
-from typesafe_sdk import TypeSafeError
 
 EXIT_CLEAN = 0
 EXIT_FINDINGS = 1
@@ -36,10 +35,6 @@ EXIT_NO_KEY = 3
 EXIT_BAD_INPUT = 4
 DEFAULT_CONCURRENCY = 16
 SKIPPED_DIRS = {".venv", "venv", "node_modules", "__pycache__", ".git", "build", "dist"}
-
-
-class MissingAnswer(Exception):
-    pass
 
 
 class GitDiffError(Exception):
@@ -106,17 +101,14 @@ def select_rules(ids: str | None) -> list[Rule]:
     return [rule for rule in RULES if rule.id in wanted]
 
 
-async def judge_unit(client, semaphore, unit: Unit, rules: list[Rule]) -> list[Judgment]:
+async def judge_unit(jev: Jev, unit: Unit, rules: list[Rule]) -> list[Judgment]:
     applicable = [rule for rule in rules if rule.kind == unit.kind and rule.applies(unit)]
     if not applicable:
         return []
-    async with semaphore:
-        response = await client.system_one(state=unit.state, questions={rule.id: rule.question for rule in applicable})
+    answers = await jev.ask("lint", unit.state, {rule.id: rule.question for rule in applicable})
     judgments = []
     for rule in applicable:
-        if rule.id not in response.answers:
-            raise MissingAnswer(f"Jev returned no answer for {rule.id}")
-        probability, label = rule.probability(response.answers[rule.id])
+        probability, label = rule.probability(answers[rule.id])
         judgments.append(
             Judgment(
                 unit.path,
@@ -132,16 +124,11 @@ async def judge_unit(client, semaphore, unit: Unit, rules: list[Rule]) -> list[J
     return judgments
 
 
-async def judge_units(
-    client, units: list[Unit], rules: list[Rule], concurrency: int
-) -> tuple[list[Judgment], list[Failure]]:
-    semaphore = asyncio.Semaphore(concurrency)
-    results = await asyncio.gather(
-        *(judge_unit(client, semaphore, unit, rules) for unit in units), return_exceptions=True
-    )
+async def judge_units(jev: Jev, units: list[Unit], rules: list[Rule]) -> tuple[list[Judgment], list[Failure]]:
+    results = await asyncio.gather(*(judge_unit(jev, unit, rules) for unit in units), return_exceptions=True)
     judgments, failures = [], []
     for unit, result in zip(units, results):
-        if isinstance(result, (TypeSafeError, MissingAnswer)):
+        if isinstance(result, Unavailable):
             failures.append(Failure(unit, str(result)))
         elif isinstance(result, BaseException):
             raise result
@@ -191,12 +178,17 @@ def findings_above_threshold(judgments: list[Judgment], rules: list[Rule], overr
     return sorted(above, key=lambda j: -j.probability)
 
 
-async def run(units: list[Unit], rules: list[Rule], concurrency: int) -> tuple[list[Judgment], list[Failure]]:
-    async with open_client() as client:
-        return await judge_units(client, units, rules, concurrency)
+async def run(
+    units: list[Unit], rules: list[Rule], concurrency: int, client_factory=open_client
+) -> tuple[list[Judgment], list[Failure]]:
+    cache = Cache()
+    async with client_factory() as client:
+        outcome = await judge_units(Jev(client, cache, concurrency), units, rules)
+    cache.save()
+    return outcome
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, client_factory=open_client) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("paths", nargs="*", type=Path)
     parser.add_argument("--diff", metavar="REF", help="also judge hunks of `git diff REF`")
@@ -231,8 +223,8 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_BAD_INPUT
 
     try:
-        judgments, failures = asyncio.run(run(units, rules, args.concurrency))
-    except TypeSafeError as error:
+        judgments, failures = asyncio.run(run(units, rules, args.concurrency, client_factory))
+    except Unavailable as error:
         print(f"jev unavailable: {error}", file=sys.stderr)
         return EXIT_JEV_FAILED
 

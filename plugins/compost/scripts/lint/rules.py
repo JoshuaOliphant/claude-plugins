@@ -33,10 +33,10 @@ class Rule:
 
     def probability(self, answer) -> tuple[float, str]:
         if isinstance(self.question, Noul):
-            return answer.noul, "yes"
-        flagged = {label: p for label, p in answer.probabilities.items() if label not in self.acceptable}
+            return answer["noul"], "yes"
+        flagged = {label: p for label, p in answer["probabilities"].items() if label not in self.acceptable}
         if not flagged:
-            return 0.0, answer.choice
+            return 0.0, answer["choice"]
         return sum(flagged.values()), max(flagged, key=flagged.get)
 
     def message_for(self, label: str) -> str:
