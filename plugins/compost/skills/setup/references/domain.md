@@ -46,8 +46,9 @@ glossary is either invented language to reconsider or a real gap for `compost:sp
 ## Keep the semantic invariants
 
 `CONTEXT.md` may list Semantic invariants: laws central to what the context means, each with the
-side to err on. Resolve a failure mode they cover on that side without asking. Work that would
-break one stops and says so; changing one is the user's call, never an implementation detail.
+side to err on. Resolve a failure mode they cover on that side without asking. When a task would
+break one, keep the law: build the law's side, record the conflict (what, why, cost if wrong) as
+an issue comment, and proceed. Changing a law is a spec decision, never an implementation detail.
 
 ## Flag ADR conflicts
 
