@@ -171,8 +171,11 @@ function sh(cmd, args, { cwd, input } = {}) {
   });
 }
 
+// DUCK_ONLY=id,id runs a subset (the pilot) without touching the case file.
 async function loadCases() {
-  return readFileSync(join(HERE, 'cases.jsonl'), 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l));
+  const only = process.env.DUCK_ONLY?.split(',').filter(Boolean);
+  const all = readFileSync(join(HERE, 'cases.jsonl'), 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l));
+  return only ? all.filter(c => only.includes(c.id)) : all;
 }
 
 function materialize(sha) {
