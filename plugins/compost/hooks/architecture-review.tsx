@@ -1,5 +1,5 @@
 // ABOUTME: The architecture-review pane: compost:deepen hands its deepening candidates to the architecture_review tool and they draw as cards.
-// ABOUTME: Each card's Explore button submits the pick as a compost message; /architecture-review reopens the last set.
+// ABOUTME: Explore submits the pick as a compost message; Explore in new session starts a plan-mode `claude --bg` session on the card.
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
@@ -77,10 +77,33 @@ export function explorePrompt(candidate: Candidate): string {
 }
 
 export function launchToast(name: string, launched: { exitCode: number; stdout: string; stderr: string }): string {
-  const id = /backgrounded · (\S+)/.exec(launched.stdout)?.[1]
-  if (launched.exitCode === 0 && id) return `Exploring "${name}" in background session ${id}: claude attach ${id}`
+  if (launched.exitCode === 0) {
+    const id = /backgrounded · (\S+)/.exec(launched.stdout)?.[1]
+    return id
+      ? `Exploring "${name}" in background session ${id}: claude attach ${id}`
+      : `Started a session for "${name}" but could not read its id: run claude agents`
+  }
   const why = (launched.stderr || launched.stdout).split('\n').find(line => line.trim()) ?? 'no output'
   return `Could not start a session for "${name}" (exit ${launched.exitCode}): ${why}`
+}
+
+const launching = new Set<string>()
+
+async function exploreInNewSession($: EngineInterface, candidate: Candidate): Promise<void> {
+  if (launching.has(candidate.name)) {
+    $.ui.toast(`Already starting a session for "${candidate.name}"`)
+    return
+  }
+  launching.add(candidate.name)
+  $.ui.toast(`Starting a session for "${candidate.name}"…`)
+  try {
+    const argv = ['claude', '--bg', '--permission-mode', 'plan', '-n', `deepen: ${candidate.name}`, explorePrompt(candidate)]
+    $.ui.toast(launchToast(candidate.name, await $.process.run(argv)))
+  } catch (error) {
+    $.ui.toast(`Could not start a session for "${candidate.name}": ${(error as Error).message}`)
+  } finally {
+    launching.delete(candidate.name)
+  }
 }
 
 function openPane($: EngineInterface) {
@@ -134,27 +157,16 @@ export const register: Register = on => {
           <Box key={`card-${candidate.name}`} flexDirection="column" marginBottom={1}>
             <Markdown text={cardMarkdown(candidate, current)} />
             <Button
-              key={`explore-${candidate.name}`}
+              key={`explore:${candidate.name}`}
               label="Explore"
               onPress={() => {
                 void $.prompt.submit({ text: `Explore the deepening candidate "${candidate.name}".` })
               }}
             />
             <Button
-              key={`explore-new-${candidate.name}`}
+              key={`explore-session:${candidate.name}`}
               label="Explore in new session"
-              onPress={async () => {
-                const argv = [
-                  'claude',
-                  '--bg',
-                  '--permission-mode',
-                  'plan',
-                  '-n',
-                  `deepen: ${candidate.name}`,
-                  explorePrompt(candidate),
-                ]
-                $.ui.toast(launchToast(candidate.name, await $.process.run(argv)))
-              }}
+              onPress={() => exploreInNewSession($, candidate)}
             />
           </Box>
         ))}
