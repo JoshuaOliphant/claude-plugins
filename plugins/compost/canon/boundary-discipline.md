@@ -37,3 +37,7 @@ only be tested by standing that dependency up. Logic in a pure function is teste
   extract it.
 - Validate at the boundary by default. Add checks at every layer only on critical paths that are
   named as such.
+- Where an invariant can't live in a type (a list that stays sorted, a ledger that balances, two
+  fields that must agree across updates), assert it in the module that owns it and crash when it
+  fails. A failed assertion is a bug report: never catch it and carry on. Try the type first
+  ([make mistakes impossible](make-mistakes-impossible.md)).
