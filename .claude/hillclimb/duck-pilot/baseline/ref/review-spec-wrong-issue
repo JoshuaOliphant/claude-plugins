@@ -1,0 +1,11 @@
+1. **"`gh issue view 66 --comments` in the scoping step returned #58's content."** You haven't observed this yet. In `workflows/review-changes.js:120-129`, the scoping step is an `agent(...)` call, not a literal shell command. Line 125 tells that agent to fetch the issue "the way docs/agents/issue-tracker.md says", which isn't necessarily `gh issue view`. Do you have a transcript or tool log of what the `scope` agent actually ran and got back? If you don't, you can't tell a wrong fetch from a wrong copy into `spec.text`.
+
+2. **"`specSource: #58`".** `specSource` is `scope.spec.source` (line 306). The scoping agent fills it in, and its schema describes it as "Issue URL, issue number, or file path". The prompt only says "The originating issue is #66". Where did "#58" come from? Compare it with the raw output of the fetch. If the fetch returned #66 but the agent wrote #58, the fetch isn't the failing step.
+
+3. **"In a fresh session the same invocation grades against #66 correctly."** Does the `scope` agent see your conversation, or only the prompt string? Check what context a workflow `agent()` call inherits. If it inherits the history, #58 is in play for that call. If it doesn't, the history can't be involved. What did you see that settles which of these holds?
+
+4. **"Auth" and the `GH_REPO` check.** `gh auth status` shows who you're logged in as, not which repo answers. Your planned `env | grep GH_` in your own shell also tests a different process from the one the agent ran in. Is there any evidence the scoping agent's shell matches yours? Also, were the "fresh session" and the failing session in the same directory with the same environment?
+
+5. **"The Spec reviewer faithfully graded whatever spec text it was handed."** Line 191 builds the Spec reviewer's prompt. Does it get only `scope.spec.text`, or can the reviewer also fetch or look up issues itself? If it can, the spec text may not be the only route by which #58's AC-3 reaches it.
+
+The assumption that would change the most: that the wrong content entered at the `gh` fetch rather than in the scoping agent's interpretation of what to copy, or in the context that agent could see.

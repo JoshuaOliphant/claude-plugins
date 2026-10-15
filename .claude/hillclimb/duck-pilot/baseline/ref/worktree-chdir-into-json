@@ -1,0 +1,11 @@
+1. **"CLAUDE_PLUGIN_ROOT contains a space, so the hook command is word-split."** The command in `hooks.json` line 31 is `bash "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/worktree-create.sh"`, and the variable is already quoted. What did you see that shows the script failed to start? Your own log lines say it ran: they have timestamps and the hook event name. A word-split path would have stopped bash before it wrote anything. Does your theory explain a script that ran and wrote a log line?
+
+2. **"The path and branch are always empty."** Is the empty value from the script's own parsing? Line 6 greps for `"worktree_path":"..."` with no space after the colon, and line 7 does the same for `"branch"`. Have you captured the real stdin payload for this event, for example by adding `echo "$EVENT_JSON" >> somefile` at the top of the script? Which field names does it use, and does it have spaces after the colons? Until you capture it, you don't know what the script receives. You also haven't said where you read the payload schema for WorktreeCreate.
+
+3. **The `chdir` error text.** The error contains the hook's own stdout (the `systemMessage` JSON from line 16). What did you read that says what the harness does with a WorktreeCreate hook's stdout? Does the hook replace the default worktree creation, with stdout treated as the path? Where is that documented? Your account assumes the harness is "left with garbage", but you haven't shown what it expects instead.
+
+4. **"Inside git repos EnterWorktree works."** Does the hook run in those cases too? Check whether `.sdlc/events/hook-events.jsonl` gains a line there. Compare the stdout and exit code of the hook in the git and non-git cases. If the hook runs in both cases, what differs between them?
+
+5. **"The only thing unusual about this machine is its install location."** How did you check that? Have you run the script by hand, with a sample payload piped in, from a non-git directory? What did it print?
+
+**Assumption that would change the most:** that the hook's stdout (the `systemMessage` JSON) is an acceptable output for this event. The error text suggests the harness is reading that stdout as something else.

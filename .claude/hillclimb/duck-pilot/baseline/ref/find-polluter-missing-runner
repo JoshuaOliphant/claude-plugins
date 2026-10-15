@@ -1,0 +1,11 @@
+1. You wrote the command as `'uv run pytes'`. Is that how it appears in your terminal, or did you mistype it when writing this up? The script sends the command's stdout and stderr to `/dev/null` (line 27) and doesn't check its exit status. Run `uv run pytes tests/test_a.py` by hand and look at what it prints and what exit code it returns. Until you do, you don't know whether any test ran during the loop.
+
+2. "All 40 steps finish in well under a second." You expected the run to take a while. What did that speed tell you? Time a single `uv run pytest tests/test_a.py` yourself and compare it to the loop's per-file time. If the two differ, the loop isn't doing the work you assume it does.
+
+3. "I assume the loop does exercise each file." What did you see that shows a test actually executed? Printing `[n/40] file` only shows that the loop reached that iteration. Remove the `> /dev/null 2>&1` redirect, or add `echo $?` after the command. Then check whether any single iteration reports collected or passed tests.
+
+4. "Running the full suite with `uv run pytest` does create `stray-output.db`." Where was that run from, and where was `find-polluter.sh` run from? The script checks `-e "$pollution"` as a relative path. Confirm both runs use the same working directory, so the check looks where the file would appear.
+
+5. Your plan is to bisect by pairs of files. Before you build on the theory that no single file creates the database alone, have you run any one test file directly with the real command and then checked for `stray-output.db`? Without that, the "interaction only" theory rests on the loop's output, which question 3 asks you to check.
+
+The assumption that matters most is that the "No test file" result comes from real test runs. If the runs never happened, the result tells you nothing about test interaction.

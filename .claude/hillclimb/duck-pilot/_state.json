@@ -1,0 +1,44 @@
+{
+  "harness_sha": "5652611a98759fc14bf2e7c4e89bef84fe22f37e17a2cb62edad237bbc8f1348",
+  "metrics": [
+    {
+      "id": "correct",
+      "label": "Correct",
+      "kind": "binary"
+    },
+    {
+      "id": "hit_any",
+      "label": "Any hit",
+      "kind": "binary"
+    },
+    {
+      "id": "no_cause_named",
+      "label": "No cause named",
+      "kind": "binary"
+    }
+  ],
+  "perf_fields": [
+    {
+      "id": "latency_s",
+      "label": "Latency",
+      "unit": "s"
+    },
+    {
+      "id": "tool_calls",
+      "label": "Tool calls"
+    },
+    {
+      "id": "out_tokens",
+      "label": "Out tokens"
+    },
+    {
+      "id": "cli_cost_usd",
+      "label": "CLI cost",
+      "unit": "$"
+    },
+    {
+      "id": "outside_reads",
+      "label": "Outside reads"
+    }
+  ]
+}

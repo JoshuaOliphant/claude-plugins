@@ -1,0 +1,11 @@
+1. **"KeyError: 'other'" and your "answer dict lacking 'other'" theory.** I grepped `scripts/jevtools/*.py` and found no `"other"` or `['other']` literal. It isn't a question name, and it isn't an index at `testing.py:102` or `:373`. Which file and line does the traceback name? Is `'other'` an outer question name, a key inside `probabilities`, or something else? The planned guard (every question name present) only helps if `'other'` is an outer key.
+
+2. **"the code is identical for every file, yet only some files fail, every time."** What differs between a failing file and a passing one? You could compare the choice or label set each file's question is built from. Could any of them add a label like `other` only for some files? If the question text changes, `cache_key` changes with it, and your stale-entry story needs a different explanation.
+
+3. **"Read only, not run."** and **"I have not inspected the file."** The cache file is the cheapest thing to look at. For a failing file, compute its `cache_key` and check whether that key exists in `~/.cache/compost/jev-cache.json`. If it does, print the entry. Does a failing run on the same file also hit the cache, or does it make a request? Without this, you have no observation that the entry is stale or that the API wasn't called. Which is it?
+
+4. **"The fresh-install machine has none, which matches."** Is a missing cache the only difference between the two machines? Compare the `typesafe_sdk` version, `MODEL`, and the API behaviour. The upgrade could change what a fresh response contains, with the cache not involved at all. Is the fresh machine's success a fresh API call, or did it fail too on a later run?
+
+5. **"cache_key hashes model, tool, state and question descriptions."** Did the upgrade change `MODEL`, the question text, or the `model_dump` output? If none changed, old entries would still be addressed by the same key. If one did, old entries would never be hit. Which of the two cases do you see in the failing runs?
+
+Assumption that matters most: that `'other'` is a missing top-level answer name in a cached entry. You haven't tied that to the traceback.

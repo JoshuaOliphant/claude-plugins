@@ -70,3 +70,10 @@ trees/
 
 # compost plugin-eval suite: lives in private compost-evals, linked in locally to run
 /plugins/compost/evals
+
+# duck eval: derived and bulk output
+.claude/hillclimb/**/traces/
+.claude/hillclimb/**/report.html
+.claude/hillclimb/**/state.json
+.claude/hillclimb/**/trajectory/
+.claude/hillclimb/**/progress.txt
