@@ -7,6 +7,8 @@
 | charter | `charter.md`: what the component is, its signals (tool + query + normal), known patterns, neighbors. |
 | signal | One query the superfan runs every pass. |
 | baseline | Observed normal per signal by time of day and weekday, in `baselines.md`. |
+| journal | `journal.md`: the superfan's own notes per pass; the last 24h go into every prompt, a week is kept. |
+| long-term memory | `long_term.md`: what the superfan decided should outlive the journal; it rewrites it. |
 | pass | One `superfan.py run`: one headless session and one report. |
 | finding | One anomaly a pass raised, a file in `inbox/` until it has a verdict, then `closed/`. |
 | fingerprint | A finding's stable signal-and-scope key; dedupe and suppression match on it. |

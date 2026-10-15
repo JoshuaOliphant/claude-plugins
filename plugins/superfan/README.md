@@ -14,18 +14,25 @@ notification instead of a chat channel.
 ```
 launchd (every N min, active hours only)
   └─ superfan.py run <component>
-       ├─ prompt = watch prompt + charter + baselines + open findings + verdicts + neighbors
+       ├─ prompt = watch prompt + charter + baselines + long-term memory + 24h journal
+       │           + open findings + verdicts + neighbors
        ├─ claude -p --tools "" --allowedTools <exact read-only MCP tools> --permission-mode dontAsk
        │            --json-schema <report> --max-budget-usd <cap>
-       └─ report → inbox/ finding files, digest/ heartbeat, baselines.md, notification
+       └─ report → inbox/ findings, digest/ heartbeat, journal.md, long_term.md, baselines.md,
+                   notification
 click notification → Terminal → /superfan:triage → verdict → ledger.jsonl → next prompt
 ```
 
 - **Least privilege by construction.** The headless run has no built-in tools (no Bash, no
   file writes) and only the exact MCP tool names you approved. Anything else is denied, not
   prompted. The script does all the writing.
-- **The ledger is the memory.** Every verdict (real, noise, known) goes into the next prompt.
-  The runner drops `known` fingerprints for good and `noise` ones for a week, whatever the
+- **Fresh sessions, curated memory.** Each pass starts clean and rereads what is worth
+  keeping: its own journal notes from the last 24h (what it noticed, what to recheck),
+  a long-term memory it rewrites itself, baselines, and your verdicts. Values over time stay in
+  the telemetry backend; the memory holds judgments. Every file is plain markdown you can edit,
+  so a wrong belief is one line to delete, not a poisoned session.
+- **Verdicts are enforced.** Every verdict (real, noise, known) goes into the next prompt, and
+  the runner drops `known` fingerprints for good and `noise` ones for a week, whatever the
   model says.
 - **A blind superfan is loud.** A crash, a timeout, or a pass that can't reach its tools all
   count as failures; after three in a row you get one notification.

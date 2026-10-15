@@ -9,6 +9,8 @@ Every file a superfan owns lives in ``$SUPERFAN_HOME/<component>/`` (default
     superfan.toml   cadence, model, budget, the read-only tool allowlist, notifier
     charter.md      what the component is, what healthy looks like, its queries
     baselines.md    observed normal, rewritten by the superfan as it learns
+    journal.md      the superfan's own notes per pass; the last 24h go into every prompt
+    long_term.md    what the superfan decided is worth remembering beyond the journal
     ledger.jsonl    one line per human verdict on a finding (real | noise | known)
     inbox/          open findings, one markdown file each
     closed/         findings that have a verdict
@@ -58,6 +60,11 @@ DAYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
 TOOL_NAME = re.compile(r"^mcp__[A-Za-z0-9_.-]+__[A-Za-z0-9_.-]+$")
 RECENT_VERDICTS = 30
 NEIGHBOR_HOURS = 24
+# The journal is short-term memory: the last day of notes goes into every prompt verbatim,
+# and anything older than a week is dropped on write. What should outlive that, the superfan
+# folds into long_term.md itself.
+JOURNAL_HOURS = 24
+JOURNAL_KEEP_DAYS = 7
 
 REPORT_SCHEMA = {
     "type": "object",
@@ -80,9 +87,11 @@ REPORT_SCHEMA = {
                 "required": ["same_as", "fingerprint", "title", "severity", "evidence"],
             },
         },
+        "notes": {"type": "array", "items": {"type": "string"}},
         "baselines": {"type": ["string", "null"]},
+        "long_term": {"type": ["string", "null"]},
     },
-    "required": ["status", "summary", "findings"],
+    "required": ["status", "summary", "findings", "notes"],
 }
 
 
@@ -228,6 +237,10 @@ def build_prompt(cfg: Config, now: datetime) -> str:
         f"## Now\n\n{now:%Y-%m-%d %H:%M %A} (local time)",
         "## Charter\n\n" + (d / "charter.md").read_text(encoding="utf-8"),
         "## Baselines\n\n" + _read_or(d / "baselines.md", "No baselines yet."),
+        "## Long-term memory (yours; rewrite it when something durable emerges)\n\n"
+        + _read_or(d / "long_term.md", "Empty."),
+        "## Your journal, last 24h (your own notes from earlier passes)\n\n"
+        + _journal_text(d, now),
         "## Open findings (no verdict yet; reuse these fingerprints, do not re-raise them)\n\n"
         + _bullets(f"`{f.get('fingerprint')}` {f.get('title')}" for f in findings_in(d, "inbox")),
         "## Recent verdicts from your human (do not raise these again)\n\n"
@@ -240,6 +253,42 @@ def build_prompt(cfg: Config, now: datetime) -> str:
     if cfg.neighbors:
         parts.append("## What neighboring superfans saw in the last 24h\n\n" + _neighbors(cfg, now))
     return "\n\n".join(parts) + "\n"
+
+
+def read_journal(d: Path) -> list[tuple[datetime, list[str]]]:
+    """journal.md as (pass time, notes) pairs, oldest first."""
+    path = d / "journal.md"
+    if not path.exists():
+        return []
+    entries: list[tuple[datetime, list[str]]] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("## "):
+            entries.append((datetime.fromisoformat(line[3:].strip()), []))
+        elif line.startswith("- ") and entries:
+            entries[-1][1].append(line[2:])
+    return entries
+
+
+def append_journal(d: Path, now: datetime, notes: list[str]) -> None:
+    cutoff = now - timedelta(days=JOURNAL_KEEP_DAYS)
+    entries = [e for e in read_journal(d) if e[0] >= cutoff]
+    entries.append((now, [" ".join(n.split()) for n in notes if n.strip()]))
+    text = "\n".join(
+        f"## {at.isoformat(timespec='minutes')}\n" + "".join(f"- {n}\n" for n in items)
+        for at, items in entries
+        if items
+    )
+    (d / "journal.md").write_text(text, encoding="utf-8")
+
+
+def _journal_text(d: Path, now: datetime) -> str:
+    cutoff = now - timedelta(hours=JOURNAL_HOURS)
+    recent = [(at, notes) for at, notes in read_journal(d) if at >= cutoff]
+    if not recent:
+        return "No notes yet."
+    return "\n\n".join(
+        f"### {at:%a %H:%M}\n" + "\n".join(f"- {n}" for n in notes) for at, notes in recent
+    )
 
 
 def _read_or(path: Path, fallback: str) -> str:
@@ -337,18 +386,16 @@ def run(cfg: Config, now: datetime, runner: Runner = subprocess.run) -> int:
         report, envelope = parse_report(proc.stdout)
         if report["status"] == "blind":
             # The model ran but could not see its signals: as useless as a crash, and quieter.
-            (runs / f"{stamp}.json").write_text(proc.stdout, encoding="utf-8")
             raise RunFailed(f"blind: {report['summary'][:300]}")
     except (RunFailed, subprocess.TimeoutExpired, FileNotFoundError) as exc:
         return _record_failure(cfg, d, now, exc)
 
     save_state(d, {"failures": 0})
     paged, digested, repeats = record_findings(cfg, d, now, report["findings"])
-    if report.get("baselines"):
-        base = d / "baselines.md"
-        if base.exists():
-            shutil.copy(base, d / "baselines.md.bak")
-        base.write_text(report["baselines"].rstrip("\n") + "\n", encoding="utf-8")
+    append_journal(d, now, report.get("notes") or [])
+    for key, name in (("baselines", "baselines.md"), ("long_term", "long_term.md")):
+        if report.get(key):
+            _replace_with_backup(d / name, report[key])
     denials = envelope.get("permission_denials") or []
     cost = envelope.get("total_cost_usd") or 0.0
     line = (
@@ -360,6 +407,12 @@ def run(cfg: Config, now: datetime, runner: Runner = subprocess.run) -> int:
     append_digest(d, now, line)
     print(line)
     return 0
+
+
+def _replace_with_backup(path: Path, text: str) -> None:
+    if path.exists():
+        shutil.copy(path, path.with_name(path.name + ".bak"))
+    path.write_text(text.rstrip("\n") + "\n", encoding="utf-8")
 
 
 def _record_failure(cfg: Config, d: Path, now: datetime, exc: Exception) -> int:
@@ -406,15 +459,24 @@ def record_findings(
         if suppressed(cfg, ledger, fp, now):
             continue
         if fp in open_by_fp:
-            _bump_seen(inbox / f"{open_by_fp[fp]['id']}.md", now)
-            repeats += 1
+            existing = open_by_fp[fp]
+            path = inbox / f"{existing['id']}.md"
+            _bump_seen(path, now)
+            # A repeat is quiet, unless the superfan now says a digest-level finding pages:
+            # that escalation is the whole point of watching it grow.
+            if f["severity"] == "page" and existing.get("severity") == "digest":
+                _escalate(path, f, now)
+                existing["severity"] = "page"
+                notify(cfg, f"{cfg.component}: {f['title']}", _headline(f), existing["id"])
+                paged += 1
+            else:
+                repeats += 1
             continue
         finding_id = f"{now:%Y%m%dT%H%M%S}-{slug(fp)}"
         (inbox / f"{finding_id}.md").write_text(render_finding(fp, f, now), encoding="utf-8")
-        open_by_fp[fp] = {"id": finding_id, "fingerprint": fp}
+        open_by_fp[fp] = {"id": finding_id, "fingerprint": fp, "severity": f["severity"]}
         if f["severity"] == "page":
-            body = (f["evidence"] or [f["title"]])[0]
-            notify(cfg, f"{cfg.component}: {f['title']}", body, finding_id)
+            notify(cfg, f"{cfg.component}: {f['title']}", _headline(f), finding_id)
             paged += 1
         else:
             append_digest(d, now, f"  - [{finding_id}] {f['title']}")
@@ -442,6 +504,19 @@ def render_finding(fp: str, f: dict, now: datetime) -> str:
         + (f"## Suspected cause\n\n{f['suspected_cause']}\n\n" if f.get("suspected_cause") else "")
         + section("Next checks", f.get("next_checks") or [])
     )
+
+
+def _headline(f: dict) -> str:
+    return (f["evidence"] or [f["title"]])[0]
+
+
+def _escalate(path: Path, f: dict, now: datetime) -> None:
+    text = re.sub(r"^severity: digest$", "severity: page", path.read_text(encoding="utf-8"),
+                  count=1, flags=re.M)  # fmt: skip
+    text += f"## Escalated to page at {now:%Y-%m-%d %H:%M}\n\n" + "".join(
+        f"- {e}\n" for e in f["evidence"]
+    )
+    path.write_text(text, encoding="utf-8")
 
 
 def _bump_seen(path: Path, now: datetime) -> None:

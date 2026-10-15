@@ -41,8 +41,14 @@ def make(component="orders-api", **overrides):
     return superfan.load_config(component)
 
 
-def envelope(findings=(), status="healthy", baselines=None, **extra):
-    report = {"status": status, "summary": "all quiet", "findings": list(findings)}
+def envelope(findings=(), status="healthy", baselines=None, notes=(), long_term=None, **extra):
+    report = {
+        "status": status,
+        "summary": "all quiet",
+        "findings": list(findings),
+        "notes": list(notes),
+        "long_term": long_term,
+    }
     if baselines is not None:
         report["baselines"] = baselines
     return json.dumps(
@@ -264,6 +270,25 @@ def test_run_pages_digests_and_dedupes(sf_home, notified):
     assert "repeats 2" in (d / "digest" / "2026-10-13.md").read_text()
 
 
+def test_digest_finding_escalating_to_page_notifies_once(sf_home, notified):
+    cfg = make()
+    d = sf_home / "orders-api"
+    growing = finding("pool-exhausted", severity="digest", title="Pool errors growing")
+    superfan.run(cfg, NOW, fake_claude(envelope([growing])))
+    assert notified == []
+
+    paging = {**growing, "severity": "page", "evidence": ["pool errors 8/h, was 1/h"]}
+    superfan.run(cfg, NOW + timedelta(hours=1), fake_claude(envelope([paging])))
+    superfan.run(cfg, NOW + timedelta(hours=2), fake_claude(envelope([paging])))
+
+    assert len(notified) == 1
+    title, body, finding_id = notified[0]
+    assert body == "pool errors 8/h, was 1/h"
+    text = (d / "inbox" / f"{finding_id}.md").read_text()
+    assert "severity: page" in text and "## Escalated to page at 2026-10-13 11:00" in text
+    assert "seen: 3" in text
+
+
 def test_run_rewrites_baselines_with_backup(sf_home, notified):
     d = sf_home / "orders-api"
     cfg = make()
@@ -292,6 +317,14 @@ def test_blind_superfan_notifies_once_after_threshold(sf_home, notified):
     assert "FAILED" in (sf_home / "orders-api" / "digest" / "2026-10-13.md").read_text()
     superfan.run(cfg, NOW, fake_claude(envelope()))
     assert superfan.load_state(sf_home / "orders-api") == {"failures": 0}
+
+
+def test_blind_pass_counts_as_failure(sf_home, notified):
+    cfg = make(failure_alert_after=1)
+    assert superfan.run(cfg, NOW, fake_claude(envelope(status="blind"))) == 1
+    assert "is blind" in notified[0][0]
+    assert superfan.load_state(sf_home / "orders-api") == {"failures": 1}
+    assert not (sf_home / "orders-api" / "journal.md").exists()
 
 
 def test_run_survives_timeout(sf_home, notified):
@@ -481,3 +514,44 @@ def test_cli_dispatches(monkeypatch, sf_home):
     ):
         assert superfan.main(argv) == 0
     assert seen == ["run", ("install", True), "uninstall", "notify", ("open", "F1")]
+
+
+# --- memory ------------------------------------------------------------------------------
+
+
+def test_journal_feeds_the_next_pass(sf_home, notified):
+    cfg = make()
+    first = fake_claude(envelope(notes=["pool-exhausted errors: 2/h, new", "recheck pool"]))
+    superfan.run(cfg, NOW, first)
+    assert "No notes yet." in first.seen["kwargs"]["input"]
+
+    second = fake_claude(envelope(notes=["pool-exhausted: 4/h, doubling"]))
+    superfan.run(cfg, NOW + timedelta(hours=1), second)
+    prompt = second.seen["kwargs"]["input"]
+    assert "### Tue 10:00\n- pool-exhausted errors: 2/h, new\n- recheck pool" in prompt
+
+    entries = superfan.read_journal(sf_home / "orders-api")
+    assert [len(notes) for _, notes in entries] == [2, 1]
+
+
+def test_journal_window_and_retention(sf_home):
+    d = superfan.init("orders-api")
+    superfan.append_journal(d, NOW - timedelta(days=8), ["ancient"])
+    superfan.append_journal(d, NOW - timedelta(days=2), ["last week"])
+    superfan.append_journal(d, NOW - timedelta(hours=2), ["multi\nline   note", "  "])
+    superfan.append_journal(d, NOW, [])  # a pass with nothing to say leaves no entry
+
+    assert [n for _, n in superfan.read_journal(d)] == [["last week"], ["multi line note"]]
+    text = superfan._journal_text(d, NOW)
+    assert "multi line note" in text and "last week" not in text
+
+
+def test_long_term_memory_is_rewritten_with_backup(sf_home, notified):
+    cfg = make()
+    d = sf_home / "orders-api"
+    superfan.run(cfg, NOW, fake_claude(envelope(long_term="Mondays run hot.")))
+    superfan.run(cfg, NOW + timedelta(hours=1), fake_claude(envelope(long_term="v2")))
+    assert (d / "long_term.md").read_text() == "v2\n"
+    assert (d / "long_term.md.bak").read_text() == "Mondays run hot.\n"
+    assert "Mondays run hot." not in superfan.build_prompt(cfg, NOW)
+    assert "v2" in superfan.build_prompt(cfg, NOW)
