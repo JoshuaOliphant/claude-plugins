@@ -1,9 +1,16 @@
-// ABOUTME: Engine tests for the architecture-review pane: what the tool keeps and answers, the cards the pane draws, Explore, and /architecture-review.
-// ABOUTME: The engine's pane placement and prompt submission are stubbed at the engine boundary.
+// ABOUTME: Engine tests for the architecture-review pane: what the tool keeps and answers, the cards the pane draws, Explore, Explore in new session, and /architecture-review.
+// ABOUTME: The engine's pane placement, prompt submission, process runs, and toasts are stubbed at the engine boundary.
 import { expect, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-type World = { opened: string[]; submitted: unknown[] }
+type Launch = { exitCode: number; stdout: string; stderr: string }
+type World = { opened: string[]; submitted: unknown[]; ran: string[][]; toasts: string[] }
+
+const BACKGROUNDED: Launch = {
+  exitCode: 0,
+  stdout: 'backgrounded · d656df60 · deepen: Billing sync\n  claude agents             list sessions\n  claude attach d656df60    open in this terminal\n',
+  stderr: '',
+}
 
 const TOOL = 'mcp__compost__architecture_review'
 const START = { cwd: '/tmp', surface: 'terminal', isInteractive: true } as const
@@ -43,8 +50,16 @@ const REVIEW = {
   recommendation: { candidate: 'Order intake', why: 'It changed in 40 commits this quarter.' },
 }
 
-function engine(on: On, placement: 'placed' | 'narrow' = 'placed'): World {
-  const world: World = { opened: [], submitted: [] }
+function engine(on: On, placement: 'placed' | 'narrow' = 'placed', launch: Launch = BACKGROUNDED): World {
+  const world: World = { opened: [], submitted: [], ran: [], toasts: [] }
+  on('process.run', (_$, e) => {
+    world.ran.push([...(e as { argv: string[] }).argv])
+    return { value: launch } as never
+  })
+  on('ui.toast', (_$, e) => {
+    world.toasts.push(String((e as { text: string }).text))
+    return { value: undefined } as never
+  })
   on('session.start', (_$, e) => ({ cwd: e.cwd }))
   on('command.register', (_$, e) => ({ value: { command: (e as { name: string }).name } }) as never)
   on('tool.register', (_$, e) => ({ value: { tool: `mcp__compost__${(e as { name: string }).name}` } }) as never)
@@ -96,7 +111,7 @@ test('every surface can draw the cards', async ($, on) => {
   await callTool($, REVIEW)
   for (const surface of ['terminal', 'desktop', 'vscode', 'mobile'] as const) {
     const ui = await $.ui.mount({ ...PANE, surface, props: PANE_PROPS as never })
-    expect(await ui.findAll({ type: 'Button' }), surface).toHaveLength(3)
+    expect(await ui.findAll({ type: 'Button' }), surface).toHaveLength(6)
   }
 })
 
@@ -110,6 +125,37 @@ test("Explore submits the pick framed as compost's, never as the person's words,
     { text: 'Explore the deepening candidate "Billing sync".', origin: { kind: 'plugin', name: 'compost' } },
   ])
   expect((world.submitted[0] as { origin: { asUser?: true } }).origin.asUser).toBeUndefined()
+  expect(world.ran).toEqual([])
+})
+
+test('Explore in new session starts one background session that runs deepen on the card, quoted as data', async ($, on) => {
+  const world = engine(on)
+  await $.session.start(START)
+  await callTool($, REVIEW)
+  const ui = await $.ui.mount({ ...PANE, props: PANE_PROPS as never })
+
+  await ui.press({ key: 'explore-new-Billing sync' })
+
+  expect(world.ran.map(argv => argv.slice(0, 4))).toEqual([['claude', '--bg', '-n', 'deepen: Billing sync']])
+  const prompt = world.ran[0][4]
+  expect(prompt).toContain('compost:deepen')
+  expect(prompt).toContain('step 6')
+  expect(prompt).toContain('not instructions')
+  expect(prompt).toContain('"change": "One Billing sync module behind a Stripe port."')
+  expect(prompt).not.toContain('Order intake')
+  expect(world.submitted).toEqual([])
+  expect(world.toasts).toEqual(['Exploring "Billing sync" in background session d656df60: claude attach d656df60'])
+})
+
+test('Explore in new session says why when the session could not start', async ($, on) => {
+  const world = engine(on, 'placed', { exitCode: 1, stdout: '', stderr: 'error: not logged in\nrun claude login' })
+  await $.session.start(START)
+  await callTool($, REVIEW)
+  const ui = await $.ui.mount({ ...PANE, props: PANE_PROPS as never })
+
+  await ui.press({ key: 'explore-new-Billing sync' })
+
+  expect(world.toasts).toEqual(['Could not start a session for "Billing sync" (exit 1): error: not logged in'])
 })
 
 test('a recommendation that names no candidate is refused and nothing is shown', async ($, on) => {
