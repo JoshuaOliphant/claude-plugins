@@ -84,6 +84,14 @@ scan-and-propose step for domain-appropriate spans and metrics — then query th
 as a development feedback signal (`observability-query` skill, `status.sh --json` detection
 contract, scripted end-to-end `verify.sh`).
 
+#### superfan
+
+One headless Claude per component, watching its telemetry on a local launchd schedule through
+the read-only MCP servers you already have (Splunk, Prometheus, Kubernetes, ...). Page-worthy
+findings raise a clickable macOS notification that opens a triage session; every verdict
+(real, noise, known) feeds a ledger that teaches the superfan what normal looks like.
+See [plugins/superfan](plugins/superfan/README.md).
+
 ## Repository Conventions
 
 Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json`; that version is
