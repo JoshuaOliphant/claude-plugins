@@ -1,0 +1,11 @@
+1. **"The scripts themselves work."** Your hand test piped only `git push origin main`. Pipe the exact failing payload, `git push origin HEAD:main`, into `bash hooks/scripts/deny-destructive.sh`. Does it return a deny? Your one passing test never exercised the failing input. Then read `DENY` at `deny-destructive.sh:41-52`, entry by entry, against that string.
+
+2. **"The test-lock seems to match every Edit."** The matcher at `builder.md:32` and `SKILL.md:36` only chooses which tool names reach the script. `test-lock.sh` has its own path logic at lines 48-57. Pipe an Edit payload with `file_path: specs/checkout-plan.md` into it by hand. What does it print? Then read `TEST_DIRS` and `is_test` and say what they do with that path. The answer shows which layer produced the deny.
+
+3. **"The Bash guard seems not to match some invocations."** What did you observe that points at the matcher? The Bash push did run, so the hook either wasn't invoked or ran and printed nothing. Run the real hook with a debug log, or add a temporary `echo` to stderr at the top of the script. Did it fire for the `HEAD:main` call? That separates "not attached" from "attached but silent".
+
+4. **"Next I will print the effective matcher values… and test them against the tool names Claude Code actually sends."** Both matchers are literal strings in the files you named. The tool names are already visible in the deny message, which says Edit, and in the Bash call. What would printing them tell you that reading `builder.md:27-35` and `SKILL.md:31-39` doesn't? If they're the same, what result would show the matchers are fine?
+
+5. **"The loaded plugin matches plugin.json."** That shows the versions match. It doesn't show that the hook scripts on disk are the ones that ran. Is the plugin cache copy of `deny-destructive.sh` and `test-lock.sh` identical to the repo copy, for example by `diff`? Also, `sdlc-loop/SKILL.md:25` has a `".*"` matcher. What is that hook, and could it also act on these calls?
+
+Assumption that, if false, changes the most: that the fault is in how the hooks are attached rather than in what the scripts do with these two specific inputs.

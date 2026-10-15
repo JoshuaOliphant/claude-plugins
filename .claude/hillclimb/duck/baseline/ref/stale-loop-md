@@ -1,0 +1,11 @@
+1. **"Claude Code keeps the old /loop prompt in its own session state, probably from the first /loop run."** What did you see that shows this? Your own account never mentions `.claude/loop.md`, but the plugin's README says `init` writes it as "the iteration ritual a bare /loop runs (written once, never overwritten)". Is that file in the project? If so, what does it contain, and what is its mtime? This matters because it's a second place the old name and old cache path could be stored, and your plan to restart Claude Code wouldn't touch it.
+
+2. **"the old plugin cache path survive[s] the upgrade."** Open the text that contains `.../2.2.0/scripts/sdlc_state.py` and find which file it sits in. Where did the prompt that produced the error come from: a file on disk, the command definition, or something else? The restart test can't tell those apart unless you know this first.
+
+3. **"Starting a new increment still shows the previous feature's name."** Which command did you run to start it (`/sdlc "<request>"`, or `init` directly)? After it ran, did the file that holds the loop prompt change? Also check whether `init` reports that it skipped writing. `sdlc_state.py:135` says it "Never overwrites", and that could make a stale prompt survive a new increment.
+
+4. **"`/loop` should run Claude Code's built-in PR-maintenance loop."** Where did you read that a bare `/loop` falls back to that behavior? What decides which prompt a bare `/loop` runs when a project-level file exists and when it doesn't? You've stated this expectation but not said where it comes from. SKILL.md line 174 touches on it, so see what it says.
+
+5. **"Plugin install incomplete: plugin.json shows 2.3.0."** Which plugin.json did you read: the repo's, or the one in `~/.claude/plugins/cache/.../2.3.0/`? Does the old `2.2.0` cache directory still exist? A version number in one file doesn't show which copy a running session loaded.
+
+Assumption that, if false, changes the most: that the stale prompt lives in Claude Code's own state rather than in a file the project or plugin wrote to disk.

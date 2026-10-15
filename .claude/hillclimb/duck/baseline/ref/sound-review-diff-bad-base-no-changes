@@ -1,0 +1,11 @@
+1. **"the user says `git log origin/main..HEAD` lists 6"**: this is the only evidence for the valid-base case, and it is secondhand. Did you run `git log orign/main..HEAD`, `git diff --no-prefix origin/main...HEAD` and the real `serve.py --base origin/main` yourself and see their output? The expected result says a valid base shows 6 commits. Is NO_CHANGES also printed with a correct ref, for example when the merge-base equals HEAD or when `--path` points somewhere other than where the user ran `git log`? That would make the typo only one possible difference.
+
+2. **"I have not run git."** The whole chain from non-zero exit to discarded stderr to empty parse to NO_CHANGES comes from reading code. What did you see when you ran serve.py with the bad base? Was the output literally `NO_CHANGES`, and what was the exit code? The code you read doesn't show which command the user ran or what it printed.
+
+3. **"`git diff HEAD` fails with HEAD unborn, and staged files are not untracked."** Where did you read or see this? Run `git diff --no-prefix HEAD` in a fresh `git init` with one staged file and record the exit code, stdout and stderr. Then run `git ls-files --others --exclude-standard` in the same repo and see whether the staged file appears. If git's actual behavior differs from your memory, the no-commit case would have a different mechanism.
+
+4. **"The no-commit case is the same mechanism."** In an unborn-HEAD repo, the no-`--base` path calls `resolve_base` (serve.py line 147). Did you trace what happens with no commits and no candidate refs? You say `--base` bypasses `resolve_base`, but the staged-files case apparently doesn't pass `--base`. Which path was the user's no-commit report on?
+
+5. **"Planned fix: raise on non-zero from the diff calls"**: `collect_diff` is called twice, at serve.py lines 138 and 149. Is every caller of `collect_diff` and `_run_git` covered by the try/except at lines 136-155, which currently catches only `NotAGitRepo`? Grep for other callers.
+
+Assumption that would change the most: that the bad-ref and no-commit failures are both "git failed silently", which you haven't yet observed in a real run.

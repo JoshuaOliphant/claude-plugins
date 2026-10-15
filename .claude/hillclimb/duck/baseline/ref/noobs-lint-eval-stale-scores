@@ -1,0 +1,13 @@
+I read `core.py` and `jev_lint.py` to check what the account says about the eval. Here are my questions.
+
+1. **"The numbers are wrong after the model update."** What are the numbers? Give me the precision and recall per threshold before and after, copied from `run_eval.py` output. Also say how you know the update happened and when, for example a changelog, a version string, or a date. Without those I can't tell "wrong" from "unchanged".
+
+2. **"The new model just isn't live for us yet."** What did you observe that points to an API-side rollout? `core.py:13` sets `MODEL = "jev-latest"`, and that is the only model reference I found under `scripts/lint`. Does the response or `response.usage` carry anything that identifies which model answered? If not, this is a guess and you can't confirm it from your account.
+
+3. **"I've checked the eval script and the lint rules and they're fine."** Did you also check what sits between the script and the API? `run_eval.py` calls `run()` in `jev_lint.py`, which builds a `Cache()` at line 184 and saves it at line 187. `cache_key` in `core.py:41` is built from `MODEL`, the tool, the state and the questions. Have you looked at `~/.cache/compost/jev-cache.json`? If entries from before the update are there, do they answer your reruns? `Jev.ask` counts hits in `self.cached`, but `run_eval.py` doesn't print that count. Do you know how many of your judgments came from the API and how many from the file?
+
+4. **"The config is right too."** Which config, and how did you check it? Did you check `TYPESAFE_API_KEY` against the Keychain item? `resolve_key` prefers the environment variable, so if both exist they could point at different accounts or keys. Which one did your run use?
+
+5. **"Wait a day and rerun."** What would a rerun tell you that the first run didn't? If you rerun the same command with the same inputs and nothing you can see has changed, what result would count as the rollout hypothesis being wrong?
+
+The assumption that matters most is that every judgment in your run came from a live call to the new model. If some of them didn't, your numbers don't measure the model, and waiting a day won't change them.

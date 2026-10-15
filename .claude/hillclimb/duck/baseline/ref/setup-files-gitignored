@@ -1,0 +1,11 @@
+1. **"its `git add` names AGENTS.md explicitly and never adds docs/agents/."** I read step 10 of `skills/setup/SKILL.md` (lines 113–120). It says only "Commit the changes as one `chore: configure agent skills` commit." It has no `git add` command at all, and no staging instructions elsewhere that I found. Where did you see the `git add`? If it isn't in the file, what did setup actually run? The session transcript or tool log would show it. Your fix targets a line I can't find.
+
+2. **"the files are there on disk."** `ls` shows presence, not tracking status. Run `git status --short docs/agents/` and `git check-ignore -v docs/agents/*.md`. Are the files untracked, ignored, or tracked and unchanged? Each result points somewhere different. The repo `.gitignore` has no `docs` match, but you haven't mentioned `.git/info/exclude` or a global excludes file.
+
+3. **"Setup not committing: `git log -1` shows the commit."** That shows a commit exists, not what setup meant to put in it. Did setup's output list the three files as staged or committed, or only as "written"? Also, step 4 creates `docs/agents/`, step 5 creates `docs.md`, and step 7 edits AGENTS.md. Your three files plus `docs.md` were all written before step 10. Is `docs.md` in the commit, on disk, or neither?
+
+4. **"The teammate's clone is at the same commit as my HEAD."** Run `git ls-tree -r HEAD --name-only | grep docs/agents` in your checkout. Does it list anything? This confirms what HEAD contains, and `git show --stat` only shows that commit's diff. Could the files have been committed earlier and then removed, or never tracked at all?
+
+5. **Pre-existing state (step 1 mentions "the output of an earlier run").** Did `docs/agents/` exist before this run? If so, was it already tracked, ignored, or untracked? That would explain why the new files didn't appear in this commit's diff.
+
+The assumption that matters most is that setup ran a `git add` that omitted `docs/agents/`. The skill text doesn't contain one, so the cause may lie in what the commit step actually executed or in the files' ignore status.

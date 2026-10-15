@@ -1,0 +1,11 @@
+1. **"Assuming: the crashing files have entries written by the older version, with an answer dict lacking 'other'."** `cache_key` (lines 39-42) hashes `described`, which is every question's `model_dump`. If the upgrade added an "other" question or changed its description, the new key wouldn't match the old entry. A stale hit would then be impossible for those questions. Did you diff the question definitions between the old and new versions? Does the old version's key formula equal the new one? A hit on an old entry needs identical keys, and this decides whether your theory can happen at all.
+
+2. **"KeyError: 'other'"**. Which expression raised it, and what does the traceback show? Your account cites `["covered"]` and `["value"]` at `testing.py:102` and `:373`. My grep for `"other"` or `'other'` in `plugins/compost` finds only `tests/test_jev_core.py:96`. So where does the `'other'` key get indexed, and is the thing indexed an answer dict, a probabilities dict, or something else? You haven't tied the error to the object you're blaming.
+
+3. **"only some files fail, every time."** You haven't observed which files fail, or whether they have cache entries. Can you list the failing files and look up each one's key in `~/.cache/compost/jev-cache.json`? Then run one with `~/.cache/compost` moved aside. If it still fails, the cache isn't involved.
+
+4. **"Ruled out: API returning partial answers… Read only, not run."** Your guard at lines 87-89 checks `name not in answers`. It doesn't check that each answer's inner shape is complete. Did you print a fresh `response.answers[...]` model_dump for a failing file? Your "never a KeyError" claim rests on the name check, not on a look at the dump's contents.
+
+5. **"The fresh-install machine has none, which matches."** Is it the same file, the same question set, and the same SDK/model version on both machines? A missing cache is one difference, but you haven't listed the others (`typesafe_sdk` version, `MODEL = "jev-latest"` resolving differently over time).
+
+The assumption that matters most is that the failing runs get a cache hit with an old-shape entry. Question 1 could make that impossible, and no run has shown a hit.

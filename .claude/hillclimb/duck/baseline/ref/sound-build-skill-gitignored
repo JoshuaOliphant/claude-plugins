@@ -1,0 +1,11 @@
+1. You wrote "The local checkout works because the untracked directory exists on disk." Your own glob found 12 directories and no `skills/build`, and I got the same 12 when I globbed `plugins/compost/skills/*/SKILL.md`. Run `ls plugins/compost/skills/build` in the checkout where the suite passes. Is it there? If it isn't, the "untracked but present" half of the theory has nothing behind it. A skill that was never written, was deleted, or sits under another name would fit the same symptoms.
+
+2. You wrote "the skill is simply absent from the published tree." What did you look at to learn that? Your glob covers a working tree, and the repo here isn't a git repo (`Is a git repository: false`). Which tree did you glob: the marketplace install, a clone, or your dev checkout? Compare the glob against the directory Claude Code actually installed (the plugin cache path). That shows whether you've seen the published state or only your own.
+
+3. You wrote "I have not run git." The `.gitignore` explanation is a prediction, so it only counts once `git check-ignore -v` and `git ls-files plugins/compost/skills/build` have run. Also run `git log --all --oneline -- plugins/compost/skills/build`. If the skill was ever committed, `.gitignore` can't explain its absence, because ignore rules don't remove tracked files. What does the log show?
+
+4. You wrote that the full suite passes locally because the test enumerates whatever is on disk. The "13 skills" figure is in CLAUDE.md. Does any test or script compare the skill count or names against that number, `plugin.json`, or the `compost:<name>` references? Check whether anything anywhere has ever asserted that `build` exists. Without that, you don't know when it went missing.
+
+5. Is the `.gitignore` the only rule that could hide `skills/build/`? What about a global excludes file (`git config core.excludesfile`), `.git/info/exclude`, or a nested `.gitignore` under `plugins/compost`? `check-ignore -v` names the rule that matched, so read its source file and line instead of assuming line 12.
+
+The assumption that would change the most: that `skills/build/` ever existed in your dev checkout.

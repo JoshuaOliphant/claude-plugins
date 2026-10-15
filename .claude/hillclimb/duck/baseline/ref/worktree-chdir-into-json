@@ -1,0 +1,11 @@
+1. **"the hook command is word-split and `worktree-create.sh` does not receive what it should."** `hooks.json` line 31 wraps the path in escaped quotes: `bash \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/worktree-create.sh\"`. Your own error message contains the script's exact stdout (`{"systemMessage": "[WorktreeCreate] New worktree: path= branch="}`). What does that tell you about whether the script ran? Why does it matter: the script ran and printed output, so a split command seems to be contradicted by your own evidence.
+
+2. **"The harness is then left with garbage, which it tries to chdir into."** Where did you read what the harness does with a WorktreeCreate hook's stdout? The script's last line (16) echoes a JSON `systemMessage`, and the error shows that string being used as a path. Find the doc or source that says what a WorktreeCreate hook's stdout means. Why it matters: you're assuming a contract from memory.
+
+3. **"Inside git repos EnterWorktree works."** In a git repo, what does the hook's stdout look like, and what does the harness do with it? Compare that with the non-repo case. Why it matters: the same script runs on both paths, so something about the harness's handling must differ, and you haven't looked at that difference.
+
+4. **"The path and branch are always empty."** Capture the raw stdin JSON the hook receives, for example with `cat > scratchpad/stdin.json` at the top of the script. Then check whether it has `worktree_path` and `branch` keys at all, and whether the `grep -o '"worktree_path":"[^"]*"'` pattern matches its spacing and key names. Why it matters: you have only seen the output of the parse, never the input.
+
+5. **"the only thing unusual about this machine is its install location."** Does the failure reproduce on a machine with no space in the path? Does the non-git-repo failure happen with a stock install elsewhere? Why it matters: the space theory is untested, and "non-git directory" is the only variable you've observed correlating with the failure.
+
+The assumption that would change the most: that the hook script is failing to run correctly. The error text suggests it ran fine and the harness misused its output.
