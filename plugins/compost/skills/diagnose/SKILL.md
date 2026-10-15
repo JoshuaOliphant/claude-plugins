@@ -84,6 +84,13 @@ comes first, the theory second, and the fix last, at the root. The why is in
    each the loop command, its hypothesis and prediction, and ask for the probe output and a
    verdict. Probes that touch the same files run in order.
 
+   When every ranked hypothesis is falsified, or a second fix fails, explain the bug to the
+   `duck` agent before ranking more. Hypotheses you rank again come from the same context that
+   produced the falsified ones; the duck starts fresh and asks where your account rests on faith.
+   Write the account so it stands alone, since the duck sees nothing else: what you expected, what
+   you observed (commands, output, error text), what you ruled out and how, and what you are
+   assuming. Go and observe what each of its questions asks for, then rank again.
+
 7. **Fix at the root, with a regression test at a real seam.** A real seam (Feathers,
    [seams](../../canon/seams.md)) is one where the test exercises the bug as it happens at the call
    site: the multi-caller chain, the real data shape. A test at a seam too shallow to reproduce the
