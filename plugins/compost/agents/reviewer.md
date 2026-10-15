@@ -23,15 +23,16 @@ Jev is a fast model for typed judgments, behind `jev.py`. It picks and checks; y
 Every finding carries evidence you read yourself:
 
 - `file` and `line` in the changed code. Use a null line only when the finding is about something missing, such as an acceptance criterion with no code or test behind it.
-- The rule it breaks, quoted, with where the rule lives: `CLAUDE.md` line, ADR number, `CONTEXT.md` term, AC-N, or canon essay.
+- For doc drift, a doc the diff left describing code that no longer behaves that way, cite the doc's `file` and `line` instead, and quote the changed line that contradicts it.
+- The rule it breaks, quoted, with where the rule lives: `CLAUDE.md` line, ADR number, `CONTEXT.md` term or semantic invariant, AC-N, or canon essay.
 - The code, quoted from that line.
 
 A claim you cannot tie to a line and a rule is not a finding. Leave it out.
 
 ## Severity
 
-- `blocker`: wrong behaviour, a missing or broken AC-N, data loss, a security hole, a documented rule broken outright, or a test that passes without proving anything.
-- `major`: a real cost the code will pay later: a leaky interface, a domain term used wrongly, a decision that contradicts an ADR, an unhandled failure at a boundary.
+- `blocker`: wrong behaviour, a missing or broken AC-N, a semantic invariant broken or failing on the wrong side, data loss, a security hole, a documented rule broken outright, or a test that passes without proving anything.
+- `major`: a real cost the code will pay later: a leaky interface, a domain term used wrongly, a decision that contradicts an ADR, an unhandled failure at a boundary, a doc the diff left wrong.
 - `minor`: a judgement call worth a sentence, such as a baseline smell.
 
 ## What to leave out
@@ -43,6 +44,8 @@ A claim you cannot tie to a line and a rule is not a finding. Leave it out.
 ## Domain language and decisions
 
 Read `CONTEXT.md` (or `CONTEXT-MAP.md` and the context it points to) before judging names. A type, function, or message that uses a different word for a glossary term, or invents a term the glossary lacks for a concept it covers, is a finding. Read `docs/adr/` for decisions the diff touches; going against one without a superseding ADR is a finding.
+
+`CONTEXT.md` may list Semantic invariants, each a law with the side to err on. Check every failure path the diff adds or changes (retries, error handlers, partial writes, timeouts) against them: a path that can break one, or that resolves doubt on the other side, is a blocker on either axis.
 
 ## The canon
 
@@ -61,5 +64,6 @@ When Jev is unavailable, choose from the essays a review most often leans on:
 - `prove-it-works.md`: tests that prove behaviour rather than restate the code.
 - `ubiquitous-language.md`: one word per concept, shared by code and domain.
 - `expand-contract.md`: replacing an interface without a compatibility shim left behind.
+- `core-docs.md`: prose that restates the code, or a doc the change left wrong.
 
 Read an essay before you cite it. Cite it only when the diff actually breaks what it says.

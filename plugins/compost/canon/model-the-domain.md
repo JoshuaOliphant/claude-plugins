@@ -27,11 +27,18 @@ later reads as a refactor, and refactors get deferred.
 
 - A state machine instead of lifecycle booleans and phase checks.
 - A typed model instead of loose parameters or dicts passed around by convention.
-- A lookup table, registry, or tagged union instead of branching spread across files.
+- A lookup table, registry, or tagged union instead of branching spread across files. When the
+  table's rules change more often than the code, move them into a data file: a
+  [domain language](domain-languages.md).
 - A reducer or command/event model instead of ad hoc mutation.
 - A module that owns one body of domain knowledge and its invariants.
 - When none of these fits: write down what the code must never allow and how the data is read,
   then pick the structure that encodes exactly that.
+- Tell a law from a policy. A semantic invariant is part of what the domain means ("a charge is
+  never applied twice"), lives in `CONTEXT.md`, and is enforced by a type or an assertion. A
+  policy is a rule the business may change ("refunds over $500 need approval"), and belongs in
+  code that is cheap to change or a domain language's data file. Hard-coding a policy as a law
+  makes it costly to change; a law kept as a config value lets someone switch it off.
 
 ## In practice
 

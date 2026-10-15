@@ -1,6 +1,6 @@
 # Edge Case Checklist
 
-Probing questions for finding edge cases while writing acceptance criteria, grouped by domain. Run through the groups that apply to the feature. A case whose answer changes what the user sees becomes a question in the next round, with your recommended answer; a case with one sensible answer becomes an assumption in the spec.
+Probing questions for finding edge cases while writing acceptance criteria, grouped by domain. Run through the groups that apply to the feature. A case whose answer changes what the user sees becomes a question in the next round, with your recommended answer; a case with one sensible answer becomes an assumption in the spec. Read the semantic invariants in `CONTEXT.md` first: a case one of them decides is already answered, on the side it names.
 
 ## Input Validation
 

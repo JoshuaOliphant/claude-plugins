@@ -78,8 +78,14 @@ def test_bad_input_exits_2(cache_dir, monkeypatch, capsys, text, message):
     assert message in capsys.readouterr().err
 
 
-def test_unavailable_jev_exits_3_and_says_to_judge_yourself(cache_dir, repo, monkeypatch, capsys):
+@pytest.mark.parametrize(
+    "failing",
+    [
+        pytest.param(StubClient(error=TypeSafeAPIConnectionError("refused")), id="api-refused"),
+        pytest.param(StubClient(lambda state, questions: {}), id="answer-dropped"),
+    ],
+)
+def test_unavailable_jev_exits_3_and_says_to_judge_yourself(cache_dir, repo, monkeypatch, capsys, failing):
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"repo": str(repo), "criterion": "c"})))
-    failing = StubClient(error=TypeSafeAPIConnectionError("refused"))
     assert jev.main(["find-test"], client_factory=lambda: failing) == jev.EXIT_UNAVAILABLE
     assert "Make this call yourself." in capsys.readouterr().err

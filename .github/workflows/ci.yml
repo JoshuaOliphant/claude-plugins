@@ -15,19 +15,8 @@ jobs:
         uses: astral-sh/setup-uv@v4
       - name: Install Claude Code, which runs compost's hooks-module tests
         run: npm install -g @anthropic-ai/claude-code
-      - name: Run version, shared-sync, and test checks
+      - name: Run version, shared-sync, test, lint, and format checks
         run: uv run --group dev python scripts/check_all.py
-
-  review-diff-coverage:
-    name: review-diff coverage gate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-      - name: Run review-diff suite with its 100% coverage gate
-        working-directory: plugins/review-diff
-        run: uv run --group dev pytest
 
   compost-coverage:
     name: compost coverage gate

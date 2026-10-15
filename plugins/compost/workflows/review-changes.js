@@ -28,10 +28,11 @@ const SCOPE_SCHEMA = {
     standardsSources: { type: 'array', items: { type: 'string' } },
     spec: {
       type: 'object',
-      required: ['found', 'source', 'text'],
+      required: ['found', 'source', 'number', 'text'],
       properties: {
         found: { type: 'boolean' },
         source: { type: 'string', description: 'Issue URL, issue number, or file path; empty when not found' },
+        number: { type: ['integer', 'null'], description: 'The number of the issue fetched; null for a spec file or when not found' },
         text: { type: 'string', description: 'User stories, AC-N, and interfaces verbatim; empty when not found' },
         problem: { type: 'string', description: 'Why a given issue could not be fetched; empty otherwise' },
       },
@@ -110,7 +111,7 @@ const baseHint = input.base
   : `No fixed point was given: use the merge-base of \`${head}\` with the default branch (\`git merge-base ${head} origin/HEAD\`, falling back to \`main\` then \`master\`).`
 
 const issueHint = input.issue
-  ? `The originating issue is #${input.issue}.`
+  ? `The originating issue is #${input.issue} and no other: fetch it even if the conversation names a different one.`
   : 'No issue was given: look for issue references in the commit messages (#123, Closes #45) and in the branch name, then for a spec file under docs/, specs/, or .scratch/ matching the branch.'
 
 const riskStep = jevScript
@@ -122,10 +123,10 @@ const scope = await agent(
 
 ${baseHint} The head under review is \`${head}\`.
 1. Resolve the fixed point and the head with \`git rev-parse\`. Record diffCommand as \`git diff <base-sha>...<head-sha>\` (three dots, against the merge-base), the commits from \`git log --oneline <base-sha>..<head-sha>\`, and the changed files from \`git diff --name-only <base-sha>...<head-sha>\`.
-2. ${issueHint} Fetch the issue the way docs/agents/issue-tracker.md says; if that file is missing, use \`gh issue view <n> --comments\`. Copy its user stories, every AC-N, and any interfaces verbatim into spec.text. If an issue number was given and fetching it fails, set spec to \`{found: false, source: "", text: "", problem: "<the error you got>"}\` and carry on with the rest.
+2. ${issueHint} Fetch the issue the way docs/agents/issue-tracker.md says; if that file is missing, use \`gh issue view <n> --comments\`. Copy its user stories, every AC-N, and any interfaces verbatim into spec.text. If an issue number was given and fetching it fails, set spec to \`{found: false, source: "", number: null, text: "", problem: "<the error you got>"}\` and carry on with the rest. Set spec.number to the number of the issue you fetched, or null for a spec file.
 3. List the standards sources that exist: CLAUDE.md and AGENTS.md at the root and in directories the diff touches, CONTEXT.md or CONTEXT-MAP.md, docs/adr/*.md, CODING_STANDARDS.md, CONTRIBUTING.md, and linter or formatter configs (so reviewers know what tooling already enforces).${riskStep}
 
-If the fixed point does not resolve or the diff is empty, say so in problem and return every other field empty: base, head, and diffCommand as "", commits, files, and standardsSources as [], and spec as \`{found: false, source: "", text: ""}\`.`,
+If the fixed point does not resolve or the diff is empty, say so in problem and return every other field empty: base, head, and diffCommand as "", commits, files, and standardsSources as [], and spec as \`{found: false, source: "", number: null, text: ""}\`.`,
   { label: 'scope', phase: 'Scope', schema: SCOPE_SCHEMA, effort: 'low' },
 )
 
@@ -135,9 +136,17 @@ if (!scope || scope.problem || scope.files.length === 0) {
   return { complete: false, problem }
 }
 
-const specProblem = input.issue && !scope.spec.found
-  ? `issue #${input.issue} could not be fetched: ${scope.spec.problem || 'the scoping agent returned no spec'}`
-  : ''
+const specSource = input.issue ? `#${input.issue}` : scope.spec.source
+
+function issueFetchProblem() {
+  if (!input.issue) return ''
+  if (!scope.spec.found) return scope.spec.problem || 'the scoping agent returned no spec'
+  if (scope.spec.number !== Number(input.issue)) return `the scoping agent fetched #${scope.spec.number} instead`
+  return ''
+}
+
+const fetchProblem = issueFetchProblem()
+const specProblem = fetchProblem ? `issue #${input.issue} could not be fetched: ${fetchProblem}` : ''
 if (specProblem) log(specProblem)
 
 log(`Reviewing ${scope.files.length} files across ${scope.commits.length} commits since ${scope.base.slice(0, 8)}`)
@@ -176,6 +185,7 @@ Check the diff against:
 - Every rule in the instructions files and contributing guides above. Cite the file and the rule.
 - CONTEXT.md vocabulary: names in the diff that contradict or bypass the glossary's terms.
 - ADRs in docs/adr/: changes that go against a recorded decision without a superseding ADR.
+- Doc drift: a line in an instructions file, README, or other doc that describes the changed code and no longer matches it after this diff. Cite the doc's file and line.
 - The compost canon essays your agent definition points you to, where one applies.
 - The smell baseline below.
 
@@ -185,13 +195,13 @@ Skip anything a linter, formatter, or type checker configured in this repo alrea
   },
   {
     name: 'Spec',
-    active: scope.spec.found,
+    active: scope.spec.found && !specProblem,
     problem: specProblem,
     prompt: `Review this diff on the Spec axis: does the code do what the originating issue asked, no more and no less?
 
 ${diffContext}
 
-Spec source: ${scope.spec.source}
+Spec source: ${specSource}
 ${scope.spec.text}
 
 Report:
@@ -302,7 +312,7 @@ function worst(axisResult) {
 return {
   base: scope.base,
   head: scope.head,
-  specSource: scope.spec.source,
+  specSource,
   risk,
   complete: standards.complete && spec.complete,
   standards,

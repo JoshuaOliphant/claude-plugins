@@ -51,8 +51,9 @@ yours to do without asking.
 5. **Open or update the pull request.** Push the branch and open a draft PR against the target,
    or update the open one. The body has five sections: Goal, Decisions, Changes, Validation,
    Risk. Decisions summarizes the rulings posted as issue comments. Validation carries
-   `compost:verify`'s evidence and the merge-result run. Risk names whatever is unproven,
-   deferred, or excluded from coverage. End the body with a `Closes` line for the issue, or for
+   `compost:verify`'s evidence and the merge-result run. Risk calls the change a one-way or
+   two-way door with its blast radius, and names whatever is unproven, deferred, or excluded
+   from coverage. End the body with a `Closes` line for the issue, or for
    the parent and every sub-issue (`Closes #12, closes #13, closes #14`), keeping any the PR
    already has. Use the
    [PR body template](references/pr-body.md) and the tracker's own CLI (`gh pr create --draft`,
@@ -72,7 +73,8 @@ yours to do without asking.
      `git -C "$main_root" switch <target>`, `git -C "$main_root" pull --ff-only`, then
      `git -C "$main_root" merge --no-ff "$branch"`. Run the suite on the result. If it is red,
      stop with the branch and worktree in place and nothing pushed. If it is green, push the
-     target.
+     target, then close the issue, or the parent, the way the tracker says (for a local tracker,
+     `Status: closed` and a closing note naming the merge commit).
 
    Then remove the worktree from `$main_root`. Use the harness's exit tool (such as
    `ExitWorktree` with remove) if it created the worktree; otherwise
@@ -100,3 +102,4 @@ yours to do without asking.
 - `compost:build` when review or the user asks for changes on the open PR.
 - `compost:diagnose` when the merge result is red.
 - `compost:pause` when stopping with the PR open and work still in flight.
+- `compost:retro` once the PR is merged, to file what in the environment would have made the run go better.

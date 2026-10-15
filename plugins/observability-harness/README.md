@@ -12,10 +12,10 @@ on session start.
   artifacts, and instruments the app. The instrumentation step is a **scan-and-propose**:
   it classifies candidate sites (boundary/tool calls, dispatch/routing, result/LLM sites),
   proposes domain-appropriate spans and metrics, and waits for confirmation before writing —
-  because different apps need different instruments. (Inside an autonomous SDLC loop it
-  decides-and-logs instead of asking.) Setup ends with a **scripted end-to-end verify**:
-  `verify.sh` runs the rendered probe and polls all three sinks, so "harness installed"
-  is an exit code.
+  because different apps need different instruments. (In an unattended run it applies the
+  conservative core and records the full proposal instead of asking.) Setup ends with a
+  **scripted end-to-end verify**: `verify.sh` runs the rendered probe and polls all three
+  sinks, so "harness installed" is an exit code.
 - **observability-query** — The consuming half: triggers when debugging, verifying a
   change ran, or doing performance work in a project that has the harness. Detects it
   via the status contract, then reads telemetry instead of guessing.
@@ -23,8 +23,7 @@ on session start.
 ## Integration contract
 
 `bash .claude/harness/observability/status.sh --json` →
-`{"installed", "running", "mode", "service", "services"}` — how any tool (including the
-`autonomous-sdlc` loop, which composes with this plugin as a soft dependency) detects a
+`{"installed", "running", "mode", "service", "services"}` — how any tool detects a
 harness without knowing its internals. File absent → no harness.
 
 ## Modes
@@ -53,6 +52,6 @@ Lite can be upgraded to full later by re-running install in full mode and swappi
 
 ## What's bundled
 
-`scripts/` (mode-aware `install`/`start`/`stop`/`status` + both `vector.*.toml`),
-`assets/` (`otel.py` template, `harness.env`, path-scoped rules template), and `references/`
+`scripts/` (mode-aware `install`/`start`/`stop`/`status`, `verify.sh`, and both `vector.*.toml`),
+`assets/` (`otel.py` and `probe.py` templates, `harness.env`, path-scoped rules template), and `references/`
 (instrumentation-scanning guide + LogsQL/PromQL/jq query recipes).

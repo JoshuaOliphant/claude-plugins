@@ -1,5 +1,5 @@
 {
-  "description": "compost stop-guard: during a compost:implement run, a stop that waits on the user for anything but an allowed stop is sent back to post a ruling and continue. skill-drift: after each turn that loaded a skill, Jev judges the turn for skill drift and hits go to ~/.claude/skill-drift/.",
+  "description": "compost stop-guard: during a compost:implement run, a stop that waits on the user for anything but an allowed stop is sent back to post a ruling and continue. skill-drift: after each turn that loaded a skill, Jev judges the turn for skill drift and hits go to ~/.claude/skill-drift/. architecture-review: compost:deepen shows its deepening candidates as cards in a pane.",
   "hooks": {
     "Stop": [
       {
@@ -14,6 +14,6 @@
     ]
   },
   "modules": [
-    "./skill-drift.ts"
+    "./compost.ts"
   ]
 }

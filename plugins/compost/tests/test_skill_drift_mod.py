@@ -1,4 +1,4 @@
-# ABOUTME: Runs the skill-drift hooks module's engine tests and validation from pytest, so CI's one test command covers them.
+# ABOUTME: Runs compost's hooks module engine tests (skill-drift, architecture-review) and validation from pytest, so CI's one test command covers them.
 # ABOUTME: Also checks the judgments file stays plain JSON after `export default`, since the live eval parses it.
 import os
 import shutil

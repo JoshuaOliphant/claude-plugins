@@ -1,0 +1,20 @@
+{
+  "name": "superfan",
+  "version": "0.1.0",
+  "description": "Superfans: one headless Claude per component, obsessively watching its telemetry through your read-only MCP servers (Splunk, Prometheus, Kubernetes, ...) on a local schedule. Findings land in a local inbox, page-worthy ones raise a clickable desktop notification that opens a triage session, and every verdict feeds a ledger that teaches the superfan what normal looks like.",
+  "license": "MIT",
+  "author": {
+    "name": "Joshua Oliphant"
+  },
+  "homepage": "https://github.com/joshuaoliphant/claude-plugins",
+  "repository": "https://github.com/joshuaoliphant/claude-plugins",
+  "keywords": [
+    "observability",
+    "monitoring",
+    "anomaly-detection",
+    "sre",
+    "headless",
+    "launchd",
+    "mcp"
+  ]
+}

@@ -21,7 +21,9 @@ mod is not running: say so in the digest rather than reporting a clean week. Thi
 log, usually from a daily scheduled task, and proposes fixes.
 
 One hit proves little: a turn can stray for reasons of its own. The same kind of drift on the
-same skill in two separate sessions is a pattern, and patterns are what this skill acts on.
+same skill in two separate sessions is a pattern, and patterns are what this skill acts on. When
+the pattern is mechanical, a check stops it better than more words in the skill
+([make mistakes impossible](../../canon/make-mistakes-impossible.md)).
 
 `${CLAUDE_PLUGIN_ROOT}/scripts/skill_drift.py` does the bookkeeping (Python 3.11+ via uv, stdlib
 only). It drops hits on skills that are no longer active (a disabled plugin, a `skillOverrides`
@@ -93,3 +95,5 @@ message.
   issue and build it.
 - `compost:turn` when a pattern shows compost's copy of a skill drifted because its upstream
   source already fixed the same thing.
+- `compost:retro` when the drift traces back to the environment rather than the skill: a missing
+  check, a hidden file, a rule in the wrong instruction file.

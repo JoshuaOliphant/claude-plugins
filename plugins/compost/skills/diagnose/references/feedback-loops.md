@@ -9,20 +9,25 @@ first that reaches the bug.
 1. **Failing test** at whatever seam reaches the bug: unit, integration, end to end. Put it in the
    existing suite next to the tests that cover the same behaviour, using their fixtures.
 2. **HTTP script** (`curl` or a short script) against a running dev server.
-3. **CLI invocation** with a fixture input, diffing stdout against a known-good snapshot.
-4. **Headless browser script** (Playwright, Puppeteer) that drives the UI and asserts on DOM,
+3. **Telemetry query.** Run the trigger, then query the telemetry `docs/agents/observability.md`
+   records for the span, log, or metric that shows the symptom, and assert on it. Reach for it
+   when the symptom is internal: a branch taken wrongly, a call that never happened, a retry
+   storm, a slow span. Scope the query to this run (a fresh trace id, a timestamp, a unique
+   request id) so old data cannot make it pass or fail.
+4. **CLI invocation** with a fixture input, diffing stdout against a known-good snapshot.
+5. **Headless browser script** (Playwright, Puppeteer) that drives the UI and asserts on DOM,
    console, or network. The bundled `/run` skill knows how to launch most apps.
-5. **Replay a captured trace.** Save a real request, payload, or event log to disk and replay it
+6. **Replay a captured trace.** Save a real request, payload, or event log to disk and replay it
    through the code path in isolation.
-6. **Throwaway harness.** Stand up the smallest subset of the system that reaches the bug (one
+7. **Throwaway harness.** Stand up the smallest subset of the system that reaches the bug (one
    service, stand-ins for the rest) and drive it with one function call.
-7. **Property or fuzz loop.** For "sometimes wrong output", run a thousand random inputs and look for
+8. **Property or fuzz loop.** For "sometimes wrong output", run a thousand random inputs and look for
    the failure mode.
-8. **Bisection harness.** When the bug appeared between two known states (commits, dataset versions,
+9. **Bisection harness.** When the bug appeared between two known states (commits, dataset versions,
    dependency versions), script "set up state X, check, report" and hand it to `git bisect run`.
-9. **Differential loop.** Run the same input through the old and new version, or two configs, and
+10. **Differential loop.** Run the same input through the old and new version, or two configs, and
    diff the outputs.
-10. **Human-driven script.** Last resort, when a person has to click. Copy
+11. **Human-driven script.** Last resort, when a person has to click. Copy
     [`../scripts/hitl-loop.sh`](../scripts/hitl-loop.sh), edit the steps, and run it: the user follows
     the prompts and their answers come back to you as `KEY=VALUE` lines. The loop stays structured
     even with a human in it.

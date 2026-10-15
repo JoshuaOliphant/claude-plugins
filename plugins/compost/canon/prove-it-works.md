@@ -22,10 +22,20 @@ is a claim, not evidence, until the claims that matter are checked against the a
 Measurements follow the same rule. When two approaches are both defensible, run both and let the
 result decide, rather than choosing from documentation claims or plausible reasoning.
 
+## Numbers
+
+A measured number is a claim too. Before trusting one, ask why it isn't twice as good, and name
+the limiter with a measurement; a guess from reading the code is not a limiter. Then rule out what
+else the number might be measuring: errors that finished fast, work that was skipped or cached,
+code that never ran, a side nobody tuned, noise between runs, or a piece too small to matter end to
+end. Keep the evidence with the number, so a reader can check it without rerunning. The
+[benchmark checklist](../skills/diagnose/references/benchmarks.md) turns this into steps.
+
 ## In practice
 
 - Before saying done, run the thing the user will run: the command, the endpoint, the page. Use
-  `/run` to drive the app when a test cannot show the behavior.
+  `/run` to drive the app when a test cannot show the behavior, and read its telemetry to see
+  what it did inside ([read the running system](read-the-running-system.md)).
 - Report what you checked and what you saw, including checks that failed. "Tests pass" without the
   output is a claim, not a result.
 - Prefer a check you can script and rerun (a test, a comparison script, a query) over a one-time

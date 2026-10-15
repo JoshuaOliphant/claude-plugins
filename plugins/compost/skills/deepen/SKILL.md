@@ -41,6 +41,10 @@ where seams go, and keeps heavy architecture out unless a dependency earns it. T
    - Pure functions were extracted for testability, but the bugs hide in how they are called.
    - Modules leak a shared decision (a representation, a policy, a wire format) across their seams.
    - Code is untested, or hard to test through its current interface.
+   - Rules in one shape (an if/elif chain, a dict of cases) grow by an entry per feature, or the
+     same rule is restated in several files. That is a candidate for a
+     [domain language](../../canon/domain-languages.md): the rules as data in `CONTEXT.md`'s terms,
+     one engine behind the interface. Start with a data file; propose a grammar almost never.
 
    Apply the deletion test to anything that looks shallow: imagine deleting the module. If complexity
    vanishes, it was a pass-through. If it reappears across its callers, it was earning its keep.
@@ -67,10 +71,14 @@ where seams go, and keeps heavy architecture out unless a dependency earns it. T
    the one you would tackle first and why. If a candidate contradicts an ADR, include it only when the
    friction is real enough to reopen the ADR, and say which ADR and why. Don't propose interfaces yet.
 
-   Give this in the conversation. Write an HTML report only when the user asks for one; the format is
-   in [references/html-report.md](references/html-report.md). When the user is driving, let them pick
-   the candidate. Inside `compost:implement`, pick the top one, post the ruling (what, why, cost if
-   wrong) as an issue comment, and continue.
+   Give this in the conversation. When the user is driving and the `mcp__compost__architecture_review`
+   tool is available, also call it with the candidates and your recommendation: it draws them as
+   cards in a pane, and the user can pick one with its Explore button. If its answer says the pane is
+   waiting, the conversation copy is what they read. Write an HTML report only when the user asks for
+   one (it adds before/after diagrams); the format is in
+   [references/html-report.md](references/html-report.md). When the user is driving, let them pick
+   the candidate. Inside `compost:implement`, skip the pane, pick the top one, post the ruling (what,
+   why, cost if wrong) as an issue comment, and continue.
 
 6. **Shape the interface.** Write the caller's usage first (two or three real call sites) and derive
    the types from it. Build types from valid values rather than carving them out of looser ones with

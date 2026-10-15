@@ -44,7 +44,7 @@ Here AC-2 is a new row in that parametrized table and AC-3 is already one of its
 34 criteria over skill-atlas's and compost's suites: the right test first for 33, in the top three
 for all 34, and the extend call right for 33.
 
-## duplicate-test (step 10, before committing)
+## duplicate-test (step 11, before committing)
 
 Input: the repo root and the base ref the change started from. Every test added or changed since
 `base` (working tree included) is paired with its five nearest tests by shared words, and Jev

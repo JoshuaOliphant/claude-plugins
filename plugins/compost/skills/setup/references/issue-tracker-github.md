@@ -32,8 +32,8 @@ GitHub numbers issues and pull requests in one sequence, so a bare `#42` may be 
 | Map | `map` | A map issue for long, foggy work |
 | Decision | `decision` | A decision sub-issue of a map |
 
-Edit the middle column if the repo already uses other names for these roles. Create a missing
-label with `gh label create <name>` the first time it is needed.
+Edit the middle column if the repo already uses other names for these roles. `compost:setup`
+creates every label in the middle column that the repo lacks with `gh label create <name>`.
 
 ## Records
 

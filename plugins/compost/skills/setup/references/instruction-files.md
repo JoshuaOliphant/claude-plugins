@@ -87,6 +87,16 @@ CONTEXT-MAP.md.">. See `docs/agents/domain.md`.
 ### Tests and gates
 
 <One line: the test convention and the coverage threshold.> See `docs/agents/testing.md`.
+
+### Observability
+
+<One line: the stack and how to read it, e.g. "Observability harness, lite mode; query it while
+debugging and verifying.", or "None."> See `docs/agents/observability.md`.
+
+### Docs
+
+Code is the source of truth; docs hold only what it can't say, in the core docs. Put a new fact in
+a name, type, test, or comment before a core doc, and never in a new file. See `docs/agents/docs.md`.
 ```
 
 ## After a migration

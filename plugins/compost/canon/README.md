@@ -10,14 +10,19 @@ only when relevant.
 - [Ubiquitous language](ubiquitous-language.md): one domain vocabulary in talk and code, scoped by bounded contexts, recorded in `CONTEXT.md` and `CONTEXT-MAP.md`.
 - [Deep modules](deep-modules.md): much behavior behind a small interface; hide decisions likely to change; design the interface twice.
 - [Seams](seams.md): places to change behavior without editing there, where tests get in and where you see them fail.
+- [Domain languages](domain-languages.md): when rules repeat in one shape and change often, write them as data in the domain's terms; an external grammar almost never.
 - [Expand, migrate, contract](expand-contract.md): change a depended-on interface in green steps, and always finish the contract step.
 
 ## Working principles
 
 - [Prove it works](prove-it-works.md): observe the real artifact working; proxies and self-reports are not checks.
+- [Read the running system](read-the-running-system.md): query the telemetry the code already emits before reasoning about what it did.
+- [Read the docs](read-the-docs.md): read current docs for the installed version before coding against what you did not write.
 - [Fix root causes](fix-root-causes.md): reproduce, trace to the cause, fix it there, and find its siblings.
+- [Make mistakes impossible](make-mistakes-impossible.md): turn a repeated mistake into a check at the highest level that works, and prove the check catches it.
 - [Boundary discipline](boundary-discipline.md): parse and validate at the edges, trust types inside, keep logic pure.
 - [Type-system discipline](type-system-discipline.md): make illegal states unrepresentable and let the checker enforce every case.
 - [Model the domain](model-the-domain.md): give domain rules a structure that fits instead of scattered conditionals.
 - [Subtract before you add](subtract-before-you-add.md): remove first, replace instead of deprecating, build for observed usage.
+- [Core docs](core-docs.md): say it in the code; keep docs to what code can't say, and trust the code when they disagree.
 - [Sequence verifiable units](sequence-verifiable-units.md): small units, each checked green before the next, delivered in an order that proves the work.

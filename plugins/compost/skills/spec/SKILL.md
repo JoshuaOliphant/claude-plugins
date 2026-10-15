@@ -74,11 +74,22 @@ a quick lookup can answer.
    - Stress-test relationships with invented scenarios that probe the boundaries between
      concepts; when the user's account of the system disagrees with the code, surface it.
    - Write each resolved term into `CONTEXT.md` right away, creating the file with the first term.
-     It is a glossary and nothing else.
+     It holds the glossary and the context's semantic invariants, nothing else.
+   - When the user states a rule as absolute ("never", "no matter what fails"), ask whether it is
+     a law of what the thing means or a policy that could change, and which side to err on when
+     it can't be decided. A law goes under Semantic invariants in `CONTEXT.md`; a policy stays in
+     the spec ([domain docs](references/domain-docs.md)).
    - Write an ADR in `docs/adr/` only when a decision is hard to reverse, surprising without
      context, and the result of a real trade-off. Missing any one of the three, skip it. Ask Jev
      first with `adr-worthy` and offer the ADR only on `offer_adr` ([jev](references/jev.md));
      exit 3, apply the three tests yourself.
+
+   When the answers turn out to be mostly rules (pricing, routing, permissions, schedules:
+   combinations of inputs and the outcome each gets), capture them as one table in the glossary's
+   terms, the Examples of a single scenario outline, rather than a run of near-identical criteria.
+   Note in the spec that the table is a candidate for a
+   [domain language](../../canon/domain-languages.md), so the build reads the rules as data
+   instead of hand-coding a branch per row.
 
    When prose cannot settle a decision (a state model that looks fine on paper, a layout nobody
    can picture), build a throwaway prototype, keep it on a `prototype/<slug>` branch as evidence,
@@ -96,9 +107,10 @@ a quick lookup can answer.
    - User stories: "As an <actor>, I want <feature>, so that <benefit>". The story says why.
    - Under each story, its acceptance criteria AC-N in Given/When/Then: the happy path first,
      then the cases the [edge-case checklist](references/edge-case-checklist.md) turns up, with
-     three or more cases of the same shape merged into one scenario outline. The scenarios say
-     what done means. Format and anti-patterns are in
-     [acceptance criteria](references/acceptance-criteria.md).
+     three or more cases of the same shape merged into one scenario outline. A failure mode a
+     semantic invariant already decides is an assumption citing it, not a question, and gets a
+     criterion for its failure side. The scenarios say what done means. Format and
+     anti-patterns are in [acceptance criteria](references/acceptance-criteria.md).
    - Describe behavior and decisions, never file paths or code: both go stale within days. The
      exception is a prototype snippet that pins a decision more precisely than prose can (a state
      machine, a schema, a type shape), trimmed to the decision and marked as from the prototype.
@@ -121,6 +133,13 @@ a quick lookup can answer.
    specific Given, and one behavior, and flags the ones to `rewrite` with their `weakest`
    dimension ([jev](references/jev.md)). Rewrite those. Exit 3: check every criterion against
    [acceptance criteria](references/acceptance-criteria.md) yourself.
+
+   Then run the builder check: a fresh subagent reads the spec as someone who must plan the build
+   without talking to you, and reports the questions where a wrong guess would matter, ranked.
+   Sort each one: already answered goes into the spec, minor gets settled and marked `(assumed)`
+   in the refined prompt, and the user's to decide joins the open questions. The prompt, the
+   sort, and the fallback without a subagent tool are in
+   [builder check](references/builder-check.md).
 
    Then list any open questions, each quoting the spec line it concerns, in the format in
    [questions](references/questions.md). Answers go back into the spec and the refined prompt. No

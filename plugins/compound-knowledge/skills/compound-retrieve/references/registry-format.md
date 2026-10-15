@@ -1,1 +1,0 @@
-../../compound-knowledge/references/registry-format.md

@@ -50,15 +50,15 @@ in full mode and swapping `vector.toml` — say so rather than implying lite is 
 
 ## Workflow
 
-Do these in order. Steps 1–2 and 4–5 are mechanical; **step 3 is the judgment call** and
+Do these in order. Steps 1–2 and 4–7 are mechanical; **step 3 is the judgment call** and
 the reason this skill exists.
 
 ### 1. Confirm mode and detect the project shape
 
 - Decide lite vs full (above). **Interactive sessions**: if unsure, ask the user in one
-  line. **Autonomous sessions** (an SDLC loop is active — `.sdlc/state.json` exists):
-  never ask; default to lite and log the choice
-  (`sdlc_state.py decide` if available).
+  line. **Unattended sessions** (`compost:implement`, or any run with no one to answer):
+  never ask; default to lite and record the choice where the run records its decisions: a comment
+  on the issue when there is one, otherwise the PR description or the final report.
 - Find the project root (`git rev-parse --show-toplevel`), the package manager (prefer
   `uv` if `pyproject.toml` exists), and the language. These templates target **Python**;
   for other languages, adapt the OTel SDK calls but keep the Vector/script layer verbatim
@@ -66,7 +66,7 @@ the reason this skill exists.
 - Pick a `SERVICE_NAME` (default: the repo/package name). This becomes the OTel
   `service.name` resource attribute and the log/metric stream label.
 - **Detection contract**: `bash .claude/harness/observability/status.sh --json` is how
-  any tool (including this skill on re-runs, and the autonomous-sdlc loop) checks for an
+  any tool (including this skill on re-runs) checks for an
   existing harness — it emits `{"installed", "running", "mode", "service", "services"}`.
   File absent → no harness.
 
@@ -111,11 +111,12 @@ structured proposal and wait for confirmation** before editing. Propose `service
 3–6 domain instruments, and the exact files/lines you'd touch. Apply only what the user
 confirms — patterns in this project may differ enough that a silent write would be wrong.
 
-**Autonomous sessions** (`.sdlc/state.json` exists): there is no one to confirm with.
+**Unattended sessions** (`compost:implement`, or any run with no one to answer): there is no
+one to confirm with.
 Apply the conservative core of the proposal — the 3–6 instruments with the clearest
-detection signals, never speculative ones — and log the full proposal (applied and
-skipped, with one-line rationale each) via `sdlc_state.py decide` so the human reviews
-it in the PR.
+detection signals, never speculative ones — and post the full proposal (applied and
+skipped, with one-line rationale each) in the same place, so the human reviews it before
+merging.
 
 The rendered `otel.py` ships with the no-op-when-absent pattern (zero cost when the OTel
 SDK isn't installed) and a stdlib-logging→OTLP bridge. Add the confirmed domain
@@ -172,6 +173,13 @@ Running the stack proves nothing until telemetry actually lands. Verify in two s
 Keep `probe.py` — it lives in the harness dir (committed, unlike the gitignored runtime
 artifacts) and `verify.sh` is re-runnable whenever the pipeline is in doubt. In full
 mode, also confirm VictoriaLogs/VictoriaMetrics ingested via `references/querying.md`.
+
+### 7. Hand off to the workflow
+
+A harness nobody queries returns nothing. When the repo uses compost (`docs/agents/` exists),
+run `compost:setup`'s observability step so `docs/agents/observability.md` records this harness;
+`compost:diagnose`, `compost:verify`, and `compost:build` read that file and query or extend the
+telemetry at fixed points. Without compost, render the rules file from step 2.
 
 ## Gotchas (learned the hard way)
 

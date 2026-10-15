@@ -125,7 +125,7 @@ Determine whether this is a **solution** or a **principle** (see Context table).
 | `title` — Clear problem description | Yes |
 | `date` — Auto-populated as YYYY-MM-DD | Yes |
 | `project` — Current working directory or explicit mention | Yes |
-| `problem_type` — Maps to category directory (see `yaml-schema.md`) | Yes |
+| `problem_type` — Maps to category directory (see `references/yaml-schema.md`) | Yes |
 | `component` — Technology involved | Yes |
 | `symptoms` — Error messages, observable behavior | Yes |
 | `solution_summary` — One-line fix description | Yes |
@@ -187,7 +187,7 @@ Proceed?
 ### Step 6: Create File
 
 1. Generate filename: `{sanitized-symptom}-{project}-{YYYYMMDD}.md` (lowercase, hyphens, max 80 chars)
-2. Read the appropriate template from references (`solution-template.md` or `principle-template.md`)
+2. Read the appropriate template: `references/solution-template.md` or `references/principle-template.md`
 3. Write the file with validated YAML frontmatter and structured content
 
 ### Step 7: Cross-Reference with Bidirectional Links

@@ -3,6 +3,10 @@
 Process information for real understanding — an antidote to the illusion of clarity (the confident
 feeling of understanding something whose grasp is actually full of gaps).
 
+The idea comes from Ness Labs, [The Illusion of Clarity](https://nesslabs.com/illusion-of-clarity).
+An AI ghost-writing your post is outsourcing, and reading it back is familiarity, so neither proves
+understanding; explaining it from memory does.
+
 ## Skill
 
 - **explain-back** — Names a topic and source, builds a complete answer key privately (source +
