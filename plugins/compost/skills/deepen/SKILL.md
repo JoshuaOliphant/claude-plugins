@@ -73,7 +73,8 @@ where seams go, and keeps heavy architecture out unless a dependency earns it. T
 
    Give this in the conversation. When the user is driving and the `mcp__compost__architecture_review`
    tool is available, also call it with the candidates and your recommendation: it draws them as
-   cards in a pane, and the user can pick one with its Explore button. If its answer says the pane is
+   cards in a pane, and the user can pick one with its Explore button, or send one to its own
+   background session with Explore in new session. If its answer says the pane is
    waiting, the conversation copy is what they read. Write an HTML report only when the user asks for
    one (it adds before/after diagrams); the format is in
    [references/html-report.md](references/html-report.md). When the user is driving, let them pick
