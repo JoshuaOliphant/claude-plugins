@@ -62,6 +62,15 @@ no test counts until you have seen it fail for the right reason.
       parameter before writing another.
    4. Add a fixture only when nothing fits, and put it beside the ones it resembles.
 
+   When the language runs examples in documentation as tests (Python's `doctest`, Rust's doc
+   tests, Elixir's `doctest`, Go's `Example` functions), use them for a criterion that is a pure
+   input-to-output example on a public function: write it as an example in that function's
+   docstring, ahead of option 3. The example then documents the contract and fails the suite
+   when the code drifts from it. If the suite does not collect them yet (pytest needs
+   `--doctest-modules`), wire that in once, in its own commit. An example that needs fixtures,
+   mocks, or more than a line or two of setup is a test in the wrong place; it belongs in the
+   suite, and so do edge-case tables.
+
    A test that duplicates a fixture, or re-covers behavior another test already covers, is a
    defect. Fix it the way you would fix a bug. When the change makes an existing test obsolete,
    fold what it still proves into a table and delete it. Give each case an id that names the
