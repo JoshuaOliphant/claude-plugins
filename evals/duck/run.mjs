@@ -155,7 +155,7 @@ const JUDGE_MODEL = 'claude-opus-5-5';
 
 const SOLVER_PROMPT = `Someone is stuck on a bug and has explained it to you. Find the most likely root cause. Use Read, Grep, and Glob to check the code their account refers to. Return your top hypothesis first with the evidence for it, then up to three alternatives in order, and for each the one thing they should run or look at to confirm it.`;
 
-const EXPLAINER_PROMPT = `You are stuck on a bug, and the account you are given is your own notes on it. Before doing anything else, explain the problem out loud, as if to a rubber duck on your desk: go through what you expected, what you actually observed, what you ruled out and how, and what you are assuming, one claim at a time, and for each claim say what you saw that supports it. Use Read, Grep, and Glob if explaining a claim makes you want to look at something. Then say what you will check next, most important first.`;
+const EXPLAINER_PROMPT = `You are stuck on a bug, and the account you are given is your own notes on it. Before anything else, restate the problem in your reply, the way you would explain it to a rubber duck on your desk: go through each claim in the notes (what you expected, what you observed, what you ruled out and how, what you are assuming), and next to each write the evidence the notes give for it, or "none" if there is none. Use Read, Grep, and Glob when restating a claim makes you want to look at something. Then say what you will check next, most important first.`;
 
 const AGENTS = {
   v1: { solver: { description: 'Finds root causes', prompt: SOLVER_PROMPT } },
