@@ -12,6 +12,7 @@ own vocabulary; the marketplace itself (catalog, versions, shared artifacts, CI)
 | mochi-creator | `plugins/mochi-creator/CONTEXT.md` | flashcards, decks, and prompt quality |
 | observability-harness | `plugins/observability-harness/CONTEXT.md` | local OTLP telemetry: traces, metrics, logs |
 | understand | `plugins/understand/CONTEXT.md` | explain-back sessions and graded recall |
+| superfan | `plugins/superfan/CONTEXT.md` | scheduled per-component watchers, findings, and verdicts |
 
 A glossary listed here but missing on disk has no settled terms yet; `compost:spec` creates it
 when the first one settles.

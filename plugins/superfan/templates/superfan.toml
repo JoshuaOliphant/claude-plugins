@@ -1,0 +1,34 @@
+# superfan settings for {component}. /superfan:setup fills this in with you.
+
+# Minutes between runs (launchd StartInterval). Re-run `superfan.py install` after changing.
+cadence_minutes = 60
+# A model alias or full id for the headless run.
+model = "sonnet"
+# Hard spend cap per run, passed to claude --max-budget-usd.
+max_budget_usd = 1.0
+timeout_seconds = 900
+
+# Exact names of READ-ONLY MCP tools the superfan may call. No wildcards, no bare server
+# prefixes: a Kubernetes server also has write tools. Everything else is denied.
+allowed_tools = []
+
+# Optional: an MCP config holding only the servers above (adds --strict-mcp-config).
+# mcp_config = "~/.superfans/{component}/mcp.json"
+
+# terminal-notifier (clickable, opens /superfan:triage) | osascript | stdout | command
+notify = "terminal-notifier"
+# With notify = "command": a shell command; SUPERFAN_TITLE, SUPERFAN_BODY, SUPERFAN_FINDING
+# and SUPERFAN_COMPONENT are in its environment.
+# notify_command = "curl -s -X POST -H 'Content-Type: application/json' ..."
+
+# Only run inside these local hours and days. Comment out active_hours to run all day.
+active_hours = "08:00-18:00"
+active_days = ["mon", "tue", "wed", "thu", "fri"]
+
+# A fingerprint marked noise stays quiet this many days; known stays quiet for good.
+suppress_noise_days = 7
+# Notify once after this many consecutive failed runs, so a blind superfan is not silent.
+failure_alert_after = 3
+
+# Other superfans whose last 24h of findings this one reads, e.g. ["kafka-broker"].
+neighbors = []
