@@ -43,6 +43,12 @@ Name domain concepts (in issue titles, test names, hypotheses, refactor proposal
 `CONTEXT.md` defines, never the synonyms it lists under _Avoid_. A concept missing from the
 glossary is either invented language to reconsider or a real gap for `compost:spec` to fill.
 
+## Keep the semantic invariants
+
+`CONTEXT.md` may list Semantic invariants: laws central to what the context means, each with the
+side to err on. Resolve a failure mode they cover on that side without asking. Work that would
+break one stops and says so; changing one is the user's call, never an implementation detail.
+
 ## Flag ADR conflicts
 
 When work would contradict an ADR, say so explicitly instead of overriding it quietly:

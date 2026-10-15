@@ -35,7 +35,8 @@ Create files lazily: `CONTEXT.md` with the first resolved term, `docs/adr/` with
 
 ## CONTEXT.md
 
-A glossary and nothing else: no implementation details, no decisions, no scratch notes.
+A glossary and the context's semantic invariants, nothing else: no implementation details, no
+decisions, no scratch notes.
 
 ```markdown
 # Ordering
@@ -51,6 +52,11 @@ _Avoid_: purchase, transaction
 **Cancellation**:
 Ending an order before any of it ships, with a full refund.
 _Avoid_: void, abort
+
+## Semantic invariants
+
+- **A customer is never charged twice for one order.** On doubt, don't charge: a missed charge is
+  recovered, a double charge is a breach of trust.
 ```
 
 - Be opinionated: when several words name one concept, pick one and list the rest under `_Avoid_`.
@@ -58,6 +64,25 @@ _Avoid_: void, abort
 - Only terms specific to this project. General programming concepts (timeout, retry, cache) stay
   out even if the code uses them everywhere.
 - Group terms under subheadings when clusters appear; a flat list is fine otherwise.
+
+### Semantic invariants
+
+A semantic invariant is a requirement central to what the context means: it holds whatever the
+business decides next quarter, and whatever fails at runtime. The Pragmatic Programmer calls it a
+philosophical contract. One law settles whole families of failure modes at once, so state it
+where every agent reads it.
+
+- **Law or policy?** Ask whether the thing would still mean the same if the rule changed. "A
+  transaction is never applied twice" is the meaning of a ledger; "refunds over $500 need
+  approval" is a policy that changes with management. A policy goes in code or a
+  [domain language](../../../canon/domain-languages.md) data file, never under this heading.
+- **State the law and the way to fail.** One line for the law in the glossary's terms, then
+  which side to err on when it can't be decided: don't process, keep the order, refuse access.
+- **Few.** Most contexts have none or one or two. A list that grows past a handful is collecting
+  policies.
+- The code enforces each one: in a type where it can, else asserted in the module that owns it
+  ([boundary discipline](../../../canon/boundary-discipline.md)), and a test proves the failure
+  side.
 
 ## ADRs
 

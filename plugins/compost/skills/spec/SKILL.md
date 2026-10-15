@@ -74,7 +74,11 @@ a quick lookup can answer.
    - Stress-test relationships with invented scenarios that probe the boundaries between
      concepts; when the user's account of the system disagrees with the code, surface it.
    - Write each resolved term into `CONTEXT.md` right away, creating the file with the first term.
-     It is a glossary and nothing else.
+     It holds the glossary and the context's semantic invariants, nothing else.
+   - When the user states a rule as absolute ("never", "no matter what fails"), ask whether it is
+     a law of what the thing means or a policy that could change, and which side to err on when
+     it can't be decided. A law goes under Semantic invariants in `CONTEXT.md`; a policy stays in
+     the spec ([domain docs](references/domain-docs.md)).
    - Write an ADR in `docs/adr/` only when a decision is hard to reverse, surprising without
      context, and the result of a real trade-off. Missing any one of the three, skip it. Ask Jev
      first with `adr-worthy` and offer the ADR only on `offer_adr` ([jev](references/jev.md));
@@ -103,9 +107,10 @@ a quick lookup can answer.
    - User stories: "As an <actor>, I want <feature>, so that <benefit>". The story says why.
    - Under each story, its acceptance criteria AC-N in Given/When/Then: the happy path first,
      then the cases the [edge-case checklist](references/edge-case-checklist.md) turns up, with
-     three or more cases of the same shape merged into one scenario outline. The scenarios say
-     what done means. Format and anti-patterns are in
-     [acceptance criteria](references/acceptance-criteria.md).
+     three or more cases of the same shape merged into one scenario outline. A failure mode a
+     semantic invariant already decides is an assumption citing it, not a question, and gets a
+     criterion for its failure side. The scenarios say what done means. Format and
+     anti-patterns are in [acceptance criteria](references/acceptance-criteria.md).
    - Describe behavior and decisions, never file paths or code: both go stale within days. The
      exception is a prototype snippet that pins a decision more precisely than prose can (a state
      machine, a schema, a type shape), trimmed to the decision and marked as from the prototype.

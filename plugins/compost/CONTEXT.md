@@ -15,6 +15,12 @@ is worth keeping into the code. The Standards reviewer reports drift a diff intr
 `doc_refs`.
 _Avoid_: drift (alone), stale docs, doc rot.
 
+**Semantic invariant**: a law central to what a context means, which holds whatever policy or
+failure comes along, stated with the side to err on ("never charge twice; on doubt, don't
+charge"). Listed under Semantic invariants in the context's `CONTEXT.md`, set by `compost:spec`,
+checked by the reviewer.
+_Avoid_: business rule, policy (those change; an invariant doesn't), constraint.
+
 **Core docs**: the few docs that hold what code can't say: `README.md`, `AGENTS.md`, `CONTEXT.md`,
 `docs/adr/`, plus what a repo lists in `docs/agents/docs.md`. Checked by `compost:prune`, fixed in
 place, never deleted.
