@@ -19,11 +19,11 @@ The idea comes from Eric Evans, *Domain-Driven Design*, along with the two that 
 ## How the repo records it
 
 The files follow Matt Pocock's convention. `CONTEXT.md` at the root is the glossary for a single
-context: each term defined in a sentence or two, with the words to avoid listed under it. It is a
-glossary and nothing else, with no implementation notes, plans, or decisions. When a repo has
-several contexts, `CONTEXT-MAP.md` at the root lists them, links each context's own `CONTEXT.md`,
-and states the relationships between them. Both files are created lazily, when the first term is
-settled or the second context appears.
+context: each term defined in a sentence or two, with the words to avoid listed under it, plus the
+context's semantic invariants, the few laws central to what it means. It holds nothing else: no
+implementation notes, plans, or decisions. When a repo has several contexts, `CONTEXT-MAP.md` at
+the root lists them, links each context's own `CONTEXT.md`, and states the relationships between
+them. Both files are created lazily, when the first term is settled or the second context appears.
 
 ## Why it matters for an agent
 
