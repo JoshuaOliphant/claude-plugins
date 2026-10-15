@@ -1,0 +1,11 @@
+1. You wrote "an interrupted save … dropped part of the document, including the `review` block." What did you see in the file that shows damage? `load()` exits with a CORRUPT message on invalid JSON, and your one-liner parsed the file and only failed on the key. Run `python3 -c "import json;print(list(json.load(open('.sdlc/state.json'))))"` on the old state.json. Then compare the keys with a healthy file's keys. If only `review` is missing, that looks different from a truncated write. A truncated write would normally leave the file unparseable.
+
+2. You said `RESUME state=BUILD iteration=7`. Look at `cmd_init` (lines 121–125 of `sdlc_state.py`). When `state.json` exists, it prints RESUME and returns. It never reaches the line that builds `review` (line 139). What does `.sdlc/state.json` contain that says when and by which version it was created? The `started` field and the first `history` entry would show this. If the file predates 2.1.x, does your account of "damage during the update" still hold?
+
+3. You said the update window is "the only thing that changed for this feature." Did you check what else wrote to this file during the week? The `history` entries and the `updated` timestamp are in the file. Does any `save()` call after the update appear there? Also, does the state.json from the working feature have the same keys apart from `review`? The answer shows whether this file ever had the block.
+
+4. You wrote that the loop "read the gate config from `.sdlc/state.json`" at REVIEW. Where did you read that? Look at what the 2.1.x `sdlc-loop` skill and the dispatch table actually do at REVIEW when `review` is absent. Then try `grep -n review` over `plugins/autonomous-sdlc/skills`. Your expectation depends on that behavior, and you haven't said you've read it.
+
+5. Before you delete or hand-edit the file, did you back it up? Re-running `init` on a missing file would discard `iteration`, `attempts`, `history` and `current_task` from last week's work. Your plan assumes the review block is the only thing missing, and you haven't checked that.
+
+The assumption that matters most: this file once contained a `review` block and lost it. If the file was created before 2.1.x, nothing was lost, and the block was never written.

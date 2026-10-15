@@ -1,0 +1,11 @@
+1. **"`judge()` sends every labeled case through `run()`, so the real API sees all 412."** Reaching `run()` doesn't mean reaching the API. `jev_lint.py:184` builds a `Cache()`. `jevtools/core.py:77-79` returns a stored answer from `Jev.ask` without calling `client.system_one`. The cache file is `~/.cache/compost/jev-cache.json`. Can you find out how many of the 412 calls actually hit the network? `Jev.cached` and `Jev.input_tokens` count this, but `run()` discards them. The check ruled out a mock client, but it never tested whether the client was called.
+
+2. **"I checked that no wrapper or test double is injected."** That covers the client. It doesn't cover the layer above it. What do you see if you look at the cache file's existence, size, and mtime before and after a run? What happens if you run with the cache path moved aside? This shows whether the 0.3s and the identical scores come from stored answers.
+
+3. **"The identical scores then mean the model update has not rolled out to this API key."** What did you observe that ties the scores to the server's model, as opposed to the request you sent? Look at `cache_key` (`core.py:39-42`) and `MODEL` (`core.py:13`). What goes into the key, and what would be different in it after the model update? This matters because your explanation and your speed puzzle may have one source, and you've assigned them two.
+
+4. **"The speed puzzle I'll put down to a fast endpoint."** The first run took minutes, and this one took 0.3s for 412 judgments at concurrency 8. What per-request latency would 0.3s imply? Do you have any request-level evidence, such as a network log, usage numbers, or a server-side count? If not, that explanation is a guess.
+
+5. **"All 412 cases returned judgments."** Does a returned judgment show it came from this run's model call? Where in `judge()` or `run_eval.py` could you print the source of each judgment (cache or API)?
+
+**Assumption that matters most:** that "returned a judgment" means "the model was called just now." If that is false, the plan to ask the key owner about pinning is aimed at the wrong place.

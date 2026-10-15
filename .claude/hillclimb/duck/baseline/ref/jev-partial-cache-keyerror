@@ -1,0 +1,11 @@
+1. You say the new check in `Jev.ask` "must have a hole." In `core.py`, line 77 returns `hit` at line 79, before the check at line 87 runs. Is the check on every route to the caller? Log which return `ask` takes for one crashing file, and say whether `self.cached` increments. That tells you whether the partial dict ever reaches your check.
+
+2. Your theory is that "the API still drops the `other` answer … intermittently." The failure is the same files and every run, and a fresh machine is fine. What did you observe that shows the answer varies from call to call? Run the same crashing file twice and compare the raw `response.answers` keys. Without that, "intermittent" is an inference.
+
+3. You say you'll log "the raw `answers` dict inside `ask`." What shows that code is reached for those files? Put the log on the first line of `ask` and confirm it prints for a crashing file. If it doesn't print, the dict you're looking for is coming from somewhere else.
+
+4. "A fresh install on another machine" is your only comparison. List what exists on the failing machine but not on the fresh one. Check anything under `Path.home()` or the environment that `core.py` reads, including `CACHE` and its contents. Then compare the two machines' state beyond `uv.lock`. You ruled out dependency drift but not state drift.
+
+5. "I assume the tool code asks for the same questions on both machines." Did you diff the `questions` dict, or the `cache_key` output, for one crashing file between the two machines? Also check whether the failing machine ran an earlier release with the same `MODEL`, `tool`, `state` and questions. Whether old results can match the new key depends on that.
+
+Assumption that would change the most: that every `answers` dict reaching the tool code was freshly produced by this release's `ask`.

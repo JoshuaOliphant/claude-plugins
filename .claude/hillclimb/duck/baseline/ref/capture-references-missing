@@ -1,0 +1,11 @@
+1. **"The source repo is fine."** I globbed `plugins/compound-knowledge/skills/compound-capture/` in this repo. It contains only `SKILL.md`. There is no `references/` file in it: no `solution-template.md`, `yaml-schema.md`, `principle-template.md` or `registry-format.md`. Across all compound-knowledge skills, the only reference file in the source is `compound-graduate/references/promote-workflow.md`. Which path did you run `ls` on? Run `ls -la` on the source `skills/compound-capture/` and on the installed copy. What type is the `references` entry (symlink, empty directory, file), and where does it point? That decides whether the cache is the place to look at all.
+
+2. **"compound-graduate's `references/promote-workflow.md` resolves in the same tree."** That file does exist in the source. Did you see it resolve in the installed tree, or only assume it from the source? Read it by absolute path from the install directory the harness is using. Otherwise this check can't tell a stale install from a source that never had the files.
+
+3. **"CLAUDE_PLUGIN_ROOT points at an older install … predates these reference files."** What did you see that shows these files ever existed? Check the history, a prior install, or another machine's copy. If they never existed, a newer install can't contain them.
+
+4. **"Version drift … `check_marketplace_versions.py` exits 0."** That script compares version strings in `marketplace.json` and `plugin.json`. It doesn't check that files referenced by a SKILL.md exist. Which of your checks, if any, looked at the contents of `skills/compound-capture/`?
+
+5. **"Reinstall … identical error."** Is the same error message from the reinstall coming from the same path as before? Compare the full absolute path in the error with the path you found in step 1. That tells you whether the reinstall changed anything.
+
+**Biggest assumption:** that the reference files exist somewhere in a correct form and the install is what's missing them. The source tree I can see doesn't have them.

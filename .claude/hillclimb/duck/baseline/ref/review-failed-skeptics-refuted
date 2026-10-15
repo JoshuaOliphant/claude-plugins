@@ -1,0 +1,11 @@
+1. "I'm assuming the skeptics ran and judged the finding." Your own evidence points the other way. The run log showed rate-limit errors from the skeptic agents, and `refutedBecause` was `[]`. Open the log and list the `Standards skeptic N.1` labels. Which ones returned a verdict, and which errored? Then read `review-changes.js` lines 189-194 and work out what `survived` and `reasons` come out as when a skeptic returns nothing. If the blocker's skeptic never returned a verdict, the "biased prompt" theory has nothing to explain.
+
+2. Your quoted status line is `reviewed: 4 findings raised, 0 survived, 3 refuted; worst none`. Line 222 of `workflows/review-changes.js` builds `reviewed: N findings raised, M minor left unverified`. Where did the line you saw come from? Is the installed or cached copy of the plugin the same file you're reading? If it isn't, your reading of `skepticPrompt` may not describe what actually ran.
+
+3. The Standards reviewer raised 4 findings and 3 were refuted. What do the other refuted findings carry in `refutedBecause`? Are those lists also empty, or do they hold real reasons? That shows whether the empty list is specific to the blocker or applies to every refuted finding in the run.
+
+4. "The same blocker survived with a normal upheld reason" on the re-run. Did the re-run use the same prompt text, and was the log free of rate-limit errors? If both were true, the difference between the runs is in the verdicts. If the errors were gone, the difference is in whether the skeptics ran at all. Which one do you have evidence for?
+
+5. "Only then should it hand off to `compost:finish`." The handoff happened on a result where 0 findings survived and some refutations had no reasons. Where does the workflow or the `compost:review` skill decide to hand off? Does it look at anything other than `worst`?
+
+Assumption that matters most: that the skeptic agents returned verdicts for the blocker at all. The empty `refutedBecause` and the rate-limit errors are your only direct evidence on that, and they don't fit it.

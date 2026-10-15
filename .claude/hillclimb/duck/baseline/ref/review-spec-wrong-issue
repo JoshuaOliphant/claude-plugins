@@ -1,0 +1,11 @@
+1. **"`gh issue view 66 --comments` in the scoping step returned #58's content."** You haven't seen that command run. In `workflows/review-changes.js` (lines 120–125) the scope step is an `agent(...)` call, and the model decides what to run and what to write into `spec.source` and `spec.text`. Can you get the scope agent's transcript or tool calls from the bad run? You need to know which `gh` command it ran, with what argument, and what came back. Without that, you don't know whether `gh` ever returned #58.
+
+2. **"Fresh session is correct, same conversation is wrong."** You've said this is the only thing that differs, but you haven't said what the scope agent can see. Does it receive any of your conversation context, or only the prompt string? If it gets only the prompt, what else differs between the two runs? Examples are the `input` object actually passed, and whether `input.issue` arrived as `66` in both. The answer decides whether #58 could have come from the conversation or from somewhere else.
+
+3. **"Spec reviewer faithfully graded whatever spec text it was handed."** Did you compare `scope.spec.text` with the text of #66 and with the text of #58? The `specSource: #58` field comes from `scope.spec.source` (line 306). Is that field copied from the fetched issue, or typed by the model? If the text and the source disagree with each other, that points to a different step than if both say #58.
+
+4. **"`docs/agents/issue-tracker.md`."** Line 125 tells the agent to fetch the issue "the way docs/agents/issue-tracker.md says". Did you read that file as it stands now? Does it say anything that could redirect the fetch, such as a default issue, a search step, or a different tracker command? That file is context you didn't list, and it shapes the fetch.
+
+5. **"Next I'll run `env | grep GH_`, `gh repo view`, and `gh issue view 66` by hand."** Those commands run in your shell, not in the scope agent's shell. If they return #66 correctly, which part of your account would that rule out, and which part would it leave open? The bad run's shell state is the thing you'd need to see.
+
+**Assumption that matters most:** that the wrong text reached the spec through `gh` returning the wrong data, rather than through the scope agent's own choice of what to write into `spec`.

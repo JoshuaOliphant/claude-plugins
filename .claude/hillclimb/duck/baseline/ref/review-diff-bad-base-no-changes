@@ -1,0 +1,11 @@
+1. **"`python scripts/serve.py --base orign/main`" vs. "`git log --oneline origin/main..HEAD`".** Compare these two ref strings character by character. Then run `git diff --no-prefix orign/main...HEAD; echo $?` yourself and read stderr and the exit code. Your "Assuming" line says `collect_diff` "ran correctly", but `_run_git` (collect.py:13-14) captures output and never checks `returncode`. Only stdout is used (line 91), so a failed git command and an empty diff look identical to you. What did git actually say?
+
+2. **"the empty result is legitimate."** Before the merge-base theory, what do you see for `git merge-base origin/main HEAD` and `git rev-parse HEAD`? And does `git diff origin/main...HEAD --stat` come back empty when you run it by hand? You have six commits listed by `git log origin/main..HEAD`. If the merge-base were HEAD, that log would be empty too. Does your assumption fit the observation you already have?
+
+3. **"Separately, in a repo with no commits yet… got no files and no error."** Run `git diff --no-prefix HEAD` in that repo and look at its stderr and exit code. Also run `git ls-files --others --exclude-standard`. Which of those commands produced the files you expected to see, and which produced nothing? Staged files are neither untracked nor, in a repo with no HEAD, diffable against `HEAD`. So the answer tells you which path the files would have to arrive by.
+
+4. **"I think the new-repo case is the same family of empty comparison."** What did you observe that connects the two cases, apart from both printing empty output? Check whether the two runs share any code path that reports failure, as opposed to just both ending in `NO_CHANGES`.
+
+5. **"The agent then told the user the branch had nothing to review."** At serve.py:154-158, is there any path where a git failure is distinguished from "no diff"? Which output did the agent see, and could it have told the two apart?
+
+The assumption that would change the most is that an empty diff on stdout means git succeeded and found nothing.

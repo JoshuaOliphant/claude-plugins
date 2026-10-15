@@ -1,0 +1,11 @@
+1. **"my local session may be more lenient than the marketplace loader"**: In the checkout I'm looking at (`plugins/compost/skills/`), there is no `build/` directory at all. Glob finds 12 `SKILL.md` files and none for build. Where does your working `compost:build` come from? Run `ls plugins/compost/skills/` and `find . -path '*build*' -name SKILL.md` in the checkout where it loads. This matters because a frontmatter theory assumes the file exists in what the installer fetched.
+
+2. **"In my own local checkout everything works: `compost:build` loads"**: Is your local checkout the same tree I'm reading? Is the install source the marketplace repo or a different clone? Show the `skills/` listing from both the checkout and the installed plugin cache directory. A skill can load locally from somewhere other than the plugin tree, such as a user-level or project-level skills directory. The comparison tells you which tree the 13th skill lives in.
+
+3. **"the full test suite passes"**: What does the suite assert about the skill count or about build's existence? Does it read the directory, or does it use a hardcoded list? If it can't fail when build is missing, passing says nothing about it.
+
+4. **Frontmatter theory as "next step"**: What have you seen of build's `SKILL.md` as installed? Open the installed file and say whether it exists. You've compared frontmatter fields with verify's, but you haven't said you've opened the installed build file.
+
+5. **"Version is 0.1.0 in both"**: The version matches, but does that show the contents match? Was the file added without a version bump? Compare the file listing, not the version string. Check that `.gitignore` line 12 (`build/`) is also not in play. I found it in the root `.gitignore`, so check whether it applies to a path like `skills/build/`.
+
+Assumption that would change the most: that a `build/` skill directory exists in the tree the installer copies from.

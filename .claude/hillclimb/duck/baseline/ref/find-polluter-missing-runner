@@ -1,0 +1,11 @@
+1. **"All 40 steps finish in well under a second."** You expected it to take a while, and you saw the opposite. Line 27 sends stdout and stderr to `/dev/null`, so you never saw a test run. Run `uv run pytes tests/test_a.py; echo $?` by hand. What exit code and output do you get? That shows whether any test ran at all.
+
+2. **`'uv run pytes'` in your command.** The invocation you pasted says `pytes`, not `pytest`. Is that a typo in the report, or what you actually typed? Check your shell history for the exact command. If it's the real command, the "ruled out" checks never touched the question of whether a test executed.
+
+3. **"I assume the loop does exercise each file."** Your evidence is that `total=$#` was 40 and the loop printed 40 lines. Those lines show the loop iterated, not that the test command succeeded. What did you observe that shows a single pytest process started and collected tests for even one file?
+
+4. **"Running each file in isolation can therefore never reproduce it."** You haven't tested this. Run `uv run pytest tests/test_a.py` directly for a few files, then run `ls stray-output.db`. Does the file ever appear? The interaction theory is only worth acting on after the per-file runs are known to work.
+
+5. **Working directory and path.** The script checks `-e "$pollution"` relative to its current directory. The full suite creates the file in the "repo root". Which directory did you run the script from, and is that the same directory where the file appears after a full run?
+
+The assumption that would change the most is that the test command in the loop actually runs pytest and succeeds.

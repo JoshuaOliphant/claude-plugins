@@ -1,0 +1,11 @@
+1. **"bash: /Users/josh/Library/Application: No such file or directory"** is the only observed error, and it stops at the first space. `hooks.json` line 9 and line 20 use `bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/...` with no quotes. What is the full, literal path of `CLAUDE_PLUGIN_ROOT` in the Desktop session? Print it from inside a hook or read it from the transcript. The answer decides whether this message came from the launch environment or from the command string.
+
+2. **"the terminal and Desktop sessions load the same plugin files."** What did you see that shows this? Compare where each session resolved the plugin: the install path, or a cache or copy path. A matching version string (2.3.1) doesn't show that the paths match.
+
+3. **"Script itself broken" was ruled out by running `bash hooks/scripts/loop-stop-hook.sh` by hand** from a relative path in the repo. That test never used the harness's expanded command string. What did you run to reproduce the exact command the harness executes, with the Desktop path substituted in? As it stands, the check couldn't have failed in the way the transcript shows.
+
+4. **"Nothing fires… auto-approve never fires."** You've seen errors in the transcript. Did you see an error for every hook event, or only some? Does the error text appear for both the Stop and PermissionRequest hooks? If both show the identical path fragment, that's one failure seen twice. If only one does, the account doesn't say what happened to the other.
+
+5. **"run them without the normal bash PATH."** The error is "No such file or directory" on a path, not "command not found" for `bash`. What observation distinguishes these two? Did `bash` itself resolve in the failing session?
+
+**Assumption that would change the most:** that the failing string is a harness launch failure rather than the literal command the harness built from your `hooks.json`.

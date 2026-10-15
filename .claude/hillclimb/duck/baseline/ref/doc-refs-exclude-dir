@@ -1,0 +1,11 @@
+1. Your command runs `scripts/doc_refs.py` from the repo root, but Glob finds `doc_refs.py` only at `plugins/compost/scripts/doc_refs.py`. Run `ls scripts/doc_refs.py` and `which`/`pwd` for the invocation that produced the output. If the file isn't there, the script that produced that output isn't the one you're reading.
+
+2. "The pattern string is mangled before `doc_refs.py` sees it." Your own evidence points the other way: `--exclude plugins/` gave the same list, and `'*.md'` did take effect. Before testing quoting, print `args.exclude` and call `PurePosixPath("plugins/compost/skills/build/references/fitting-a-test-in.md").match("plugins/*")` in a Python REPL. What does it return? Line 81 passes each tracked path and your pattern to exactly that call.
+
+3. "The core docs ... are matched by `CORE`, so I expect them to survive." Line 11 of the script says CORE patterns are "matched from the right." Do you know that from the docs or from the `.match` source you read? Check the same `.match` call with `"README.md"` on `plugins/compost/README.md`, and with `"plugins/*"` on it. Compare the two results and see whether what `CORE` does matches what you expect `--exclude` to do.
+
+4. "`--exclude '*.md'` ... also removes `plugins/compost/README.md`." That tells you how `*.md` behaves. Does it tell you how a pattern with a directory component behaves? Try `--exclude 'plugins/*/*'` and `--exclude 'plugins/compost/skills/*/references/*.md'`, and see which depths drop out of the output.
+
+5. You want to drop `plugins/` and keep `plugins/compost/README.md`. Does an exclude pattern that removes a doc also remove its `"core": true` entry? Check what `--exclude` and `core` each do to the same path in `scan`.
+
+The assumption that would change the most is that `--exclude` patterns are anchored at the repo root, like a shell glob, when the script matches them with `PurePosixPath.match`.
