@@ -37,7 +37,13 @@ so a skill already fixed stops producing patterns from its old text.
    skill, kind (`deviated`, `missing_guidance`, `corrected`), owner, skill file, session count,
    `earlier_versions` (hits on the skill's text before its last change), and the hits with their
    `evidence`, `prompt`, and `transcript` path. With no patterns, report the `retired` and
-   `unreadable` counts and stop.
+   `unreadable` counts, then check that the mod could have run, because a quiet log and a dead
+   mod look the same: `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS` is `1` in the environment or in the
+   `env` block of `~/.claude/settings.json`, compost's installed version ships
+   `hooks/skill-drift.ts`, and a TypeSafe key exists in `TYPESAFE_API_KEY` or, failing that, in
+   the `typesafe` keychain entry (`security find-generic-password -s typesafe` exits 0). Name
+   the check that failed, or say all three passed, and stop. A scheduled run cannot prove the
+   module loaded; when every check passes, call it a quiet stretch.
 2. **Read each pattern against the skill.** Open the skill file and read every hit's evidence
    next to the step it concerns. When the excerpt is too thin, search the hit's transcript for its
    prompt and read that turn. A pattern whose hits describe different things is not a pattern:
