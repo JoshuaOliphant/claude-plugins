@@ -57,6 +57,8 @@ uv run --group dev python ai_docs/experiments/skill-mutation/analyze.py <dir> [-
 
 The run had 3 cases × 54 variants × 5 trials = 810 runs, with 0 infra errors. Subject cost was $4.33; judge cost was not recorded.
 
+Reproduce it from commit 332e3bf (the evals and KB it ran against were rewritten for #116): `mutate_skill.py --skill plugins/compound-knowledge/skills/compound-retrieve/SKILL.md --evals plugins/compound-knowledge/skills/compound-retrieve/evals/evals.json --kb knowledge/solutions --agents-dir plugins/compound-knowledge/agents --out <dir> --trials 5 --workers 12`, with that commit's `mutate_skill.py`.
+
 Outputs in `results/`:
 - `analysis.txt` and `analysis-excluding-escaped.txt`: the analysis, with and without runs that read outside the sandbox.
 - `results.jsonl.gz`: per-run transcripts.
@@ -143,4 +145,4 @@ The evals now ship their own fixtures (`evals/fixtures/`): a KB holding every en
 
 - **Case 5 is masked by the leak.** Without the skill, haiku still reports the missing directory (0.8) and suggests setup (0.6). In 3 of those 5 runs it left the sandbox, found the installed compound-knowledge plugin (`/root/.claude/plugins/synced/...`, or this checkout under `/home/user`) and ran its resolver, whose stderr names `/compound-knowledge:setup`. In a container it should separate.
 - **Case 1 doesn't separate either.** `critical-patterns.md` sits beside the solutions, so a plain glob of the KB reads it.
-- **66 of 100 runs escaped**, all four arms alike. In this cloud container most are harmless: `~` guessed as `/home/user` (the path doesn't exist) and reads of the session's own memory dir under `/tmp/claude/memory`. The rest reach this repo or its installed plugin, which only helps the no-skill arm. None can supply the registry, which exists only in the sandbox HOME, so the kills above stand; the `--exclude-escaped` view keeps too few no-skill rows to say anything.
+- **66 of 100 runs escaped**, all four arms alike. In this cloud container most are harmless: `~` guessed as `/home/user` (the path doesn't exist) and reads of the session's own memory dir under `/tmp/claude/memory`. The rest reach this repo or its installed plugin, which only helps the no-skill arm. The checkout does hold a copy of the registry fixture under `evals/fixtures/home`, but no run read it: the one no-skill run that grepped the checkout searched its `knowledge/` dir. So the kills above stand; the `--exclude-escaped` view keeps too few no-skill rows to say anything. A future run can pass c2e2 and c4e4 through that leak, so check traces for `evals/fixtures` before trusting a no-skill pass there.

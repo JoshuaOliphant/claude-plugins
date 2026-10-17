@@ -107,6 +107,16 @@ def load_agents(directory: Path) -> dict:
     return agents
 
 
+def tree_sha(root: Path | None) -> str:
+    """One hash over every file's path and bytes, so editing a fixture or a script invalidates a resume."""
+    if not root:
+        return ""
+    digest = hashlib.sha1()
+    for path in sorted(p for p in root.rglob("*") if p.is_file()):
+        digest.update(path.relative_to(root).as_posix().encode() + b"\0" + path.read_bytes())
+    return digest.hexdigest()
+
+
 class Infra(Exception):
     """A run that produced nothing scorable: goes to errors.jsonl, never scored as a model failure."""
 
@@ -397,9 +407,9 @@ def main() -> None:
         "model": args.model,
         "judge_model": args.judge_model,
         "agents": sorted(agents),
-        "home_seed": str(args.home_seed or ""),
-        "kb": str(args.kb),
-        "plugin_root": str(args.plugin_root or ""),
+        "home_seed": tree_sha(args.home_seed),
+        "kb": tree_sha(args.kb),
+        "plugin_scripts": tree_sha(scripts),
     }
     manifest_path = args.out / "manifest.json"
     if manifest_path.exists() and json.loads(manifest_path.read_text()) != manifest:
