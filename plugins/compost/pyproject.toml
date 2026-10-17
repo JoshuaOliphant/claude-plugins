@@ -10,22 +10,24 @@ package = false
 
 [dependency-groups]
 dev = [
+    "cosmic-ray>=8.7.0",
     "pytest>=8",
     "pytest-asyncio>=0.23",
     "pytest-cov>=5",
+    "pytest-xdist>=3.8.0",
     "pyyaml>=6",
     "ruff>=0.6",
     "typesafe-sdk>=0.7.1",
 ]
-mutation = [
-    "cosmic-ray>=8.7.0",
-    "pytest-xdist>=3.8.0",
-]
 
 [tool.pytest.ini_options]
-addopts = "-m \"not jev\" --cov=pile --cov=jev --cov=jevtools --cov=stop_guard --cov=skill_drift --cov=doc_refs --cov=jev_lint --cov=extract --cov=rules --cov=run_eval --cov=collect --cov=serve --cov-report=term-missing"
+addopts = "-m \"not jev\" --cov=pile --cov=jev --cov=jevtools --cov=stop_guard --cov=skill_drift --cov=doc_refs --cov=jev_lint --cov=extract --cov=rules --cov=run_eval --cov=collect --cov=serve --cov=thin --cov-report=term-missing"
 markers = ["jev: live evals against the TypeSafe API (uv run --group dev pytest -m jev)"]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+# thin.py runs each mutant in a forked child that ends with os._exit; this saves the child's coverage first.
+patch = ["_exit"]
 
 [tool.coverage.report]
 fail_under = 100

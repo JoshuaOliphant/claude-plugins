@@ -51,10 +51,9 @@ killed, 2 survived, 60s).
 behavior, equivalent, or excluded. The exclusions above apply to mutants too.
 
 Run: the cosmic-ray steps in compost's mutation reference
-(`plugins/compost/skills/verify/references/mutation.md`), from `plugins/compost`, through
-`uv run --group mutation`, with config `plugins/compost/cosmic-ray.toml`. Covers compost's
-`scripts/` only; the other plugins, and compost's TypeScript hooks and workflows, get only
-`compost:build`'s walk by hand.
+(`plugins/compost/skills/verify/references/mutation.md`), from `plugins/compost`, with config
+`plugins/compost/cosmic-ray.toml`. Covers compost's `scripts/` only; the other plugins, and
+compost's TypeScript hooks and workflows, get only `compost:build`'s walk by hand.
 
 Sorted: both survivors on 861127d are `session()`'s `concurrency=8` default in
 `scripts/jevtools/core.py`, mutated to 7 and 9: equivalent, since they change throughput only and

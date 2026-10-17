@@ -138,7 +138,12 @@ no test counts until you have seen it fail for the right reason.
 11. **Commit with the issue number.** Before committing, ask Jev whether a new or changed test
     re-covers an existing one: run `duplicate-test` with the base the branch started from
     ([jev](references/jev.md)), and fold every `fold into <test>` into that test as step 4 says.
-    Exit 3: compare each new test against its neighbours in the file yourself. Run the full
+    Exit 3: compare each new test against its neighbours in the file yourself. When
+    `docs/agents/testing.md` records cosmic-ray, also make each new test earn its place by
+    mutation: collect per-test coverage and run `thin.py matrix --tests <new node ids>`, then
+    `thin.py verdict`, as `compost:thin` does. A new test the verdict calls redundant or
+    kills-nothing gets step 5 of that skill, a break by hand, and folds into its subsumer when
+    the break confirms it. Run the full
     suite. A failing test outside the change gets run on the base SHA first. Red there, it is
     pre-existing: handle it as a red baseline in step 2. Green there, your change broke it: hand
     it to `compost:diagnose`. Commit with a
