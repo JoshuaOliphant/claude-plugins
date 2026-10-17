@@ -14,7 +14,7 @@ Detailed procedure for the `compound-graduate` promote face.
 4. **Solution files** with frontmatter `severity: critical` or `severity: high`.
 5. Recurring patterns: the same lesson appearing across 3+ solution files is itself a signal.
 
-Skip: theses with `confidence: hypothesis` or `confidence: questioning`, low-severity one-offs,
+Skip: anything under `_archive/` (garden retired it), theses with `confidence: hypothesis` or `confidence: questioning`, low-severity one-offs,
 anything project-specific that would not generalize to the target context file. Treat any
 out-of-enum confidence value (e.g. `synthesized`) conservatively — surface it but do not
 auto-prioritize it as `solid`.

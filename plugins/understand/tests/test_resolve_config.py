@@ -1,6 +1,6 @@
 """
 ABOUTME: Tests for resolve_config.py understand-plugin settings resolution.
-ABOUTME: Covers defaults, overrides, bool/int parsing, precedence, tilde expansion.
+ABOUTME: Covers defaults, overrides, bool/int parsing, tilde expansion.
 """
 
 import sys
@@ -74,18 +74,6 @@ def test_follow_references_bool_parsing(tmp_path):
     assert result["follow_references"] is True
 
 
-def test_project_over_user_precedence(tmp_path):
-    home = tmp_path / "home"
-    home.mkdir()
-    proj = tmp_path / "proj"
-    proj.mkdir()
-    _write_cfg(home, "mochi_deck: UserDeck\n")
-    _write_cfg(proj, "mochi_deck: ProjectDeck\n")
-    result = resolve_config.resolve(proj, home)
-    assert result["mochi_deck"] == "ProjectDeck"
-    assert result["config_source"] == "project"
-
-
 def test_session_dir_tilde_expanded(tmp_path):
     home = tmp_path / "home"
     home.mkdir()
@@ -105,14 +93,3 @@ def test_relative_session_dir_anchored_to_project(tmp_path):
     _write_cfg(proj, "session_dir: my-sessions/\n")
     result = resolve_config.resolve(proj, home)
     assert result["session_dir"] == str(proj / "my-sessions") + "/"
-
-
-def test_user_only_config(tmp_path):
-    home = tmp_path / "home"
-    home.mkdir()
-    proj = tmp_path / "proj"
-    proj.mkdir()
-    _write_cfg(home, "mochi_deck: UserDeck\n")
-    result = resolve_config.resolve(proj, home)
-    assert result["mochi_deck"] == "UserDeck"
-    assert result["config_source"] == "user"

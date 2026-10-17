@@ -33,7 +33,7 @@ Updated automatically when solutions are captured or `/compound-knowledge:setup`
 | `project-name` | string | H3 heading, derived from the project directory name (lowercase, hyphens) |
 | `path` | absolute path | Full path to the `knowledge/solutions/` directory. Use `~` expansion. |
 | `last_updated` | YYYY-MM-DD | Date of the most recent capture or setup in this knowledge base |
-| `solution_count` | integer | Total number of `.md` files in the solutions directory (excluding `critical-patterns.md`) |
+| `solution_count` | integer | Total number of `.md` files in the solutions directory (excluding `critical-patterns.md` and anything under `_archive/`) |
 | `primary_components` | list | Unique `component:` values extracted from solution file frontmatter |
 
 ## Update Rules
@@ -41,8 +41,8 @@ Updated automatically when solutions are captured or `/compound-knowledge:setup`
 1. **Idempotent**: If an entry already exists for a given `path`, update it in-place. Never create duplicate entries for the same path.
 2. **Append-only for new entries**: New knowledge bases are appended at the end of the "Registered Knowledge Bases" section.
 3. **Path is the unique key**: Two entries with different project names but the same path are considered duplicates. Use the path to match.
-4. **Component list**: Extract unique values by running `Grep(pattern="^component:", path="{write_path}", output_mode="content")` and deduplicating. Limit to the top 10 most frequent components.
-5. **Solution count**: Count via `Glob(pattern="**/*.md", path="{write_path}")` and subtract 1 for `critical-patterns.md` if it exists.
+4. **Component list**: Extract unique values by running `Grep(pattern="^component:", path="{write_path}", output_mode="content")`, dropping matches under `_archive/`, and deduplicating. Limit to the top 10 most frequent components.
+5. **Solution count**: Count via `Glob(pattern="**/*.md", path="{write_path}")`, leave out every path under `_archive/`, then subtract 1 for `critical-patterns.md` if it exists.
 
 ## When to Update
 

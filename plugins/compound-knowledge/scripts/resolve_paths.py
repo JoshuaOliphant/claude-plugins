@@ -15,11 +15,6 @@ import config_loader
 CONFIG_NAME = "compound-knowledge.local.md"
 
 
-def _norm(path: str) -> str:
-    """Normalize a directory path: expand ~ and ensure a single trailing slash."""
-    return str(Path(path).expanduser()).rstrip("/") + "/"
-
-
 def resolve(project_root: Path, home: Path) -> dict:
     """Resolve write_path, read_paths, and vault_root from config or defaults."""
     # Reads go wide (the whole vault via read_paths/vault_root) so retrieval finds everything;
@@ -28,22 +23,26 @@ def resolve(project_root: Path, home: Path) -> dict:
 
     # write_path: explicit > solutions_path alias > default
     if "write_path" in settings:
-        write_path = _norm(settings["write_path"])
+        write_path = config_loader.directory(settings["write_path"], project_root)
     elif "solutions_path" in settings:
-        write_path = _norm(settings["solutions_path"])
+        write_path = config_loader.directory(settings["solutions_path"], project_root)
     else:
-        write_path = _norm(str(project_root / "knowledge" / "solutions"))
+        write_path = config_loader.directory("knowledge/solutions", project_root)
 
     # read_paths: explicit comma list, else empty; write_path is always first (deduped)
     read_paths = []
     if "read_paths" in settings:
-        read_paths = [_norm(p.strip()) for p in settings["read_paths"].split(",") if p.strip()]
+        read_paths = [
+            config_loader.directory(p.strip(), project_root)
+            for p in settings["read_paths"].split(",")
+            if p.strip()
+        ]
     read_paths = [p for p in read_paths if p != write_path]
     read_paths.insert(0, write_path)
 
     vault_root = settings.get("vault_root")
     if vault_root:
-        vault_root = _norm(vault_root)
+        vault_root = config_loader.directory(vault_root, project_root)
 
     return {
         "write_path": write_path,

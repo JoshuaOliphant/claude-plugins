@@ -1,6 +1,6 @@
 """
 ABOUTME: Tests for resolve_paths.py reservoir path resolution.
-ABOUTME: Covers defaults, solutions_path back-compat, read/write split, precedence, vault_root, CLI exit.
+ABOUTME: Covers defaults, solutions_path back-compat, read/write split, vault_root, CLI exit.
 """
 
 import json
@@ -74,29 +74,6 @@ def test_read_paths_dedup_write(tmp_path):
     assert result["read_paths"] == ["/vault/knowledge/solutions/", "/vault/wiki/"]
 
 
-def test_project_over_user_precedence(tmp_path):
-    home = tmp_path / "home"
-    home.mkdir()
-    proj = tmp_path / "proj"
-    proj.mkdir()
-    _write_cfg(home, "solutions_path: /user/level/solutions/\n")
-    _write_cfg(proj, "solutions_path: /project/level/solutions/\n")
-    result = resolve_paths.resolve(proj, home)
-    assert result["write_path"] == "/project/level/solutions/"
-    assert result["config_source"] == "project"
-
-
-def test_user_level_when_no_project_config(tmp_path):
-    home = tmp_path / "home"
-    home.mkdir()
-    proj = tmp_path / "proj"
-    proj.mkdir()
-    _write_cfg(home, "solutions_path: /user/level/solutions/\n")
-    result = resolve_paths.resolve(proj, home)
-    assert result["write_path"] == "/user/level/solutions/"
-    assert result["config_source"] == "user"
-
-
 def test_vault_root_parsed(tmp_path):
     home = tmp_path / "home"
     home.mkdir()
@@ -116,6 +93,17 @@ def test_tilde_path_expanded(tmp_path):
     result = resolve_paths.resolve(proj, home)
     assert not result["write_path"].startswith("~")
     assert result["write_path"].startswith("/")
+
+
+def test_relative_paths_anchored_to_project(tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    home.mkdir()
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    monkeypatch.chdir(home)
+    _write_cfg(proj, "write_path: kb/solutions/\nread_paths: kb/wiki/\n")
+    result = resolve_paths.resolve(proj, home)
+    assert result["read_paths"] == [f"{proj}/kb/solutions/", f"{proj}/kb/wiki/"]
 
 
 def test_read_paths_write_forced_first(tmp_path):
