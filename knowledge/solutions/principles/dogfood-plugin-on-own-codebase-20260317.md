@@ -3,7 +3,7 @@ title: "Dogfood your plugin on its own codebase"
 date: 2026-03-17
 project: cross-project
 problem_type: principles
-component: claude-code-plugins
+component: claude-code
 severity: medium
 solution_summary: "Test plugin patterns by using the plugin itself to do work on its own codebase — reveals integration gaps, UX issues, and incorrect assumptions faster than synthetic tests"
 statement: "The best test of an orchestration plugin is to use it to orchestrate work on its own codebase. Dogfooding reveals integration gaps, incorrect assumptions, and UX issues that synthetic evals miss."

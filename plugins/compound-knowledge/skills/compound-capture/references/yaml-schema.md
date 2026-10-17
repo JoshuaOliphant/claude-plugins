@@ -27,7 +27,7 @@
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `root_cause` | enum | What fundamentally caused it |
+| `root_cause` | enum | What fundamentally caused it. The explanation goes in the body's `## Root Cause` section |
 | `resolution_type` | enum | Type of fix applied |
 | `tags` | string[] (max 8) | Freeform searchable keywords |
 | `environment` | string | Runtime context (Python 3.12, K8s 1.28, etc.) |
@@ -82,7 +82,8 @@
 | `git` | Git version control |
 | `general` | No specific technology |
 
-Extend with project-specific values as needed. The enum is a starting vocabulary, not a constraint.
+The enum is closed, like the others: capture blocks a value that is not in this table. When nothing fits, use the
+closest value or `general`, and put the specific technology in `tags`.
 
 ---
 
@@ -121,6 +122,7 @@ Extend with project-specific values as needed. The enum is a starting vocabulary
 | Value | Description |
 |-------|-------------|
 | `code_fix` | Changed application source code |
+| `refactor` | Restructured code or config without changing what it is meant to do |
 | `config_change` | Modified configuration files or settings |
 | `dependency_update` | Updated, added, or removed a dependency |
 | `infrastructure_change` | Changed infrastructure (networking, storage, etc.) |
