@@ -1,6 +1,6 @@
 # The proof ladder and silent checks
 
-Depth for steps 5 and 6 of `compost:verify`.
+Depth for steps 6 and 7 of `compost:verify`.
 
 ## One fact, five rungs
 

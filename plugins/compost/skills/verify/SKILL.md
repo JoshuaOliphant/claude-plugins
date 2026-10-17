@@ -1,6 +1,6 @@
 ---
 name: verify
-description: Proves a change works from fresh evidence before anyone says it does. Use before claiming done, fixed, or passing, before a commit or PR, and when the user asks "is this ready", "verify this", "prove it works", "are the acceptance criteria met", "check coverage", or "what could this break".
+description: Proves a change works from fresh evidence before anyone says it does. Use before claiming done, fixed, or passing, before a commit or PR, and when the user asks "is this ready", "verify this", "prove it works", "are the acceptance criteria met", "check coverage", "run mutation testing", "would the tests catch this", or "what could this break".
 ---
 
 # Verify
@@ -45,7 +45,20 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
      on the issue, list it in the PR's Risk section, and continue; the user decides at
      `compost:finish`.
 
-4. **Map every acceptance criterion to a passing test.** Build a table from this run's results:
+4. **Kill the diff's mutants.** When `docs/agents/testing.md` records a mutation tool, run its
+   command over the lines this branch changed ([mutation testing](references/mutation.md)). A
+   line that runs is not a line a test checks: each surviving mutant is a change to the code that
+   no test noticed. Sort every survivor:
+   - Unprotected behavior: go back to `compost:build` and fit a case in.
+   - Equivalent, so no input can tell the mutant apart: say why in the report.
+   - In a recorded exclusion: leave it. A new exclusion is proposed exactly like a coverage one,
+     and the same unattended rule applies.
+
+   There is no score to reach; a survivor left unsorted fails the step. Run `git diff` after the
+   run and restore any mutant an interrupted run left behind. With no tool recorded, skip this step;
+   `compost:build` has already walked the mutations by hand.
+
+5. **Map every acceptance criterion to a passing test.** Build a table from this run's results:
    AC-N, the test's node id, and pass or fail. Find the tests in the placement map
    `compost:build` posted on the issue (AC-N to node id). A criterion with no test is unmet, with no judgment call. So is one
    whose test was skipped, deselected, or marked xfail in this run, because a test that did not
@@ -54,7 +67,7 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    every criterion in `to_read` against its test. One whose test never checks the Then is unmet.
    Exit 3: read each test's assertions against its Then yourself.
 
-5. **Prove the one fact the change is safe because of.** Most changes that look risky are safe
+6. **Prove the one fact the change is safe because of.** Most changes that look risky are safe
    because of one fact, such as "this call only evicts entries that are already expired". Name
    it, then push it as far down this ladder as is cheap:
    1. Asserted: you said so. Worth nothing on its own.
@@ -78,13 +91,13 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    When the fact is a performance claim, run
    [the benchmark checklist](../diagnose/references/benchmarks.md) and report its verdict.
 
-6. **Make silent checks prove they ran.** A check that prints nothing when it fails looks the
+7. **Make silent checks prove they ran.** A check that prints nothing when it fails looks the
    same as one that never ran. Before counting it as a pass, show it did work: the number of
    tests collected, the number of files linted, or one run where it caught a planted defect.
    Common cases, such as pytest collecting nothing or coverage measuring the wrong package, are
    in [the proof ladder](references/proof-ladder.md).
 
-7. **Check the comments in the diff.** For Python, run [jev-lint](references/jev-lint.md) over
+8. **Check the comments in the diff.** For Python, run [jev-lint](references/jev-lint.md) over
    the branch first. If it exits 3 (no key), say so and do the manual pass. Either way, read every
    comment the diff adds. Keep only:
    - legal or license headers
@@ -98,8 +111,9 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    ("changed from X"). A comment explaining a surprise in our own code means the code needs a
    better name, an extracted function, or a type. Change the code and drop the comment.
 
-8. **Report the evidence.** Give the commands and their counts (`214 passed, 0 failed`), the
-   coverage result and any proposed exclusion, the AC table, the safety fact with its rung and
+9. **Report the evidence.** Give the commands and their counts (`214 passed, 0 failed`), the
+   coverage result and any proposed exclusion, the mutants run, killed, and sorted as equivalent
+   or excluded, the AC table, the safety fact with its rung and
    the proof output (the telemetry query and what it returned, when a stack is recorded), and the comments removed. Post the AC table on the issue; on a re-run, edit
    the AC-table comment you posted before instead of adding another. Before saying "done", ask
    Jev whether the output you captured backs each claim: run `claim-backed` with every claim
@@ -110,6 +124,6 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
 ## Next moves
 
 - `compost:review` when every gate is green and every AC is met.
-- `compost:build` when an AC is unmet, or a coverage gap is real behavior.
+- `compost:build` when an AC is unmet, or a coverage gap or a surviving mutant is real behavior.
 - `compost:diagnose` when a gate fails and the cause is not plain.
 - `compost:finish` when review findings are addressed and this run is on the final commit.

@@ -1,6 +1,6 @@
 # jev-lint
 
-Semantic lint for Python, used in verify's comment check (step 7) and whenever someone asks to
+Semantic lint for Python, used in verify's comment check (step 8) and whenever someone asks to
 find narrating comments, silent failures, or weakened tests. `ast` and `tokenize` find the units
 (comments, except handlers, functions, log calls, diff hunks); Jev answers one plain-language
 question per rule about each unit; findings at or above each rule's threshold are reported.

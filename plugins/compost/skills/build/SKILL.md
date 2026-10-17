@@ -130,7 +130,10 @@ no test counts until you have seen it fail for the right reason.
     - missing validation for zero, empty, None, unauthorized, or malformed input
 
     A mutation that nothing catches is an unprotected behavior. Close it with a case in an
-    existing table or test, following step 4 again.
+    existing table or test, following step 4 again. When `docs/agents/testing.md` records a
+    mutation tool, run it on the diff after the walk to catch what you missed
+    ([mutation testing](../verify/references/mutation.md)); `compost:verify` runs it again on the
+    finished branch.
 
 11. **Commit with the issue number.** Before committing, ask Jev whether a new or changed test
     re-covers an existing one: run `duplicate-test` with the base the branch started from
