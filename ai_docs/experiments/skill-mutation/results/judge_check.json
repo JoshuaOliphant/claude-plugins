@@ -1,0 +1,105 @@
+{
+ "null_expectation_passes": "2/45",
+ "null_detail": [
+  [
+   1,
+   "",
+   [
+    false,
+    false,
+    false,
+    false,
+    false
+   ]
+  ],
+  [
+   1,
+   "I don't know.",
+   [
+    false,
+    false,
+    false,
+    false,
+    false
+   ]
+  ],
+  [
+   1,
+   "Paris is the capital of France.",
+   [
+    false,
+    false,
+    false,
+    false,
+    false
+   ]
+  ],
+  [
+   2,
+   "",
+   [
+    false,
+    false,
+    false,
+    false,
+    false
+   ]
+  ],
+  [
+   2,
+   "I don't know.",
+   [
+    false,
+    false,
+    false,
+    false,
+    true
+   ]
+  ],
+  [
+   2,
+   "Paris is the capital of France.",
+   [
+    false,
+    false,
+    false,
+    false,
+    true
+   ]
+  ],
+  [
+   3,
+   "",
+   [
+    false,
+    false,
+    false,
+    false,
+    false
+   ]
+  ],
+  [
+   3,
+   "I don't know.",
+   [
+    false,
+    false,
+    false,
+    false,
+    false
+   ]
+  ],
+  [
+   3,
+   "Paris is the capital of France.",
+   [
+    false,
+    false,
+    false,
+    false,
+    false
+   ]
+  ]
+ ],
+ "rejudge_agreement": "45/45"
+}
