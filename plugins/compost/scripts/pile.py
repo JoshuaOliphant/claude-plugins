@@ -212,11 +212,11 @@ class Active:
 
 
 def find_active(replaces: Replaces, config: claude_config.Config) -> Active:
-    listed = [plugin_id for plugin_id in replaces.plugins if config.is_active(plugin_id)]
+    listed = [plugin_id for plugin_id in replaces.plugins if config.plugin_enabled(plugin_id)]
     return Active(
-        plugins=[plugin_id for plugin_id in listed if config.enabled[plugin_id] != "synced"],
-        synced=[plugin_id for plugin_id in listed if config.enabled[plugin_id] == "synced"],
-        skills=[name for name in replaces.skills if config.is_active(name)],
+        plugins=[plugin_id for plugin_id in listed if not config.is_synced(plugin_id)],
+        synced=[plugin_id for plugin_id in listed if config.is_synced(plugin_id)],
+        skills=[name for name in replaces.skills if config.skill_active(name)],
     )
 
 
