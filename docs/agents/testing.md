@@ -22,7 +22,7 @@ pytest, adopted from the existing suites.
 
 | Gate | Command | Status |
 |---|---|---|
-| Repo checks | `uv run --group dev python scripts/check_all.py` (marketplace versions, shared-artifact sync, every plugin's tests, lint, format) | passing |
+| Repo checks | `uv run --group dev python scripts/check_all.py` (marketplace versions, shared-artifact sync, every plugin's tests and `scripts/tests`, lint, format) | passing |
 | compost coverage | `cd plugins/compost && uv run --group dev pytest` | passing |
 | Lint | `uv run --group dev ruff check .` (run by `check_all.py`) | passing |
 | Format | `uv run --group dev ruff format --check .` (run by `check_all.py`) | passing |

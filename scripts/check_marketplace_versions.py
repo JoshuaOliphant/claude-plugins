@@ -9,7 +9,8 @@ This script enforces that rule so the catalog never advertises a stale version.
 
 The rules live in ``drift()``, which takes parsed JSON and touches no files;
 ``main()`` reads the repo and prints. Plugin directories come from
-``git ls-files``, so untracked leftovers under plugins/ don't count.
+``git ls-files`` plus the catalog's own names, so untracked leftovers under
+plugins/ don't count.
 
 Usage:
     python scripts/check_marketplace_versions.py
@@ -104,17 +105,26 @@ def _plugin_dirs(root: Path) -> list[str]:
     )
 
 
-def _read_manifests(root: Path) -> dict[str, dict | None]:
+def _read_manifests(root: Path, registered: list[str]) -> dict[str, dict | None]:
+    """Manifests for every plugin directory on disk that git tracks or the catalog names.
+
+    A registered plugin is read even before its first commit; a tracked
+    directory already deleted from the working tree is skipped.
+    """
     manifests: dict[str, dict | None] = {}
-    for name in _plugin_dirs(root):
-        plugin_json = root / "plugins" / name / ".claude-plugin" / "plugin.json"
+    for name in sorted(set(_plugin_dirs(root)) | set(registered)):
+        plugin_dir = root / "plugins" / name
+        if not plugin_dir.is_dir():
+            continue
+        plugin_json = plugin_dir / ".claude-plugin" / "plugin.json"
         manifests[name] = json.loads(plugin_json.read_text()) if plugin_json.exists() else None
     return manifests
 
 
 def main(root: Path = REPO_ROOT) -> int:
     marketplace = json.loads((root / ".claude-plugin" / "marketplace.json").read_text())
-    findings = drift(marketplace, _read_manifests(root))
+    registered = [entry["name"] for entry in marketplace.get("plugins", [])]
+    findings = drift(marketplace, _read_manifests(root, registered))
     if findings:
         print("\n".join(findings.lines()))
         return 1

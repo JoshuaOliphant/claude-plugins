@@ -4,6 +4,7 @@ ABOUTME: drift() takes parsed JSON, so its rules run without files; one test bui
 """
 
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -92,3 +93,29 @@ def test_tracked_dir_without_manifest_still_fails(tmp_path, capsys):
 
     assert cmv.main(tmp_path) == 1
     assert "  - stray (no .claude-plugin/plugin.json)" in capsys.readouterr().out
+
+
+def test_registered_plugin_not_yet_committed_is_checked(tmp_path, capsys):
+    """AGENTS.md runs this check before commit, when a new plugin is still untracked."""
+    _write_json(tmp_path / ".claude-plugin" / "marketplace.json", catalog(new="0.1.0"))
+    _git(tmp_path, "init", "-q")
+    _write_json(
+        tmp_path / "plugins" / "new" / ".claude-plugin" / "plugin.json", {"version": "0.1.0"}
+    )
+
+    assert cmv.main(tmp_path) == 0
+    assert "OK: 1 plugin versions in sync." in capsys.readouterr().out
+
+
+def test_deleted_but_still_tracked_dir_is_not_a_stray(tmp_path, capsys):
+    """Retiring a plugin with rm -rf before git rm leaves its paths in the index."""
+    _write_json(tmp_path / ".claude-plugin" / "marketplace.json", catalog())
+    _write_json(
+        tmp_path / "plugins" / "old" / ".claude-plugin" / "plugin.json", {"version": "1.0.0"}
+    )
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "add", ".")
+    shutil.rmtree(tmp_path / "plugins" / "old")
+
+    assert cmv.main(tmp_path) == 0
+    assert "OK: 0 plugin versions in sync." in capsys.readouterr().out
