@@ -108,7 +108,8 @@ async function driftSummary($: EngineInterface): Promise<string> {
   try {
     const ran = await $.process.run(argv)
     if (ran.exitCode === 0) return ran.stdout.trimEnd()
-    const why = (ran.stderr || ran.stdout).split('\n').find(line => line.trim()) ?? 'no output'
+    // The last line: a Python traceback ends with the exception, and skill_drift.py's own errors are one line.
+    const why = (ran.stderr || ran.stdout).split('\n').findLast(line => line.trim()) ?? 'no output'
     return `skill-drift: skill_drift.py summary failed (exit ${ran.exitCode}): ${why}`
   } catch (error) {
     return `skill-drift: could not run skill_drift.py: ${(error as Error).message}`

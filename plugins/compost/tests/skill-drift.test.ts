@@ -9,7 +9,9 @@ type Asked = { state: Record<string, unknown>; questions: Record<string, unknown
 type Ran = { exitCode: number; stdout: string; stderr: string } | 'refused'
 type World = { asked: Asked[]; files: Map<string, string>; toasts: string[]; order: string[]; ran: string[][]; drift: Ran }
 
-const LOG = '/home/me/.claude/skill-drift/1970-01-01-session-9.jsonl'
+// compost's folder, the root the engine loads the mod from (this file sits in its tests/).
+const PLUGIN_ROOT = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+const LOG ='/home/me/.claude/skill-drift/1970-01-01-session-9.jsonl'
 
 const TURN = [
   { role: 'user', text: 'run the verify gates', toolUses: [] },
@@ -149,10 +151,15 @@ test("/drift prints skill_drift.py's summary of the log, so it shows the hits co
   const shown = await $.command.run({ name: 'drift', args: '' } as never)
   expect((shown as { text: string }).text).toBe('compost:build  deviated×2 sessions (pattern)')
   expect(world.ran).toHaveLength(1)
-  const [uv, run, quiet, script, ...rest] = world.ran[0]
-  expect([uv, run, quiet]).toEqual(['uv', 'run', '--quiet'])
-  expect(script.endsWith('/scripts/skill_drift.py')).toBe(true)
-  expect(rest).toEqual(['--claude-dir', '/home/me/.claude', 'summary'])
+  expect(world.ran[0]).toEqual([
+    'uv',
+    'run',
+    '--quiet',
+    `${PLUGIN_ROOT}/scripts/skill_drift.py`,
+    '--claude-dir',
+    '/home/me/.claude',
+    'summary',
+  ])
 })
 
 test('/drift reports a failed or refused run of skill_drift.py instead of throwing', async ($, on) => {
@@ -163,6 +170,13 @@ test('/drift reports a failed or refused run of skill_drift.py instead of throwi
   expect((failed as { text: string }).text).toBe(
     'skill-drift: skill_drift.py summary failed (exit 1): skill_drift: settings.json is not valid JSON',
   )
+  world.drift = {
+    exitCode: 1,
+    stdout: '',
+    stderr: 'Traceback (most recent call last):\n  File "skill_drift.py", line 9, in <module>\nKeyError: \'p\'\n\n',
+  }
+  const crashed = await $.command.run({ name: 'drift', args: '' } as never)
+  expect((crashed as { text: string }).text).toBe("skill-drift: skill_drift.py summary failed (exit 1): KeyError: 'p'")
   world.drift = 'refused'
   const refused = await $.command.run({ name: 'drift', args: '' } as never)
   expect((refused as { text: string }).text).toStartWith('skill-drift: could not run skill_drift.py: ')
