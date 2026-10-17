@@ -1,0 +1,81 @@
+scored runs 561, infra errors 0, escaped the sandbox 249
+subject cost $2.84 (judge cost not recorded)
+
+expectations live in the reference (baseline + ctrl-same-1 + ctrl-same-2): 7/15
+  case 1 e1: 1.00
+  case 1 e2: 1.00
+  case 1 e3: 1.00
+  case 1 e4: 0.00  (dead: cannot kill anything)
+  case 1 e5: 0.62
+  case 2 e1: 1.00
+  case 2 e2: 0.00  (dead: cannot kill anything)
+  case 2 e3: 1.00
+  case 2 e4: 0.11  (dead: cannot kill anything)
+  case 2 e5: 0.89
+  case 3 e1: 0.00  (dead: cannot kill anything)
+  case 3 e2: 0.00  (dead: cannot kill anything)
+  case 3 e3: 0.00  (dead: cannot kill anything)
+  case 3 e4: 0.00  (dead: cannot kill anything)
+  case 3 e5: 0.20  (dead: cannot kill anything)
+
+CONTROLS
+  ctrl-no-skill mean drop +0.10  killed by c1e5               '(whole skill)'
+  ctrl-same-1   mean drop -0.07  killed by -                  '(nothing)'
+  ctrl-same-2   mean drop +0.04  killed by -                  '(nothing)'
+  false-kill rate (identical copies killed): 0/2
+
+mutation score: 2/50 = 4% (about 3.1 kills expected by chance if no deletion mattered)
+
+KILLED
+  del-L31-31    mean drop +0.07  killed by c1e5               '3. **Default**: `{project_root}/knowledge/solutions/`'
+  del-L33-33    mean drop +0.00  killed by c2e3               "If the directory doesn't exist, say so and suggest `/compound-knowledg"
+
+SURVIVED (eval gap, or the line changes nothing)
+  del-L89-89    mean drop +0.06  killed by -                  "If `vault-recommender` isn't installed or fails, fall back to grep-onl"
+  del-L115-115  mean drop +0.05  killed by -                  '- Then relevant principles with *why* they apply here'
+  del-L45-45    mean drop +0.05  killed by -                  'Apply **retrieval_depth** and **general** feedback to how many results'
+  del-L103-103  mean drop +0.03  killed by -                  '- **Honest about gaps** — "nothing found" is a valid and valuable resu'
+  del-L55-60    mean drop +0.02  killed by -                  '```\nGrep(pattern="project:.*{name}", path="{solutions_path}", output_m'
+  del-L62-62    mean drop +0.02  killed by -                  'Read the cross-project registry at `~/.claude/compound-knowledge-regis'
+  del-L19-19    mean drop +0.01  killed by -                  'You are fast — under 30 seconds. You are the first thing that runs bef'
+  del-L83-83    mean drop +0.01  killed by -                  '**When grep is sufficient:**'
+  del-L113-113  mean drop +0.00  killed by -                  '- **Search summary first** — briefly state what you searched (which KB'
+  del-L95-95    mean drop +0.00  killed by -                  '**Report what you checked even when nothing matches.** Say "Checked cr'
+  del-L104-104  mean drop +0.00  killed by -                  '- **Fast** — under 30 seconds for grep, up to 60 seconds if semantic s'
+  del-L87-87    mean drop +0.00  killed by -                  'You can run both in parallel — grep for structured frontmatter matchin'
+  del-L93-93    mean drop +0.00  killed by -                  'You MUST always read `{solutions_path}/critical-patterns.md` if it exi'
+  del-L27-27    mean drop -0.01  killed by -                  'Your solutions directory is resolved by first match:'
+  del-L126-126  mean drop -0.01  killed by -                  '- **tdd-workflow / verification-stack**: You run *before* these. You p'
+  del-L127-127  mean drop -0.01  killed by -                  '- **beads-workflow**: When a beads issue describes a bug, search for i'
+  del-L29-29    mean drop -0.01  killed by -                  '1. **Project-level override**: `{project_root}/.claude/compound-knowle'
+  del-L102-102  mean drop -0.02  killed by -                  '- **Semantic connections discovered** — concepts related to the query '
+  del-L117-117  mean drop -0.02  killed by -                  '- If semantic search found additional connections, present them separa'
+  del-L41-43    mean drop -0.02  killed by -                  '```bash\npython ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py compo'
+  del-L35-35    mean drop -0.02  killed by -                  'You also know about a **cross-project registry** at `~/.claude/compoun'
+  del-L72-74    mean drop -0.04  killed by -                  '```bash\nvault-recommender --vault {vault_root} recommend --topic "{que'
+  del-L21-21    mean drop -0.04  killed by -                  "You are not a search engine. You don't just return results — you inter"
+  del-L84-84    mean drop -0.04  killed by -                  '- Error messages, specific file names, tool names — these are keyword '
+  del-L79-79    mean drop -0.04  killed by -                  '- The grep-based researcher returns <3 results'
+  del-L53-53    mean drop -0.04  killed by -                  'Extract keywords from the task (project names, technology terms, error'
+  del-L101-101  mean drop -0.04  killed by -                  '- **Principles referenced in context** — engineering wisdom applied to'
+  del-L17-17    mean drop -0.04  killed by -                  "You are institutional memory. You've seen every bug this team has solv"
+  del-L78-78    mean drop -0.04  killed by -                  '**When to use semantic search:**'
+  del-L128-128  mean drop -0.04  killed by -                  '- **superpowers:systematic-debugging**: You complement debugging — you'
+  del-L81-81    mean drop -0.04  killed by -                  "- You want to discover *related* knowledge the user didn't think to as"
+  del-L39-39    mean drop -0.04  killed by -                  'Before searching, check for feedback that shapes your behavior:'
+  del-L80-80    mean drop -0.04  killed by -                  '- The query is conceptual ("how do we handle state in agent workflows"'
+  del-L68-68    mean drop -0.04  killed by -                  'When the knowledge base lives inside an Obsidian vault (or any markdow'
+  del-L64-64    mean drop -0.04  killed by -                  'For candidates, read frontmatter first (`limit: 20`), score by relevan'
+  del-L70-70    mean drop -0.04  killed by -                  'Use vault-recommender for **topic-based queries** — when the user desc'
+  del-L122-122  mean drop -0.04  killed by -                  'You are one half of a pair. Capture writes the knowledge. You read it.'
+  del-L114-114  mean drop -0.04  killed by -                  '- Lead with critical pattern warnings (if any match)'
+  del-L116-116  mean drop -0.04  killed by -                  '- Then ranked solutions with key insights and file paths'
+  del-L105-105  mean drop -0.07  killed by -                  '- **File paths included** — so the user can dive deeper if something c'
+  del-L85-85    mean drop -0.07  killed by -                  '- The researcher already found 3+ relevant results'
+  del-L30-30    mean drop -0.07  killed by -                  '2. **User-level override**: `~/.claude/compound-knowledge.local.md` → '
+  del-L76-76    mean drop -0.07  killed by -                  'Where `{vault_root}` is the parent directory of the solutions path (e.'
+  del-L100-100  mean drop -0.07  killed by -                  '- **Past solutions connected to current work** — not just "here are so'
+  del-L111-111  mean drop -0.07  killed by -                  'Present findings concisely, and always show your work so the user trus'
+  del-L118-118  mean drop -0.07  killed by -                  '- End with actionable recommendations'
+  del-L51-51    mean drop -0.07  killed by -                  'Search solutions using parallel Grep calls on YAML frontmatter fields.'
+  del-L99-99    mean drop -0.07  killed by -                  '- **Critical patterns surfaced prominently** — if a known dangerous pa'
