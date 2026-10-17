@@ -7,7 +7,7 @@ from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-import pile
+import claude_config
 
 MIN_SESSIONS = 2
 REVIEWED = "reviewed.json"
@@ -77,15 +77,6 @@ def mark(claude_dir: Path, ids: list[str]) -> int:
     return len(done)
 
 
-def is_active(skill: str, settings: dict, personal: set[str]) -> bool:
-    if settings.get("skillOverrides", {}).get(skill) == "off":
-        return False
-    if ":" not in skill:
-        return skill in personal
-    plugin = skill.split(":", 1)[0]
-    return any(key.split("@", 1)[0] == plugin and on for key, on in settings.get("enabledPlugins", {}).items())
-
-
 def owner(skill: str, claude_dir: Path, repo: Path) -> tuple[str, str | None]:
     if ":" not in skill:
         return "personal", str((claude_dir / "skills" / skill / "SKILL.md").resolve())
@@ -137,9 +128,8 @@ def group_hits(hits: list[Hit], active: set[str], done: set[str], min_sessions: 
 
 def patterns(claude_dir: Path, repo: Path, min_sessions: int = MIN_SESSIONS) -> dict:
     log = read_log(claude_dir)
-    settings = pile.read_settings(claude_dir)
-    personal = pile.personal_skills(claude_dir)
-    active = {hit.skill for hit in log.hits if is_active(hit.skill, settings, personal)}
+    config = claude_config.read(claude_dir)
+    active = {hit.skill for hit in log.hits if config.skill_active(hit.skill)}
     groups, retired = group_hits(log.hits, active, reviewed(claude_dir), min_sessions)
     found = []
     for group in groups:
@@ -163,7 +153,7 @@ def patterns(claude_dir: Path, repo: Path, min_sessions: int = MIN_SESSIONS) -> 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="skill_drift", description="Review the skill-drift log.")
-    parser.add_argument("--claude-dir", type=Path, default=pile.CLAUDE_DIR)
+    parser.add_argument("--claude-dir", type=Path, default=claude_config.CLAUDE_DIR)
     commands = parser.add_subparsers(dest="command", required=True)
     grouped = commands.add_parser("patterns", help="print unreviewed cross-session patterns on active skills as JSON")
     grouped.add_argument("--min-sessions", type=int, default=MIN_SESSIONS)
@@ -176,7 +166,7 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(patterns(args.claude_dir, args.repo, args.min_sessions), indent=2))
         else:
             print(f"{mark(args.claude_dir, args.ids)} hits reviewed in all")
-    except pile.PileError as error:
+    except claude_config.ClaudeConfigError as error:
         print(f"skill_drift: {error}", file=sys.stderr)
         return 1
     return 0

@@ -15,57 +15,85 @@ reviewed.
 `pile.toml` at the plugin root lists every source:
 
 - `input`: a source compost takes text from. `pin` is the upstream commit compost reflects, and
-  `feeds` maps upstream paths to the compost skills they fed.
+  `feeds` maps upstream paths to what they fed: a compost skill by name, `canon` for the essays, or
+  a mechanism, `hooks` for compost's hooks as a whole or `hooks/<mod>` for one mod, so `pile.py
+  status` reports an adopted mod's upstream drift as it does a skill's.
 - `frozen`: an input that will not change again (a retired plugin). Listed for attribution only.
 - `reference`: a repo watched for ideas and not drawn from yet.
 
 `${CLAUDE_PLUGIN_ROOT}/scripts/pile.py` does the bookkeeping (Python 3.11+ via uv, stdlib only).
 
+## Kinds and rulings
+
+Both procedures below sort each upstream item by kind before judging it: a **skill** (a SKILL.md
+and its references), a **mod or hook** (a hooks module, a hook entry, a hook script), an
+**agent**, or a **script**. Judge a skill, agent, or script by its text. Judge a mod or hook as a
+mechanism: name the event it fires on (a prompt submitted, a tool call, Stop, session start) and
+the compost rule it would enforce that a skill now only states. Each item gets one ruling:
+
+- **adopt**: better than compost's counterpart, fits as is (a sharper step, a fixed bug, a clearer
+  example)
+- **adapt**: the idea is good, the form conflicts with compost's rulings (a new approval gate,
+  a TDD ritual, beads, a size rule); take the idea, not the text
+- **add**: compost has no counterpart, and it serves a step in compost's workflow (spec, slice,
+  build, verify, review, finish, pause, diagnose). Name the compost step it serves and what it
+  makes cheaper or harder to skip. If no step fits, the ruling is ignore: it belongs in a
+  standalone plugin, not in compost.
+- **ignore**: churn, tooling specific to the source, or already covered
+
+Adopt and adapt are overlaps, judged against the compost skill or mechanism the item feeds; add is
+judged against the step it serves. Report the two apart.
+
 ## Check for upstream changes
 
 1. Run `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/pile.py status`. For each input it keeps a blobless
    clone under `~/.cache/compost/upstream/`, lists every file changed since the pin, and groups
-   them by the compost skill they feed, then lists the names of the changed files no `feeds` entry
-   maps. It prints the `git diff` command for reading each change.
-2. Skim the unmapped file names for a skill that did not exist when the pin was set; a promising
-   one becomes a `feeds` entry, and its paths go into the sort below.
+   them by the compost skill or mechanism they feed, then lists the names of the changed files no
+   `feeds` entry maps. It prints the `git diff` command for reading each change.
+2. Skim the unmapped file names for an item that did not exist when the pin was set: a skill, mod
+   or hook, agent, or script. Note its kind. One that overlaps a compost skill or mechanism becomes
+   a `feeds` entry now; a candidate add gets one once its issue lands, naming what it became. Its
+   paths go into the sort below.
 3. Sort the changes before reading them. Ask Jev first: per source, write
    `{"source": "<name>", "paths": [<every path listed under a compost skill, plus promising
-   unmapped ones>]}` to a temp file and run
+   unmapped skills>]}` to a temp file and run
    `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py classify-change --input <file>`. Record each change
    with `needs_reading: false` as ignored, with Jev's verdict as the reason, without reading it.
    Read the diff of every path in `to_read` and judge it yourself; Jev's verdict there is a hint,
    since it over-calls adopt and adapt on long diffs ([Jev tools](references/jev-tools.md)). Exit 3
-   means Jev is unavailable: read every listed diff. Judge each change you read against the compost
-   skill it feeds and the [canon](../../canon/README.md):
-   - **adopt**: better than what compost has, fits as is (a sharper step, a fixed bug, a clearer
-     example)
-   - **adapt**: the idea is good, the form conflicts with compost's rulings (a new approval gate,
-     a TDD ritual, beads, a size rule); take the idea, not the text
-   - **ignore**: churn, tooling specific to the source, or already covered
-   When dozens of changes remain to read, split them across parallel subagents, one per compost
-   skill, each returning adopt / adapt / ignore with a one-line reason; then read the adopt and
-   adapt candidates yourself.
-4. File one issue per adopt or adapt on the compost repo (the `repository` in
+   means Jev is unavailable: read every listed diff. `classify-change` judges skill text against
+   compost's skills and has no add verdict, so read every mod or hook and candidate add yourself.
+   Give each change you read a ruling from [kinds and rulings](#kinds-and-rulings), against the
+   [canon](../../canon/README.md). When dozens of changes remain to read, split them across
+   parallel subagents, one per compost skill or mechanism, each returning a ruling with a one-line
+   reason; then read the adopt, adapt, and add candidates yourself.
+4. File one issue per adopt, adapt, or add on the compost repo (the `repository` in
    `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`), labeled `upstream`, with the upstream diff
-   link, the compost skill it touches, and what to take.
+   link, its kind, and what to take: for an overlap, the compost skill or mechanism it touches; for
+   an add, the step it serves and what it makes cheaper or harder to skip.
 5. Once every change since a pin has a ruling, move the pin. Pins live in the source repo, not the
    installed plugin: in a worktree of that repo run
    `uv run plugins/compost/scripts/pile.py advance <source> <commit>`, then
    `uv run plugins/compost/scripts/pile.py notice`, and commit both with the ignored changes and
    their reasons in the commit message. That is the record that keeps them from resurfacing.
-6. Report: per source, how many changes were adopted, adapted, and ignored, with the issue links.
+6. Report per source, in two parts: overlaps, with how many changes were adopted, adapted, and
+   ignored and the issue links; then additions, each add with its kind, the step it serves, and
+   its issue link.
 
 ## Add a reference
 
-1. Clone the repo and read its skills. When `skill-atlas` is installed, run
-   `skill-atlas --claude-dir <clone> judge` then `report` to get each skill's category, craft, and
-   the techniques it uses; otherwise read the SKILL.md files directly.
-2. Report which compost skills each one overlaps and what it would bring that compost lacks:
-   worked examples, a verification step, a decision procedure, a sharper trigger.
+1. Clone the repo and list what it ships by kind: skills, mods and hooks, agents, scripts. For the
+   skills, when `skill-atlas` is installed, run `skill-atlas --claude-dir <clone> judge` then
+   `report` to get each skill's category, craft, and the techniques it uses; otherwise read the
+   SKILL.md files directly. Read each mod and hook for the event it fires on and what it does.
+2. Give each item a ruling from [kinds and rulings](#kinds-and-rulings) and report overlaps and
+   additions apart. For each overlap, name the compost skill or mechanism it overlaps and what it
+   would bring that compost lacks: worked examples, a verification step, a decision procedure, a
+   sharper trigger, a rule enforced instead of stated. For each add, name the step it serves and
+   what it makes cheaper or harder to skip.
 3. Add a `[[source]]` with `role = "reference"`, its license, and `pin` set to the commit you read.
-4. A reference becomes an `input` the first time compost takes text from it: set the role, add
-   `feeds`, and regenerate NOTICE.
+4. A reference becomes an `input` the first time compost takes text or a mod or hook from it: set
+   the role, add `feeds` (a skill name, `hooks`, or `hooks/<mod>`), and regenerate NOTICE.
 
 ## Check compost's own text after a change
 

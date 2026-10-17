@@ -5,6 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from extract import Kind, Unit, is_test_path
+from jevtools.core import Answers
 from typesafe_sdk import Choice, Noul, NoulCriteria
 
 
@@ -17,7 +18,7 @@ class Rule:
     acceptable: frozenset[str] = frozenset()
     threshold: float = 0.5
     actions: dict[str, str] = field(default_factory=dict, hash=False)
-    applies: Callable[[Unit], bool] = lambda _unit: True
+    when: Callable[[Unit], bool] = lambda _unit: True
     static_equivalents: Callable[[str, Unit], tuple[str, ...]] = lambda _label, _unit: ()
 
     def __post_init__(self) -> None:
@@ -31,13 +32,21 @@ class Rule:
         if not set(self.actions) <= labels - self.acceptable:
             raise ValueError(f"{self.id}: actions must name flagged labels")
 
-    def probability(self, answer) -> tuple[float, str]:
+    def probability(self, answers: Answers) -> tuple[float, str]:
+        """This rule's finding probability and label, read from the answers to an ask that included its question."""
         if isinstance(self.question, Noul):
-            return answer["noul"], "yes"
-        flagged = {label: p for label, p in answer["probabilities"].items() if label not in self.acceptable}
+            return answers.noul(self.id), "yes"
+        probabilities = answers.probabilities(self.id)
+        flagged = {label: p for label, p in probabilities.items() if label not in self.acceptable}
         if not flagged:
-            return 0.0, answer["choice"]
+            return 0.0, answers.choice(self.id)
         return sum(flagged.values()), max(flagged, key=flagged.get)
+
+    def applies(self, unit: Unit) -> bool:
+        return unit.kind == self.kind and self.when(unit)
+
+    def flags(self, probability: float, override: float | None = None) -> bool:
+        return probability >= (self.threshold if override is None else override)
 
     def message_for(self, label: str) -> str:
         return self.actions.get(label, self.message)
@@ -206,7 +215,7 @@ DOCSTRING_QUALITY = Rule(
         "contradicts": "fix: the docstring claims behavior the code does not have",
         "omits_surprise": "extend: name the side effect or failure mode a caller must know",
     },
-    applies=lambda unit: "docstring" in unit.state,
+    when=lambda unit: "docstring" in unit.state,
     question=Choice(
         instructions="Judge the docstring `docstring` against the code in `function`.",
         criteria={
@@ -247,7 +256,7 @@ TEST_SMELL = Rule(
     message="test cannot catch the regression it claims to guard",
     threshold=0.7,
     acceptable=frozenset({"meaningful", "smoke"}),
-    applies=lambda unit: unit.name.rsplit(".", 1)[-1].startswith("test_"),
+    when=lambda unit: unit.name.rsplit(".", 1)[-1].startswith("test_"),
     question=Choice(
         instructions=("Judge whether the test `function` can fail when the behavior it names breaks."),
         criteria={
@@ -300,7 +309,7 @@ TEST_WEAKENING = Rule(
     threshold=0.7,
     kind="hunk",
     message="change weakens the tests",
-    applies=lambda unit: is_test_path(unit.path),
+    when=lambda unit: is_test_path(unit.path),
     question=Noul(
         instructions=(
             "Does the change in `hunk` (removed lines in `removed`, added lines in `added`) weaken the tests?"

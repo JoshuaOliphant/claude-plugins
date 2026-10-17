@@ -1,21 +1,28 @@
 # ABOUTME: The one door to TypeSafe Jev for compost's tools: key lookup, a content-hash cache, and bounded concurrency.
-# ABOUTME: Tools call Jev.ask(tool, state, questions) and get an answer dict per question, or Unavailable; SDK types stay here.
+# ABOUTME: Tools call Jev.ask(tool, state, questions) and read the Answers view, or get Unavailable; SDK types stay here.
 import asyncio
 import hashlib
 import json
 import os
 import subprocess
 import tempfile
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from typesafe_sdk import AsyncTypeSafeClient, TypeSafeError
+from typesafe_sdk import AsyncTypeSafeClient, Choice, TypeSafeError
+
+from jevtools.registry import BadInput
 
 MODEL = "jev-latest"
 ENV_VAR = "TYPESAFE_API_KEY"
 KEYCHAIN_SERVICE = "typesafe"
 CACHE = Path.home() / ".cache" / "compost" / "jev-cache.json"
+# The most options one Choice may carry. typesafe-sdk 0.7.1 does not encode the API's cap, so this is the
+# lower of the two values compost has used (250 and 254); see the ruling on issue #105.
+CHOICE_LIMIT = 250
+# Runners-up a tool reports beside its pick.
+ALTERNATIVES = 2
 
 
 class Unavailable(Exception):
@@ -66,6 +73,34 @@ class Cache:
         os.replace(handle.name, self.path)
 
 
+class Answers:
+    """Jev's answers to one ask, read by question name. The SDK's answer dicts stay behind this view and in the cache."""
+
+    def __init__(self, raw: dict[str, dict]):
+        self.raw = raw
+
+    def noul(self, name: str) -> float:
+        return self.raw[name]["noul"]
+
+    def score(self, name: str) -> float:
+        return self.raw[name]["score"]
+
+    def confidence(self, name: str) -> float:
+        return self.raw[name]["confidence"]
+
+    def choice(self, name: str) -> str:
+        """The option a Choice picked."""
+        return self.raw[name]["choice"]
+
+    def probabilities(self, name: str) -> dict[str, float]:
+        """A Choice's or Score's probability per option, in the order the question listed them."""
+        return self.raw[name]["probabilities"]
+
+    def ranked(self, name: str, count: int | None = None) -> list[tuple[str, float]]:
+        """A Choice's or Score's options, likeliest first; ties keep the order the question listed them in."""
+        return sorted(self.probabilities(name).items(), key=lambda item: -item[1])[:count]
+
+
 class Jev:
     def __init__(self, client, cache: Cache, concurrency: int = 8):
         self.client = client
@@ -74,11 +109,11 @@ class Jev:
         self.input_tokens = 0
         self.cached = 0
 
-    async def ask(self, tool: str, state: dict, questions: dict) -> dict:
+    async def ask(self, tool: str, state: dict, questions: dict) -> Answers:
         key = cache_key(tool, state, questions)
         if (hit := self.cache.get(key)) is not None and questions.keys() <= hit.keys():
             self.cached += 1
-            return hit
+            return Answers(hit)
         async with self.semaphore:
             try:
                 response = await self.client.system_one(state=state, questions=questions, model=MODEL)
@@ -90,7 +125,7 @@ class Jev:
         if missing:
             raise Unavailable(f"Jev returned no answer for {', '.join(missing)}")
         self.cache.put(key, answers)
-        return answers
+        return Answers(answers)
 
 
 MISSING_KEY = (
@@ -115,5 +150,46 @@ async def session(client_factory=open_client, cache: Cache | None = None, concur
     cache.save()
 
 
-def top(probabilities: dict[str, float], count: int = 3) -> list[tuple[str, float]]:
-    return sorted(probabilities.items(), key=lambda item: -item[1])[:count]
+def parts(options: list[str]) -> list[list[str]]:
+    """`options` in runs of at most CHOICE_LIMIT, in order."""
+    return [options[index : index + CHOICE_LIMIT] for index in range(0, len(options), CHOICE_LIMIT)]
+
+
+async def narrow(
+    jev,
+    tool: str,
+    state: dict,
+    groups: dict[str, list[str]],
+    question: Callable[[dict[str, list[str]]], Choice],
+    keep: int = 1,
+    also: dict | None = None,
+) -> tuple[list[str], Answers | None]:
+    """Choose among more options than one Choice can carry, in two stages.
+
+    When every option fits under CHOICE_LIMIT, returns them all and asks nothing. Otherwise asks
+    `question(groups)` as "group" (with any `also` questions) and returns the options of the `keep`
+    likeliest groups that fit under the cap together, with the answers. A group past the cap is split
+    into parts first, so every option stays reachable; options two stages cannot reach are a BadInput.
+    """
+    options = [option for members in groups.values() for option in members]
+    if len(options) <= CHOICE_LIMIT:
+        return options, None
+    split: dict[str, list[str]] = {}
+    for label, members in groups.items():
+        pieces = parts(members)
+        if len(pieces) == 1:
+            split[label] = members
+        else:
+            split.update({f"{label} (part {i} of {len(pieces)})": piece for i, piece in enumerate(pieces, 1)})
+    if len(split) > CHOICE_LIMIT:
+        raise BadInput(
+            f"{len(options)} options in {len(split)} groups; at most {CHOICE_LIMIT} groups of {CHOICE_LIMIT} "
+            "can be chosen among, so narrow the input"
+        )
+    answers = await jev.ask(tool, state, {"group": question(split), **(also or {})})
+    kept: list[str] = []
+    for label, _ in answers.ranked("group", keep):
+        if kept and len(kept) + len(split[label]) > CHOICE_LIMIT:
+            continue
+        kept += split[label]
+    return kept, answers

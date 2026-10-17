@@ -45,11 +45,11 @@ def test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head(upstream, 
     payload = {"source": "acme", "paths": ["skills/to-spec/SKILL.md", "README.md"], "pile": str(pile_file)}
     gathered = meta.gather_changes(payload)
     spec_change, readme = gathered["changes"]
-    assert (spec_change["path"], spec_change["skills"]) == ("skills/to-spec/SKILL.md", ["spec"])
+    assert (spec_change["path"], spec_change["targets"]) == ("skills/to-spec/SKILL.md", ["spec"])
     assert "+spec v2" in spec_change["diff"]
-    assert (readme["skills"], readme["diff"]) == ([], "")
+    assert (readme["targets"], readme["diff"]) == ([], "")
     assert gathered["source"] == "acme"
-    assert list(gathered["skills"]) == ["spec"]
+    assert list(gathered["skill_texts"]) == ["spec"]
     assert "implement" in gathered["catalog"]
 
     first = run_git(upstream, "rev-list", "--max-parents=0", "HEAD")
@@ -57,10 +57,14 @@ def test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head(upstream, 
     assert [change["diff"] for change in again["changes"]] == ["", ""]
 
 
-def test_describe_changes_cuts_long_diffs(monkeypatch):
+def test_describe_changes_cuts_long_diffs_and_sends_no_mechanism_as_skill_text(monkeypatch, plugin):
     monkeypatch.setattr(meta, "DIFF_CHARS", 5)
-    described = meta.describe_changes("acme", [{"path": "a", "skills": [], "diff": "0123456789"}])
-    assert described["changes"] == [{"path": "a", "skills": [], "diff": "01234"}]
+    (plugin / "skills" / "hooks").mkdir()
+    (plugin / "skills" / "hooks" / "SKILL.md").write_text("a skill dir named like a mechanism\n")
+    change = {"path": "a", "targets": ["hooks", "spec"], "diff": "0123456789"}
+    described = meta.describe_changes("acme", [change], plugin)
+    assert described["changes"] == [change | {"diff": "01234"}]
+    assert list(described["skill_texts"]) == ["spec"]
 
 
 @pytest.mark.parametrize(
@@ -86,20 +90,27 @@ def classifying(probabilities: dict[str, float]):
 
 
 @pytest.mark.parametrize(
-    ("probabilities", "verdict", "needs_reading"),
+    ("probabilities", "verdict", "needs_reading", "targets"),
     [
-        ({"adopt": 0.1, "adapt": 0.3, "ignore": 0.6}, "ignore", False),
-        ({"adopt": 0.11, "adapt": 0.3, "ignore": 0.59}, "ignore", True),
-        ({"adopt": 0.9, "adapt": 0.05, "ignore": 0.05}, "adopt", True),
-        ({"adopt": 0.05, "adapt": 0.9, "ignore": 0.05}, "adapt", True),
+        ({"adopt": 0.1, "adapt": 0.3, "ignore": 0.6}, "ignore", False, ["spec"]),
+        ({"adopt": 0.11, "adapt": 0.3, "ignore": 0.59}, "ignore", True, ["spec"]),
+        ({"adopt": 0.9, "adapt": 0.05, "ignore": 0.05}, "adopt", True, ["spec"]),
+        ({"adopt": 0.05, "adapt": 0.9, "ignore": 0.05}, "adapt", True, ["spec"]),
+        ({"adopt": 0.0, "adapt": 0.0, "ignore": 1.0}, "ignore", True, ["spec", "hooks/skill-drift"]),
     ],
-    ids=["confident ignore is recorded", "unsure ignore is read", "adopt is read", "adapt is read"],
+    ids=[
+        "confident ignore is recorded",
+        "unsure ignore is read",
+        "adopt is read",
+        "adapt is read",
+        "a change feeding a mechanism is always read",
+    ],
 )
-def test_classify_change_records_only_confident_ignores(probabilities, verdict, needs_reading):
+def test_classify_change_records_only_confident_ignores(probabilities, verdict, needs_reading, targets):
     gathered = {
         "source": "acme",
-        "changes": [{"path": "skills/to-spec/SKILL.md", "skills": ["spec"], "diff": "+spec v2"}],
-        "skills": {"spec": "spec text"},
+        "changes": [{"path": "skills/to-spec/SKILL.md", "targets": targets, "diff": "+spec v2"}],
+        "skill_texts": {"spec": "spec text"},
         "catalog": {"spec": "spec description"},
     }
     jev = StubJev(classifying(probabilities))
@@ -116,15 +127,15 @@ def test_classify_change_records_only_confident_ignores(probabilities, verdict, 
 def test_an_unchanged_path_is_ignored_without_asking_jev():
     gathered = {
         "source": "acme",
-        "changes": [{"path": "README.md", "skills": [], "diff": "\n"}],
-        "skills": {},
+        "changes": [{"path": "README.md", "targets": [], "diff": "\n"}],
+        "skill_texts": {},
         "catalog": {},
     }
     jev = StubJev(classifying({"ignore": 1.0}))
     result = asyncio.run(meta.classify_change(jev, gathered))
-    assert result["changes"][0] | {"skills": None} == {
+    assert result["changes"][0] | {"targets": None} == {
         "path": "README.md",
-        "skills": None,
+        "targets": None,
         "verdict": "ignore",
         "confidence": 1.0,
         "probabilities": {},

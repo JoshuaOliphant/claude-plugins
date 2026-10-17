@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 from conftest import StubJev, choice, commit, noul, run_git, score
-from jevtools import review
+from jevtools import core, review
 from jevtools.registry import BadInput
 
 EXPORT_V1 = "".join(f"line {n}\n" for n in range(1, 21))
@@ -114,17 +114,18 @@ def test_gather_diff_needs_a_base_and_a_non_empty_diff(repo):
 
 
 def test_review_risk_ranks_files_and_flags_structural_ones_from_the_threshold():
-    scores = {"a.py": review.STRUCTURAL - 0.01, "b.py": review.STRUCTURAL, "c.md": 0.2}
+    scores = {"a.py": review.STRUCTURAL - 0.01, "b.py": review.STRUCTURAL, "c.md": 0.2, "d.py": 3.8}
     jev = StubJev(lambda tool, state, questions: {"risk": score(scores[state["file"]], 5)})
     files = [{"file": name, "status": "modified", "diff": "d"} for name in scores]
     result = asyncio.run(review.review_risk(jev, {"files": files}))
     assert [(entry["file"], entry["structural"]) for entry in result["files"]] == [
+        ("d.py", True),
         ("b.py", True),
         ("a.py", False),
         ("c.md", False),
     ]
     assert result["structural"] is True
-    assert jev.calls[0][1]["changed_files"] == ["a.py", "b.py", "c.md"]
+    assert jev.calls[0][1]["changed_files"] == ["a.py", "b.py", "c.md", "d.py"]
 
 
 def test_essay_heads_reads_each_title_and_opening_paragraph_but_not_the_readme():
@@ -200,7 +201,7 @@ def test_gather_queries_rejects_bad_input(source, payload, message):
 
 
 def test_a_file_past_two_passes_must_be_narrowed_with_a_range(source, monkeypatch):
-    monkeypatch.setattr(review, "CHOICE_LIMIT", 2)
+    monkeypatch.setattr(core, "CHOICE_LIMIT", 2)
     with pytest.raises(BadInput, match="too long to search"):
         review.gather_queries({"repo": str(source), "claim": "c", "file": "notes.md"})
 
@@ -223,17 +224,17 @@ def test_locate_picks_the_line_and_says_whether_the_file_addresses_the_claim(exi
 
 
 def test_locate_past_the_choice_limit_picks_a_window_then_a_line_in_it(monkeypatch):
-    monkeypatch.setattr(review, "CHOICE_LIMIT", 3)
+    monkeypatch.setattr(core, "CHOICE_LIMIT", 3)
 
     def answer(tool, state, questions):
         if tool == "locate/window":
-            return {"window": choice("L4-L6", questions["window"].criteria), "exists": noul(0.9)}
+            return {"group": choice("L4-L6", questions["group"].criteria), "exists": noul(0.9)}
         assert "exists" not in questions
         return {"line": choice("L5", questions["line"].criteria)}
 
     jev = StubJev(answer)
     result = asyncio.run(review.locate(jev, {"queries": [{"claim": "c", "file": "notes.md", "lines": LINES}]}))
-    assert list(jev.calls[0][2]["window"].criteria) == ["L1-L3", "L4-L6", "L7-L7"]
+    assert list(jev.calls[0][2]["group"].criteria) == ["L1-L3", "L4-L6", "L7-L7"]
     assert jev.calls[1][1]["document"] == "L4| text 4\nL5| text 5\nL6| text 6"
     assert {key: result["locations"][0][key] for key in ("line", "exists", "found")} == {
         "line": 5,

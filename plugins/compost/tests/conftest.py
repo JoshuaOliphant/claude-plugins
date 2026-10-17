@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
@@ -110,15 +111,16 @@ class StubClient:
 
 
 class StubJev:
-    """Stands in for jevtools.core.Jev in tool tests: `answer(tool, state, questions)` returns plain answer dicts."""
+    """Stands in for jevtools.core.Jev in tool tests: `answer(tool, state, questions)` returns plain answer dicts,
+    which reach the tool behind the same Answers view Jev.ask returns."""
 
     def __init__(self, answer):
         self.answer = answer
         self.calls: list[tuple[str, dict, dict]] = []
 
-    async def ask(self, tool: str, state: dict, questions: dict) -> dict:
+    async def ask(self, tool: str, state: dict, questions: dict) -> core.Answers:
         self.calls.append((tool, state, questions))
-        return self.answer(tool, state, questions)
+        return core.Answers(self.answer(tool, state, questions))
 
 
 def run_git(repo: Path, *args: str) -> str:
@@ -179,3 +181,37 @@ license = "Apache-2.0"
 pin = "bbbbbbbbbbbbbbbb"
 ''')
     return path
+
+
+@dataclass
+class ClaudeHome:
+    dir: Path
+    listing: Path
+    disabled: Path
+    calls: Path
+
+    def install(self, *plugins: dict) -> None:
+        """Sets what `claude plugin list --json` prints: dicts shaped like the CLI's, `{"id", "scope", "enabled"}`."""
+        self.listing.write_text(json.dumps(list(plugins)))
+
+
+@pytest.fixture
+def claude_home(tmp_path, monkeypatch) -> ClaudeHome:
+    """A throwaway ~/.claude, and a `claude` CLI on PATH that lists what `install` set and logs `plugin disable` ids.
+    `calls` gets one line per run: the subcommand and the CLAUDE_CONFIG_DIR it saw (`unset` when none)."""
+    home = ClaudeHome(tmp_path / ".claude", tmp_path / "installed.json", tmp_path / "disabled.log", tmp_path / "calls")
+    home.dir.mkdir()
+    home.install()
+    binary = tmp_path / "bin" / "claude"
+    binary.parent.mkdir()
+    binary.write_text(
+        "#!/bin/sh\n"
+        f'echo "$2 ${{CLAUDE_CONFIG_DIR-unset}}" >> "{home.calls}"\n'
+        f'if [ "$2" = list ]; then cat "{home.listing}"; exit 0; fi\n'
+        f'if [ "$2" = disable ]; then echo "$3" >> "{home.disabled}"; exit 0; fi\n'
+        "exit 1\n"
+    )
+    binary.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{binary.parent}{os.pathsep}{os.environ['PATH']}")
+    monkeypatch.delenv("CLAUDE_CONFIG_DIR", raising=False)
+    return home

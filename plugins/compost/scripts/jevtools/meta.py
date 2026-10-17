@@ -7,7 +7,6 @@ from pathlib import Path
 import pile
 from typesafe_sdk import Choice, Noul
 
-from jevtools.core import top
 from jevtools.registry import BadInput, require, tool
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[2]
@@ -88,17 +87,18 @@ DIFF_CHARS = 12000
 RECORD_IGNORE_AT = 0.6
 
 
-def fed_skills(path: str, feeds: dict[str, list[str]]) -> list[str]:
-    by_skill, _ = pile.map_changes([path], feeds)
-    return sorted(by_skill)
+def fed_targets(path: str, feeds: dict[str, list[str]]) -> list[str]:
+    by_target, _ = pile.map_changes([path], feeds)
+    return sorted(by_target)
 
 
 def describe_changes(source: str, changes: list[dict], root: Path = PLUGIN_ROOT) -> dict:
-    fed = sorted({skill for change in changes for skill in change["skills"]})
+    # classify-change judges skill text only; turn reads mechanism targets (`hooks`, `hooks/<mod>`) by hand.
+    fed = sorted({target for change in changes for target in change["targets"] if not pile.is_mechanism(target)})
     return {
         "source": source,
         "changes": [change | {"diff": change["diff"][:DIFF_CHARS]} for change in changes],
-        "skills": skill_texts(fed, root),
+        "skill_texts": skill_texts(fed, root),
         "catalog": skill_descriptions(root),
     }
 
@@ -108,7 +108,7 @@ def gather_changes(payload: dict) -> dict:
     if not payload["paths"]:
         raise BadInput("`paths` is empty")
     try:
-        sources = {source.name: source for source in pile.load(Path(payload.get("pile", pile.PILE)))}
+        sources = {source.name: source for source in pile.load(Path(payload.get("pile", pile.PILE))).sources}
         if payload["source"] not in sources:
             raise BadInput(f"no source named {payload['source']!r} in pile.toml")
         source = sources[payload["source"]]
@@ -120,31 +120,33 @@ def gather_changes(payload: dict) -> dict:
         diffs = {path: pile.git("-C", str(clone), "diff", pin, head, "--", path) for path in payload["paths"]}
     except pile.PileError as error:
         raise BadInput(str(error)) from error
-    changes = [{"path": path, "skills": fed_skills(path, source.feeds), "diff": diff} for path, diff in diffs.items()]
+    changes = [{"path": path, "targets": fed_targets(path, source.feeds), "diff": diff} for path, diff in diffs.items()]
     return describe_changes(source.name, changes)
 
 
 async def classify(jev, gathered: dict, change: dict) -> dict:
-    decided = {"path": change["path"], "skills": change["skills"]}
+    decided = {"path": change["path"], "targets": change["targets"]}
     if not change["diff"].strip():
         return decided | {"verdict": "ignore", "confidence": 1.0, "probabilities": {}, "needs_reading": False}
     state = {
         "source": gathered["source"],
         "change": {"path": change["path"], "diff": change["diff"]},
         "compost_skills": {
-            skill: gathered["skills"][skill] for skill in change["skills"] if skill in gathered["skills"]
+            target: gathered["skill_texts"][target] for target in change["targets"] if target in gathered["skill_texts"]
         },
         "compost_catalog": gathered["catalog"],
         "rulings": RULINGS,
     }
     answers = await jev.ask("classify-change", state, {"verdict": VERDICT})
-    probabilities = answers["verdict"]["probabilities"]
-    verdict, confidence = top(probabilities, 1)[0]
+    [(verdict, confidence)] = answers.ranked("verdict", 1)
     return decided | {
         "verdict": verdict,
         "confidence": round(confidence, 3),
-        "probabilities": {name: round(value, 3) for name, value in probabilities.items()},
-        "needs_reading": verdict != "ignore" or confidence < RECORD_IGNORE_AT,
+        "probabilities": {name: round(value, 3) for name, value in answers.probabilities("verdict").items()},
+        # Jev never sees a mechanism's text, so its ignore cannot clear a change that feeds one.
+        "needs_reading": verdict != "ignore"
+        or confidence < RECORD_IGNORE_AT
+        or any(pile.is_mechanism(target) for target in change["targets"]),
     }
 
 
@@ -188,15 +190,15 @@ def route_question(skills: dict[str, str]) -> Choice:
 
 async def route_one(jev, prompt: str, question: Choice) -> dict:
     answers = await jev.ask("route", {"request": prompt}, {"skill": question})
-    probabilities = answers["skill"]["probabilities"]
-    (skill, first), (_, second) = top(probabilities, 2)
+    ranked = answers.ranked("skill")
+    (skill, first), (_, second) = ranked[:2]
     margin = first - second
     return {
         "prompt": prompt,
         "skill": skill,
         "margin": round(margin, 3),
         "close": margin < CLOSE_MARGIN,
-        "probabilities": {name: round(value, 3) for name, value in top(probabilities, len(probabilities))},
+        "probabilities": {name: round(value, 3) for name, value in ranked},
     }
 
 
@@ -323,8 +325,8 @@ def gather_passages(payload: dict) -> dict:
 
 async def lint(jev, unit: dict) -> dict[str, float]:
     answers = await jev.ask("rulings-lint", {"policy": POLICY, "passage": unit}, LINT_QUESTIONS)
-    scores = {rule: answers[rule]["noul"] for rule in RULES}
-    gate, allowed = answers["gate"]["noul"], answers["allowed"]["noul"]
+    scores = {rule: answers.noul(rule) for rule in RULES}
+    gate, allowed = answers.noul("gate"), answers.noul("allowed")
     return {"unallowed_stop": gate * (1 - allowed)} | scores | {"gate": gate, "allowed": allowed}
 
 
@@ -384,7 +386,7 @@ def gather_stop(payload: dict) -> dict:
 async def stop_guard(jev, gathered: dict) -> dict:
     state = {"run": RUN, "allowed_stops": ALLOWED_STOPS, "message": gathered["message"]}
     answers = await jev.ask("stop-guard", state, {"waits": MESSAGE_WAITS, "allowed": MESSAGE_ALLOWED})
-    waits, allowed = answers["waits"]["noul"], answers["allowed"]["noul"]
+    waits, allowed = answers.noul("waits"), answers.noul("allowed")
     score = waits * (1 - allowed)
     return {
         "block": score >= BLOCK_AT,

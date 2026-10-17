@@ -15,6 +15,13 @@ is worth keeping into the code. The Standards reviewer reports drift a diff intr
 `doc_refs`.
 _Avoid_: drift (alone), stale docs, doc rot.
 
+**Mechanism**: a mod or hook judged by what it enforces: the event it fires on and the compost
+rule it makes happen rather than states. "Mod or hook" is the kind of an upstream item;
+"mechanism" is how `compost:turn` judges one, and what a `feeds` target in `pile.toml` names on
+compost's side: `hooks` for its hooks as a whole, `hooks/<mod>` for one mod its hooks module
+registers. In code: `pile.is_mechanism`.
+_Avoid_: guard, enforcement hook.
+
 **Semantic invariant**: a law central to what a context means, which holds whatever policy or
 failure comes along, stated with the side to err on ("never charge twice; on doubt, don't
 charge"). Listed under Semantic invariants in the context's `CONTEXT.md`, set by `compost:spec`,

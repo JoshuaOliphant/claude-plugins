@@ -27,7 +27,8 @@ the pattern is mechanical, a check stops it better than more words in the skill
 
 `${CLAUDE_PLUGIN_ROOT}/scripts/skill_drift.py` does the bookkeeping (Python 3.11+ via uv, stdlib
 only). It drops hits on skills that are no longer active (a disabled plugin, a `skillOverrides`
-entry set to `off`, a removed personal skill) and counts only hits on each skill's latest version,
+entry set to `off`, a removed personal skill), reading plugins from `claude plugin list --json`
+as `compost:setup`'s replaced check does, and counts only hits on each skill's latest version,
 so a skill already fixed stops producing patterns from its old text.
 
 ## Review the log

@@ -1,5 +1,6 @@
 # What compost was made from. `pin` is the upstream commit compost reflects; `feeds` maps upstream
-# paths to the compost skills they fed ("canon" for the essays). Roles:
+# paths to what they fed in compost: a skill by name, "canon" for the essays, or a mechanism as
+# "hooks" (the hooks as a whole) or "hooks/<mod>" (one mod in hooks/). Roles:
 #   input: compost takes text from it, and pile.py checks it for drift since the pin.
 #   frozen: an input that will not change again (a retired plugin); listed for attribution only.
 #   reference: watched for ideas; nothing taken yet, so it is not in NOTICE.

@@ -1,6 +1,8 @@
 # ABOUTME: Tests `skill_drift.py`: grouping skill-drift hits into cross-session patterns on active skills, routing each
 # ABOUTME: to its owner, splitting by skill version, and recording reviews. Runs against a throwaway ~/.claude and repo.
+import importlib
 import json
+import sys
 
 import pytest
 import skill_drift
@@ -22,23 +24,17 @@ def hit(**fields) -> dict:
 
 
 @pytest.fixture
-def machine(tmp_path):
+def machine(claude_home, tmp_path):
     """A ~/.claude with compost and plugin-dev enabled, one personal skill, one skill off, and a marketplace repo."""
-    claude_dir = tmp_path / ".claude"
+    claude_dir = claude_home.dir
+    claude_home.install(
+        {"id": "compost@oliphant", "scope": "user", "enabled": True},
+        {"id": "plugin-dev@official", "scope": "project", "enabled": True},
+        {"id": "stick-shift@oliphant", "scope": "user", "enabled": False},
+    )
     (claude_dir / "skills" / "grilling").mkdir(parents=True)
     (claude_dir / "skills" / "grilling" / "SKILL.md").write_text("---\nname: grilling\n---\n")
-    (claude_dir / "settings.json").write_text(
-        json.dumps(
-            {
-                "enabledPlugins": {
-                    "compost@oliphant": True,
-                    "plugin-dev@official": True,
-                    "stick-shift@oliphant": False,
-                },
-                "skillOverrides": {"compost:pause": "off"},
-            }
-        )
-    )
+    (claude_dir / "settings.json").write_text(json.dumps({"skillOverrides": {"compost:pause": "off"}}))
     (claude_dir / "projects" / "-repo").mkdir(parents=True)
     (claude_dir / "projects" / "-repo" / "s1.jsonl").write_text("{}\n")
     repo = tmp_path / "repo"
@@ -168,3 +164,19 @@ def test_cli_reports_unreadable_settings(machine, capsys):
     (claude_dir / "settings.json").write_text("{")
     assert skill_drift.main(["--claude-dir", str(claude_dir), "patterns", "--repo", str(repo)]) == 1
     assert "is not valid JSON" in capsys.readouterr().err
+
+
+def test_skill_drift_runs_without_pile(machine, monkeypatch):
+    monkeypatch.setitem(sys.modules, "pile", None)
+    monkeypatch.delitem(sys.modules, "skill_drift")
+    fresh = importlib.import_module("skill_drift")
+    claude_dir, repo, log = machine
+    log(hit(session="s1"), hit(session="s2"))
+    assert [p["skill"] for p in fresh.patterns(claude_dir, repo)["patterns"]] == ["compost:build"]
+
+
+def test_personal_skill_hits_need_no_claude_cli(machine, monkeypatch):
+    claude_dir, repo, log = machine
+    log(hit(skill="grilling", session="s1"), hit(skill="grilling", session="s2"))
+    monkeypatch.setenv("PATH", "")
+    assert [p["skill"] for p in skill_drift.patterns(claude_dir, repo)["patterns"]] == ["grilling"]
