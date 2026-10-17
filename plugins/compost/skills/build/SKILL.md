@@ -139,7 +139,7 @@ no test counts until you have seen it fail for the right reason.
     re-covers an existing one: run `duplicate-test` with the base the branch started from
     ([jev](references/jev.md)), and fold every `fold into <test>` into that test as step 4 says.
     Exit 3: compare each new test against its neighbours in the file yourself. When
-    `docs/agents/testing.md` records cosmic-ray, also make each new test earn its place by
+    `docs/agents/testing.md` records mutation testing for Python, also make each new test earn its place by
     mutation: collect per-test coverage and run `thin.py matrix --tests <new node ids>`, then
     `thin.py verdict`, as `compost:thin` does. A new test the verdict calls redundant or
     kills-nothing gets step 5 of that skill, a break by hand, and folds into its subsumer when

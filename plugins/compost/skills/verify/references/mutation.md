@@ -20,53 +20,36 @@ untracked=$(git ls-files --others --exclude-standard)
 [ -z "$untracked" ] || printf 'untracked, so never mutated: %s\nrun git add -N on the new sources\n' "$untracked"
 ```
 
-`git diff` leaves out untracked files, so a new module is never mutated until `git add -N` (or a
-real `git add`) puts it in the index; a run with untracked sources is not clean.
+`git diff` leaves out untracked files, so for the tools below that read it, a new module is never
+mutated until `git add -N` (or a real `git add`) puts it in the index; a run with untracked sources
+is not clean. `thin.py` reads untracked files itself.
 
-### Python: cosmic-ray
+### Python: thin.py survivors
 
-mutmut 3 refuses flat modules that tests import through `sys.path` (a `scripts/` directory, a
-conftest that inserts a path): it stops with "none match any mutant key". cosmic-ray mutates the
-file in place and runs any test command, so it works with every layout. When the repo already runs
-mutmut, keep it, but it has no line filter: narrow `source_paths` to the files the diff touches.
-
-Add `cosmic-ray` as a dev dependency (`uv add --dev cosmic-ray`) and commit a config, for example
-`cosmic-ray.toml`:
-
-```toml
-[cosmic-ray]
-module-path = "src/pkg"            # a file or a directory; it must hold every file the diff changes
-timeout = 30.0
-excluded-modules = []
-test-command = "python -m pytest -x -q -p no:cacheprovider --no-cov"
-
-[cosmic-ray.distributor]
-name = "local"
-```
-
-Then, as one command so a failed baseline stops it:
+compost's `thin.py` runs the mutants itself; cosmic-ray only supplies them. Each mutant is served
+from memory to a child forked from a warm process, so the tree never changes and runs go side by
+side. It runs a changed line's mutants against the tests that cover it, and a line no test runs,
+such as a module constant or a default argument that runs only at import, against every test. It
+reads git for the changed lines, untracked files included, so no `git add -N` is needed. It
+refuses to start unless the covering tests pass unmutated, and it counts timeouts and crashes apart
+from kills. From the directory pytest runs in:
 
 ```bash
-filter=$(mktemp) && trap 'rm -f "$filter"' EXIT && printf '[cosmic-ray.filters.git-filter]\nbranch = "%s"\n' "$base" > "$filter" \
-  && uv run cosmic-ray baseline cosmic-ray.toml \
-  && rm -f .cosmic-ray.sqlite \
-  && uv run cosmic-ray init cosmic-ray.toml .cosmic-ray.sqlite \
-  && uv run cr-filter-git --config "$filter" .cosmic-ray.sqlite \
-  && uv run cosmic-ray exec cosmic-ray.toml .cosmic-ray.sqlite \
-  && uv run cr-report .cosmic-ray.sqlite --surviving-only --show-diff \
-  && python3 -c 'import sqlite3; db = sqlite3.connect(".cosmic-ray.sqlite"); print("mutants run:", db.execute("select count(*) from work_results where test_outcome is not null").fetchone()[0])'
+T=${TMPDIR:-/tmp}/mutation && mkdir -p "$T"
+pytest --cov=<package> --cov-context=test --cov-report= -p no:cacheprovider
+coverage json --show-contexts -o "$T/contexts.json"
+uv run --with cosmic-ray python ${CLAUDE_PLUGIN_ROOT}/scripts/thin.py survivors "$T/contexts.json" \
+  --base "$base" --paths <source dirs> --pytest-args "-q -p no:cacheprovider --no-cov" > "$T/survivors.json"
 ```
 
-An empty survivor list reads the same whether every mutant was killed or none ran, so the last line
-counts the ones that ran. The filter only removes mutants, so a changed file outside `module-path`
-gets none: when the count is 0, or lower than `git diff --stat "$base"` suggests, the run did not
-check the change.
-
-`cr-filter-git` reads its base only from a config file and defaults to `master`, so the base goes
-in a throwaway one rather than the committed config.
-
-Add `.cosmic-ray.sqlite` to `.gitignore`. `--no-cov` keeps a coverage gate in `addopts` from
-failing every mutant run; drop it when the project has no pytest-cov.
+It prints JSON: `survivors` (each with `module`, `line`, `operator`, and the `mutated` line) and the
+counts of `changed_lines`, `mutants`, `killed`, `survived`, `timeouts` and `crashed`. It exits 0 when
+every mutant is killed, 1 when any survive or time out, 2 when the baseline or git fails, and 3 when
+changed lines made no mutant: comments only, or `--paths` misses the changed code. A timeout is a
+mutant that made the tests hang, such as a loop that never ends; sort it like a survivor. A crash
+broke the run outright, such as an annotation that no longer evaluates, and no test had to notice.
+`--paths` names source, never tests. `--no-cov` keeps a coverage gate in `addopts` from failing
+every run.
 
 ### JavaScript and TypeScript: StrykerJS
 
@@ -113,25 +96,23 @@ compost; setup's proving run is the check.
 
 ## Gotchas
 
-- **Read the survivors, not the score.** `cr-report`'s "surviving mutants: 18 (11.61%)" divides
-  by every job, including the ones the git filter skipped; on that run 18 of 18 run mutants
-  survived. Count the mutants that ran and the ones that survived yourself.
-- **Stale bytecode.** A mutant that keeps a file's size and lands in the same second as the last
-  write can leave Python running the old `.pyc`. cosmic-ray sets `PYTHONDONTWRITEBYTECODE=1` for
-  its own test runs; set it yourself for any other runner or a hand-made edit.
-- **A timeout counts as a kill.** cosmic-ray scores a test command that outruns `timeout` as
-  killed, so a slow suite turns survivors into kills. Keep the test command well under it.
-- **In-place tools leave a mutant behind when interrupted.** cosmic-ray restores each file after
-  its mutant, but a timeout or Ctrl-C that stops the run itself can strand one. Run `git diff` afterwards and restore
-  anything you did not write.
-- **A broken setup reports perfect tests.** cosmic-ray counts a test command that errors as
-  a killed mutant. Run outside `uv run`, cosmic-ray's `python` resolved to an interpreter without
-  pytest and reported all 154 of `stop_guard.py`'s mutants killed in 5 seconds, where the real
-  run kills 111 and leaves 43. Run the baseline (`cosmic-ray baseline`, or the stack's suite on the
-  unmutated tree) in the same environment right before the run, and stop on a non-zero exit. A
-  run where nothing survives on more than a few lines deserves the same suspicion.
+`thin.py` handles these for Python; the tools for the other stacks leave them to you.
+
+- **A broken setup reports perfect tests.** Most tools count a test command that errors as a killed
+  mutant: run outside `uv run`, cosmic-ray's own runner resolved `python` to an interpreter without
+  pytest and reported all 154 of `stop_guard.py`'s mutants killed in 5 seconds, where the real run
+  kills 111 and leaves 43. Run the suite unmutated in the same environment right before, and stop
+  on a failure. A run where nothing survives on more than a few lines deserves the same suspicion.
+- **A timeout counts as a kill.** cosmic-ray's runner scores a test command that outruns its
+  timeout as killed, so a slow suite turns survivors into kills.
+- **Read the survivors, not the score.** `cr-report`'s "surviving mutants: 18 (11.61%)" divided by
+  every job, including the ones its git filter skipped; 18 of 18 run mutants had survived.
+- **In-place tools leave a mutant behind when interrupted.** A timeout or Ctrl-C that stops the run
+  itself can strand one. Run `git diff` afterwards and restore anything you did not write.
+- **Stale bytecode.** A hand-made edit that keeps a file's size and lands in the same second as the
+  last write can leave Python running the old `.pyc`. Set `PYTHONDONTWRITEBYTECODE=1`.
 - **The base branch.** Diff against the commit the branch started from, the same base
-  `compost:review` reads. Against a stale local `main`, the filter mutates other people's lines.
+  `compost:review` reads. Against a stale local `main`, every tool mutates other people's lines.
 
 ## Triage
 
