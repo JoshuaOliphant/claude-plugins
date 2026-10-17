@@ -41,6 +41,43 @@ operator for:
 So the matrix finds where to look, and step 5 decides; on this suite four in five of its
 redundant verdicts were wrong.
 
+## Thin's own operators
+
+`--operators all` adds six ast-based operators, named `thin/...`, for the breaks above: a deleted
+statement or guard (`DeleteStatement`), a constant return (`ReturnConstant`), one term dropped from
+an `and`, an `or`, or an `all`/`any` over a literal (`DropTerm`), a changed string
+(`ReplaceString`), a float threshold nudged one digit finer (`NudgeThreshold`), and a same-type
+call or `sorted` dropped (`DropCall`). A threshold set at import, such as a module constant, runs
+against every selected test of its module, since coverage gives its line no test. `matrix` uses
+them by default; `survivors` adds them only with `--operators all`, and lists surviving string
+mutants apart, in `survived_strings`, since most are messages nobody reads.
+
+Measured on the 174 candidates outside `test_thin.py`, at 100% line coverage:
+
+| Operators | Mutants | Wall | Keep | Redundant | Kills-nothing |
+| --- | --- | --- | --- | --- | --- |
+| cosmic-ray's | 2,275 | 17 min | 71 | 91 | 7 |
+| cosmic-ray's and thin's | 3,747 | 31 min | 108 | 64 | 2 |
+
+The new operators made 1,472 mutants: 774 strings, 236 deleted statements, 171 constant returns,
+153 dropped terms, 72 dropped calls, 66 nudged thresholds. They moved 37 tests to keep, and the
+removable count fell from 98 to 66. Step 5 still overturned 58 of those 66, and no one operator
+would have caught most of them; the breaks were:
+
+- one element dropped from a tuple, list, or `except (A, B)`: a flag name in a skip list, a part of
+  a cache key;
+- part of a regex: a character class, an optional group, `re.DOTALL`;
+- a condition narrowed or loosened while the body stays: `if verdict:` becomes always true, a
+  `0 <` lower bound added, `and pick == "spike"` added;
+- a threshold moved at the comparison rather than at its constant, since a test that reads the
+  constant moves with it;
+- a statement moved out of a `try`, two statements swapped, an early return inserted, a wrong
+  non-empty constant returned.
+
+These are rewrites, and most need knowing what the code is for. So the operators make the matrix
+judge fewer tests wrongly, and do not make step 5 optional: on this suite nearly nine in ten of the
+redundant verdicts left were still wrong.
+
 ## Cost
 
 A short test run is mostly startup: starting Python, importing pytest, collecting. So `thin.py`
