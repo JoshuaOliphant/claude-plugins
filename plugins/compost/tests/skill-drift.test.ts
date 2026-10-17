@@ -1,11 +1,16 @@
 // ABOUTME: Engine tests for skill-drift: which turns are judged, the hits written to the session's log file, and /drift.
-// ABOUTME: Jev's HTTP answers are stubbed at the engine boundary; tests/test_evals_skill_drift.py measures live judgments.
+// ABOUTME: Jev's HTTP answers and skill_drift.py's run are stubbed at the engine boundary; the Python suite reads the hit back.
 import { expect, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-type Asked = { state: Record<string, unknown>; questions: Record<string, unknown> }
-type World = { asked: Asked[]; files: Map<string, string>; toasts: string[]; order: string[] }
+import writtenHit from './skill-drift-hit.ts'
 
+type Asked = { state: Record<string, unknown>; questions: Record<string, unknown> }
+type Ran = { exitCode: number; stdout: string; stderr: string } | 'refused'
+type World = { asked: Asked[]; files: Map<string, string>; toasts: string[]; order: string[]; ran: string[][]; drift: Ran }
+
+// compost's folder, the root the engine loads the mod from (this file sits in its tests/).
+const PLUGIN_ROOT = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
 const LOG = '/home/me/.claude/skill-drift/1970-01-01-session-9.jsonl'
 
 const TURN = [
@@ -25,7 +30,7 @@ function engine(
   messages: unknown[] = TURN,
   key: string | null = 'test-key',
 ): World {
-  const world: World = { asked: [], files: new Map(), toasts: [], order: [] }
+  const world: World = { asked: [], files: new Map(), toasts: [], order: [], ran: [], drift: { exitCode: 0, stdout: '', stderr: '' } }
   on('session.start', (_$, e) => ({ cwd: e.cwd }))
   on('command.register', () => ({ value: { command: 'drift' } }) as never)
   on('skill.prompt', (_$, e) => ({ text: e.text }))
@@ -37,7 +42,12 @@ function engine(
   on('session.messages', () => ({ value: messages }) as never)
   on('session.id', () => ({ value: 'session-9' }) as never)
   on('env.get', (_$, e) => ({ value: (e as { name: string }).name === 'HOME' ? '/home/me' : (key ?? undefined) }) as never)
-  on('process.run', () => ({ value: { exitCode: 44, stdout: '', stderr: 'not found' } }) as never)
+  on('process.run', (_$, e) => {
+    const { argv } = e as { argv: string[] }
+    if (argv[0] !== 'uv') return { value: { exitCode: 44, stdout: '', stderr: 'not found' } } as never
+    world.ran.push(argv)
+    return (world.drift === 'refused' ? { deny: 'uv is not installed' } : { value: world.drift }) as never
+  })
   on('clock.now', () => ({ value: 1000 }) as never)
   on('ui.toast', (_$, e) => {
     world.toasts.push(String((e as { text: string }).text))
@@ -85,18 +95,7 @@ test('a turn that used a skill is judged against it and its drift is logged', as
   expect(world.asked.length).toBe(1)
   expect(Object.keys(world.asked[0].questions)).toEqual(['deviated', 'missing_guidance'])
   expect(JSON.stringify(world.asked[0].state)).toContain('ERROR no such command')
-  const [hit, ...rest] = logged(world)
-  expect(rest).toEqual([])
-  expect(hit).toMatchObject({
-    skill: 'compost:verify',
-    kind: 'deviated',
-    p: 0.92,
-    at: 1000,
-    session: 'session-9',
-    turn: 'turn-1',
-    prompt: 'run the verify gates',
-  })
-  expect(hit.evidence).toContain('TOOL Bash {"command":"uv run pytest"} -> ERROR no such command')
+  expect(logged(world)).toEqual([writtenHit])
   expect(world.toasts).toEqual([])
 })
 
@@ -130,7 +129,7 @@ test("the user's next message is checked for a correction of the skill's work", 
   expect(world.asked.length).toBe(2)
 })
 
-test('hits append to the session file without a toast, carry the skill version, and /drift counts sessions', async ($, on) => {
+test('hits append to the session file without a toast and carry the skill version', async ($, on) => {
   const world = engine(on, { deviated: 0.9 })
   await $.session.start(START)
   for (const [turnId, text] of [['turn-1', 'steps'], ['turn-2', 'steps'], ['turn-3', 'steps, revised']]) {
@@ -143,15 +142,44 @@ test('hits append to the session file without a toast, carry the skill version, 
   expect(hits[1].skill_hash).toBe(hits[0].skill_hash)
   expect(hits[2].skill_hash).not.toBe(hits[0].skill_hash)
   expect(world.toasts).toEqual([])
-  const shown = await $.command.run({ name: 'drift', args: '' } as never)
-  expect((shown as { text: string }).text).toContain('compost:build  deviated×1 sessions')
 })
 
-test('/drift with no log says so', async ($, on) => {
-  engine(on, {})
+test("/drift prints skill_drift.py's summary of the log, so it shows the hits compost:skill-drift counts open", async ($, on) => {
+  const world = engine(on, {})
+  world.drift = { exitCode: 0, stdout: 'compost:build  deviated×2 sessions (pattern)\n', stderr: '' }
   await $.session.start(START)
   const shown = await $.command.run({ name: 'drift', args: '' } as never)
-  expect((shown as { text: string }).text).toBe('skill-drift: no drift recorded yet')
+  expect((shown as { text: string }).text).toBe('compost:build  deviated×2 sessions (pattern)')
+  expect(world.ran).toHaveLength(1)
+  expect(world.ran[0]).toEqual([
+    'uv',
+    'run',
+    '--quiet',
+    `${PLUGIN_ROOT}/scripts/skill_drift.py`,
+    '--claude-dir',
+    '/home/me/.claude',
+    'summary',
+  ])
+})
+
+test('/drift reports a failed or refused run of skill_drift.py instead of throwing', async ($, on) => {
+  const world = engine(on, {})
+  world.drift = { exitCode: 1, stdout: '', stderr: '\nskill_drift: settings.json is not valid JSON\n' }
+  await $.session.start(START)
+  const failed = await $.command.run({ name: 'drift', args: '' } as never)
+  expect((failed as { text: string }).text).toBe(
+    'skill-drift: skill_drift.py summary failed (exit 1): skill_drift: settings.json is not valid JSON',
+  )
+  world.drift = {
+    exitCode: 1,
+    stdout: '',
+    stderr: 'Traceback (most recent call last):\n  File "skill_drift.py", line 9, in <module>\nKeyError: \'p\'\n\n',
+  }
+  const crashed = await $.command.run({ name: 'drift', args: '' } as never)
+  expect((crashed as { text: string }).text).toBe("skill-drift: skill_drift.py summary failed (exit 1): KeyError: 'p'")
+  world.drift = 'refused'
+  const refused = await $.command.run({ name: 'drift', args: '' } as never)
+  expect((refused as { text: string }).text).toStartWith('skill-drift: could not run skill_drift.py: ')
 })
 
 test("a long turn is trimmed from the middle, so Jev still reads the user's request", async ($, on) => {

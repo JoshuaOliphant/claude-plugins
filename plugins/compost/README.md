@@ -83,7 +83,9 @@ compost also ships the `skill-drift` mod (`hooks/skill-drift.ts`), the collector
 loaded, asking whether the turn deviated from the skill or lacked its guidance; when your next
 prompt follows such a turn it sends one more per skill, asking whether you are correcting that
 work. A request averages about 5,000 input tokens, a fraction of a cent. Hits go to
-`~/.claude/skill-drift/`, and `/drift` lists them by skill. It never shows anything or holds a
+`~/.claude/skill-drift/`, and `/drift` lists the open ones by skill, as `scripts/skill_drift.py
+summary` gives them (through `uv`), so it leaves out what `compost:skill-drift` leaves out: reviewed
+hits, retired skills, and a skill's earlier versions. It never shows anything or holds a
 prompt back: your prompt enters before the correction check runs, and a TypeSafe outage is
 skipped. Without a key it asks and writes nothing. It is an in-process hooks module, so it loads
 only where Claude Code runs plugin hooks modules (`CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` while
@@ -132,8 +134,11 @@ compost replaces several collections that cover the same stages, listed in the `
 of `pile.toml`. Leaving them on gives Claude two answers to every request, so setup finds the ones
 still active on the machine and, with your yes, turns them off: it disables their plugins and sets
 their personal and skills-CLI skills to `"off"` under `skillOverrides` in `~/.claude/settings.json`.
-Plugins synced from claude.ai have to be turned off there. Nothing is deleted, so turning one back
-on is a settings change. To check a machine directly: `uv run scripts/pile.py replaced [--apply]`.
+Plugins synced from claude.ai have to be turned off there. Turning these off deletes nothing, so
+turning one back on is a settings change. Setup also lists installs their marketplace no longer
+lists and, with a separate yes, uninstalls them, keeping their data. That cannot be undone, since
+the marketplace no longer offers them. To check a machine directly:
+`uv run scripts/pile.py replaced [--apply [--keep-orphans]]`.
 
 ## Development
 

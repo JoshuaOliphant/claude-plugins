@@ -1,10 +1,15 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 # ABOUTME: Reads the skill-drift log (~/.claude/skill-drift/*.jsonl): hits where Jev judged a turn drifted from a skill.
-# ABOUTME: CLI: `patterns` groups unreviewed hits on active skills into cross-session patterns; `mark` records reviews.
+# ABOUTME: CLI: `patterns` groups open hits into cross-session patterns, `summary` is the mod's /drift, `mark` reviews.
 import argparse
 import json
 import sys
 from collections import defaultdict
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 
 import claude_config
@@ -58,10 +63,20 @@ def read_log(claude_dir: Path) -> Log:
             if not line.strip():
                 continue
             try:
-                hits.append(Hit(**json.loads(line)))
+                hits.append(parse_hit(line))
             except (json.JSONDecodeError, TypeError):
                 unreadable += 1
     return Log(hits, unreadable)
+
+
+def parse_hit(line: str) -> Hit:
+    """One log line as a Hit; TypeError when it is not an object with exactly Hit's fields, each of its type."""
+    hit = Hit(**json.loads(line))
+    for spec in fields(Hit):
+        value = getattr(hit, spec.name)
+        if isinstance(value, bool) or not isinstance(value, (int, float) if spec.type is float else spec.type):
+            raise TypeError(f"{spec.name} is {type(value).__name__}, not {spec.type.__name__}")
+    return hit
 
 
 def reviewed(claude_dir: Path) -> set[str]:
@@ -126,11 +141,17 @@ def group_hits(hits: list[Hit], active: set[str], done: set[str], min_sessions: 
     return groups, dict(retired)
 
 
-def patterns(claude_dir: Path, repo: Path, min_sessions: int = MIN_SESSIONS) -> dict:
+def open_groups(claude_dir: Path, min_sessions: int) -> tuple[Log, list[Group], dict]:
+    """The log, its open hits (unreviewed, on an active skill's latest version) by skill and kind, and the retired."""
     log = read_log(claude_dir)
     config = claude_config.read(claude_dir)
     active = {hit.skill for hit in log.hits if config.skill_active(hit.skill)}
     groups, retired = group_hits(log.hits, active, reviewed(claude_dir), min_sessions)
+    return log, groups, retired
+
+
+def patterns(claude_dir: Path, repo: Path, min_sessions: int = MIN_SESSIONS) -> dict:
+    log, groups, retired = open_groups(claude_dir, min_sessions)
     found = []
     for group in groups:
         who, file = owner(group.skill, claude_dir, repo)
@@ -151,6 +172,33 @@ def patterns(claude_dir: Path, repo: Path, min_sessions: int = MIN_SESSIONS) -> 
     return {"patterns": [asdict(pattern) for pattern in found], "retired": retired, "unreadable": log.unreadable}
 
 
+def summary(claude_dir: Path) -> str:
+    """/drift's text: every open hit by skill, most hits first, with the kinds that make a pattern marked."""
+    log, groups, retired = open_groups(claude_dir, 1)
+    by_skill: dict[str, list[Group]] = defaultdict(list)
+    for group in groups:
+        by_skill[group.skill].append(group)
+    lines = []
+    for skill, kinds in sorted(by_skill.items(), key=lambda item: (-sum(len(g.hits) for g in item[1]), item[0])):
+        counts = []
+        for group in kinds:
+            sessions = len({hit.session for hit in group.hits})
+            plural = "s" if sessions != 1 else ""
+            counts.append(
+                f"{group.kind}×{sessions} session{plural}" + (" (pattern)" if sessions >= MIN_SESSIONS else "")
+            )
+        lines.append(f"{skill}  " + "  ".join(counts))
+        latest = max((hit for group in kinds for hit in group.hits), key=lambda hit: hit.at)
+        lines.append(f'  latest: {latest.kind} p={latest.p:.2f} on "{latest.prompt[:90]}"')
+    if not lines:
+        lines.append("skill-drift: no open drift" if log.hits else "skill-drift: no drift recorded yet")
+    if retired:
+        lines.append(f"skill-drift: {sum(retired.values())} hits on retired skills left out")
+    if log.unreadable:
+        lines.append(f"skill-drift: {log.unreadable} unreadable log lines left out")
+    return "\n".join(lines)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="skill_drift", description="Review the skill-drift log.")
     parser.add_argument("--claude-dir", type=Path, default=claude_config.CLAUDE_DIR)
@@ -158,12 +206,15 @@ def main(argv: list[str] | None = None) -> int:
     grouped = commands.add_parser("patterns", help="print unreviewed cross-session patterns on active skills as JSON")
     grouped.add_argument("--min-sessions", type=int, default=MIN_SESSIONS)
     grouped.add_argument("--repo", type=Path, default=Path.cwd(), help="the marketplace checkout; default the cwd")
+    commands.add_parser("summary", help="print every open hit by skill, as the mod's /drift shows it")
     marking = commands.add_parser("mark", help="record hits as reviewed so later runs leave them out")
     marking.add_argument("ids", nargs="+")
     args = parser.parse_args(argv)
     try:
         if args.command == "patterns":
             print(json.dumps(patterns(args.claude_dir, args.repo, args.min_sessions), indent=2))
+        elif args.command == "summary":
+            print(summary(args.claude_dir))
         else:
             print(f"{mark(args.claude_dir, args.ids)} hits reviewed in all")
     except claude_config.ClaudeConfigError as error:
