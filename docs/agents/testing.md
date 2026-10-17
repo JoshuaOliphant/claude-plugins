@@ -41,3 +41,26 @@ user decides at `compost:finish`.
 Exclusions agreed so far:
 
 - `if __name__ == "__main__":` guards (`exclude_also` in compost's coverage config).
+
+## Mutation
+
+Tool: cosmic-ray, added (`plugins/compost/cosmic-ray.toml`, dev group in compost's `pyproject.toml`).
+Status: working, last proved on 861127d (15 mutants on its lines: 13 killed, 2 survived, 60s).
+
+`compost:verify` runs this over the branch's diff and sorts every surviving mutant as killed,
+equivalent, or excluded. The exclusions above apply to mutants too. It covers compost's
+`scripts/` only; the other plugins have no mutation tool yet, so build and verify walk their
+mutations by hand. Each mutant runs the whole compost suite in parallel (`-n auto`, about 7s),
+since a test can reach a module through a subprocess or fixture without importing it.
+
+```bash
+cd plugins/compost
+base=$(git merge-base origin/main HEAD)
+filter=$(mktemp) && printf '[cosmic-ray.filters.git-filter]\nbranch = "%s"\n' "$base" > "$filter" \
+  && uv run cosmic-ray baseline cosmic-ray.toml \
+  && rm -f .cosmic-ray.sqlite \
+  && uv run cosmic-ray init cosmic-ray.toml .cosmic-ray.sqlite \
+  && uv run cr-filter-git --config "$filter" .cosmic-ray.sqlite \
+  && PYTHONDONTWRITEBYTECODE=1 uv run cosmic-ray exec cosmic-ray.toml .cosmic-ray.sqlite \
+  && uv run cr-report .cosmic-ray.sqlite --surviving-only --show-diff
+```

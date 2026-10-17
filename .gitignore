@@ -70,3 +70,6 @@ trees/
 
 # compost plugin-eval suite: lives in private compost-evals, linked in locally to run
 /plugins/compost/evals
+
+# compost mutation-testing session database (cosmic-ray)
+/plugins/compost/.cosmic-ray.sqlite
