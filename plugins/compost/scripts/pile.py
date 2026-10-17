@@ -1,5 +1,6 @@
 # ABOUTME: Reads compost's pile.toml: the sources compost was made from, and the plugins and skills it replaces.
-# ABOUTME: CLI: `status`/`advance`/`notice` track upstream sources; `replaced` finds and turns off superseded skills.
+# ABOUTME: CLI: `status`/`advance`/`notice` track upstream sources; `replaced` turns off superseded skills and
+# ABOUTME: uninstalls plugins their marketplace no longer lists.
 import argparse
 import dataclasses
 import subprocess
@@ -209,6 +210,7 @@ class Active:
     plugins: list[str]
     synced: list[str]
     skills: list[str]
+    orphaned: list[tuple[str, str]]
 
 
 def find_active(replaces: Replaces, config: claude_config.Config) -> Active:
@@ -217,32 +219,47 @@ def find_active(replaces: Replaces, config: claude_config.Config) -> Active:
         plugins=[plugin_id for plugin_id in listed if not config.is_synced(plugin_id)],
         synced=[plugin_id for plugin_id in listed if config.is_synced(plugin_id)],
         skills=[name for name in replaces.skills if config.skill_active(name)],
+        orphaned=config.orphaned,
     )
 
 
 def render_active(active: Active) -> str:
-    if not (active.plugins or active.synced or active.skills):
-        return "Nothing compost replaces is active here."
-    lines = ["compost replaces these, and they are still active here:"]
+    if active.plugins or active.synced or active.skills:
+        lines = ["compost replaces these, and they are still active here:"]
+    else:
+        lines = ["Nothing compost replaces is active here."]
     if active.plugins:
         lines.append(f"  plugins to disable: {', '.join(active.plugins)}")
     if active.skills:
         lines.append(f"  skills to set off in skillOverrides: {', '.join(active.skills)}")
     if active.synced:
         lines.append(f"  synced from claude.ai, turn off in your claude.ai settings: {', '.join(active.synced)}")
+    if active.orphaned:
+        lines.append("Installed, but their marketplace no longer lists them:")
+        orphans = ", ".join(f"{plugin_id} ({scope} scope)" for plugin_id, scope in active.orphaned)
+        lines.append(f"  plugins to uninstall: {orphans}")
     return "\n".join(lines)
 
 
-def replaced(pile: Path, claude_dir: Path, apply: bool) -> str:
+def replaced(pile: Path, claude_dir: Path, apply: bool, keep_orphans: bool = False) -> str:
+    """With `apply`, disables superseded plugins, sets superseded skills off, and uninstalls orphaned installs unless
+    `keep_orphans`. An uninstall keeps the plugin's data directory, since a delisted plugin cannot be reinstalled."""
     active = find_active(load(pile).replaces, claude_config.read(claude_dir))
     report = render_active(active)
-    if not apply or not (active.plugins or active.skills):
+    orphans = [] if keep_orphans else active.orphaned
+    if not apply or not (active.plugins or active.skills or orphans):
         return report
     for plugin_id in active.plugins:
         claude_config.claude("plugin", "disable", plugin_id, "--json", claude_dir=claude_dir)
     if active.skills:
         claude_config.turn_off_skills(claude_dir, active.skills)
+    for plugin_id, scope in orphans:
+        claude_config.claude(
+            "plugin", "uninstall", plugin_id, "--scope", scope, "--keep-data", "--json", claude_dir=claude_dir
+        )
     done = [f"disabled {len(active.plugins)} plugins", f"set {len(active.skills)} skills off in skillOverrides"]
+    if orphans:
+        done.append(f"uninstalled {len(orphans)} installs their marketplace dropped")
     remaining = f"; still to do by hand: {', '.join(active.synced)} on claude.ai" if active.synced else ""
     return f"{report}\n{'; '.join(done)}{remaining}. Restart Claude Code to apply."
 
@@ -251,8 +268,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="pile", description="Track the upstream sources compost was made from.")
     parser.add_argument("--pile", type=Path, default=PILE)
     commands = parser.add_subparsers(dest="command", required=True)
-    superseded = commands.add_parser("replaced", help="list what compost replaces that is still active on this machine")
-    superseded.add_argument("--apply", action="store_true", help="disable those plugins and set those skills off")
+    superseded = commands.add_parser(
+        "replaced", help="list what compost replaces that is still active here, and installs no marketplace lists"
+    )
+    superseded.add_argument(
+        "--apply", action="store_true", help="disable those plugins, set those skills off, uninstall those installs"
+    )
+    superseded.add_argument("--keep-orphans", action="store_true", help="with --apply, uninstall nothing")
     superseded.add_argument("--claude-dir", type=Path, default=claude_config.CLAUDE_DIR)
     commands.add_parser("status", help="list upstream changes since each input's pin, by compost skill")
     move = commands.add_parser("advance", help="move SOURCE's pin to COMMIT, resolved to a full hash upstream")
@@ -263,7 +285,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command == "replaced":
-            print(replaced(args.pile, args.claude_dir, args.apply))
+            print(replaced(args.pile, args.claude_dir, args.apply, args.keep_orphans))
         elif args.command == "status":
             print(render_status(drift(load(args.pile).sources)))
         elif args.command == "advance":

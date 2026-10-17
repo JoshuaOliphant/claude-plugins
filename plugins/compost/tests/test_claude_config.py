@@ -124,10 +124,35 @@ def test_plugins_are_listed_only_when_a_plugin_is_asked_about(claude_home):
     assert claude_home.calls.read_text() == f"list {claude_home.dir}\n"
 
 
-def test_unparseable_cli_output_is_reported(claude_home):
-    claude_home.listing.write_text("Warning: update available\n[]")
-    with pytest.raises(claude_config.ClaudeConfigError, match="claude plugin list --json printed no JSON: "):
-        claude_config.read(claude_home.dir).enabled
+@pytest.mark.parametrize(
+    ("listing", "asked", "command"),
+    [("listing", "enabled", "plugin list"), ("marketplaces", "orphaned", "plugin marketplace list")],
+    ids=["plugin-list", "marketplace-list"],
+)
+def test_unparseable_cli_output_is_reported(claude_home, listing, asked, command):
+    getattr(claude_home, listing).write_text("Warning: update available\n[]")
+    with pytest.raises(claude_config.ClaudeConfigError, match=f"claude {command} --json printed no JSON: "):
+        getattr(claude_config.read(claude_home.dir), asked)
+
+
+def test_orphans_come_only_from_marketplaces_whose_clone_has_a_catalog(claude_home):
+    claude_home.install(
+        {"id": "kept@listed", "scope": "user", "enabled": True},
+        {"id": "dropped@listed", "scope": "local", "enabled": False},
+        {"id": "dropped@uncloned", "scope": "user", "enabled": True},
+        {"id": "dropped@managed", "scope": "managed", "enabled": True},
+    )
+    claude_home.add_marketplace("listed", "kept")
+    claude_home.add_marketplace("managed")
+    (claude_home.add_marketplace("uncloned") / ".claude-plugin" / "marketplace.json").unlink()
+    assert claude_config.read(claude_home.dir).orphaned == [("dropped@listed", "local")]
+
+
+def test_an_unreadable_marketplace_catalog_is_reported(claude_home):
+    clone = claude_home.add_marketplace("broken")
+    (clone / ".claude-plugin" / "marketplace.json").write_text("{not json")
+    with pytest.raises(claude_config.ClaudeConfigError, match="broken.*marketplace.json is not valid JSON"):
+        claude_config.read(claude_home.dir).orphaned
 
 
 @pytest.mark.parametrize(
