@@ -32,10 +32,10 @@ python ${CLAUDE_PLUGIN_ROOT}/scripts/resolve_paths.py
 
 It prints JSON. Search **every** directory in `read_paths` (the solutions directory is always the
 first entry, `{write_path}`); use `vault_root` (if set) for semantic search. Never read the config
-file yourself.
+file yourself. Skip any `read_paths` entry that does not exist.
 
 If the resolver exits non-zero, the solutions directory (`write_path`) does not exist: say so and
-suggest `/compound-knowledge:setup`, then still search the `read_paths` entries that do exist.
+suggest `/compound-knowledge:setup`, then search the remaining entries.
 
 You also know about a **cross-project registry** at `~/.claude/compound-knowledge-registry.md` that maps other projects' knowledge bases. When local results are thin (<3 hits), you search across projects.
 
