@@ -14,7 +14,12 @@ PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 REPO_ROOT = PLUGIN_ROOT.parent.parent
 SCHEMA = PLUGIN_ROOT / "skills" / "compound-capture" / "references" / "yaml-schema.md"
 EVALS = PLUGIN_ROOT / "skills" / "compound-retrieve" / "evals"
-KBS = [REPO_ROOT / "knowledge" / "solutions", *sorted(EVALS.glob("**/knowledge/solutions"))]
+FIXTURES = EVALS / "fixtures"
+KBS = [
+    REPO_ROOT / "knowledge" / "solutions",
+    FIXTURES / "solutions",
+    *sorted((FIXTURES / "home").glob("**/knowledge/solutions")),
+]
 REQUIRED = [
     "title",
     "project",

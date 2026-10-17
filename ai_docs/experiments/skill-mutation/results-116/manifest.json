@@ -1,0 +1,10 @@
+{
+ "skill_sha": "837f6eb2a1c19f86cfe20f8b1526782df69eae77",
+ "evals_sha": "b566126f3d43ab8a78547b8fb2b05032d71a7026",
+ "model": "haiku",
+ "judge_model": "sonnet",
+ "agents": [],
+ "home_seed": "plugins/compound-knowledge/skills/compound-retrieve/evals/fixtures/home",
+ "kb": "plugins/compound-knowledge/skills/compound-retrieve/evals/fixtures/solutions",
+ "plugin_root": "plugins/compound-knowledge"
+}
