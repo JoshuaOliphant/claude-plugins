@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 import thin
+from conftest import commit, run_git
 
 PYTEST = ["-q", "-p", "no:cacheprovider"]
 
@@ -211,9 +212,9 @@ def test_an_empty_selection_runs_nothing(toy, monkeypatch):
     }
 
 
-def test_a_run_past_its_timeout_is_killed_and_leaves_no_report(toy, tmp_path):
+def test_a_run_past_its_timeout_is_killed_and_reported_as_timed_out_not_crashed(toy, tmp_path):
     (tmp_path / "test_slow.py").write_text("import time\ndef test_slow():\n    time.sleep(30)\n")
-    assert thin.fork_runs([(None, None, ["test_slow.py::test_slow"])], PYTEST, 1, 1) == [None]
+    assert thin.fork_runs([(None, None, ["test_slow.py::test_slow"])], PYTEST, 1, 1) == [thin.TIMED_OUT]
 
 
 def test_children_read_stdin_from_devnull_so_a_read_cannot_block(toy, tmp_path):
@@ -243,11 +244,19 @@ def test_children_drop_compost_scripts_from_sys_path_so_its_modules_cannot_shado
     ],
     ids=["broken setup", "red baseline", "junit prefix", "collection error"],
 )
-def test_the_matrix_refuses_to_run_on_a_baseline_that_is_not_green(toy, tmp_path, pytest_args, test_body, message):
+@pytest.mark.parametrize(
+    "run",
+    [
+        lambda toy, args: thin.kill_matrix(toy, None, args, 60, 2, log=NO_LOG),
+        lambda toy, args: thin.survivors(toy, {"age.py": {2}}, args, 60, 2, log=NO_LOG),
+    ],
+    ids=["matrix", "survivors"],
+)
+def test_mutation_refuses_to_run_on_a_baseline_that_is_not_green(toy, tmp_path, pytest_args, test_body, message, run):
     source = (tmp_path / "test_age.py").read_text().replace("assert adult(18)\n", f"{test_body}\n")
     (tmp_path / "test_age.py").write_text(source)
     with pytest.raises(thin.BaselineError, match=message):
-        thin.kill_matrix(toy, None, pytest_args, 60, 2, log=NO_LOG)
+        run(toy, pytest_args)
 
 
 def test_main_runs_each_stage_and_prints_json(toy, tmp_path, capsys, monkeypatch):
@@ -310,3 +319,123 @@ def test_a_test_needed_only_jointly_has_no_single_subsumer():
     assert len(result["minimal"]) == 2
     dropped = next(t for t, entry in result["tests"].items() if entry["verdict"] == "redundant")
     assert result["tests"][dropped]["subsumed_by"] is None
+
+
+@pytest.fixture
+def toy_repo(toy, tmp_path):
+    """The toy as a git repository, its first commit the base a branch starts from."""
+    run_git(tmp_path, "init", "-q", "-b", "main")
+    run_git(tmp_path, "config", "user.email", "t@example.com")
+    run_git(tmp_path, "config", "user.name", "t")
+    return toy, commit(tmp_path, {}, "base")
+
+
+def test_changed_lines_are_the_diff_from_base_with_uncommitted_and_untracked_files(toy_repo, tmp_path):
+    _, base = toy_repo
+    commit(tmp_path, {"lib/kept.py": "a = 1\nb = 2\n", "lib/gone.py": "x = 1\n", "notes.md": "x\n"}, "more")
+    (tmp_path / "lib" / "kept.py").write_text("a = 1\nb = 3\nc = 4\n")
+    (tmp_path / "lib" / "new.py").write_text("n = 1\nm = 2\no = 3\n")
+    (tmp_path / "lib" / "data.txt").write_text("not python\n")
+    run_git(tmp_path, "rm", "-q", "lib/gone.py")
+    (tmp_path / "age.py").write_text("def adult(age):\n    return age > 18\n")
+    assert thin.changed_lines(base, ["lib"]) == {"lib/kept.py": {1, 2, 3}, "lib/new.py": {1, 2, 3}}
+    assert thin.changed_lines("HEAD", ["lib"]) == {"lib/kept.py": {2, 3}, "lib/new.py": {1, 2, 3}}
+    assert thin.changed_lines(base, ["age.py"]) == {"age.py": {2}}
+
+
+def test_survivors_runs_an_import_time_line_against_the_whole_suite(toy, tmp_path):
+    (tmp_path / "age.py").write_text("LIMIT = 18\ndef adult(age):\n    return age >= LIMIT\n")
+    toy["files"]["age.py"]["contexts"] = {"1": [""], "2": [""], "3": [f"{t}|run" for t in TOY_TESTS]}
+    result = thin.survivors(toy, {"age.py": {1}}, PYTEST, 60, 2, log=NO_LOG)
+    assert result["mutants"] > 0 and result["killed"] == result["mutants"]
+    assert result["survivors"] == []
+
+
+def test_survivors_stops_each_mutant_at_its_first_failing_test(toy, tmp_path, monkeypatch):
+    (tmp_path / "test_age.py").write_text(
+        textwrap.dedent("""\
+            from age import adult
+
+            def test_boundary():
+                assert not adult(17)
+
+            def test_later():
+                with open("ran.log", "a") as log:
+                    log.write("ran\\n")
+            """)
+    )
+    one_mutant(monkeypatch, mutated="def adult(age):\n    return True\n")
+    tests = ["test_age.py::test_boundary", "test_age.py::test_later"]
+    toy["files"]["age.py"]["contexts"]["2"] = [f"{t}|run" for t in tests]
+    result = thin.survivors(toy, {"age.py": {2}}, PYTEST, 60, 1, log=NO_LOG)
+    assert result["killed"] == 1
+    assert (tmp_path / "ran.log").read_text() == "ran\n"  # the baseline's run only; the mutant's stopped first
+
+
+@pytest.mark.parametrize(
+    ("mutated", "timeout", "outcome"),
+    [
+        ("import time\ntime.sleep(30)\n", 2, "timeouts"),
+        ("import os\nos._exit(3)\n", 60, "crashed"),
+        ("raise ImportError('boom')\n", 60, "crashed"),
+    ],
+    ids=["hang", "no report", "collection error"],
+)
+def test_survivors_counts_timeouts_and_crashes_apart_from_kills(toy, monkeypatch, mutated, timeout, outcome):
+    one_mutant(monkeypatch, mutated=mutated)
+    result = thin.survivors(toy, {"age.py": {2}}, PYTEST, timeout, 1, log=NO_LOG)
+    assert result[outcome] == 1 and result["killed"] == result["survived"] == 0
+
+
+def test_main_survivors_lists_an_untested_change_and_exits_1(toy_repo, tmp_path, capsys):
+    toy, base = toy_repo
+    (tmp_path / "age.py").write_text("def adult(age):\n    return age >= 18\ndef child(age):\n    return age < 13\n")
+    (tmp_path / "ctx.json").write_text(json.dumps(toy))
+    args = ["survivors", "ctx.json", "--base", base, "--paths", "age.py", "--pytest-args", " ".join(PYTEST)]
+    assert thin.main(args) == 1
+    out = capsys.readouterr()
+    result = json.loads(out.out)
+    assert result["changed_lines"] == 2 and result["mutants"] == result["survived"] > 0
+    assert {row["line"] for row in result["survivors"]} == {4}
+    assert all(row.keys() == {"module", "line", "operator", "occurrence", "mutated"} for row in result["survivors"])
+    texts = {row["mutated"] for row in result["survivors"]}
+    assert {"return age > 13", "return age < 14", "return age < 12"} <= texts and "return age < 13" not in texts
+    assert "age.py:4" in out.err
+
+
+def test_main_survivors_exits_0_when_every_mutant_is_killed(toy_repo, tmp_path, capsys):
+    toy, base = toy_repo
+    (tmp_path / "age.py").write_text("def adult(age):\n    return age >= 18  # the boundary\n")
+    (tmp_path / "ctx.json").write_text(json.dumps(toy))
+    args = ["survivors", "ctx.json", "--base", base, "--paths", "age.py", "--pytest-args", " ".join(PYTEST)]
+    assert thin.main(args) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["mutants"] == result["killed"] > 0
+
+
+def test_main_survivors_exits_3_when_changed_lines_make_no_mutant(toy_repo, tmp_path, capsys):
+    toy, base = toy_repo
+    (tmp_path / "age.py").write_text("# who counts as an adult\ndef adult(age):\n    return age >= 18\n")
+    (tmp_path / "ctx.json").write_text(json.dumps(toy))
+    assert thin.main(["survivors", "ctx.json", "--base", base, "--paths", "age.py"]) == 3
+    out = capsys.readouterr()
+    assert json.loads(out.out)["mutants"] == 0
+    assert "1 changed lines made no mutant" in out.err
+
+
+def test_main_survivors_exits_2_on_a_base_git_cannot_read_and_requires_base_and_paths(toy_repo, tmp_path, capsys):
+    toy, _ = toy_repo
+    (tmp_path / "ctx.json").write_text(json.dumps(toy))
+    assert thin.main(["survivors", "ctx.json", "--base", "no-such-ref", "--paths", "age.py"]) == 2
+    assert "thin: git failed: " in capsys.readouterr().err
+    for missing in (["--paths", "age.py"], ["--base", "HEAD"]):
+        with pytest.raises(SystemExit):
+            thin.main(["survivors", "ctx.json", *missing])
+
+
+def test_main_survivors_exits_2_when_the_baseline_fails(toy_repo, tmp_path, capsys):
+    toy, base = toy_repo
+    (tmp_path / "age.py").write_text("def adult(age):\n    return age >= 19\n")
+    (tmp_path / "ctx.json").write_text(json.dumps(toy))
+    assert thin.main(["survivors", "ctx.json", "--base", base, "--paths", "age.py"]) == 2
+    assert "thin: baseline failed: 2 tests fail unmutated" in capsys.readouterr().err

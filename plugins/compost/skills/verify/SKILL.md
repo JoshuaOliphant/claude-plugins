@@ -54,9 +54,10 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    - In a recorded exclusion: leave it. A new exclusion is proposed exactly like a coverage one,
      and the same unattended rule applies.
 
-   There is no score to reach; a survivor left unsorted fails the step, and so does a run that
-   mutated nothing on lines the tool covers. Run `git diff` after the run and restore any mutant an
-   interrupted run left behind. Lines the tool does not cover, outside its recorded paths or in
+   A timeout is sorted the same way. There is no score to reach; a survivor left unsorted fails the
+   step, and so does a run that mutated nothing on lines the tool covers. With a tool that edits
+   files in place, run `git diff` after the run and restore any mutant an interrupted run left
+   behind. Lines the tool does not cover, outside its recorded paths or in
    another language, have only `compost:build`'s walk by hand: name them in the report. With no
    tool recorded, skip this step for the same reason.
 

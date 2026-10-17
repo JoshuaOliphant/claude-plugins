@@ -1,6 +1,6 @@
 # ABOUTME: Finds redundant tests for compost:thin: per-test coverage narrows the candidates, a full kill matrix
-# ABOUTME: (every failing test per mutant, not the first) proves which ones no mutant needs. The matrix runs in the
-# ABOUTME: project's environment, which needs pytest and cosmic-ray; the rest is stdlib.
+# ABOUTME: (every failing test per mutant, not the first) proves which ones no mutant needs. `survivors` runs the
+# ABOUTME: mutants on a branch's changed lines for compost:verify. Mutant runs need pytest and cosmic-ray.
 import argparse
 import importlib.abc
 import importlib.machinery
@@ -8,6 +8,7 @@ import json
 import os
 import shlex
 import signal
+import subprocess
 import sys
 import tempfile
 import time
@@ -64,6 +65,13 @@ def candidates(contexts: dict) -> dict:
 
 class BaselineError(Exception):
     pass
+
+
+class TimedOut:
+    """What fork_runs returns for a run it killed at its deadline, so a hang is never read as a crash or a kill."""
+
+
+TIMED_OUT = TimedOut()
 
 
 def mutants(module: str) -> list[dict]:
@@ -160,7 +168,9 @@ def run_child(pytest_args: list[str], tests: list[str], report: Path, module: st
         os._exit(code)
 
 
-def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers: int) -> list[Report | None]:
+def fork_runs(
+    jobs: list[tuple], pytest_args: list[str], timeout: float, workers: int
+) -> list[Report | TimedOut | None]:
     """Run each (module, source, tests) job in a child forked from this already-warm process, `workers` at a time.
 
     Forking skips the interpreter start and pytest import that dominate a short test run, and serving the mutant
@@ -186,10 +196,28 @@ def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers
                 if not done:
                     os.kill(pid, signal.SIGKILL)
                     os.waitpid(pid, 0)
-                results[index] = read_report(report, tests) if done else None
+                results[index] = read_report(report, tests) if done else TIMED_OUT
                 del running[pid]
             time.sleep(0.005)
     return [results[index] for index in range(len(jobs))]
+
+
+def check_baseline(tests: list[str], pytest_args: list[str], timeout: float) -> None:
+    """Raise unless the unmutated tests all pass and the report names each one.
+
+    Under a broken setup every run fails, and every mutant would read as killed.
+    """
+    [baseline] = fork_runs([(None, None, tests)], pytest_args, timeout, 1)
+    if not isinstance(baseline, Report):
+        raise BaselineError("the unmutated tests left no report: check the interpreter has pytest and the tests import")
+    if baseline.strays:
+        raise BaselineError(f"the report names a failure no selected test matches: {baseline.strays[0]}")
+    if baseline.failed:
+        raise BaselineError(f"{len(baseline.failed)} tests fail unmutated, e.g. {min(baseline.failed)}: fix them first")
+    if missing := set(tests) - baseline.named:
+        raise BaselineError(
+            f"the report never names {min(missing)}: check junit_prefix, and that thin runs from the rootdir"
+        )
 
 
 def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], timeout: float, workers: int,
@@ -210,17 +238,7 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
     everyone = sorted({test for pair in wanted for test in on_line[pair]})
     if not everyone:  # with no node ids, pytest would run the whole suite
         return {"selected": sorted(selected & set(lines)), "mutants": []}
-    [baseline] = fork_runs([(None, None, everyone)], pytest_args, timeout, 1)
-    if baseline is None:
-        raise BaselineError("the unmutated tests left no report: check the interpreter has pytest and the tests import")
-    if baseline.strays:
-        raise BaselineError(f"the report names a failure no selected test matches: {baseline.strays[0]}")
-    if baseline.failed:
-        raise BaselineError(f"{len(baseline.failed)} tests fail unmutated, e.g. {min(baseline.failed)}: fix them first")
-    if missing := set(everyone) - baseline.named:
-        raise BaselineError(
-            f"the report never names {min(missing)}: check junit_prefix, and that thin runs from the rootdir"
-        )
+    check_baseline(everyone, pytest_args, timeout)
     jobs, made = [], []
     for module in sorted({path for path, _ in wanted}):
         source = Path(module).read_text()
@@ -235,7 +253,7 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
             made.append({k: v for k, v in mutant.items() if k != "args"} | {"covering": covering})
     rows = []
     for row, report in zip(made, fork_runs(jobs, pytest_args, timeout, workers)):
-        crashed = report is None or bool(report.strays)  # a mutant that breaks collection kills every covering test
+        crashed = not isinstance(report, Report) or bool(report.strays)  # a broken run kills every covering test
         row["killers"] = row["covering"] if crashed else sorted(report.failed)
         if crashed:
             row["crashed"] = True
@@ -243,6 +261,73 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
         log(f"{row['module']}:{row['line']} {row['operator']}#{row['occurrence']} "
             f"killed by {len(row['killers'])}/{len(row['covering'])}")  # fmt: skip
     return {"selected": sorted(selected & set(lines)), "mutants": rows}
+
+
+def git(*args: str) -> str:
+    return subprocess.run(["git", *args], check=True, capture_output=True, text=True).stdout
+
+
+def changed_lines(base: str, paths: list[str]) -> dict[str, set[int]]:
+    """The Python lines under `paths` that differ from `base` in the working tree, untracked files whole."""
+    changed, current = defaultdict(set), None
+    for line in git("diff", "-U0", "--relative", "--no-color", base, "--", *paths).splitlines():
+        if line.startswith("+++ "):
+            current = line[6:] if line.startswith("+++ b/") else None  # None: the file was deleted
+        elif line.startswith("@@") and current and current.endswith(".py"):
+            new = line.split()[2].lstrip("+").split(",")
+            start, count = int(new[0]), int(new[1]) if len(new) > 1 else 1
+            changed[current].update(range(start, start + count))
+    for path in git("ls-files", "--others", "--exclude-standard", "--", *paths).splitlines():
+        if path.endswith(".py"):
+            changed[path].update(range(1, len(Path(path).read_text().splitlines()) + 1))
+    return {path: lines for path, lines in changed.items() if lines}
+
+
+def first_difference(source: str, mutated: str) -> str:
+    """The first line the mutant changes, stripped; a mutant can add or drop lines, so line numbers can't pick it."""
+    pairs = zip(source.splitlines(), mutated.splitlines() + [""] * len(source.splitlines()))
+    return next((new.strip() for old, new in pairs if old != new), "")
+
+
+def survivors(contexts: dict, changed: dict[str, set[int]], pytest_args: list[str], timeout: float, workers: int,
+              log=print) -> dict:  # fmt: skip
+    """Run each mutant on a changed line, stopping at the first failing test, and report the ones no test notices.
+
+    A changed line no test runs, such as a module constant or a default argument that runs only at import,
+    is tried against the whole suite, since coverage credits import-time lines to no test.
+    """
+    on_line = defaultdict(set)
+    for name, pairs in covered_lines(contexts).items():
+        for path, number in pairs:
+            on_line[(os.path.relpath(path), number)].add(name)
+    everyone = sorted({name for names in on_line.values() for name in names})
+    jobs, made = [], []
+    for module in sorted(changed):
+        source = Path(module).read_text()
+        for mutant in mutants(module):
+            if mutant["line"] not in changed[module] or (mutated := mutate(source, mutant)) is None:
+                continue
+            jobs.append((module, mutated, sorted(on_line.get((module, mutant["line"]), everyone))))
+            made.append({k: v for k, v in mutant.items() if k != "args"}
+                        | {"mutated": first_difference(source, mutated)})  # fmt: skip
+    counts = {"changed_lines": sum(map(len, changed.values())), "mutants": len(jobs)}
+    outcomes = defaultdict(list)
+    if jobs:  # with no node ids, the baseline would run the whole suite
+        check_baseline(sorted({test for _, _, tests in jobs for test in tests}), pytest_args, timeout)
+    for row, report in zip(made, fork_runs(jobs, [*pytest_args, "-x"], timeout, workers)):
+        if report is TIMED_OUT:
+            outcome = "timeouts"
+        elif report is None or report.strays:
+            outcome = "crashed"
+        else:
+            outcome = "killed" if report.failed else "survived"
+        outcomes[outcome].append(row)
+        log(f"{mutant_id(row)} {outcome}")
+    return (
+        counts
+        | {kind: len(outcomes[kind]) for kind in ("killed", "survived", "timeouts", "crashed")}
+        | {"survivors": outcomes["survived"]}
+    )
 
 
 def mutant_id(row: dict) -> str:
@@ -296,10 +381,43 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--workers", type=int, default=os.cpu_count(), help="mutants run side by side")
     judge = sub.add_parser("verdict", help="keep, redundant, or kills-nothing for every test in a matrix")
     judge.add_argument("matrix")
+    diff = sub.add_parser(
+        "survivors",
+        help="the mutants on lines changed since --base that no test notices; exits 1 when any survive or time out, "
+        "2 on a failed baseline, 3 when changed lines made no mutant",
+    )
+    diff.add_argument("contexts")
+    diff.add_argument("--base", required=True, help="the commit the branch started from")
+    diff.add_argument("--paths", nargs="+", required=True, help="the source directories or files to mutate")
+    for flag in ("--pytest-args", "--timeout", "--workers"):
+        action = next(a for a in run._actions if flag in a.option_strings)
+        diff.add_argument(flag, type=action.type, default=action.default, help=action.help)
     args = parser.parse_args(argv)
 
     if args.command == "candidates":
         result = candidates(json.loads(Path(args.contexts).read_text()))
+    elif args.command == "survivors":
+        try:
+            result = survivors(
+                json.loads(Path(args.contexts).read_text()),
+                changed_lines(args.base, args.paths),
+                shlex.split(args.pytest_args),
+                args.timeout,
+                args.workers,
+                log=lambda line: print(line, file=sys.stderr, flush=True),
+            )
+        except BaselineError as error:
+            print(f"thin: baseline failed: {error}", file=sys.stderr)
+            return 2
+        except subprocess.CalledProcessError as error:  # a bad --base must not read as "nothing changed"
+            print(f"thin: git failed: {error.stderr.strip()}", file=sys.stderr)
+            return 2
+        print(json.dumps(result, indent=1))
+        if result["changed_lines"] and not result["mutants"]:
+            print(f"thin: {result['changed_lines']} changed lines made no mutant: comments only, or --paths "
+                  "misses the changed code", file=sys.stderr)  # fmt: skip
+            return 3
+        return 1 if result["survived"] or result["timeouts"] else 0
     elif args.command == "matrix":
         only = json.loads(Path(args.only).read_text())["candidates"] if args.only else args.tests
         try:

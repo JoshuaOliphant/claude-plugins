@@ -84,7 +84,7 @@ Exclusions agreed so far:
 
 ## Mutation
 
-Tool: <cosmic-ray | mutmut | StrykerJS | cargo-mutants | ... | none>, <adopted | added>.
+Tool: <thin.py survivors | cosmic-ray | mutmut | StrykerJS | cargo-mutants | ... | none>, <adopted | added>.
 Status: <working, last proved on <sha> | broken: <first error>>.
 
 `compost:verify` runs this over the branch's diff and sorts every surviving mutant as

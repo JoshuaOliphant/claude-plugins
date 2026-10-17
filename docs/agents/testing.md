@@ -44,22 +44,23 @@ Exclusions agreed so far:
 
 ## Mutation
 
-Tool: cosmic-ray, added. Status: working, last proved on cb0b2ef (96 mutants on its lines: 92
-killed, none by timeout, 4 survived, 1057s).
+Tool: thin.py survivors, compost's own. Status: working, last proved on this tool's own branch
+(#123): 219 mutants on 134 changed lines of `scripts/thin.py`, 184 killed, 11 survived, 1 timeout,
+23 crashed, 348s.
 
 `compost:verify` runs this over the branch's diff and sorts every surviving mutant as unprotected
 behavior, equivalent, or excluded. The exclusions above apply to mutants too.
 
-Run: the cosmic-ray steps in compost's mutation reference
-(`plugins/compost/skills/verify/references/mutation.md`), from `plugins/compost`, with config
-`plugins/compost/cosmic-ray.toml`. Covers compost's `scripts/` only; the other plugins, and
-compost's TypeScript hooks and workflows, get only `compost:build`'s walk by hand.
+Run: the Python steps in compost's mutation reference
+(`plugins/compost/skills/verify/references/mutation.md`) from `plugins/compost`, with
+`--paths scripts` and the plain `pytest` collecting contexts for every module `addopts` covers
+(`uv run --group dev python -m pytest -q -p no:cacheprovider --cov-context=test --cov-report=`).
+Covers compost's `scripts/` only; the other plugins, and compost's TypeScript hooks and workflows,
+get only `compost:build`'s walk by hand.
 
-Sorted on cb0b2ef: `thin.py`'s `sys.path` filter mutated to `<` and `>` was unprotected (a test
-now checks every other entry stays); `- baseline.named` to `^` is equivalent, since `named` only
-holds tests from `everyone`; `strays[0]` to `strays[-1]` only changes which stray the error names.
-
-Sorted earlier, on 861127d: both survivors there are `session()`'s `concurrency=8` default in
-`scripts/jevtools/core.py`, mutated to 7 and 9: equivalent, since they change throughput only and
-no correctness test can tell 7, 8 and 9 apart. Tuning constants are sorted one at a time, not
-excluded as a pattern; where a limit has an edge that breaks behavior (0, negative), test the edge.
+Sorted on #123: the 11 survivors are equivalent. `workers` 1 to 2 on the baseline's single job;
+`strays[0]` to `[-1]` and `- named` to `^`, as on cb0b2ef; `len(new) > 1` to `!= 1`, since a hunk
+range has one or two parts; `k != "args"` to `>` or `is not`, and `==` to `is` on "survivors", which
+string ordering and interning keep the same; `is TIMED_OUT` to `==`, since TimedOut has no `__eq__`;
+stderr's `flush`, and the JSON `indent`. Tuning constants are sorted one at a time, not excluded as a
+pattern; where a limit has an edge that breaks behavior (0, negative), test the edge.
