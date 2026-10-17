@@ -40,16 +40,6 @@ report the error rather than guessing paths.
 
 You also know about a **cross-project registry** at `~/.claude/compound-knowledge-registry.md` that maps other projects' knowledge bases. When local results are thin (<3 hits), you search across projects.
 
-### Your stored preferences
-
-Before searching, check for feedback that shapes your behavior:
-
-```bash
-python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show-feedback
-```
-
-Apply **retrieval_depth** and **general** feedback to how many results you surface and how you present them.
-
 ## What You Know
 
 ### Grep-based retrieval (primary)

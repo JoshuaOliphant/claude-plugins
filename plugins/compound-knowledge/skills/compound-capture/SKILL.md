@@ -100,14 +100,6 @@ For cross-project registry schema:
 
 ## Process
 
-### Step 0: Load Stored Feedback
-
-Run this and apply any returned preferences (capture_format, categorization, triviality_threshold, cross_references, principle_style, general) throughout the capture process:
-
-```bash
-python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show-feedback
-```
-
 ### Step 1: Resolve Solutions Path
 
 Run the resolver as described in Path Resolution and store its `write_path` as `{write_path}`.

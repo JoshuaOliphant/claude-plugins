@@ -100,14 +100,6 @@ For detailed hexagonal architecture explanation and SDK API details:
 
 ## Process
 
-### Step 0: Load Stored Feedback
-
-Run this and apply any returned preferences (architecture, tools, skill_file, ui_components, styling, agent_behavior, general) throughout app scaffolding:
-
-```bash
-python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py hexagonal-agents show-feedback
-```
-
 ### Step 1: Initialize Project Structure
 
 Locate the init script within this skill's directory and run it:

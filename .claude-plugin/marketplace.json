@@ -13,7 +13,7 @@
       "name": "mochi-creator",
       "source": "./plugins/mochi-creator",
       "description": "Create evidence-based spaced repetition flashcards using cognitive science principles. Applies the 5 properties of effective prompts for long-term retention.",
-      "version": "1.4.3",
+      "version": "1.5.0",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -30,7 +30,7 @@
       "name": "hexagonal-agents",
       "source": "./plugins/hexagonal-agents",
       "description": "Build web apps where an AI agent dynamically generates HTML UI using hexagonal architecture with HTMX",
-      "version": "1.5.1",
+      "version": "1.6.0",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -50,7 +50,7 @@
       "name": "compound-knowledge",
       "source": "./plugins/compound-knowledge",
       "description": "Capture solved problems, retrieve past solutions, and graduate accumulated knowledge into living context. Skills: compound-capture, compound-retrieve, compound-graduate.",
-      "version": "0.8.8",
+      "version": "0.9.0",
       "author": {
         "name": "Joshua Oliphant"
       },

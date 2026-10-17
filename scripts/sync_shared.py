@@ -30,15 +30,6 @@ SHARED = REPO_ROOT / "scripts" / "shared"
 # Paths are relative to the repository root.
 SHARED_ARTIFACTS: list[tuple[str, str, list[str]]] = [
     (
-        "feedback_manager.py",
-        "scripts/shared/feedback_manager.py",
-        [
-            "plugins/compound-knowledge/scripts/feedback_manager.py",
-            "plugins/hexagonal-agents/scripts/feedback_manager.py",
-            "plugins/mochi-creator/scripts/feedback_manager.py",
-        ],
-    ),
-    (
         "config_loader.py",
         "scripts/shared/config_loader.py",
         [

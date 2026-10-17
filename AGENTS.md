@@ -50,8 +50,6 @@ Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json` (the
 | **superfan** | One headless Claude per component watching telemetry through read-only MCP tools | `setup` + `triage` skills, `scripts/superfan.py` (run loop, ledger, launchd, notifiers), `scripts/watch_prompt.md` |
 | **compost** | One SDLC workflow made from Matt Pocock's skills, superpowers, pstack, blueprint, and the retired autonomous-sdlc and stick-shift plugins | 17 skills linked by Next moves plus the user-invoked `/compost:wait-what`, `canon/` essays, `compost:prune` + `scripts/doc_refs.py` keeping docs to the core, `compost:thin` + `scripts/thin.py` finding tests no mutant needs and, as `thin.py survivors`, the mutants a diff leaves alive for `compost:verify`, `/compost:review-changes` workflow + `reviewer` agent, Jev tools (`scripts/jev.py`), browser diff review (`scripts/review_diff/`), semantic Python lint (`scripts/lint/`), `pile.toml` + `scripts/pile.py` tracking upstream sources for `compost:turn` |
 
-The older plugins (mochi-creator, hexagonal-agents, compound-knowledge) also ship a `feedback` skill backed by `scripts/feedback_manager.py` to persist user preferences across sessions.
-
 ## Key Architectural Concepts
 
 ### Plugin System Structure
@@ -101,8 +99,8 @@ python scripts/check_marketplace_versions.py   # exits non-zero on any drift
 ### Shared-source sync (generate from one source)
 
 Some artifacts must be physically present in multiple self-contained plugins but should never
-diverge — e.g. `feedback_manager.py` (shipped by 3 plugins), `config_loader.py` (the
-`.claude/<name>.local.md` reader shared by `compound-knowledge` and `understand`), and
+diverge — e.g. `config_loader.py` (the `.claude/<name>.local.md` reader shared by
+`compound-knowledge` and `understand`) and
 `prompt_design_principles.md` (shared by `mochi-creator` and `understand`). The canonical copy
 lives under `scripts/shared/`; each plugin's copy is generated from it.
 
