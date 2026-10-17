@@ -73,3 +73,5 @@ trees/
 
 # compost:build's per-issue worktrees
 .worktrees/
+# and the harness worktrees Claude Code falls back to
+.claude/worktrees/
