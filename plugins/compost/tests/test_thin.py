@@ -168,6 +168,7 @@ def test_mutate_makes_the_mutant_in_memory_or_none_when_cosmic_ray_cannot(tmp_pa
         ("def f(x):\n    return x.is_file()\n", "ReturnConstant",
          ["def f(x):\n    return (True)\n", "def f(x):\n    return (False)\n"]),
         ("def f(x):\n    return x + 1\n", "ReturnConstant", ["def f(x):\n    return (None)\n"]),
+        ("def f(d):\n    return d.isoformat()\n", "ReturnConstant", ["def f(d):\n    return (None)\n"]),
         ("def f(x):\n    if x:\n        return isinstance(x, int)\n", "ReturnConstant",
          ["def f(x):\n    if x:\n        return (True)\n", "def f(x):\n    if x:\n        return (False)\n"]),
         ("def f():\n    return False\n", "ReturnConstant", ["def f():\n    return (True)\n"]),
@@ -185,22 +186,26 @@ def test_mutate_makes_the_mutant_in_memory_or_none_when_cosmic_ray_cannot(tmp_pa
           "def f(s):\n    return s >= (0.71) and s < 1e-3 and s == 0.5 and s > 18\n",
           "def f(s):\n    return s >= 0.7 and s < (0.0009) and s == 0.5 and s > 18\n",
           "def f(s):\n    return s >= 0.7 and s < (0.0011) and s == 0.5 and s > 18\n"]),
+        ("def f(s):\n    return s > -0.5\n", "NudgeThreshold",
+         ["def f(s):\n    return s > (-0.49)\n", "def f(s):\n    return s > (-0.51)\n"]),
         ("FOUND = {'a': 0.75}\ndef f(): sleep(0.5)\n", "NudgeThreshold",
          ["FOUND = {'a': (0.749)}\ndef f(): sleep(0.5)\n", "FOUND = {'a': (0.751)}\ndef f(): sleep(0.5)\n"]),
-        ("a = p.removeprefix('x').upper\nb = list(dict.fromkeys(ys))\nc = sorted(ys, key=len)\np.strip()\n", "DropCall",
-         ["a = (p).upper\nb = list(dict.fromkeys(ys))\nc = sorted(ys, key=len)\np.strip()\n",
-          "a = p.removeprefix('x').upper\nb = list((ys))\nc = sorted(ys, key=len)\np.strip()\n",
-          "a = p.removeprefix('x').upper\nb = list(dict.fromkeys(ys))\nc = (ys)\np.strip()\n"]),
+        ("a = p.removeprefix('x').upper\nb = list(dict.fromkeys(ys))\nc = sorted(ys, key=len)\n"
+         "p.strip()\nsorted(ys)\n", "DropCall",
+         ["a = (p).upper\nb = list(dict.fromkeys(ys))\nc = sorted(ys, key=len)\np.strip()\nsorted(ys)\n",
+          "a = p.removeprefix('x').upper\nb = list((ys))\nc = sorted(ys, key=len)\np.strip()\nsorted(ys)\n",
+          "a = p.removeprefix('x').upper\nb = list(dict.fromkeys(ys))\nc = (ys)\np.strip()\nsorted(ys)\n"]),
     ],
     ids=["guard", "call statement, not docstring", "no elif", "bool annotation", "first of a union", "optional forward reference",
          "typing union",
-         "predicate method", "no annotation", "predicate call in a branch", "only the other bool", "one per term",
-         "all() terms", "one term left", "lines kept", "strings and whole f-strings, not docstrings or annotations", "ordered float comparisons",
+         "predicate method", "no annotation", "is-prefix not a predicate",
+         "predicate call in a branch", "only the other bool", "one per term",
+         "all() terms", "one term left", "lines kept", "strings and whole f-strings, not docstrings or annotations", "ordered float comparisons", "negative threshold",
          "module constants", "same-type methods and wrappers"],
 )  # fmt: skip
 def test_thin_operators_make_the_breaks_cosmic_ray_cannot(tmp_path, source, operator, expected):
     (tmp_path / "m.py").write_text(source)
-    made = [m for m in thin.extra_mutants(str(tmp_path / "m.py")) if m["operator"] == f"thin/{operator}"]
+    made = [m for m in thin.own_mutants(str(tmp_path / "m.py")) if m["operator"] == f"thin/{operator}"]
     mutated = [thin.mutate(source, m) for m in made]
     assert sorted(mutated) == sorted(expected)
     assert [m["occurrence"] for m in made] == list(range(len(made)))
@@ -288,7 +293,7 @@ def guards_matrix(tmp_path_factory):
 )  # fmt: skip
 def test_the_matrix_makes_the_breaks_that_only_one_test_catches(guards_matrix, line, mutated, killers):
     [row] = [row for row in guards_matrix["mutants"] if row["line"] == line and row["mutated"] == mutated]
-    assert row["operator"].startswith(thin.EXTRA)
+    assert row["operator"].startswith(thin.OWN)
     assert row["killers"] == [f"test_guards.py::{name}" for name in killers]
 
 
@@ -301,14 +306,14 @@ def test_the_matrix_tries_a_threshold_set_at_import_on_every_test_of_its_module(
 
 def test_a_break_inside_a_statement_goes_by_the_line_coverage_records(tmp_path):
     (tmp_path / "m.py").write_text('def f():\n    raise ValueError(\n        "negative"\n    )\n')
-    [string] = [m for m in thin.extra_mutants(str(tmp_path / "m.py")) if m["operator"] == "thin/ReplaceString"]
+    [string] = [m for m in thin.own_mutants(str(tmp_path / "m.py")) if m["operator"] == "thin/ReplaceString"]
     assert string["line"] == 2 and string["args"]["span"][0] == 3
 
 
 def test_stock_operators_leave_thin_out(tmp_path):
     (tmp_path / "guards.py").write_text(GUARDS)
-    operators = {m["operator"] for m in thin.mutants(str(tmp_path / "guards.py"), extra=False)}
-    assert operators and not any(op.startswith(thin.EXTRA) for op in operators)
+    operators = {m["operator"] for m in thin.mutants(str(tmp_path / "guards.py"), own=False)}
+    assert operators and not any(op.startswith(thin.OWN) for op in operators)
     assert {m["operator"] for m in thin.mutants(str(tmp_path / "guards.py"))} > operators
 
 
@@ -337,7 +342,7 @@ def test_the_verdict_keeps_the_boundary_and_flags_the_restatement_and_the_no_op(
 def one_mutant(monkeypatch, line: int = 2, mutated: str | None = "def adult(age):\n    return age > 18\n"):
     """Swap cosmic-ray's mutant list for a single `>=` to `>` on `line`, made as `mutated`."""
     mutant = {"module": "age.py", "operator": "gt", "args": {}, "occurrence": 0, "line": line}
-    monkeypatch.setattr(thin, "mutants", lambda module, extra: [mutant])
+    monkeypatch.setattr(thin, "mutants", lambda module, own: [mutant])
     monkeypatch.setattr(thin, "mutate", lambda source, m: mutated)
 
 
@@ -478,7 +483,7 @@ def test_main_matrix_takes_node_ids_in_place_of_a_candidates_file(toy, tmp_path,
     one_mutant(monkeypatch)
     asked = []
     listed = thin.mutants
-    monkeypatch.setattr(thin, "mutants", lambda module, extra: asked.append(extra) or listed(module, extra))
+    monkeypatch.setattr(thin, "mutants", lambda module, own: asked.append(own) or listed(module, own))
     (tmp_path / "ctx.json").write_text(json.dumps(toy))
     args = ["matrix", "ctx.json", "--tests", "test_age.py::test_runs_only", "--workers", "1"]
     assert thin.main([*args, "--pytest-args", " ".join(PYTEST)]) == 0
@@ -605,7 +610,7 @@ def test_main_survivors_lists_an_untested_change_and_exits_1(toy_repo, tmp_path,
     assert result["changed_lines"] == 2 and result["mutants"] == result["survived"] > 0
     assert {row["line"] for row in result["survivors"]} == {4}
     assert all(row.keys() == {"module", "line", "operator", "occurrence", "mutated"} for row in result["survivors"])
-    assert not any(row["operator"].startswith(thin.EXTRA) for row in result["survivors"])  # stock unless asked
+    assert not any(row["operator"].startswith(thin.OWN) for row in result["survivors"])  # stock unless asked
     texts = {row["mutated"] for row in result["survivors"]}
     assert {"return age > 13", "return age < 14", "return age < 12"} <= texts and "return age < 13" not in texts
     assert "age.py:4" in out.err

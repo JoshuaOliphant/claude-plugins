@@ -3,6 +3,7 @@
 # ABOUTME: mutants on a branch's changed lines for compost:verify. Mutant runs need pytest and cosmic-ray.
 import argparse
 import ast
+import functools
 import importlib.abc
 import importlib.machinery
 import json
@@ -76,9 +77,10 @@ class TimedOut:
 TIMED_OUT = TimedOut()
 
 
-EXTRA = "thin/"  # the operators below, for breaks cosmic-ray never makes; `--operators stock` leaves them out
+OWN = "thin/"  # the operators below, for breaks cosmic-ray never makes; `--operators stock` leaves them out
 PREDICATE_CALLS = {"isinstance", "issubclass", "hasattr", "callable", "all", "any", "bool"}
-PREDICATE_METHODS = ("is", "has", "startswith", "endswith", "exists")
+PREDICATE_METHODS = {"startswith", "endswith", "exists", "isdigit", "isalpha", "isalnum", "isspace", "isupper",
+                     "islower", "isidentifier", "isdisjoint", "issubset", "issuperset"}  # and any is_* or has_*  # fmt: skip
 RETURN_CONSTANTS = {"bool": ["True", "False"], "str": ['""'], "list": ["[]"], "dict": ["{}"], "set": ["set()"],
                     "tuple": ["()"], "int": ["0"], "float": ["0.0"]}  # fmt: skip
 SAME_TYPE_METHODS = {"strip", "lstrip", "rstrip", "removeprefix", "removesuffix", "lower", "upper", "casefold",
@@ -97,7 +99,9 @@ def predicate_shaped(value: ast.expr) -> bool:
         func = value.func
         if isinstance(func, ast.Name):
             return func.id in PREDICATE_CALLS
-        return isinstance(func, ast.Attribute) and func.attr.startswith(PREDICATE_METHODS)
+        return isinstance(func, ast.Attribute) and (
+            func.attr in PREDICATE_METHODS or func.attr.startswith(("is_", "has_"))
+        )
     return False
 
 
@@ -145,7 +149,7 @@ def breaks(tree: ast.Module, source: str, parents: dict[ast.AST, ast.AST]):
         if isinstance(getattr(node, field, None), ast.expr)
         for part in ast.walk(getattr(node, field))
     }  # fmt: skip
-    segment = lambda node: ast.get_source_segment(source, node)  # noqa: E731
+    segment = functools.partial(ast.get_source_segment, source)
     for node in ast.walk(tree):
         parent = parents.get(node)
         if (
@@ -180,6 +184,8 @@ def breaks(tree: ast.Module, source: str, parents: dict[ast.AST, ast.AST]):
                 )  # nothing of the original left for `in` or a regex to find
                 yield "thin/ReplaceString", node, repr(other), True
         elif isinstance(node, ast.Constant) and type(node.value) is float:
+            if isinstance(parent, ast.UnaryOp) and isinstance(parent.op, ast.USub):  # -0.5 is a unary minus on 0.5
+                node, parent = parent, parents[parent]
             ordered = isinstance(parent, ast.Compare) and all(isinstance(op, ORDERINGS) for op in parent.ops)
             scope = parent
             while not isinstance(scope, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
@@ -187,17 +193,15 @@ def breaks(tree: ast.Module, source: str, parents: dict[ast.AST, ast.AST]):
             if ordered or isinstance(scope, ast.Module):  # compared here, or a module or class constant read later
                 for text in nudged(segment(node)):
                     yield "thin/NudgeThreshold", node, text, True
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and not isinstance(parent, ast.Expr):
-            if node.func.attr in SAME_TYPE_METHODS:
+        if isinstance(node, ast.Call) and not isinstance(parent, ast.Expr):  # a call statement is deleted instead
+            name = getattr(node.func, "attr", getattr(node.func, "id", None))
+            if isinstance(node.func, ast.Attribute) and name in SAME_TYPE_METHODS:
                 yield "thin/DropCall", node, segment(node.func.value), True
-            elif node.func.attr in WRAPPERS and len(node.args) == 1:
-                yield "thin/DropCall", node, segment(node.args[0]), True
-        elif isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in WRAPPERS:
-            if len(node.args) == 1:
+            elif name in WRAPPERS and len(node.args) == 1:
                 yield "thin/DropCall", node, segment(node.args[0]), True
 
 
-def extra_mutants(module: str) -> list[dict]:
+def own_mutants(module: str) -> list[dict]:
     """The breaks cosmic-ray has no operator for (#124), each the span of `module` it replaces and its new text."""
     source = Path(module).read_text()
     tree = ast.parse(source)
@@ -235,8 +239,8 @@ def splice(source: str, span: list[int], text: str, expression: bool) -> str | N
     return mutated
 
 
-def mutants(module: str, extra: bool = True) -> list[dict]:
-    """Every mutation cosmic-ray would make in one module, and with `extra` thin's own, in line order."""
+def mutants(module: str, own: bool = True) -> list[dict]:
+    """Every mutation cosmic-ray would make in one module, and with `own` thin's own operators too, in line order."""
     from cosmic_ray.commands.init import _all_work_items  # private, but it is how cosmic-ray init lists mutants
 
     found = [
@@ -245,14 +249,14 @@ def mutants(module: str, extra: bool = True) -> list[dict]:
         for item in _all_work_items([Path(module)], {})
         for m in item.mutations
     ]  # fmt: skip
-    if extra:
-        found += extra_mutants(module)
+    if own:
+        found += own_mutants(module)
     return sorted(found, key=lambda m: (m["line"], m["operator"], m["occurrence"]))
 
 
 def mutate(source: str, mutant: dict) -> str | None:
     """The mutated source, or None when the mutant can't be made (cosmic-ray's AST walk crashes on a few)."""
-    if mutant["operator"].startswith(EXTRA):
+    if mutant["operator"].startswith(OWN):
         return splice(source, **mutant["args"])
     from cosmic_ray.mutating import mutate_code
     from cosmic_ray.plugins import get_operator
@@ -400,7 +404,7 @@ def check_baseline(tests: list[str], pytest_args: list[str], timeout: float | No
 
 
 def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], timeout: float | None,
-                workers: int, log=print, extra: bool = True) -> dict:  # fmt: skip
+                workers: int, log=print, own: bool = True) -> dict:  # fmt: skip
     """Run each mutant on a line the selected tests cover against every test covering that line; record each killer.
 
     Only the selected tests are mutated over every line they run, so only they can be judged from the result. The
@@ -425,7 +429,7 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
     for module in sorted({path for path, _ in wanted}):
         source = Path(module).read_text()
         in_module = sorted({test for path, line in wanted if path == module for test in on_line[(path, line)]})
-        for mutant in mutants(module, extra):
+        for mutant in mutants(module, own):
             # A threshold set at import, `FOUND = 0.7`, runs under no test: try it on the module's selected tests.
             place = (module, mutant["line"])
             at_import = mutant["operator"] == "thin/NudgeThreshold" and place in imported and place not in on_line
@@ -482,7 +486,7 @@ def first_difference(source: str, mutated: str) -> str:
 
 
 def survivors(contexts: dict, changed: dict[str, set[int]], pytest_args: list[str], timeout: float | None, workers: int,
-              log=print, extra: bool = False) -> dict:  # fmt: skip
+              log=print, own: bool = False) -> dict:  # fmt: skip
     """Run each mutant on a changed line, stopping at the first failing test, and report the ones no test notices.
 
     A changed line no test runs, such as a module constant or a default argument that runs only at import,
@@ -496,7 +500,7 @@ def survivors(contexts: dict, changed: dict[str, set[int]], pytest_args: list[st
     jobs, made = [], []
     for module in sorted(changed):
         source = Path(module).read_text()
-        for mutant in mutants(module, extra):
+        for mutant in mutants(module, own):
             if mutant["line"] not in changed[module] or (mutated := mutate(source, mutant)) is None:
                 continue
             jobs.append((module, mutated, sorted(on_line.get((module, mutant["line"]), everyone))))
@@ -609,7 +613,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.timeout,
                 args.workers,
                 log=lambda line: print(line, file=sys.stderr, flush=True),
-                extra=args.operators == "all",
+                own=args.operators == "all",
             )
         except BaselineError as error:
             print(f"thin: baseline failed: {error}", file=sys.stderr)
@@ -633,7 +637,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.timeout,
                 args.workers,
                 log=lambda line: print(line, file=sys.stderr, flush=True),
-                extra=args.operators == "all",
+                own=args.operators == "all",
             )
         except BaselineError as error:
             print(f"thin: baseline failed: {error}", file=sys.stderr)
