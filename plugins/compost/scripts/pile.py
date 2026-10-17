@@ -213,13 +213,19 @@ class Active:
     orphaned: list[tuple[str, str]]
 
 
-def find_active(replaces: Replaces, config: claude_config.Config) -> Active:
+def find_active(replaces: Replaces, config: claude_config.Config, keep_orphans: bool) -> Active:
+    """`plugins` are the superseded plugins to disable: one that is also orphaned is left out, since it is
+    uninstalled instead, unless `keep_orphans`."""
     listed = [plugin_id for plugin_id in replaces.plugins if config.plugin_enabled(plugin_id)]
+    orphaned = config.orphaned
+    uninstalling = set() if keep_orphans else {plugin_id for plugin_id, _ in orphaned}
     return Active(
-        plugins=[plugin_id for plugin_id in listed if not config.is_synced(plugin_id)],
+        plugins=[
+            plugin_id for plugin_id in listed if not config.is_synced(plugin_id) and plugin_id not in uninstalling
+        ],
         synced=[plugin_id for plugin_id in listed if config.is_synced(plugin_id)],
         skills=[name for name in replaces.skills if config.skill_active(name)],
-        orphaned=config.orphaned,
+        orphaned=orphaned,
     )
 
 
@@ -245,10 +251,8 @@ def replaced(pile: Path, claude_dir: Path, apply: bool, keep_orphans: bool = Fal
     """With `apply`, disables superseded plugins, sets superseded skills off, and uninstalls orphaned installs unless
     `keep_orphans`. A superseded plugin that is also orphaned is uninstalled rather than disabled, unless kept. An
     uninstall keeps the plugin's data directory, since a delisted plugin cannot be reinstalled."""
-    active = find_active(load(pile).replaces, claude_config.read(claude_dir))
+    active = find_active(load(pile).replaces, claude_config.read(claude_dir), keep_orphans)
     orphans = [] if keep_orphans else active.orphaned
-    uninstalling = {plugin_id for plugin_id, _ in orphans}
-    active = dataclasses.replace(active, plugins=[plugin for plugin in active.plugins if plugin not in uninstalling])
     report = render_active(active, keep_orphans)
     if not apply or not (active.plugins or active.skills or orphans):
         return report

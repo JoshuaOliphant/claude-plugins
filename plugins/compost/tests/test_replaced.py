@@ -45,13 +45,20 @@ def machine(claude_home, tmp_path):
     return claude_dir, pile_path, claude_home.disabled
 
 
-def test_find_active_separates_local_plugins_synced_plugins_skills_and_orphaned_installs():
+@pytest.mark.parametrize(
+    ("keep_orphans", "to_disable"),
+    [
+        pytest.param(False, ["old@market", "proj@market"], id="orphan-uninstalled-not-disabled"),
+        pytest.param(True, ["old@market", "dropped-old@market", "proj@market"], id="kept-orphan-disabled"),
+    ],
+)
+def test_find_active_separates_local_plugins_synced_plugins_skills_and_orphaned_installs(keep_orphans, to_disable):
     config = claude_config.Config(
         frozenset({"tdd", "grill"}), {"grill": "off"}, lambda: INSTALLED, lambda: {"market": frozenset(LISTED)}
     )
-    active = pile.find_active(REPLACES, config)
+    active = pile.find_active(REPLACES, config, keep_orphans)
     assert (active.plugins, active.synced, active.skills, active.orphaned) == (
-        ["old@market", "dropped-old@market", "proj@market"],
+        to_disable,
         ["synced-old@synced"],
         ["tdd"],
         [("dropped-old@market", "user"), ("retired@market", "user"), ("retired@market", "project")],
