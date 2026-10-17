@@ -20,11 +20,13 @@ def scored_by_question() -> dict[str, list[tuple[float, bool]]]:
     async def judge(jev: core.Jev, case: dict) -> dict:
         state = case["state"]
         turn = {"skill": state["skill"], "turn": state["turn"]}
-        answered = await asyncio.gather(
+        on_turn, on_next = await asyncio.gather(
             jev.ask("skill-drift", turn, turn_questions),
             jev.ask("skill-drift", {**turn, "next_user_message": state["next_user_message"]}, next_questions),
         )
-        return {name: answer["noul"] for answers in answered for name, answer in answers.items()}
+        return {name: on_turn.noul(name) for name in turn_questions} | {
+            name: on_next.noul(name) for name in next_questions
+        }
 
     async def run() -> list[dict]:
         async with core.open_client() as client:

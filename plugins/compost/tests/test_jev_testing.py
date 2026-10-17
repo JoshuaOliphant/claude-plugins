@@ -5,7 +5,7 @@ import json
 
 import pytest
 from conftest import StubJev, choice, commit, noul, run_git, score
-from jevtools import suite, testing
+from jevtools import core, suite, testing
 from jevtools.registry import BadInput
 
 PARAMETRIZED = '''import pytest
@@ -118,7 +118,12 @@ def placing(covered: float, confidence: float = 0.9):
     ids=["chosen test covers it", "chosen test does not cover it"],
 )
 def test_find_test_extends_the_chosen_test_only_when_it_covers_the_criterion(covered, action):
-    tests = {"a.py::test_one": "src one" + "x" * 800, "a.py::test_two": "src two", "b.py::test_three": "src three"}
+    tests = {
+        "a.py::test_one": "src one" + "x" * 800,
+        "a.py::test_two": "src two",
+        "b.py::test_three": "src three",
+        "b.py::test_four": "src four",
+    }
     jev = StubJev(placing(covered))
     result = asyncio.run(testing.find_test(jev, {"criteria": ["c1", "c2"], "tests": tests}))
     assert [p["action"] for p in result["placements"]] == [action, action]
@@ -133,20 +138,28 @@ def test_find_test_extends_the_chosen_test_only_when_it_covers_the_criterion(cov
     assert checking[1]["test"] == {"id": "a.py::test_one", "source": tests["a.py::test_one"]}
 
 
-def test_a_suite_past_the_choice_limit_is_narrowed_by_file_first(monkeypatch):
-    monkeypatch.setattr(testing, "CHOICE_LIMIT", 3)
-    tests = {f"f{f}.py::test_{n}": "src" for f in range(3) for n in range(2)}
+@pytest.mark.parametrize(
+    ("files", "wanted", "candidates"),
+    [
+        ({"f0.py": "ab", "f1.py": "cd", "f2.py": "ef"}, "test_e", ["f2.py::test_e", "f2.py::test_f"]),
+        ({"f0.py": "abcd", "f1.py": "e"}, "test_d", ["f0.py::test_d"]),
+    ],
+    ids=["narrowed to the chosen files", "a file past the cap is split, so none of its tests is dropped"],
+)
+def test_a_suite_past_the_choice_limit_is_narrowed_by_file_first(monkeypatch, files, wanted, candidates):
+    monkeypatch.setattr(core, "CHOICE_LIMIT", 3)
+    tests = {f"{file}::test_{letter}": "src" for file, letters in files.items() for letter in letters}
 
     def answer(tool, state, questions):
         if tool == "find-test/file":
-            return {"file": choice("f2.py", questions["file"].criteria)}
+            options = questions["group"].criteria
+            holding = next(label for label, names in options.items() if wanted in names.split(", "))
+            return {"group": choice(holding, options)}
         return placing(0.2)(tool, state, questions)
 
     jev = StubJev(answer)
     result = asyncio.run(testing.find_test(jev, {"criteria": ["c"], "tests": tests}))
-    assert jev.calls[0][2]["file"].criteria["f0.py"] == "test_0, test_1"
-    assert set(jev.calls[1][2]["neighbour"].criteria) <= set(tests)
-    assert len(jev.calls[1][2]["neighbour"].criteria) == 3
+    assert list(jev.calls[1][2]["neighbour"].criteria) == candidates
     assert result["placements"][0]["action"] == "add-beside"
 
 
@@ -326,11 +339,12 @@ def test_gather_gaps_rejects_bad_input(code, payload, message):
 
 
 def test_test_value_proposes_an_exclusion_below_the_threshold():
-    value = {"a.py": testing.EXCLUDE_BELOW - 0.01, "b.py": testing.EXCLUDE_BELOW}
+    value = {"a.py": testing.EXCLUDE_BELOW - 0.01, "b.py": testing.EXCLUDE_BELOW, "c.py": 2.75}
     jev = StubJev(lambda tool, state, questions: {"value": score(value[state["file"]])})
     gaps = [{"file": name, "lines": [3, 4], "enclosing": None, "excerpt": ">> 3 x"} for name in value]
     result = asyncio.run(testing.test_value(jev, {"gaps": gaps}))
-    assert [(b["decision"], b["score"]) for b in result["blocks"]] == [("exclude", 1.49), ("test", 1.5)]
+    decisions = [(b["decision"], b["score"]) for b in result["blocks"]]
+    assert decisions == [("exclude", 1.49), ("test", 1.5), ("test", 2.75)]
     assert result["exclude"] == ["a.py:3-4"]
     assert result["blocks"][0]["probabilities"] == score(0)["probabilities"]
     assert len(jev.calls[0][2]["value"].criteria) == len(testing.TEST_VALUE_LEVELS)
