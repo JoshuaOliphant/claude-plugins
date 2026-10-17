@@ -22,16 +22,20 @@ def answering(probability=0.9):
     return lambda: client
 
 
-def test_source_case_becomes_a_unit_tagged_with_its_case_index():
-    case = {"rule": "silent-failure", "flag": True, "source": "try:\n    x()\nexcept:\n    pass\n"}
-    unit = run_eval.unit_for_case(3, case)
-    assert (unit.kind, unit.path) == ("handler", "case3/app/example.py")
-
-
-def test_diff_case_becomes_a_hunk_unit():
-    diff = "--- a/tests/test_x.py\n+++ b/tests/test_x.py\n@@ -1 +1 @@\n-    assert x == 1\n+    assert x\n"
-    unit = run_eval.unit_for_case(0, {"rule": "test-weakening", "flag": True, "diff": diff})
-    assert (unit.kind, unit.path) == ("hunk", "case0/tests/test_x.py")
+@pytest.mark.parametrize(
+    ("index", "case", "kind", "path"),
+    [
+        (3, {"rule": "silent-failure", "flag": True, "source": "try:\n    x()\nexcept:\n    pass\n"},
+         "handler", "case3/app/example.py"),
+        (0, {"rule": "test-weakening", "flag": True,
+             "diff": "--- a/tests/test_x.py\n+++ b/tests/test_x.py\n@@ -1 +1 @@\n-    assert x == 1\n+    assert x\n"},
+         "hunk", "case0/tests/test_x.py"),
+    ],
+    ids=["source case", "diff case"],
+)  # fmt: skip
+def test_a_case_becomes_a_unit_tagged_with_its_case_index(index, case, kind, path):
+    unit = run_eval.unit_for_case(index, case)
+    assert (unit.kind, unit.path) == (kind, path)
 
 
 def test_case_without_a_matching_unit_names_the_case():

@@ -47,13 +47,8 @@ def machine(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize(
     ("skills", "overrides", "expected"),
-    [
-        ({"tdd", "grill"}, {}, ["tdd", "grill"]),
-        ({"tdd", "grill"}, {"grill": "off"}, ["tdd"]),
-        ({"tdd", "grill"}, {"grill": "user-invocable-only"}, ["tdd", "grill"]),
-        (set(), {}, []),
-    ],
-    ids=["both present", "one already off", "hidden is not off", "none installed"],
+    [({"tdd", "grill"}, {"grill": "user-invocable-only"}, ["tdd", "grill"])],
+    ids=["hidden is not off"],
 )
 def test_find_active_separates_local_plugins_synced_plugins_and_skills(skills, overrides, expected):
     active = pile.find_active(REPLACES, INSTALLED, skills, overrides)

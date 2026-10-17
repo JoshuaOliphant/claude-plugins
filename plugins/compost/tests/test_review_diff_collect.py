@@ -5,8 +5,6 @@ from collect import (
     NotAGitRepo,
     build_untracked_file,
     collect_diff,
-    get_untracked_files,
-    is_git_repo,
     parse_unified_diff,
     repo_name,
 )
@@ -19,15 +17,6 @@ def _init_repo(path):
         ["git", "config", "user.name", "Tester"],
     ):
         subprocess.run(args, cwd=path, check=True, capture_output=True)
-
-
-def test_is_git_repo_true(tmp_path):
-    _init_repo(tmp_path)
-    assert is_git_repo(str(tmp_path)) is True
-
-
-def test_is_git_repo_false(tmp_path):
-    assert is_git_repo(str(tmp_path)) is False
 
 
 def test_repo_name(tmp_path):
@@ -149,13 +138,10 @@ def test_collect_diff_binary_file_has_path(tmp_path):
     assert None not in [f["path"] for f in data["files"]]
 
 
-def test_parse_empty():
-    assert parse_unified_diff("") == []
-
-
-def test_parse_ignores_preamble():
+@pytest.mark.parametrize("diff", ["", "garbage before any file\n"], ids=["empty", "preamble only"])
+def test_parse_ignores_anything_before_the_first_file(diff):
     # Any line before the first "diff --git" is skipped (covers the guard).
-    assert parse_unified_diff("garbage before any file\n") == []
+    assert parse_unified_diff(diff) == []
 
 
 def test_parse_malformed_hunk_header():
@@ -182,24 +168,11 @@ def test_build_untracked_file(tmp_path):
     assert all(ln["side"] == "new" for ln in lines)
 
 
-def test_build_untracked_empty_file(tmp_path):
-    (tmp_path / "empty.txt").write_text("")
-    f = build_untracked_file("empty.txt", str(tmp_path))
-    assert f["hunks"] == []
-
-
 def test_build_untracked_unreadable_path(tmp_path):
     # A directory cannot be read as text -> OSError branch -> empty content.
     (tmp_path / "adir").mkdir()
     f = build_untracked_file("adir", str(tmp_path))
     assert f["hunks"] == []
-
-
-def test_get_untracked_files(tmp_path):
-    _init_repo(tmp_path)
-    _commit_initial(tmp_path)
-    (tmp_path / "extra.txt").write_text("new\n")
-    assert get_untracked_files(str(tmp_path)) == ["extra.txt"]
 
 
 def test_collect_diff_combines_tracked_and_untracked(tmp_path):
@@ -252,13 +225,6 @@ def test_resolve_base_none_when_no_default(tmp_path):
     # Rename the only branch to a non-standard name so no candidate ref matches.
     subprocess.run(["git", "branch", "-M", "wip"], cwd=tmp_path, check=True, capture_output=True)
     assert resolve_base(str(tmp_path)) is None
-
-
-def test_collect_diff_base_mode_shows_committed_branch_changes(tmp_path):
-    _make_branch_with_commit(tmp_path)
-    data = collect_diff(str(tmp_path), base="main")
-    assert data["has_changes"] is True
-    assert data["files"][0]["path"] == "tracked.txt"
 
 
 def test_collect_diff_base_mode_excludes_untracked(tmp_path):

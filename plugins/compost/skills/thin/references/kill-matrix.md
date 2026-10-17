@@ -25,6 +25,22 @@ Run on compost's own suite at 100% line coverage, five modules (`jevtools/spec.p
 
 Line coverage is a cheap filter, then, and a poor judge: about half its candidates were wrong.
 
+The full run, `compost:thin` start to finish on the same suite: 192 coverage candidates, 2,518
+mutants in 29 minutes on four cores, and a verdict of 70 keep, 110 redundant, 7 kills-nothing.
+Breaking the code by hand for each of the 117 confirmed 26, about 1.6 s of a 28 s suite. The other
+91 each caught a break no other test did, and nearly every one was a break cosmic-ray has no
+operator for:
+
+- a deleted guard or statement: every `rejects bad input` row, a dropped `mkdir`, a dropped
+  `.removeprefix`;
+- a threshold read through `round()`, so 0.69 passes as 0.7;
+- one term dropped from an `all(...)` or an `or`;
+- a changed string: a message, a git flag (`--no-renames`, `...` against `..`), a dict key;
+- a constant return, which is where `is_test_path`'s only negative row earns its place.
+
+So the matrix finds where to look, and step 5 decides; on this suite four in five of its
+redundant verdicts were wrong.
+
 ## Cost
 
 A short test run is mostly startup: starting Python, importing pytest, collecting. So `thin.py`
