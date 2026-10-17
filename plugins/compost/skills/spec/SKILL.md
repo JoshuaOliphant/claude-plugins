@@ -1,6 +1,6 @@
 ---
 name: spec
-description: Turns a request for new behavior into an agreed spec of user stories with Given/When/Then acceptance criteria, posted as the parent issue, before any code is written. Use when the user asks in plain words for a feature or a change in behavior that no issue or spec pins down yet - "let users export their notes as PDF", "notify admins when a job fails", "cap how many uploads a user can make" - or says "spec this out", "let's design this", "brainstorm", "grill me", "what should happen when", "acceptance criteria", "edge cases", "define the requirements", "BDD". Not for bug reports, questions, or work already filed as issues.
+description: Turns a request for new behavior, a fuzzy idea, or a rough doc into an agreed spec of user stories with Given/When/Then acceptance criteria, posted as the parent issue, before any code is written. Use when the user asks in plain words for a feature or a change in behavior that no issue or spec pins down yet - "let users export their notes as PDF", "notify admins when a job fails", "cap how many uploads a user can make" - or says "spec this out", "let's design this", "brainstorm", "grill me", "what should happen when", "acceptance criteria", "edge cases", "define the requirements", "BDD". Not for bug reports, questions, or work already specced or sliced into issues.
 ---
 
 # Spec
