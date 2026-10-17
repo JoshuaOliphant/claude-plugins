@@ -30,7 +30,7 @@
       "name": "hexagonal-agents",
       "source": "./plugins/hexagonal-agents",
       "description": "Build web apps where an AI agent dynamically generates HTML UI using hexagonal architecture with HTMX",
-      "version": "1.5.0",
+      "version": "1.5.1",
       "author": {
         "name": "Joshua Oliphant"
       },

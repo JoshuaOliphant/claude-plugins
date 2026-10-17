@@ -78,11 +78,31 @@ The task function wraps your agent for evaluation:
 
 ```python
 # evals/test_agent.py
+import asyncio
+import json
+import tempfile
 from dataclasses import dataclass
-from typing import Any
-from claude_agent_sdk import ClaudeSDKClient
-from app.tools import create_tools_server
+from pathlib import Path
+
+from claude_agent_sdk import (
+    AssistantMessage,
+    ClaudeAgentOptions,
+    ClaudeSDKClient,
+    ResultMessage,
+    TextBlock,
+    ToolUseBlock,
+)
+
+import app.tools
 from app.agent import _build_system_prompt
+from app.tools import create_tools_server
+
+SERVER = "app_tools"
+TOOL_PREFIX = f"mcp__{SERVER}__"
+
+# The tools read the module-global DATA_FILE, so runs that overlap (evaluate()
+# runs cases concurrently) would share one store. Run them one at a time.
+_store_lock = asyncio.Lock()
 
 
 @dataclass
@@ -103,46 +123,66 @@ async def run_agent_task(
     """
     Task function that runs the agent and returns structured results.
     """
-    # Set up isolated state
-    state = initial_state.copy() if initial_state else {}
-    tool_calls_log = []
+    async with _store_lock:
+        original_data_file = app.tools.DATA_FILE
+        with tempfile.TemporaryDirectory() as tmp:
+            # Isolate state: point the tools' JSON store at a seeded temp file
+            data_file = Path(tmp) / "data.json"
+            data_file.write_text(json.dumps(initial_state or {}))
+            app.tools.DATA_FILE = data_file
+            try:
+                html_parts, tool_calls, result = await _converse(user_message)
+            finally:
+                app.tools.DATA_FILE = original_data_file
+            final_state = json.loads(data_file.read_text())
 
-    # Create MCP server with test state (inject state)
-    mcp_server = create_tools_server(state)
-
-    # Wrap tools to log calls
-    for name, tool_fn in list(mcp_server.tools.items()):
-        async def logged_tool(args, _name=name, _fn=tool_fn):
-            tool_calls_log.append({"name": _name, "args": args})
-            return await _fn(args)
-        mcp_server.tools[name] = logged_tool
-
-    # Run agent
-    client = ClaudeSDKClient(
-        model="claude-sonnet-5-5",
-        system=_build_system_prompt(),
-        mcp_servers={"app_tools": mcp_server},
-        allowed_tools=[f"mcp__app_tools__{t}" for t in mcp_server.tools.keys()],
-    )
-
-    await client.connect()
-    await client.query(user_message)
-
-    html_parts = []
-    async for msg in client.receive_response():
-        for block in msg.content:
-            if hasattr(block, 'text'):
-                html_parts.append(block.text)
-
-    await client.disconnect()
-
+    usage = (result.usage if result else None) or {}
     return EvalResult(
         html_output="\n".join(html_parts),
-        tool_calls=tool_calls_log,
-        final_state=state,
-        turn_count=1,
-        total_tokens=0,  # Would need to track from response
+        tool_calls=tool_calls,
+        final_state=final_state,
+        turn_count=result.num_turns if result else 0,
+        # input_tokens excludes cached prompt tokens, so count those too
+        total_tokens=sum(usage.get(k, 0) for k in (
+            "input_tokens",
+            "cache_creation_input_tokens",
+            "cache_read_input_tokens",
+            "output_tokens",
+        )),
     )
+
+
+async def _converse(
+    user_message: str,
+) -> tuple[list[str], list[dict], ResultMessage | None]:
+    options = ClaudeAgentOptions(
+        model="claude-sonnet-5-5",
+        system_prompt=_build_system_prompt(),
+        mcp_servers={SERVER: create_tools_server()},
+        allowed_tools=[f"mcp__{SERVER}"],  # server-level rule: every tool on app_tools
+    )
+
+    html_parts: list[str] = []
+    tool_calls: list[dict] = []
+    result: ResultMessage | None = None
+
+    async with ClaudeSDKClient(options=options) as client:
+        await client.query(user_message)
+        async for msg in client.receive_response():
+            if isinstance(msg, AssistantMessage):
+                for block in msg.content:
+                    if isinstance(block, TextBlock):
+                        html_parts.append(block.text)
+                    elif isinstance(block, ToolUseBlock):
+                        # Log calls from the stream; the server's tools are not wrappable
+                        tool_calls.append({
+                            "name": block.name.removeprefix(TOOL_PREFIX),
+                            "args": block.input,
+                        })
+            elif isinstance(msg, ResultMessage):
+                result = msg
+
+    return html_parts, tool_calls, result
 ```
 
 ---
