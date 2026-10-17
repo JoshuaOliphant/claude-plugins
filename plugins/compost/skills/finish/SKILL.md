@@ -22,7 +22,7 @@ yours to do without asking.
    ```bash
    worktree_path=$(git rev-parse --show-toplevel)
    branch=$(git branch --show-current)          # empty on a detached HEAD
-   main_root=$(git -C "$(git rev-parse --git-common-dir)/.." rev-parse --show-toplevel)
+   main_root=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
    ```
 
    A detached HEAD means the harness manages this workspace. Push it as a named branch
@@ -41,16 +41,20 @@ yours to do without asking.
    ```
 
    Exit 0 means the target hasn't moved past your branch, so the merge result is HEAD's own
-   tree and `compost:verify`'s run on HEAD is the merge-result run. Otherwise the target moved:
-   merge it into your branch (`git merge --no-ff origin/<target>`), resolve any conflict, and go
-   back through `compost:verify`; the branch then holds the merge result. This needs no second
+   tree and `compost:verify`'s run on HEAD is the merge-result run. Exit 1 means the target
+   moved: merge it into your branch (`git merge --no-ff origin/<target>`), resolve any
+   conflict, and go back through `compost:verify`; the branch then holds the merge result. This needs no second
    worktree and no `git -C`, which a worktree-isolated session refuses. Do not rebase a branch
-   you have already pushed. A red merge result stops here and goes to `compost:diagnose`.
+   you have already pushed. A red merge result stops here and goes to `compost:diagnose`. Any
+   other exit is an error (a wrong target name, a failed fetch): fix it before going on.
 
    Where your branch must not take the target's commits yet, build the merge in a throwaway
    worktree instead: `git worktree add --detach "$main_root/.worktrees/merge-check-<issue>"
-   origin/<target>`, merge `"$branch"` there, run the full suite and the recorded gates, then
-   remove the worktree.
+   origin/<target>`, `cd` into it, `git merge --no-ff --no-edit <head>` (your branch's
+   `git rev-parse HEAD`, taken before the `cd`, so a detached HEAD works too), install
+   dependencies, run the full suite and the recorded gates, then `cd` back and
+   `git worktree remove` it. A worktree-isolated session may refuse to work outside its own
+   worktree; then take the merge-into-the-branch path above.
 
 5. **Open or update the pull request.** Push the branch and open a draft PR against the target,
    or update the open one. The body has five sections: Goal, Decisions, Changes, Validation,
