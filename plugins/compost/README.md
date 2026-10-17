@@ -83,7 +83,9 @@ compost also ships the `skill-drift` mod (`hooks/skill-drift.ts`), the collector
 loaded, asking whether the turn deviated from the skill or lacked its guidance; when your next
 prompt follows such a turn it sends one more per skill, asking whether you are correcting that
 work. A request averages about 5,000 input tokens, a fraction of a cent. Hits go to
-`~/.claude/skill-drift/`, and `/drift` lists them by skill. It never shows anything or holds a
+`~/.claude/skill-drift/`, and `/drift` lists the open ones by skill, as `scripts/skill_drift.py
+summary` gives them (through `uv`), so it leaves out what `compost:skill-drift` leaves out: reviewed
+hits, retired skills, and a skill's earlier versions. It never shows anything or holds a
 prompt back: your prompt enters before the correction check runs, and a TypeSafe outage is
 skipped. Without a key it asks and writes nothing. It is an in-process hooks module, so it loads
 only where Claude Code runs plugin hooks modules (`CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` while

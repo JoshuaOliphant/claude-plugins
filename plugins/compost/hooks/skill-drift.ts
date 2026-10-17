@@ -1,5 +1,5 @@
 // ABOUTME: Watches each skill the model loads and asks TypeSafe Jev whether the turn deviated from it, lacked its guidance, or drew a correction.
-// ABOUTME: Hits go quietly to ~/.claude/skill-drift/<date>-<session>.jsonl for compost:skill-drift to review; /drift lists them.
+// ABOUTME: Hits go quietly to ~/.claude/skill-drift/<date>-<session>.jsonl; /drift prints scripts/skill_drift.py's summary of the open ones.
 import type { EngineInterface, Register, SessionMessage } from 'claude-code'
 
 import judgments from './skill-drift-judgments.ts'
@@ -96,28 +96,19 @@ async function record($: EngineInterface, found: Hit[]) {
   await $.fs.write(path, before + found.map(hit => JSON.stringify(hit) + '\n').join(''))
 }
 
-export function summarize(log: Hit[]): string {
-  if (log.length === 0) return 'skill-drift: no drift recorded yet'
-  const bySkill = new Map<string, Hit[]>()
-  for (const hit of log) bySkill.set(hit.skill, [...(bySkill.get(hit.skill) ?? []), hit])
-  const ranked = [...bySkill.entries()].sort((a, b) => b[1].length - a[1].length)
-  const lines: string[] = []
-  for (const [skill, hits] of ranked) {
-    const kinds = new Map<string, Set<string>>()
-    for (const hit of hits) kinds.set(hit.kind, (kinds.get(hit.kind) ?? new Set()).add(hit.session))
-    lines.push(`${skill}  ${[...kinds.entries()].map(([kind, sessions]) => `${kind}×${sessions.size} sessions`).join('  ')}`)
-    const latest = hits.reduce((a, b) => (b.at > a.at ? b : a))
-    lines.push(`  latest: ${latest.kind} p=${latest.p.toFixed(2)} on "${latest.prompt.slice(0, 90)}"`)
+// The mod only writes hits. Which ones are open (unreviewed, on an active skill's latest version) is
+// scripts/skill_drift.py's to say, for /drift as for compost:skill-drift, so /drift asks it.
+async function driftSummary($: EngineInterface): Promise<string> {
+  const script = `${$.plugin.root}/scripts/skill_drift.py`
+  const argv = ['uv', 'run', '--quiet', script, '--claude-dir', `${await $.env.get('HOME')}/.claude`, 'summary']
+  try {
+    const ran = await $.process.run(argv)
+    if (ran.exitCode === 0) return ran.stdout.trimEnd()
+    const why = (ran.stderr || ran.stdout).split('\n').find(line => line.trim()) ?? 'no output'
+    return `skill-drift: skill_drift.py summary failed (exit ${ran.exitCode}): ${why}`
+  } catch (error) {
+    return `skill-drift: could not run skill_drift.py: ${(error as Error).message}`
   }
-  return lines.join('\n')
-}
-
-async function readLog($: EngineInterface): Promise<Hit[]> {
-  const dir = await logDir($)
-  if (!(await $.fs.exists(dir))) return []
-  const files = (await $.fs.list(dir)).filter(entry => entry.kind === 'file' && entry.name.endsWith('.jsonl'))
-  const texts = await Promise.all(files.map(entry => $.fs.read(`${dir}/${entry.name}`)))
-  return texts.flatMap(text => String(text).split('\n').filter(Boolean).map(line => JSON.parse(line) as Hit))
 }
 
 export const DRIFT_COMMAND = { name: 'drift', description: 'List skill drift the mod has recorded, by skill' }
@@ -182,7 +173,7 @@ export const register: Register = on => {
     return result
   })
 
-  on('command.run', { name: 'drift' }, async $ => ({ text: summarize(await readLog($)) }))
+  on('command.run', { name: 'drift' }, async $ => ({ text: await driftSummary($) }))
 }
 
 function hitOf(w: Watched, kind: DriftKind, p: number, session: string, at: number, prompt: string): Hit {
