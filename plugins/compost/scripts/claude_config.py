@@ -54,18 +54,24 @@ def turn_off_skills(claude_dir: Path, names: list[str]) -> None:
 
 @dataclass(frozen=True)
 class Config:
-    """`enabled` maps each enabled plugin id to its scope, from `claude plugin list --json`: the CLI merges every
-    settings scope and the plugins synced from claude.ai, which `enabledPlugins` in ~/.claude/settings.json alone
-    does not. Skills are switched off only by `skillOverrides` there."""
+    """Enabled plugins come from `claude plugin list --json`: the CLI merges every settings scope and the plugins
+    synced from claude.ai, which `enabledPlugins` in ~/.claude/settings.json alone does not. `synced` holds the
+    enabled ones only claude.ai can turn off. Skills are switched off only by `skillOverrides` in settings.json."""
 
-    enabled: dict[str, str | None]
+    enabled: frozenset[str]
+    synced: frozenset[str]
     personal: frozenset[str]
     overrides: dict[str, str]
 
-    def is_active(self, name: str) -> bool:
-        """`name` is a plugin id (`plugin@marketplace`), a plugin's skill (`plugin:skill`), or a personal skill."""
-        if "@" in name:
-            return name in self.enabled
+    def plugin_enabled(self, plugin_id: str) -> bool:
+        """`plugin_id` is `plugin@marketplace`."""
+        return plugin_id in self.enabled
+
+    def is_synced(self, plugin_id: str) -> bool:
+        return plugin_id in self.synced
+
+    def skill_active(self, name: str) -> bool:
+        """`name` is a plugin's skill (`plugin:skill`), active under any marketplace's `plugin`, or a personal skill."""
         if self.overrides.get(name) == "off":
             return False
         if ":" not in name:
@@ -76,5 +82,10 @@ class Config:
 
 def read(claude_dir: Path) -> Config:
     overrides = read_settings(claude_dir).get("skillOverrides", {})
-    enabled = {plugin["id"]: plugin.get("scope") for plugin in installed_plugins() if plugin.get("enabled")}
-    return Config(enabled, frozenset(personal_skills(claude_dir)), overrides)
+    enabled = [plugin for plugin in installed_plugins() if plugin.get("enabled")]
+    return Config(
+        enabled=frozenset(plugin["id"] for plugin in enabled),
+        synced=frozenset(plugin["id"] for plugin in enabled if plugin.get("scope") == "synced"),
+        personal=frozenset(personal_skills(claude_dir)),
+        overrides=overrides,
+    )

@@ -34,18 +34,25 @@ def test_skill_drift_and_replaced_agree_on_whether_a_plugin_is_active(claude_hom
 
 
 CONFIG = claude_config.Config(
-    enabled={"compost@oliphant": "user", "old@market": "synced"},
+    enabled=frozenset({"compost@oliphant", "old@market"}),
+    synced=frozenset({"old@market"}),
     personal=frozenset({"grilling", "tdd"}),
     overrides={"tdd": "off", "compost:pause": "off", "grilling": "user-invocable-only"},
 )
 
 
 @pytest.mark.parametrize(
+    ("plugin_id", "enabled", "synced"),
+    [("compost@oliphant", True, False), ("old@market", True, True), ("compost@elsewhere", False, False)],
+    ids=["plugin-enabled", "synced-plugin-enabled", "same-name-other-marketplace"],
+)
+def test_a_plugin_is_enabled_and_synced_by_its_full_id(plugin_id, enabled, synced):
+    assert (CONFIG.plugin_enabled(plugin_id), CONFIG.is_synced(plugin_id)) == (enabled, synced)
+
+
+@pytest.mark.parametrize(
     ("name", "active"),
     [
-        ("compost@oliphant", True),
-        ("old@market", True),
-        ("compost@elsewhere", False),
         ("compost:build", True),
         ("compost:pause", False),
         ("plugin-dev:hook-development", False),
@@ -54,9 +61,6 @@ CONFIG = claude_config.Config(
         ("never-made", False),
     ],
     ids=[
-        "plugin-enabled",
-        "synced-plugin-enabled",
-        "same-name-other-marketplace",
         "skill-of-enabled-plugin",
         "plugin-skill-set-off",
         "skill-of-missing-plugin",
@@ -65,20 +69,23 @@ CONFIG = claude_config.Config(
         "personal-skill-absent",
     ],
 )
-def test_is_active_reads_plugin_ids_plugin_skills_and_personal_skills(name, active):
-    assert CONFIG.is_active(name) is active
+def test_skill_active_reads_plugin_skills_and_personal_skills(name, active):
+    assert CONFIG.skill_active(name) is active
 
 
-def test_read_takes_enabled_plugins_from_the_cli_and_skills_from_claude_dir(claude_home):
+def test_read_takes_enabled_and_synced_plugins_from_the_cli_and_skills_from_claude_dir(claude_home):
     claude_home.install(
-        {"id": "on@m", "scope": "project", "enabled": True}, {"id": "off@m", "scope": "user", "enabled": False}
+        {"id": "on@m", "scope": "project", "enabled": True},
+        {"id": "off@m", "scope": "user", "enabled": False},
+        {"id": "web@m", "scope": "synced", "enabled": True},
     )
-    assert claude_config.read(claude_home.dir) == claude_config.Config({"on@m": "project"}, frozenset(), {})
+    assert claude_config.read(claude_home.dir) == claude_config.Config(
+        frozenset({"on@m", "web@m"}), frozenset({"web@m"}), frozenset(), {}
+    )
     (claude_home.dir / "skills" / "mine").mkdir(parents=True)
     (claude_home.dir / "settings.json").write_text(json.dumps({"skillOverrides": {"x": "off"}}))
-    assert claude_config.read(claude_home.dir) == claude_config.Config(
-        {"on@m": "project"}, frozenset({"mine"}), {"x": "off"}
-    )
+    assert claude_config.read(claude_home.dir).personal == frozenset({"mine"})
+    assert claude_config.read(claude_home.dir).overrides == {"x": "off"}
 
 
 @pytest.mark.parametrize(

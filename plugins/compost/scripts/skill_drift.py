@@ -129,7 +129,7 @@ def group_hits(hits: list[Hit], active: set[str], done: set[str], min_sessions: 
 def patterns(claude_dir: Path, repo: Path, min_sessions: int = MIN_SESSIONS) -> dict:
     log = read_log(claude_dir)
     config = claude_config.read(claude_dir)
-    active = {hit.skill for hit in log.hits if config.is_active(hit.skill)}
+    active = {hit.skill for hit in log.hits if config.skill_active(hit.skill)}
     groups, retired = group_hits(log.hits, active, reviewed(claude_dir), min_sessions)
     found = []
     for group in groups:

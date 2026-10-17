@@ -36,8 +36,11 @@ def machine(claude_home, tmp_path):
 
 
 def test_find_active_separates_local_plugins_synced_plugins_and_skills():
-    enabled = {plugin["id"]: plugin["scope"] for plugin in INSTALLED if plugin["enabled"]}
-    active = pile.find_active(REPLACES, claude_config.Config(enabled, frozenset({"tdd", "grill"}), {"grill": "off"}))
+    enabled = frozenset(plugin["id"] for plugin in INSTALLED if plugin["enabled"])
+    config = claude_config.Config(
+        enabled, frozenset({"synced-old@synced"}), frozenset({"tdd", "grill"}), {"grill": "off"}
+    )
+    active = pile.find_active(REPLACES, config)
     assert (active.plugins, active.synced, active.skills) == (
         ["old@market", "proj@market"],
         ["synced-old@synced"],

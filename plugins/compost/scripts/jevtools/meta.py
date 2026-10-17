@@ -87,17 +87,18 @@ DIFF_CHARS = 12000
 RECORD_IGNORE_AT = 0.6
 
 
-def fed_skills(path: str, feeds: dict[str, list[str]]) -> list[str]:
+def fed_targets(path: str, feeds: dict[str, list[str]]) -> list[str]:
     by_target, _ = pile.map_changes([path], feeds)
     return sorted(by_target)
 
 
 def describe_changes(source: str, changes: list[dict], root: Path = PLUGIN_ROOT) -> dict:
-    fed = sorted({skill for change in changes for skill in change["skills"]})
+    # classify-change judges skill text only; turn reads mechanism targets (`hooks`, `hooks/<mod>`) by hand.
+    fed = sorted({target for change in changes for target in change["targets"] if not pile.is_mechanism(target)})
     return {
         "source": source,
         "changes": [change | {"diff": change["diff"][:DIFF_CHARS]} for change in changes],
-        "skills": skill_texts(fed, root),
+        "skill_texts": skill_texts(fed, root),
         "catalog": skill_descriptions(root),
     }
 
@@ -119,19 +120,19 @@ def gather_changes(payload: dict) -> dict:
         diffs = {path: pile.git("-C", str(clone), "diff", pin, head, "--", path) for path in payload["paths"]}
     except pile.PileError as error:
         raise BadInput(str(error)) from error
-    changes = [{"path": path, "skills": fed_skills(path, source.feeds), "diff": diff} for path, diff in diffs.items()]
+    changes = [{"path": path, "targets": fed_targets(path, source.feeds), "diff": diff} for path, diff in diffs.items()]
     return describe_changes(source.name, changes)
 
 
 async def classify(jev, gathered: dict, change: dict) -> dict:
-    decided = {"path": change["path"], "skills": change["skills"]}
+    decided = {"path": change["path"], "targets": change["targets"]}
     if not change["diff"].strip():
         return decided | {"verdict": "ignore", "confidence": 1.0, "probabilities": {}, "needs_reading": False}
     state = {
         "source": gathered["source"],
         "change": {"path": change["path"], "diff": change["diff"]},
         "compost_skills": {
-            skill: gathered["skills"][skill] for skill in change["skills"] if skill in gathered["skills"]
+            target: gathered["skill_texts"][target] for target in change["targets"] if target in gathered["skill_texts"]
         },
         "compost_catalog": gathered["catalog"],
         "rulings": RULINGS,

@@ -16,8 +16,8 @@ reviewed.
 
 - `input`: a source compost takes text from. `pin` is the upstream commit compost reflects, and
   `feeds` maps upstream paths to what they fed: a compost skill by name, `canon` for the essays, or
-  a mechanism, `hooks` for compost's hooks as a whole or `hooks/<mod>` for one mod, so an adopted
-  mod is tracked for drift like skill text.
+  a mechanism, `hooks` for compost's hooks as a whole or `hooks/<mod>` for one mod, so `pile.py
+  status` reports an adopted mod's upstream drift as it does a skill's.
 - `frozen`: an input that will not change again (a retired plugin). Listed for attribution only.
 - `reference`: a repo watched for ideas and not drawn from yet.
 
@@ -62,7 +62,7 @@ judged against the step it serves. Report the two apart.
    Read the diff of every path in `to_read` and judge it yourself; Jev's verdict there is a hint,
    since it over-calls adopt and adapt on long diffs ([Jev tools](references/jev-tools.md)). Exit 3
    means Jev is unavailable: read every listed diff. `classify-change` judges skill text against
-   compost's skills and has no add verdict, so read every mechanism and candidate add yourself.
+   compost's skills and has no add verdict, so read every mod or hook and candidate add yourself.
    Give each change you read a ruling from [kinds and rulings](#kinds-and-rulings), against the
    [canon](../../canon/README.md). When dozens of changes remain to read, split them across
    parallel subagents, one per compost skill or mechanism, each returning a ruling with a one-line
@@ -92,7 +92,7 @@ judged against the step it serves. Report the two apart.
    sharper trigger, a rule enforced instead of stated. For each add, name the step it serves and
    what it makes cheaper or harder to skip.
 3. Add a `[[source]]` with `role = "reference"`, its license, and `pin` set to the commit you read.
-4. A reference becomes an `input` the first time compost takes text or a mechanism from it: set
+4. A reference becomes an `input` the first time compost takes text or a mod or hook from it: set
    the role, add `feeds` (a skill name, `hooks`, or `hooks/<mod>`), and regenerate NOTICE.
 
 ## Check compost's own text after a change
