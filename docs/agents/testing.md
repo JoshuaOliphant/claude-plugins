@@ -8,6 +8,8 @@ pytest, adopted from the existing suites.
   `scripts/test_*.py` beside the code). compost keeps shared fixtures in `tests/conftest.py`,
   which also puts its `scripts/` on the import path; the other `tests/` suites insert `scripts/`
   into `sys.path` in each test file.
+- The repo-level scripts under `scripts/` keep theirs in `scripts/tests/`, collected by the root
+  `pytest` run; each test file inserts `scripts/` into `sys.path`.
 - Plugins with their own `pyproject.toml` (compost) run their suite from
   their directory with their own dev group and coverage gate.
 - Each acceptance criterion AC-N maps to a test node id or parametrize id, recorded in the
@@ -20,7 +22,7 @@ pytest, adopted from the existing suites.
 
 | Gate | Command | Status |
 |---|---|---|
-| Repo checks | `uv run --group dev python scripts/check_all.py` (marketplace versions, shared-artifact sync, every plugin's tests, lint, format) | passing |
+| Repo checks | `uv run --group dev python scripts/check_all.py` (marketplace versions, shared-artifact sync, every plugin's tests and `scripts/tests`, lint, format) | passing |
 | compost coverage | `cd plugins/compost && uv run --group dev pytest` | passing |
 | Lint | `uv run --group dev ruff check .` (run by `check_all.py`) | passing |
 | Format | `uv run --group dev ruff format --check .` (run by `check_all.py`) | passing |

@@ -6,7 +6,7 @@
 Checks, in order:
   1. ``check_marketplace_versions.py`` — marketplace.json matches each plugin.json
   2. ``sync_shared.py --check``        — generated shared copies match their canonical source
-  3. ``pytest``                        — every plugin's test suite
+  3. ``pytest``                        — every plugin's test suite, plus scripts/tests
   4. ``ruff check .``                  — lint the whole repo
   5. ``ruff format --check .``         — formatting matches ruff format
 
