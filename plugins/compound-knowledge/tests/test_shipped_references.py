@@ -64,7 +64,15 @@ def test_only_setup_names_the_config_file(doc):
         "skills/compound-capture/SKILL.md",
         "skills/compound-retrieve/SKILL.md",
         "agents/knowledge-researcher.md",
+        "commands/setup.md",
     ],
 )
 def test_path_readers_delegate_to_the_resolver(doc):
     assert "scripts/resolve_paths.py" in (PLUGIN_ROOT / doc).read_text(encoding="utf-8")
+
+
+def test_setup_writes_write_path_not_the_alias():
+    """setup writes the key the resolver prefers, so its config can't be shadowed by its own alias."""
+    text = (PLUGIN_ROOT / "commands" / "setup.md").read_text(encoding="utf-8")
+    assert "write_path: " in text
+    assert "solutions_path: " not in text
