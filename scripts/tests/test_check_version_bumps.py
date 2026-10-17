@@ -49,6 +49,16 @@ def test_version_that_is_not_semver_is_flagged():
     assert found == ["a: version 1.0.0-rc1 is not MAJOR.MINOR.PATCH"]
 
 
+def test_base_version_that_is_not_semver_names_the_base():
+    found = cvb.unbumped({"a": "1.0"}, {"a": "1.0.1"}, {"a"}, "origin/main")
+    assert found == ["a: version 1.0 on origin/main is not MAJOR.MINOR.PATCH; fix it there"]
+
+
+def test_head_manifest_without_a_version_says_so():
+    found = cvb.unbumped({"a": "1.0.0"}, {"a": None}, {"a"}, "origin/main")
+    assert found == ["a: plugin.json has no version"]
+
+
 def _git(root: Path, *args: str) -> str:
     return subprocess.run(
         ["git", *args], cwd=root, check=True, capture_output=True, text=True

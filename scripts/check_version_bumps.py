@@ -58,11 +58,18 @@ def unbumped(
         base_version = base_versions.get(name)
         if base_version is None:
             continue
-        head_version = head_versions.get(name) or ""
+        head_version = head_versions.get(name)
+        if head_version is None:
+            found.append(f"{name}: plugin.json has no version")
+            continue
         head_key, base_key = _semver(head_version), _semver(base_version)
         if head_key is None:
             found.append(f"{name}: version {head_version} is not MAJOR.MINOR.PATCH")
-        elif base_key is None or head_key <= base_key:
+        elif base_key is None:
+            found.append(
+                f"{name}: version {base_version} on {base} is not MAJOR.MINOR.PATCH; fix it there"
+            )
+        elif head_key <= base_key:
             found.append(
                 f"{name}: changed since {base}, at {head_version}, needs more than {base_version}"
             )

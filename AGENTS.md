@@ -24,7 +24,7 @@ claude-plugins/
 │   ├── cloud-setup.sh                 # Cloud environment setup script: installs compost + typesafe plugins
 │   ├── check_all.py                   # One-command repo health check (versions + sync + tests + lint + format)
 │   ├── check_marketplace_versions.py  # Asserts marketplace.json ⇄ plugin.json (versions + registration)
-│   ├── check_version_bumps.py         # CI on PRs into main: every changed plugin has a bumped version
+│   ├── check_version_bumps.py         # CI on PRs into main: every changed plugin's version is above main's
 │   ├── sync_shared.py                 # Asserts/regenerates per-plugin copies of shared artifacts
 │   └── shared/                        # Canonical sources for artifacts duplicated across plugins
 ├── knowledge/                      # Captured solutions (compound-knowledge output for this repo)
