@@ -51,6 +51,48 @@ in a throwaway one rather than the committed config.
 Add `.cosmic-ray.sqlite` to `.gitignore`. `--no-cov` keeps a coverage gate in `addopts` from
 failing every mutant run; drop it when the project has no pytest-cov.
 
+### JavaScript and TypeScript: StrykerJS
+
+Stryker has no diff mode, but `--mutate` takes line ranges (`file:start-end`, comma-separated),
+so turn the diff into ranges. It needs a `stryker.config.json`, for example
+`{"testRunner": "vitest", "reporters": ["clear-text", "progress"], "coverageAnalysis": "perTest"}`.
+
+```bash
+M=$(git diff -U0 <base>...HEAD -- 'src/*.js' 'src/*.ts' ':!*.test.*' ':!*.spec.*' \
+  | awk '/^\+\+\+ b\//{f=substr($0,7)} /^@@/{split($3,a,/[+,]/); s=a[2]; c=(a[3]==""?1:a[3]); if(c>0) printf "%s%s:%d-%d",(n++?",":""),f,s,s+c-1}')
+[ -n "$M" ] && npx stryker run --mutate "$M"
+```
+
+Survivors print as `[Survived]` with `file:line:col`. The guard matters: an empty `--mutate`
+fails with "No tests were executed".
+
+### Rust: cargo-mutants
+
+```bash
+git diff <base>...HEAD > "${TMPDIR:-/tmp}/branch.diff"
+cargo mutants --in-diff "${TMPDIR:-/tmp}/branch.diff"
+```
+
+It mutates every function the diff touches, unchanged lines in them included. Survivors print as
+`MISSED src/lib.rs:10:9: ...` and land in `mutants.out/missed.txt`; add `mutants.out*` to
+`.gitignore`. `--in-diff -` does not read stdin, so write the diff to a file.
+
+### Go: gremlins
+
+```bash
+gremlins unleash --diff <base> -S l
+```
+
+It mutates the changed lines only, against the merge-base. Survivors print as
+`LIVED ... at x.go:12:13`. It exits 0 with survivors, even under `--threshold-efficacy`, so read
+the output; its "Mutator coverage: 100.00%" means only that tests reach the code.
+
+### Java: PIT
+
+`mvn org.pitest:pitest-maven:scmMutationCoverage -DoriginBranch=<base>` scopes to the files the
+SCM reports changed, not lines, and `destinationBranch` defaults to `master`. Not yet run by
+compost; setup's proving run is the check.
+
 ## Gotchas
 
 - **Read the survivors, not the score.** `cr-report`'s "surviving mutants: 18 (11.61%)" divides
