@@ -1,7 +1,7 @@
 {
   "name": "compound-knowledge",
-  "version": "0.9.1",
-  "description": "Capture solved problems, retrieve past solutions, and graduate accumulated knowledge into living context. Skills: compound-capture (post-solve documentation), compound-retrieve (pre-work knowledge search), compound-graduate (promote lessons into CLAUDE.md/AGENTS.md).",
+  "version": "0.10.0",
+  "description": "Capture solved problems, retrieve past solutions, and graduate accumulated knowledge into living context. Skills: compound-capture (post-solve documentation), compound-retrieve (pre-work knowledge search), compound-graduate (promote lessons into CLAUDE.md/AGENTS.md, garden the solutions corpus).",
   "license": "MIT",
   "author": {
     "name": "Joshua Oliphant"

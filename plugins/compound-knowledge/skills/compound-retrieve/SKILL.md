@@ -57,6 +57,8 @@ Grep(pattern="symptoms:.*{error}", path="{read_path}", output_mode="files_with_m
 
 Read the cross-project registry at `~/.claude/compound-knowledge-registry.md` to discover other knowledge bases. When local results are thin (<3 hits), search across registered KBs too, skipping any that is already in `read_paths`.
 
+Drop any hit under an `_archive/` directory: `compound-graduate`'s garden face moved it there because it no longer applies.
+
 For candidates, read frontmatter first (`limit: 20`), score by relevance, then full-read the top 3-5.
 
 ### Semantic search (vault-recommender)

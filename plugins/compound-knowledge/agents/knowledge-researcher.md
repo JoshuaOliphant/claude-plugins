@@ -71,6 +71,8 @@ Grep(pattern="statement:.*{keyword}", path="{read_path}/principles/", output_mod
 Grep(pattern="confidence:.*{level}", path="{read_path}/principles/", output_mode="files_with_matches")
 ```
 
+Drop any hit under an `_archive/` directory; `compound-graduate`'s garden face archived it.
+
 **Thresholds**:
 - >25 hits → tighten patterns (add more specific terms, narrow to subdirectory)
 - <3 hits → broaden search (remove category filter, try content search with `Grep` on full file body)

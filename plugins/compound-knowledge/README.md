@@ -146,7 +146,7 @@ New task → Read registry → Extract keywords → Parallel grep → Score cand
 
 - **compound-capture** — Capture solved problems as structured YAML-frontmatter solution files. Runs after solving a non-trivial problem to extract title, component, severity, symptoms, and root cause.
 - **compound-retrieve** — Search registered knowledge bases for past solutions before starting a new task. Searches project-level solutions first, then cross-project via registry if <3 hits found.
-- **compound-graduate** — Promote accumulated knowledge (especially synthesized wiki theses) into the always-loaded living context (`CLAUDE.md` / `AGENTS.md`). The "improve" stroke: proposes concrete, evergreen edits and verifies the system would catch the pattern next session.
+- **compound-graduate** — Promote accumulated knowledge (especially synthesized wiki theses) into the always-loaded living context (`CLAUDE.md` / `AGENTS.md`). The "improve" stroke: proposes concrete, evergreen edits and verifies the system would catch the pattern next session. Its garden face sorts each solution into keep, update, merge, replace, or archive, so retrieval stays sharp as the corpus grows; archived files move to `_archive/`, which retrieval skips.
 
 ## Directory Structure
 
