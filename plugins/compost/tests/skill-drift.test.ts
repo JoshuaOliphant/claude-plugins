@@ -11,7 +11,7 @@ type World = { asked: Asked[]; files: Map<string, string>; toasts: string[]; ord
 
 // compost's folder, the root the engine loads the mod from (this file sits in its tests/).
 const PLUGIN_ROOT = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
-const LOG ='/home/me/.claude/skill-drift/1970-01-01-session-9.jsonl'
+const LOG = '/home/me/.claude/skill-drift/1970-01-01-session-9.jsonl'
 
 const TURN = [
   { role: 'user', text: 'run the verify gates', toolUses: [] },
