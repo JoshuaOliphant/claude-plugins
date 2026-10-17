@@ -3,8 +3,6 @@
 # ABOUTME: The environment's own setup script runs this; every step is idempotent and only warns on failure.
 #
 # Usage: bash scripts/cloud-setup.sh
-#   TYPESAFE_MARKETPLACE_SOURCE  where to add the typesafe-ai marketplace from (owner/repo or URL);
-#                                needed only the first time, before typesafe-ai is registered.
 set -uo pipefail
 
 warn() { echo "cloud-setup: warn: $*" >&2; }
@@ -17,10 +15,6 @@ has_marketplace() {
 ensure_plugin() {
   local marketplace="$1" source="$2" plugin="$3"
   if ! has_marketplace "$marketplace"; then
-    if [[ -z "$source" ]]; then
-      warn "no source for marketplace $marketplace; skipping $plugin@$marketplace"
-      return 0
-    fi
     claude plugin marketplace add "$source" || { warn "could not add marketplace $source"; return 0; }
   fi
   claude plugin marketplace update "$marketplace" || warn "marketplace update $marketplace failed"
@@ -35,4 +29,5 @@ if ! command -v claude >/dev/null 2>&1; then
 fi
 
 ensure_plugin oliphant-plugins JoshuaOliphant/claude-plugins compost
-ensure_plugin typesafe-ai "${TYPESAFE_MARKETPLACE_SOURCE:-}" typesafe
+# Source per https://docs.typesafe.ai/agent-skill
+ensure_plugin typesafe-ai typesafe-ai/skills typesafe
