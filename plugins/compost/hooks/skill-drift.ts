@@ -84,8 +84,12 @@ function evidence(trace: string): string {
   return trace.length > EVIDENCE_CHARS ? `${trace.slice(0, EVIDENCE_CHARS / 2)}\n…\n${trace.slice(-EVIDENCE_CHARS / 2)}` : trace
 }
 
+async function claudeDir($: EngineInterface): Promise<string> {
+  return `${await $.env.get('HOME')}/.claude`
+}
+
 async function logDir($: EngineInterface): Promise<string> {
-  return `${await $.env.get('HOME')}/.claude/skill-drift`
+  return `${await claudeDir($)}/skill-drift`
 }
 
 async function record($: EngineInterface, found: Hit[]) {
@@ -100,7 +104,7 @@ async function record($: EngineInterface, found: Hit[]) {
 // scripts/skill_drift.py's to say, for /drift as for compost:skill-drift, so /drift asks it.
 async function driftSummary($: EngineInterface): Promise<string> {
   const script = `${$.plugin.root}/scripts/skill_drift.py`
-  const argv = ['uv', 'run', '--quiet', script, '--claude-dir', `${await $.env.get('HOME')}/.claude`, 'summary']
+  const argv = ['uv', 'run', '--quiet', script, '--claude-dir', await claudeDir($), 'summary']
   try {
     const ran = await $.process.run(argv)
     if (ran.exitCode === 0) return ran.stdout.trimEnd()

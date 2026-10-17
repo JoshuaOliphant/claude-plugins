@@ -99,10 +99,15 @@ def test_summary_lists_the_open_hits_patterns_counts(machine):
         hit(session="s2", at=1500, p=0.8, prompt="build issue #13"),
         hit(session="s3", at=2000, prompt="build issue #14"),
         hit(skill="grilling", kind="missing_guidance", session="s1", p=0.61, prompt="grill me on the plan"),
+        hit(skill="plugin-dev:hook-development", session="s5", turn="t1", prompt="write a hook"),
+        hit(skill="plugin-dev:hook-development", session="s5", turn="t2", at=900, prompt="write a hook"),
+        hit(skill="plugin-dev:hook-development", session="s6", kind="corrected", at=800, prompt="no, async"),
         hit(skill="stick-shift:build", session="s4"),
     )
     skill_drift.mark(claude_dir, ["s3:t1:compost:build:deviated"])
     assert skill_drift.summary(claude_dir) == (
+        "plugin-dev:hook-development  corrected×1 session  deviated×1 session\n"
+        '  latest: deviated p=0.90 on "write a hook"\n'
         "compost:build  deviated×2 sessions (pattern)\n"
         '  latest: deviated p=0.80 on "build issue #13"\n'
         "grilling  missing_guidance×1 session\n"
@@ -112,6 +117,8 @@ def test_summary_lists_the_open_hits_patterns_counts(machine):
     assert [(p["skill"], p["sessions"]) for p in found(machine, min_sessions=1)["patterns"]] == [
         ("compost:build", 2),
         ("grilling", 1),
+        ("plugin-dev:hook-development", 1),
+        ("plugin-dev:hook-development", 1),
     ]
 
 
@@ -181,11 +188,16 @@ def test_hits_carry_their_id_evidence_and_transcript(machine):
     assert hits[0]["evidence"].startswith("USER: build issue #12")
 
 
-def test_unreadable_lines_are_counted_not_dropped_silently(machine):
+@pytest.mark.parametrize(
+    "bad",
+    [{"skill": "x"}, hit(p="0.9"), hit(prompt=None), hit(at="x"), hit(at=True), [hit()]],
+    ids=["missing-fields", "p-a-string", "prompt-null", "at-a-string", "at-a-bool", "not-an-object"],
+)
+def test_unreadable_lines_are_counted_not_dropped_silently(machine, bad):
     claude_dir, _, log = machine
     log(hit(session="s1"), hit(session="s2"))
     with (claude_dir / "skill-drift" / "2026-09-29-s.jsonl").open("a") as handle:
-        handle.write("not json\n\n" + json.dumps({"skill": "x"}) + "\n")
+        handle.write("not json\n\n" + json.dumps(bad) + "\n")
     report = found(machine)
     assert (len(report["patterns"]), report["unreadable"]) == (1, 2)
     assert skill_drift.summary(claude_dir).splitlines()[::2] == [

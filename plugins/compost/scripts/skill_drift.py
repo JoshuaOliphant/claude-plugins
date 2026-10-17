@@ -9,7 +9,7 @@ import argparse
 import json
 import sys
 from collections import defaultdict
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 
 import claude_config
@@ -63,10 +63,20 @@ def read_log(claude_dir: Path) -> Log:
             if not line.strip():
                 continue
             try:
-                hits.append(Hit(**json.loads(line)))
+                hits.append(parse_hit(line))
             except (json.JSONDecodeError, TypeError):
                 unreadable += 1
     return Log(hits, unreadable)
+
+
+def parse_hit(line: str) -> Hit:
+    """One log line as a Hit; TypeError when it is not an object with exactly Hit's fields, each of its type."""
+    hit = Hit(**json.loads(line))
+    for spec in fields(Hit):
+        value = getattr(hit, spec.name)
+        if isinstance(value, bool) or not isinstance(value, (int, float) if spec.type is float else spec.type):
+            raise TypeError(f"{spec.name} is {type(value).__name__}, not {spec.type.__name__}")
+    return hit
 
 
 def reviewed(claude_dir: Path) -> set[str]:
