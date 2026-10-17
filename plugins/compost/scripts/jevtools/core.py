@@ -86,6 +86,10 @@ class Answers:
     def confidence(self, name: str) -> float:
         return self.raw[name]["confidence"]
 
+    def choice(self, name: str) -> str:
+        """The option a Choice picked."""
+        return self.raw[name]["choice"]
+
     def probabilities(self, name: str) -> dict[str, float]:
         """A Choice's or Score's probability per option, in the order the question listed them."""
         return self.raw[name]["probabilities"]
@@ -93,10 +97,6 @@ class Answers:
     def ranked(self, name: str, count: int | None = None) -> list[tuple[str, float]]:
         """A Choice's or Score's options, likeliest first; ties keep the order the question listed them in."""
         return sorted(self.probabilities(name).items(), key=lambda item: -item[1])[:count]
-
-    def __getitem__(self, name: str) -> dict:
-        """The raw answer dict, kept only for scripts/lint until its rules read the view (follow-up to #105)."""
-        return self.raw[name]
 
 
 class Jev:

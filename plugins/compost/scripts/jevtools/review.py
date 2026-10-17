@@ -3,6 +3,7 @@
 import asyncio
 import re
 import subprocess
+from operator import itemgetter
 from pathlib import Path
 
 from typesafe_sdk import Choice, Noul, NoulCriteria, Score
@@ -208,7 +209,7 @@ async def assess(jev, changed: dict, everything: list[str]) -> dict:
 async def review_risk(jev, gathered: dict) -> dict:
     everything = [changed["file"] for changed in gathered["files"]]
     assessed = await asyncio.gather(*(assess(jev, changed, everything) for changed in gathered["files"]))
-    ranked = sorted(assessed, key=lambda entry: -entry["score"])
+    ranked = sorted(assessed, key=itemgetter("score"), reverse=True)
     return {"files": ranked, "structural": any(entry["structural"] for entry in ranked)}
 
 

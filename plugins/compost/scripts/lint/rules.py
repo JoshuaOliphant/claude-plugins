@@ -5,6 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from extract import Kind, Unit, is_test_path
+from jevtools.core import Answers
 from typesafe_sdk import Choice, Noul, NoulCriteria
 
 
@@ -31,12 +32,14 @@ class Rule:
         if not set(self.actions) <= labels - self.acceptable:
             raise ValueError(f"{self.id}: actions must name flagged labels")
 
-    def probability(self, answer) -> tuple[float, str]:
+    def probability(self, answers: Answers) -> tuple[float, str]:
+        """This rule's finding probability and label, read from the answers to an ask that included its question."""
         if isinstance(self.question, Noul):
-            return answer["noul"], "yes"
-        flagged = {label: p for label, p in answer["probabilities"].items() if label not in self.acceptable}
+            return answers.noul(self.id), "yes"
+        probabilities = answers.probabilities(self.id)
+        flagged = {label: p for label, p in probabilities.items() if label not in self.acceptable}
         if not flagged:
-            return 0.0, answer["choice"]
+            return 0.0, answers.choice(self.id)
         return sum(flagged.values()), max(flagged, key=flagged.get)
 
     def applies(self, unit: Unit) -> bool:

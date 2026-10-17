@@ -115,8 +115,12 @@ def test_answers_are_read_through_the_view_and_cached_as_plain_dicts(tmp_path):
     assert len(client.calls) == 1
 
 
+ANSWER_KEYS = {"type", "noul", "choice", "probabilities", "confidence", "score", "legend"}
+
+
 def answer_reads(source: str) -> list[int]:
-    """Lines where the result of `jev.ask` is subscripted, directly or through the name it was bound to."""
+    """Lines that index the SDK's answer shape: a subscript on a `jev.ask` result (directly or through the name it
+    was bound to), or on anything by one of the answer dict's keys."""
     tree = ast.parse(source)
 
     def is_ask(node) -> bool:
@@ -134,23 +138,29 @@ def answer_reads(source: str) -> list[int]:
         node.lineno
         for node in ast.walk(tree)
         if isinstance(node, ast.Subscript)
-        and (is_ask(node.value) or (isinstance(node.value, ast.Name) and node.value.id in bound))
+        and (
+            is_ask(node.value)
+            or (isinstance(node.value, ast.Name) and node.value.id in bound)
+            or (isinstance(node.slice, ast.Constant) and node.slice.value in ANSWER_KEYS)
+        )
     ]
 
 
-def test_answer_reads_finds_both_ways_of_indexing_an_answer():
+def test_answer_reads_finds_every_way_of_indexing_an_answer():
     source = (
-        'async def f(jev):\n    a = await jev.ask("t", {}, {})\n    a["q"]\n    (await jev.ask("t", {}, {}))["q"]\n'
+        'async def f(jev, answer):\n    a = await jev.ask("t", {}, {})\n    a["q"]\n'
+        '    (await jev.ask("t", {}, {}))["q"]\n    answer["noul"]\n    answer["q"]\n'
     )
-    assert answer_reads(source) == [3, 4]
+    assert answer_reads(source) == [3, 4, 5]
 
 
-@pytest.mark.parametrize(
-    "module", [*sorted((SCRIPTS / "jevtools").glob("*.py")), SCRIPTS / "jev.py"], ids=lambda path: path.name
-)
+TOOLS = [*sorted((SCRIPTS / "jevtools").glob("*.py")), SCRIPTS / "jev.py", *sorted((SCRIPTS / "lint").glob("*.py"))]
+
+
+@pytest.mark.parametrize("module", TOOLS, ids=lambda path: str(path.relative_to(SCRIPTS)))
 def test_tools_read_answers_only_through_the_view_and_core_owns_the_cap(module):
     source = module.read_text()
-    assert answer_reads(source) == []
+    assert answer_reads(source) == [] or module.name == "core.py"
     owners = [
         node.lineno
         for node in ast.walk(ast.parse(source))
