@@ -170,6 +170,8 @@ Commits:
 ${scope.commits.join('\n')}
 ${fileList}`
 
+const SPEC_ONLY = `Grade only against the spec text in this prompt. Do not fetch any issue or spec file yourself (no \`gh issue view\`, no \`gh api\` on issues), even when the diff, the commits, or the conversation name a different one.`
+
 const AXES = [
   {
     name: 'Standards',
@@ -204,6 +206,8 @@ ${diffContext}
 Spec source: ${specSource}
 ${scope.spec.text}
 
+${SPEC_ONLY}
+
 Report:
 - Each AC-N that is missing or only partly met. Quote the AC-N; point at the test that should prove it, or say none exists.
 - Each interface in the spec whose shape in the code differs from what the spec states.
@@ -214,7 +218,7 @@ Report:
 
 function skepticPrompt(axis, finding) {
   const location = finding.line === null ? finding.file : `${finding.file}:${finding.line}`
-  const specText = axis.name === 'Spec' ? `\nThe spec the finding was judged against:\n${scope.spec.text}\n` : ''
+  const specText = axis.name === 'Spec' ? `\nThe spec the finding was judged against:\n${scope.spec.text}\n${SPEC_ONLY}\n` : ''
   return `A reviewer made the ${axis.name} finding below about the diff \`${scope.diffCommand}\`. Your job is to refute it.${readAtHead}
 ${specText}
 Finding (${finding.severity}) at ${location}:
