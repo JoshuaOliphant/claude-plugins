@@ -44,3 +44,15 @@ def test_no_dangling_symlinks():
         if path.is_symlink() and not path.exists()
     ]
     assert dangling == []
+
+
+@pytest.mark.parametrize(
+    "doc",
+    [doc for doc in INSTRUCTION_DOCS if doc != PLUGIN_ROOT / "commands" / "setup.md"],
+    ids=lambda p: p.relative_to(PLUGIN_ROOT).as_posix(),
+)
+def test_only_setup_names_the_config_file(doc):
+    """Readers take paths from scripts/resolve_paths.py; only setup, which writes the config, names it."""
+    text = doc.read_text(encoding="utf-8")
+    assert "compound-knowledge.local.md" not in text
+    assert "first match" not in text.lower()
