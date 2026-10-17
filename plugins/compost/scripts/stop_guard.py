@@ -24,6 +24,10 @@ IMPLEMENT = "compost:implement"
 FINISH = "compost:finish"
 # Text Claude Code writes into user entries: <command-name>, <system-reminder>, <task-notification> and the like.
 INJECTED = re.compile(r"<([a-z][a-z-]*)>.*?</\1>", re.DOTALL)
+# A <command-name> entry appears only when the user typed a slash command; a skill Claude loads is a Skill tool_use.
+COMMAND = re.compile(r"<command-name>/[^<]+</command-name>")
+# Main-thread entries Claude Code writes as user entries that no one typed: skill bodies, compaction summaries.
+UNTYPED = ("isSidechain", "isMeta", "isCompactSummary", "isVisibleInTranscriptOnly")
 REASON = (
     "compost stop-guard: this implement run is unattended, and your last message waits on the user for something "
     f"outside the allowed stops ({'; '.join(meta.ALLOWED_STOPS)}). Decide it yourself, post a ruling as an issue "
@@ -52,6 +56,8 @@ def blocks(entry: dict) -> list:
 
 
 def loads(entry: dict, skill: str) -> bool:
+    if entry.get("isSidechain"):
+        return False
     for block in blocks(entry):
         named = (block.get("input") or {}).get("skill")
         if block.get("type") == "tool_use" and block.get("name") == "Skill" and named == skill:
@@ -63,15 +69,15 @@ def loads(entry: dict, skill: str) -> bool:
 
 
 def prompt(entry: dict) -> list[str]:
-    """The text of a main-thread user entry that can start a turn; tool results and meta entries carry none."""
-    if entry.get("type") != "user" or entry.get("isMeta") or entry.get("isSidechain"):
+    """The text of a main-thread user entry that can start a turn; tool results and UNTYPED entries carry none."""
+    if entry.get("type") != "user" or any(entry.get(flag) for flag in UNTYPED):
         return []
     return [block.get("text", "") for block in blocks(entry) if block.get("type") == "text"]
 
 
 def typed(texts: list[str]) -> bool:
-    """Whether the user typed a prompt, as opposed to Claude Code injecting it (<task-notification> and the like)."""
-    return any(INJECTED.sub("", text).strip() for text in texts)
+    """Whether the user typed a prompt or slash command, as opposed to Claude Code injecting it (<task-notification>)."""
+    return any(COMMAND.search(text) or INJECTED.sub("", text).strip() for text in texts)
 
 
 def unattended_run(transcript: list[dict]) -> bool:
