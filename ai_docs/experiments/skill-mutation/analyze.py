@@ -1,9 +1,11 @@
 # ABOUTME: Reads mutate_skill.py's results.jsonl and reports which deletion mutants the evals killed and which survived.
-# ABOUTME: Kill rule: some expectation that passes reliably at baseline loses at least half its pass rate on the mutant.
+# ABOUTME: Kill rule: some expectation that passes reliably at baseline drops by at least 0.5 (absolute) on the mutant.
 import argparse
 import json
 from collections import defaultdict
 from pathlib import Path
+
+from mutate_skill import read_rows
 
 
 def main() -> None:
@@ -12,15 +14,17 @@ def main() -> None:
     parser.add_argument(
         "--live", type=float, default=0.66, help="baseline pass rate for an expectation to count"
     )
+    # Absolute, not relative: identical copies of the skill already differ by 0.4 on one
+    # expectation at 5 trials, so a "lost half its rate" rule would kill 0.8 -> 0.4 on noise.
     parser.add_argument(
-        "--drop", type=float, default=0.5, help="pass-rate drop that kills a mutant"
+        "--drop", type=float, default=0.5, help="absolute pass-rate drop that kills a mutant"
     )
     parser.add_argument(
         "--exclude-escaped", action="store_true", help="drop runs that read outside the sandbox"
     )
     args = parser.parse_args()
 
-    rows = [json.loads(line) for line in (args.out / "results.jsonl").read_text().splitlines()]
+    rows = read_rows(args.out)
     errors_path = args.out / "errors.jsonl"
     errors = (
         [json.loads(line) for line in errors_path.read_text().splitlines()]

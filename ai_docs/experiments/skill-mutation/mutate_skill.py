@@ -2,6 +2,7 @@
 # ABOUTME: A surviving mutant is either an eval gap or an instruction that changes nothing. Throwaway PoC, not shipped.
 import argparse
 import concurrent.futures
+import gzip
 import hashlib
 import json
 import os
@@ -10,6 +11,8 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
+
+import yaml
 
 WRAPPER = (
     "The user has invoked the `{name}` skill. Follow its instructions below for this request.\n\n"
@@ -41,6 +44,9 @@ def split_skill(text: str) -> tuple[str, str]:
     return (match.group(0), text[match.end() :]) if match else ("", text)
 
 
+LIST_ITEM = re.compile(r"^\s*([-*]|\d+\.) ")
+
+
 def chunks(body: str) -> list[tuple[int, int]]:
     """Line ranges [start, end) that can each be deleted: paragraphs, single list items, whole code blocks. Headings stay."""
     lines = body.split("\n")
@@ -55,20 +61,19 @@ def chunks(body: str) -> list[tuple[int, int]]:
                 j += 1
             spans.append((i, j + 1))
             i = j + 1
-        elif re.match(r"^\s*(-|\d+\.) ", line):
+        elif LIST_ITEM.match(line):
             j = i + 1
-            while (
-                j < len(lines)
-                and lines[j].startswith("  ")
-                and not re.match(r"^\s*(-|\d+\.) ", lines[j])
-            ):
+            while j < len(lines) and lines[j].startswith("  ") and not LIST_ITEM.match(lines[j]):
                 j += 1
             spans.append((i, j))
             i = j
         else:
             j = i + 1
             while (
-                j < len(lines) and lines[j].strip() and not lines[j].startswith(("#", "```", "- "))
+                j < len(lines)
+                and lines[j].strip()
+                and not lines[j].startswith(("#", "```"))
+                and not LIST_ITEM.match(lines[j])
             ):
                 j += 1
             spans.append((i, j))
@@ -78,6 +83,28 @@ def chunks(body: str) -> list[tuple[int, int]]:
 
 ESCAPE = re.compile(r"(?<![\w.~$}/-])/(root|home|opt|tmp|etc|usr|var)\b|find / ")
 NULL_RESPONSES = ["", "I don't know.", "Paris is the capital of France."]
+
+
+def read_rows(out: Path) -> list[dict]:
+    """results.jsonl, or the results.jsonl.gz a finished run is committed as."""
+    plain, packed = out / "results.jsonl", out / "results.jsonl.gz"
+    text = plain.read_text() if plain.exists() else gzip.decompress(packed.read_bytes()).decode()
+    return [json.loads(line) for line in text.splitlines()]
+
+
+def load_agents(directory: Path) -> dict:
+    """A plugin's agents/*.md as the JSON `claude --agents` takes, so the subject can delegate as it would installed."""
+    agents = {}
+    for path in sorted(directory.glob("*.md")):
+        front, prompt = split_skill(path.read_text())
+        meta = yaml.safe_load(front.strip().strip("-"))
+        agents[meta["name"]] = {
+            "description": meta["description"].strip(),
+            "prompt": prompt.strip(),
+            **({"tools": meta["allowed-tools"]} if "allowed-tools" in meta else {}),
+            **({"model": meta["model"]} if "model" in meta else {}),
+        }
+    return agents
 
 
 class Infra(Exception):
@@ -95,16 +122,27 @@ def run(cmd: list[str], cwd: Path, timeout: int, home: Path | None = None) -> st
     return done.stdout
 
 
-def sandbox(kb: Path) -> tuple[Path, Path]:
-    """A fresh project dir holding a copy of the KB, and an empty HOME, so no trial sees another's files or ~/.claude."""
+def sandbox(kb: Path, home_seed: Path | None) -> tuple[Path, Path]:
+    """A fresh project dir holding a copy of the KB, and a HOME holding only home_seed (empty without it),
+    so no trial sees another's files or the real ~/.claude."""
     root = Path(tempfile.mkdtemp(prefix="mutation-sandbox-"))
     shutil.copytree(kb, root / "project" / "knowledge" / "solutions")
-    (root / "home").mkdir()
+    if home_seed:
+        shutil.copytree(home_seed, root / "home")
+    else:
+        (root / "home").mkdir()
     return root / "project", root / "home"
 
 
-def subject(prompt: str, system: str, model: str, kb: Path) -> dict:
-    project, home = sandbox(kb)
+def subject(
+    prompt: str, system: str, model: str, kb: Path, agents: dict, home_seed: Path | None
+) -> dict:
+    project, home = sandbox(kb, home_seed)
+    agent_args = []
+    if agents:
+        agents_file = project.parent / "agents.json"
+        agents_file.write_text(json.dumps(agents))
+        agent_args = ["--agents", str(agents_file)]
     try:
         out = run(
             [
@@ -124,15 +162,16 @@ def subject(prompt: str, system: str, model: str, kb: Path) -> dict:
                 "Grep",
                 "Glob",
                 "Bash",
+                *(["Agent"] if agents else []),
                 "--disallowedTools",
                 "Skill",
-                "Agent",
-                "Task",
+                *([] if agents else ["Agent", "Task"]),
                 "WebFetch",
                 "WebSearch",
                 "--output-format",
                 "stream-json",
                 "--verbose",
+                *agent_args,
             ],
             project,
             600,
@@ -147,7 +186,7 @@ def subject(prompt: str, system: str, model: str, kb: Path) -> dict:
         except json.JSONDecodeError:
             continue
         if event.get("type") == "assistant":
-            for block in event["message"].get("content", []):
+            for block in event.get("message", {}).get("content", []):
                 if block.get("type") == "tool_use":
                     trace.append(f"{block['name']}({json.dumps(block['input'])[:300]})")
         elif event.get("type") == "result":
@@ -180,57 +219,67 @@ def judge(case: dict, transcript: dict, model: str) -> list[bool]:
         expectations="\n".join(f"{i + 1}. {e}" for i, e in enumerate(expectations)),
     )
     for _ in range(2):
-        out = run(
-            [
-                "claude",
-                "-p",
-                prompt,
-                "--model",
-                model,
-                "--setting-sources",
-                "",
-                "--strict-mcp-config",
-                "--no-session-persistence",
-                "--tools",
-                "",
-                "--output-format",
-                "json",
-            ],
-            Path(tempfile.gettempdir()),
-            300,
-        )
         try:
+            out = run(
+                [
+                    "claude",
+                    "-p",
+                    prompt,
+                    "--model",
+                    model,
+                    "--setting-sources",
+                    "",
+                    "--strict-mcp-config",
+                    "--no-session-persistence",
+                    "--tools",
+                    "",
+                    "--output-format",
+                    "json",
+                ],
+                Path(tempfile.gettempdir()),
+                300,
+            )
             verdict = json.loads(
                 re.search(r"\[.*\]", json.loads(out)["result"], re.DOTALL).group(0)
             )
-            if len(verdict) == len(expectations):
-                return [bool(v) for v in verdict]
-        except (json.JSONDecodeError, AttributeError, KeyError, TypeError):
-            pass
+        except (Infra, json.JSONDecodeError, AttributeError, KeyError, TypeError):
+            continue
+        # Only real booleans count: bool("false") is True, so a stringly verdict is a retry, not a pass.
+        if len(verdict) == len(expectations) and all(isinstance(v, bool) for v in verdict):
+            return verdict
     raise Infra("judge gave no parseable verdict")
 
 
 def judge_check(cases: list[dict], out: Path, model: str, workers: int) -> None:
     """Null answers must fail every expectation; baseline transcripts re-judged must get the same verdict."""
-    rows = [json.loads(line) for line in (out / "results.jsonl").read_text().splitlines()]
+    rows = read_rows(out)
     by_id = {c["id"]: c for c in cases}
     nulls = [(c, {"trace": [], "response": r}) for c in cases for r in NULL_RESPONSES]
     rejudge = [(by_id[r["case"]], r) for r in rows if r["variant"] == "baseline"]
+
+    def safe(pair: tuple[dict, dict]) -> list[bool] | None:
+        try:
+            return judge(*pair, model)
+        except Infra:
+            return None
+
     with concurrent.futures.ThreadPoolExecutor(workers) as pool:
-        null_verdicts = list(pool.map(lambda a: judge(a[0], a[1], model), nulls))
-        again = list(pool.map(lambda a: judge(a[0], a[1], model), rejudge))
-    null_passes = sum(sum(v) for v in null_verdicts)
+        null_verdicts = list(pool.map(safe, nulls))
+        again = list(pool.map(safe, rejudge))
+    judged_nulls = [v for v in null_verdicts if v is not None]
     pairs = [
         (a, b)
         for (_, r), v in zip(rejudge, again, strict=True)
+        if v is not None
         for a, b in zip(r["verdict"], v, strict=True)
     ]
     report = {
-        "null_expectation_passes": f"{null_passes}/{sum(len(v) for v in null_verdicts)}",
+        "null_expectation_passes": f"{sum(map(sum, judged_nulls))}/{sum(map(len, judged_nulls))}",
         "null_detail": [
             [c["id"], t["response"], v] for (c, t), v in zip(nulls, null_verdicts, strict=True)
         ],
         "rejudge_agreement": f"{sum(a == b for a, b in pairs)}/{len(pairs)}",
+        "judge_errors": sum(v is None for v in null_verdicts + again),
     }
     (out / "judge_check.json").write_text(json.dumps(report, indent=1))
     print(json.dumps({k: v for k, v in report.items() if k != "null_detail"}, indent=1))
@@ -254,6 +303,14 @@ def main() -> None:
         default=2,
         help="byte-identical copies of the baseline, to measure false kills",
     )
+    parser.add_argument(
+        "--agents-dir",
+        type=Path,
+        help="a plugin's agents/ dir, offered to the subject via --agents",
+    )
+    parser.add_argument(
+        "--home-seed", type=Path, help="copied in as the subject's HOME (e.g. a registry fixture)"
+    )
     parser.add_argument("--baseline-only", action="store_true")
     parser.add_argument(
         "--judge-check", action="store_true", help="grade null answers and re-grade baseline runs"
@@ -264,7 +321,13 @@ def main() -> None:
     name = re.search(r"^name:\s*(\S+)", front, re.MULTILINE).group(1)
     lines = body.split("\n")
     spans = chunks(body)
+    offset = front.count("\n")  # labels name SKILL.md lines, so a survivor can be found and edited
+
+    def label(start: int, end: int) -> str:
+        return f"del-L{offset + start + 1}-{offset + end}"
+
     cases = json.loads(args.evals.read_text())["evals"]
+    agents = load_agents(args.agents_dir) if args.agents_dir else {}
     args.out.mkdir(parents=True, exist_ok=True)
     if args.judge_check:
         judge_check(cases, args.out, args.judge_model, args.workers)
@@ -277,23 +340,34 @@ def main() -> None:
         variants |= {f"ctrl-same-{k}": body for k in range(1, args.controls + 1)}
         variants["ctrl-no-skill"] = "(no instructions)"
         for start, end in spans:
-            variants[f"del-L{start + 1}-{end}"] = "\n".join(lines[:start] + lines[end:])
+            variants[label(start, end)] = "\n".join(lines[:start] + lines[end:])
     (args.out / "chunks.json").write_text(
         json.dumps(
-            {f"del-L{s + 1}-{e}": "\n".join(lines[s:e]) for s, e in spans}
+            {label(s, e): "\n".join(lines[s:e]) for s, e in spans}
             | {"ctrl-no-skill": "(whole skill)"}
             | {f"ctrl-same-{k}": "(nothing)" for k in range(1, args.controls + 1)},
             indent=1,
         )
     )
 
+    # Resume skips (variant, case, trial) already done, which is only sound if every input that
+    # shapes a run is unchanged: a skill edit renumbers the del-L* labels under the old rows.
+    manifest = {
+        "skill_sha": hashlib.sha1(args.skill.read_bytes()).hexdigest(),
+        "evals_sha": hashlib.sha1(args.evals.read_bytes()).hexdigest(),
+        "model": args.model,
+        "judge_model": args.judge_model,
+        "agents": sorted(agents),
+        "home_seed": str(args.home_seed or ""),
+    }
+    manifest_path = args.out / "manifest.json"
+    if manifest_path.exists() and json.loads(manifest_path.read_text()) != manifest:
+        raise SystemExit(f"{args.out} holds a run with different inputs; use a new --out")
+    manifest_path.write_text(json.dumps(manifest, indent=1))
     results_path, errors_path = args.out / "results.jsonl", args.out / "errors.jsonl"
     done = set()
     if results_path.exists():
-        done = {
-            (r["variant"], r["case"], r["trial"])
-            for r in map(json.loads, results_path.read_text().splitlines())
-        }
+        done = {(r["variant"], r["case"], r["trial"]) for r in read_rows(args.out)}
 
     def job(variant: str, case: dict, trial: int) -> dict:
         key = {
@@ -308,10 +382,14 @@ def main() -> None:
                 WRAPPER.format(name=name, body=variants[variant]),
                 args.model,
                 args.kb,
+                agents,
+                args.home_seed,
             )
             return {**key, "verdict": judge(case, transcript, args.judge_model), **transcript}
         except Infra as error:
             return {**key, "error": str(error)}
+        except Exception as error:  # noqa: BLE001 - a harness bug in one run must not discard the rest of the batch
+            return {**key, "error": f"{type(error).__name__}: {error}"}
 
     todo = [
         (v, c, t)
