@@ -50,14 +50,24 @@ def marketplace_listings(claude_dir: Path | None = None) -> dict[str, frozenset[
     listings = {}
     for marketplace in _claude_json("plugin", "marketplace", "list", claude_dir=claude_dir):
         catalog = Path(marketplace["installLocation"]) / ".claude-plugin" / "marketplace.json"
-        if not catalog.is_file():
-            continue
-        try:
-            plugins = json.loads(catalog.read_text()).get("plugins", [])
-        except json.JSONDecodeError as error:
-            raise ClaudeConfigError(f"{catalog} is not valid JSON: {error}") from error
-        listings[marketplace["name"]] = frozenset(plugin["name"] for plugin in plugins)
+        if catalog.is_file():
+            listings[marketplace["name"]] = catalog_names(catalog)
     return listings
+
+
+def catalog_names(catalog: Path) -> frozenset[str]:
+    """The plugin names a marketplace's own `marketplace.json` lists; it is the marketplace's content, so a catalog
+    that is unreadable or not shaped as `{"plugins": [{"name": ...}]}` is reported rather than trusted."""
+    try:
+        data = json.loads(catalog.read_text())
+    except (OSError, ValueError) as error:
+        raise ClaudeConfigError(f"cannot read {catalog}: {error}") from error
+    plugins = data.get("plugins") if isinstance(data, dict) else None
+    if not isinstance(plugins, list) or not all(
+        isinstance(plugin, dict) and isinstance(plugin.get("name"), str) for plugin in plugins
+    ):
+        raise ClaudeConfigError(f"{catalog} does not list plugins by name")
+    return frozenset(plugin["name"] for plugin in plugins)
 
 
 def personal_skills(claude_dir: Path) -> set[str]:

@@ -235,7 +235,7 @@ def render_active(active: Active) -> str:
     if active.synced:
         lines.append(f"  synced from claude.ai, turn off in your claude.ai settings: {', '.join(active.synced)}")
     if active.orphaned:
-        lines.append("Installed, but their marketplace no longer lists them:")
+        lines.append("Installs their marketplace no longer lists:")
         orphans = ", ".join(f"{plugin_id} ({scope} scope)" for plugin_id, scope in active.orphaned)
         lines.append(f"  plugins to uninstall: {orphans}")
     return "\n".join(lines)
@@ -259,7 +259,7 @@ def replaced(pile: Path, claude_dir: Path, apply: bool, keep_orphans: bool = Fal
         )
     done = [f"disabled {len(active.plugins)} plugins", f"set {len(active.skills)} skills off in skillOverrides"]
     if orphans:
-        done.append(f"uninstalled {len(orphans)} installs their marketplace dropped")
+        done.append(f"uninstalled {len(orphans)} installs their marketplace no longer lists")
     remaining = f"; still to do by hand: {', '.join(active.synced)} on claude.ai" if active.synced else ""
     return f"{report}\n{'; '.join(done)}{remaining}. Restart Claude Code to apply."
 
@@ -269,7 +269,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pile", type=Path, default=PILE)
     commands = parser.add_subparsers(dest="command", required=True)
     superseded = commands.add_parser(
-        "replaced", help="list what compost replaces that is still active here, and installs no marketplace lists"
+        "replaced",
+        help="list what compost replaces that is still active here, and installs their marketplace no longer lists",
     )
     superseded.add_argument(
         "--apply", action="store_true", help="disable those plugins, set those skills off, uninstall those installs"

@@ -148,10 +148,31 @@ def test_orphans_come_only_from_marketplaces_whose_clone_has_a_catalog(claude_ho
     assert claude_config.read(claude_home.dir).orphaned == [("dropped@listed", "local")]
 
 
-def test_an_unreadable_marketplace_catalog_is_reported(claude_home):
+@pytest.mark.parametrize(
+    ("catalog", "message"),
+    [
+        (b"{not json", "cannot read .*broken.*marketplace.json: Expecting property name"),
+        (b"\xff", "cannot read .*broken.*marketplace.json: 'utf-8' codec"),
+        (b"[]", "broken.*marketplace.json does not list plugins by name"),
+        (b"{}", "broken.*marketplace.json does not list plugins by name"),
+        (b'{"plugins": {"a": {}}}', "broken.*marketplace.json does not list plugins by name"),
+        (b'{"plugins": [{"source": "./a"}]}', "broken.*marketplace.json does not list plugins by name"),
+        (b'{"plugins": ["a"]}', "broken.*marketplace.json does not list plugins by name"),
+    ],
+    ids=[
+        "not-json",
+        "not-utf8",
+        "top-level-list",
+        "no-plugins",
+        "plugins-not-list",
+        "entry-without-name",
+        "entry-not-object",
+    ],
+)
+def test_an_unreadable_marketplace_catalog_is_reported(claude_home, catalog, message):
     clone = claude_home.add_marketplace("broken")
-    (clone / ".claude-plugin" / "marketplace.json").write_text("{not json")
-    with pytest.raises(claude_config.ClaudeConfigError, match="broken.*marketplace.json is not valid JSON"):
+    (clone / ".claude-plugin" / "marketplace.json").write_bytes(catalog)
+    with pytest.raises(claude_config.ClaudeConfigError, match=message):
         claude_config.read(claude_home.dir).orphaned
 
 
