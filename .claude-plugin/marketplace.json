@@ -50,7 +50,7 @@
       "name": "compound-knowledge",
       "source": "./plugins/compound-knowledge",
       "description": "Capture solved problems, retrieve past solutions, and graduate accumulated knowledge into living context. Skills: compound-capture, compound-retrieve, compound-graduate.",
-      "version": "0.8.6",
+      "version": "0.8.7",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -107,7 +107,7 @@
       "name": "compost",
       "source": "./plugins/compost",
       "description": "One software-engineering workflow composted from Matt Pocock's skills, superpowers, pstack, Imbue's blueprint, and autonomous-sdlc: specs with BDD acceptance criteria, tracer-bullet issues in your tracker, builds that fit tests into the existing suite, automatic subagent review, browser diff review, semantic lint for Python, a prune skill that keeps docs to what the code can't say, and a turn skill that works in upstream changes.",
-      "version": "0.17.1",
+      "version": "0.17.2",
       "author": {
         "name": "Joshua Oliphant"
       },

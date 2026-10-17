@@ -59,19 +59,19 @@ To point all projects at a shared knowledge base (e.g., a second brain), create 
 ```markdown
 # ~/.claude/compound-knowledge.local.md
 # Compound Knowledge Settings
-solutions_path: ~/path/to/your/knowledge/solutions/
+write_path: ~/path/to/your/knowledge/solutions/
 ```
 
 **Project-level** (overrides user-level for one project):
 ```markdown
 # {project}/.claude/compound-knowledge.local.md
 # Compound Knowledge Settings
-solutions_path: /absolute/path/to/knowledge/solutions/
+write_path: /absolute/path/to/knowledge/solutions/
 ```
 
 The skills and agent get their paths from `scripts/resolve_paths.py`, which prints `write_path` (where captures go), `read_paths` (every directory searched) and `vault_root` as JSON, and exits 1 when `write_path` does not exist yet.
 
-**Other keys**: `write_path`, `read_paths` (comma-separated extra directories to search), and `vault_root` (the whole vault for wide reads) are also accepted. `solutions_path` is a back-compat alias for `write_path`. Semantic search (vault-recommender) runs only when `vault_root` is set.
+**Other keys**: `read_paths` (comma-separated extra directories to search), and `vault_root` (the whole vault for wide reads) are also accepted. `solutions_path` is a back-compat alias for `write_path`. Semantic search (vault-recommender) runs only when `vault_root` is set.
 
 ### Component values
 
