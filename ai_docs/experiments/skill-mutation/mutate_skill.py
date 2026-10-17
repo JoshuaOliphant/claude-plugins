@@ -107,12 +107,24 @@ def load_agents(directory: Path) -> dict:
     return agents
 
 
+def tree_sha(root: Path | None) -> str:
+    """One hash over every file's path and bytes, so editing a fixture or a script invalidates a resume."""
+    if not root:
+        return ""
+    digest = hashlib.sha1()
+    for path in sorted(p for p in root.rglob("*") if p.is_file()):
+        digest.update(path.relative_to(root).as_posix().encode() + b"\0" + path.read_bytes())
+    return digest.hexdigest()
+
+
 class Infra(Exception):
     """A run that produced nothing scorable: goes to errors.jsonl, never scored as a model failure."""
 
 
-def run(cmd: list[str], cwd: Path, timeout: int, home: Path | None = None) -> str:
-    env = {**os.environ, "HOME": str(home)} if home else None
+def run(
+    cmd: list[str], cwd: Path, timeout: int, home: Path | None = None, env: dict | None = None
+) -> str:
+    env = {**os.environ, "HOME": str(home), **(env or {})} if home else None
     try:
         done = subprocess.run(
             cmd, cwd=cwd, env=env, capture_output=True, text=True, timeout=timeout, check=False
@@ -122,11 +134,16 @@ def run(cmd: list[str], cwd: Path, timeout: int, home: Path | None = None) -> st
     return done.stdout
 
 
-def sandbox(kb: Path, home_seed: Path | None) -> tuple[Path, Path]:
-    """A fresh project dir holding a copy of the KB, and a HOME holding only home_seed (empty without it),
-    so no trial sees another's files or the real ~/.claude."""
+def sandbox(kb: Path | None, home_seed: Path | None, scripts: Path | None) -> tuple[Path, Path]:
+    """A fresh project dir holding a copy of the KB (no knowledge dir when kb is None), a HOME holding only
+    home_seed (empty without it), and the plugin's scripts at <sandbox>/plugin/scripts, so no trial sees
+    another's files or the real ~/.claude."""
     root = Path(tempfile.mkdtemp(prefix="mutation-sandbox-"))
-    shutil.copytree(kb, root / "project" / "knowledge" / "solutions")
+    (root / "project").mkdir()
+    if kb:
+        shutil.copytree(kb, root / "project" / "knowledge" / "solutions")
+    if scripts:
+        shutil.copytree(scripts, root / "plugin" / "scripts")
     if home_seed:
         shutil.copytree(home_seed, root / "home")
     else:
@@ -135,9 +152,16 @@ def sandbox(kb: Path, home_seed: Path | None) -> tuple[Path, Path]:
 
 
 def subject(
-    prompt: str, system: str, model: str, kb: Path, agents: dict, home_seed: Path | None
+    prompt: str,
+    system: str,
+    model: str,
+    kb: Path | None,
+    agents: dict,
+    home_seed: Path | None,
+    scripts: Path | None = None,
 ) -> dict:
-    project, home = sandbox(kb, home_seed)
+    project, home = sandbox(kb, home_seed, scripts)
+    plugin_env = {"CLAUDE_PLUGIN_ROOT": str(project.parent / "plugin")} if scripts else None
     agent_args = []
     if agents:
         agents_file = project.parent / "agents.json"
@@ -176,6 +200,7 @@ def subject(
             project,
             600,
             home,
+            plugin_env,
         )
     finally:
         shutil.rmtree(project.parent, ignore_errors=True)
@@ -290,7 +315,9 @@ def main() -> None:
     parser.add_argument("--skill", type=Path, required=True)
     parser.add_argument("--evals", type=Path, required=True)
     parser.add_argument(
-        "--kb", type=Path, required=True, help="copied to <sandbox>/knowledge/solutions"
+        "--kb",
+        type=Path,
+        help="copied to <sandbox>/knowledge/solutions; defaults to the evals' fixtures.kb",
     )
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--trials", type=int, default=3)
@@ -309,9 +336,21 @@ def main() -> None:
         help="a plugin's agents/ dir, offered to the subject via --agents",
     )
     parser.add_argument(
-        "--home-seed", type=Path, help="copied in as the subject's HOME (e.g. a registry fixture)"
+        "--home-seed",
+        type=Path,
+        help="copied in as the subject's HOME (e.g. a registry fixture); defaults to the evals' fixtures.home",
+    )
+    parser.add_argument(
+        "--plugin-root",
+        type=Path,
+        help="the plugin dir: its scripts/ is copied into the sandbox and CLAUDE_PLUGIN_ROOT points at the copy",
     )
     parser.add_argument("--baseline-only", action="store_true")
+    parser.add_argument(
+        "--controls-only",
+        action="store_true",
+        help="baseline and controls, no mutants: checks the evals measure the skill at all",
+    )
     parser.add_argument(
         "--judge-check", action="store_true", help="grade null answers and re-grade baseline runs"
     )
@@ -326,7 +365,17 @@ def main() -> None:
     def label(start: int, end: int) -> str:
         return f"del-L{offset + start + 1}-{offset + end}"
 
-    cases = json.loads(args.evals.read_text())["evals"]
+    evals = json.loads(args.evals.read_text())
+    cases = evals["evals"]
+    # Fixture paths in evals.json are relative to it, so the evals carry the KB they were written against.
+    fixtures = {
+        k: args.evals.parent / v for k, v in evals.get("fixtures", {}).items() if k != "note"
+    }
+    args.kb = args.kb or fixtures.get("kb")
+    args.home_seed = args.home_seed or fixtures.get("home")
+    if not args.kb:
+        parser.error("--kb is required when the evals name no fixtures.kb")
+    scripts = args.plugin_root / "scripts" if args.plugin_root else None
     agents = load_agents(args.agents_dir) if args.agents_dir else {}
     args.out.mkdir(parents=True, exist_ok=True)
     if args.judge_check:
@@ -339,7 +388,7 @@ def main() -> None:
     if not args.baseline_only:
         variants |= {f"ctrl-same-{k}": body for k in range(1, args.controls + 1)}
         variants["ctrl-no-skill"] = "(no instructions)"
-        for start, end in spans:
+        for start, end in [] if args.controls_only else spans:
             variants[label(start, end)] = "\n".join(lines[:start] + lines[end:])
     (args.out / "chunks.json").write_text(
         json.dumps(
@@ -358,7 +407,9 @@ def main() -> None:
         "model": args.model,
         "judge_model": args.judge_model,
         "agents": sorted(agents),
-        "home_seed": str(args.home_seed or ""),
+        "home_seed": tree_sha(args.home_seed),
+        "kb": tree_sha(args.kb),
+        "plugin_scripts": tree_sha(scripts),
     }
     manifest_path = args.out / "manifest.json"
     if manifest_path.exists() and json.loads(manifest_path.read_text()) != manifest:
@@ -381,9 +432,10 @@ def main() -> None:
                 case["prompt"],
                 WRAPPER.format(name=name, body=variants[variant]),
                 args.model,
-                args.kb,
+                args.kb if case.get("kb", True) is not None else None,
                 agents,
                 args.home_seed,
+                scripts,
             )
             return {**key, "verdict": judge(case, transcript, args.judge_model), **transcript}
         except Infra as error:

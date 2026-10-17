@@ -16,21 +16,22 @@ This is reference material only, not a shipped skill. Related ideas: #113 (mutat
 uv run --group dev python ai_docs/experiments/skill-mutation/mutate_skill.py \
   --skill plugins/compound-knowledge/skills/compound-retrieve/SKILL.md \
   --evals plugins/compound-knowledge/skills/compound-retrieve/evals/evals.json \
-  --kb knowledge/solutions --agents-dir plugins/compound-knowledge/agents \
-  --out <dir> --trials 5 --workers 12
+  --plugin-root plugins/compound-knowledge --out <dir> --trials 5 --workers 12
 uv run --group dev python ai_docs/experiments/skill-mutation/mutate_skill.py ... --out <dir> --judge-check
 uv run --group dev python ai_docs/experiments/skill-mutation/analyze.py <dir> [--exclude-escaped]
 ```
 
-`analyze.py` also reads the committed run directly: `analyze.py ai_docs/experiments/skill-mutation/results`.
+`analyze.py` also reads the committed runs directly: `analyze.py ai_docs/experiments/skill-mutation/results`.
+
+`--controls-only` runs the baseline and the controls without mutants, which is enough to check that the evals measure the skill at all. `--kb` and `--home-seed` default to the `fixtures` block in `evals.json` (paths relative to it). A case with `"kb": null` runs with no knowledge directory. `--plugin-root` copies the plugin's `scripts/` into the sandbox and points `CLAUDE_PLUGIN_ROOT` at the copy, so the skill's resolver and feedback calls run as they would installed. `--agents-dir` offers the plugin's agents; leave it off when an agent carries the skill's own procedure (compound-knowledge's `knowledge-researcher` does), or the no-skill control delegates to it and stops being skill-free.
 
 **Subject.** Each run is headless `claude -p` on haiku:
 - The skill is injected with `--append-system-prompt`.
 - `--setting-sources ""` keeps installed plugins out.
-- The plugin's own agents are offered through `--agents`, so the subject can delegate as it would when installed.
+- With `--agents-dir`, the plugin's own agents are offered through `--agents`, so the subject can delegate as it would when installed.
 
 **Sandbox.**
-- Each trial gets a fresh project directory holding a copy of the KB.
+- Each trial gets a fresh project directory holding a copy of the KB (none for a `"kb": null` case).
 - Its `HOME` is empty, or a copy of `--home-seed` when one is given, for example a registry fixture.
 
 **Judge.** Sonnet grades each expectation from the tool trace and the final response. Only real JSON booleans count; anything else is retried.
@@ -55,6 +56,8 @@ uv run --group dev python ai_docs/experiments/skill-mutation/analyze.py <dir> [-
 ## Results: compound-retrieve, shipped evals (2026-10-17)
 
 The run had 3 cases × 54 variants × 5 trials = 810 runs, with 0 infra errors. Subject cost was $4.33; judge cost was not recorded.
+
+Reproduce it from commit 332e3bf (the evals and KB it ran against were rewritten for #116): `mutate_skill.py --skill plugins/compound-knowledge/skills/compound-retrieve/SKILL.md --evals plugins/compound-knowledge/skills/compound-retrieve/evals/evals.json --kb knowledge/solutions --agents-dir plugins/compound-knowledge/agents --out <dir> --trials 5 --workers 12`, with that commit's `mutate_skill.py`.
 
 Outputs in `results/`:
 - `analysis.txt` and `analysis-excluding-escaped.txt`: the analysis, with and without runs that read outside the sandbox.
@@ -122,3 +125,24 @@ Until several expectations depend on the skill, survivors carry little informati
 - **Add concept-level mutants** next to the single-chunk ones.
 - **Run in a container,** or keep reading the `--exclude-escaped` view.
 - **Then rerun.** Survivors are the actionable list: each one is either a missing eval case or a line to delete.
+
+## Results: compound-retrieve, evals rebuilt for #116 (2026-10-17)
+
+`results-116/`: `--controls-only`, 5 trials, no agents offered, `--plugin-root plugins/compound-knowledge`. 4 variants × 5 cases × 5 trials = 100 runs, 0 infra errors, subject cost $0.45.
+
+The evals now ship their own fixtures (`evals/fixtures/`): a KB holding every entry an expectation names plus a `critical-patterns.md`, and a HOME whose registry lists a second KB (`skill-lab`). Cases 4 and 5 cover "nothing relevant" and "no knowledge dir". The delegation expectation is gone.
+
+- **24 of 24 expectations are live** in the reference (the old evals had 8 of 15 meetable).
+- **The whole-skill deletion is killed by 5 expectations**, against 1 before. The identical copies are killed by none.
+
+  | Expectation | Reference (3 arms) | No skill |
+  |---|---|---|
+  | c2e1 read the cross-project registry | 0.8, 1.0, 1.0 | 0.0 |
+  | c2e2 names the registered skill-lab KB | 0.6, 0.8, 1.0 | 0.0 |
+  | c4e4 searched the registry on a miss | 1.0, 1.0, 1.0 | 0.0 |
+  | c4e3 reports critical-patterns.md checked, none apply | 1.0, 1.0, 1.0 | 0.2 |
+  | c3e5 checked critical-patterns.md | 1.0, 1.0, 1.0 | 0.4 |
+
+- **Case 5 is masked by the leak.** Without the skill, haiku still reports the missing directory (0.8) and suggests setup (0.6). In 3 of those 5 runs it left the sandbox, found the installed compound-knowledge plugin (`/root/.claude/plugins/synced/...`, or this checkout under `/home/user`) and ran its resolver, whose stderr names `/compound-knowledge:setup`. In a container it should separate.
+- **Case 1 doesn't separate either.** `critical-patterns.md` sits beside the solutions, so a plain glob of the KB reads it.
+- **66 of 100 runs escaped**, all four arms alike. In this cloud container most are harmless: `~` guessed as `/home/user` (the path doesn't exist) and reads of the session's own memory dir under `/tmp/claude/memory`. The rest reach this repo or its installed plugin, which only helps the no-skill arm. The checkout does hold a copy of the registry fixture under `evals/fixtures/home`, but no run read it: the one no-skill run that grepped the checkout searched its `knowledge/` dir. So the kills above stand; the `--exclude-escaped` view keeps too few no-skill rows to say anything. A future run can pass c2e2 and c4e4 through that leak, so check traces for `evals/fixtures` before trusting a no-skill pass there.

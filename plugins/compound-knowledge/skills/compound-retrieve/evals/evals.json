@@ -1,29 +1,34 @@
 {
   "skill_name": "compound-retrieve",
+  "fixtures": {
+    "kb": "fixtures/solutions",
+    "home": "fixtures/home",
+    "note": "Run every case with kb copied to <project>/knowledge/solutions and home as HOME, which holds a cross-project registry pointing at ~/projects/skill-lab. A case with \"kb\": null runs with no knowledge directory."
+  },
   "evals": [
     {
       "id": 1,
       "prompt": "I'm getting a weird error in my autonomous-sdlc plugin — the builder agents keep committing directly to main instead of using worktree branches. I've seen this before but can't remember what fixed it. Can you check if we've documented a solution?",
-      "expected_output": "Should search knowledge/solutions/ for worktree/builder/commit patterns, find the parallel-worktree-builders solution, and present the key insight about worktree isolation behavior varying by task complexity",
+      "expected_output": "Should search knowledge/solutions/ for worktree/builder/commit patterns, find the parallel-worktree-builders solution, present the key insight about worktree isolation behavior varying by task complexity, and warn about the critical pattern on checking the main checkout before merging an agent's branch",
       "files": [],
       "expectations": [
         "The output references the parallel-worktree-builders solution file",
         "The output mentions that worktree isolation behavior varies by task complexity",
         "The output includes at least one file path the user could read for more detail",
-        "The skill spawned the knowledge-researcher subagent to perform the search",
+        "The output warns to check the main checkout (git status) for stray changes before merging an agent's branch, from critical-patterns.md",
         "The output checked or referenced critical-patterns.md"
       ]
     },
     {
       "id": 2,
       "prompt": "I want to add a new skill to the mochi-creator plugin that handles batch card imports from CSV files. Before I start building, can you check if there are any relevant patterns or principles from past work that I should know about?",
-      "expected_output": "Should search for plugin architecture patterns, skill creation patterns, and mochi-related solutions. Should surface the skill-value-correlates-with-knowledge-specificity principle and the plugin-modernization pattern.",
+      "expected_output": "Local hits are plugin-related, so it should read critical-patterns.md and the cross-project registry, say whether it searched the skill-lab knowledge base the registry lists (the skill sends it there only when local results are thin), and apply what it found to the batch import skill without inventing entries.",
       "files": [],
       "expectations": [
-        "The output references at least one relevant principle from the knowledge base",
-        "The output mentions that tool-specific or proprietary knowledge has higher skill value",
+        "The tool trace shows the subject read ~/.claude/compound-knowledge-registry.md (SANDBOX/home is ~)",
+        "The output names the skill-lab knowledge base from the cross-project registry and says whether it searched it",
+        "The output names a critical pattern from critical-patterns.md that applies to the new skill, such as keeping MOCHI_API_KEY out of the script",
         "The output includes an actionable recommendation relevant to building a batch import skill",
-        "The skill searched cross-project knowledge bases when local results were thin",
         "The output does not fabricate solutions or principles that do not exist in the knowledge base"
       ]
     },
@@ -36,8 +41,34 @@
         "The output references the generic-feedback-persistence pattern or solution file",
         "The output mentions the three-layer architecture (Storage, Semantics, Consumption) or equivalent structure",
         "The output mentions that feedback_manager.py is parameterized by plugin name",
-        "The output includes at least one file path to the solution for deeper reading",
-        "The output connects the finding to the user's specific goal of building a new plugin"
+        "The output connects the finding to the user's specific goal of building a new plugin",
+        "The output checked or referenced critical-patterns.md"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Before I start digging in: have we documented anything about Postgres connection pool exhaustion in a FastAPI service? Requests start timing out after a few minutes under load.",
+      "expected_output": "Nothing in either knowledge base covers this. It should say so plainly, show what it checked (local solutions, critical-patterns.md, the cross-project registry), and suggest capturing the fix with compound-capture once solved.",
+      "files": [],
+      "expectations": [
+        "The output says plainly that no documented solution for this problem was found",
+        "The output does not present any knowledge base entry as a solution to connection pool exhaustion",
+        "The output says it checked critical-patterns.md and that no critical pattern applies",
+        "The tool trace shows the subject read ~/.claude/compound-knowledge-registry.md or searched the skill-lab knowledge base (SANDBOX/home is ~)",
+        "The output suggests capturing the solution in the knowledge base (for example with compound-capture) once the problem is solved"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Check the knowledge base for anything on flaky Playwright tests before I start debugging them.",
+      "kb": null,
+      "expected_output": "This project has no knowledge/solutions directory. It should say so, pass on the fix the resolver prints (mkdir -p the solutions directory or run /compound-knowledge:setup), still search the registered skill-lab knowledge base, and report nothing found rather than inventing an answer.",
+      "files": [],
+      "expectations": [
+        "The output says this project has no knowledge/solutions directory (no local knowledge base)",
+        "The output suggests running /compound-knowledge:setup or creating the solutions directory",
+        "The tool trace shows the subject read ~/.claude/compound-knowledge-registry.md or searched the skill-lab knowledge base (SANDBOX/home is ~)",
+        "The output does not present any knowledge base entry as a fix for flaky Playwright tests"
       ]
     }
   ]

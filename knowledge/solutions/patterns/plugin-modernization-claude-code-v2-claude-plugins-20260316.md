@@ -3,7 +3,7 @@ title: "Modernizing Claude Code plugins for v2.1+ native features"
 date: 2026-03-16
 project: claude-plugins
 problem_type: patterns
-component: claude-code-plugins
+component: claude-code
 severity: medium
 solution_summary: "Replace manual orchestration patterns with declarative frontmatter — native worktree isolation, task management, agent memory, and permission modes"
 symptoms:
@@ -12,7 +12,7 @@ symptoms:
   - "Only builder agent has permissionMode: none, others prompt for permissions"
   - "Architect agent loses codebase knowledge between sessions"
   - "Agent teams feature gate checks stale CLAUDE_CODE_EXPERIMENTAL env var"
-root_cause: "Plugin was built against Claude Code v1.0 capabilities; v2.0-2.1 shipped native worktree isolation, task management with dependencies, agent memory, and matured agent teams"
+root_cause: version_mismatch
 resolution_type: refactor
 tags:
   - claude-code-plugins
@@ -45,6 +45,10 @@ Cross-referenced the full release notes (v0.2.21 through v2.1.76) against every 
 | v2.1.32+ | Agent teams matured (many fixes) | Feature gate docs were stale |
 | v2.1.72 | `model` parameter restored on Task tool | Per-invocation model overrides possible |
 | v2.1.0 | Hooks in skill/command frontmatter | Already adopted (builder PostToolUse) |
+
+## Root Cause
+
+Plugin was built against Claude Code v1.0 capabilities; v2.0-2.1 shipped native worktree isolation, task management with dependencies, agent memory, and matured agent teams.
 
 ## Solution
 

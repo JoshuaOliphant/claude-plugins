@@ -3,14 +3,14 @@ title: "Parallel builder dispatch with worktree isolation — behaviors and inte
 date: 2026-03-17
 project: claude-plugins
 problem_type: workflow
-component: claude-code-plugins
+component: claude-code
 severity: medium
 solution_summary: "When dispatching 5 parallel builders with isolation: worktree, 4 of 5 committed directly to main while 1 used its worktree branch — integration requires checking both paths"
 symptoms:
   - "Worktree branches not created for all builders despite isolation: worktree"
   - "Some builders commit to main directly even when worktree isolation requested"
   - "Integration step finds uncommitted changes in main working directory from worktree builder"
-root_cause: "Claude Code's worktree isolation behavior varies by task complexity — simpler tasks (frontmatter edits) may resolve without creating a separate branch, while complex tasks (new files, multiple file changes) use the full worktree lifecycle"
+root_cause: documentation_gap
 resolution_type: workaround
 tags:
   - parallel-builders
@@ -20,6 +20,7 @@ tags:
 environment: "Claude Code v2.1.49+"
 related_solutions:
   - "patterns/plugin-modernization-claude-code-v2-claude-plugins-20260316.md"
+  - "principles/dogfood-plugin-on-own-codebase-20260317.md"
 ---
 
 ## Problem
@@ -37,6 +38,10 @@ git branch | grep worktree  # Only worktree-agent-ac10983c existed
 ```
 
 The worktree builder also wrote some files to the main working directory, causing `git merge` to fail with "local changes would be overwritten."
+
+## Root Cause
+
+Claude Code's worktree isolation behavior varies by task complexity — simpler tasks (frontmatter edits) may resolve without creating a separate branch, while complex tasks (new files, multiple file changes) use the full worktree lifecycle.
 
 ## Solution
 

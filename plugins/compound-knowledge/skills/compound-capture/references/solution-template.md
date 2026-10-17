@@ -49,6 +49,10 @@ related_solutions:  # optional, max 5, bidirectional (if A links B, update B to 
 1. **{Failed approach 1}**: {Why it didn't work}
 2. **{Failed approach 2}**: {Why it didn't work}
 
+## Root Cause
+
+{What fundamentally caused it, in a sentence or two. `root_cause` in the frontmatter names its category.}
+
 ## Solution
 
 {Describe the fix clearly. Include enough detail that someone else could apply it.}
