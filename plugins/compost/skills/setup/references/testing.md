@@ -33,6 +33,11 @@ Treat what CI runs as the definition of green, then add what the repo exposes lo
 - Type checkers: ty, mypy, `tsc --noEmit`.
 - Task runners: `make check`, `just check`, package scripts, `scripts/*verify*`.
 - `pre-commit run --all-files` when `.pre-commit-config.yaml` exists.
+- Mutation testing, scoped to the branch's diff: the tool the repo already configures, else the
+  stack's default in [mutation testing](../../verify/references/mutation.md), added as a dev
+  dependency with its config committed once the user agrees. Prove it with one run over
+  `HEAD~1`: it should report mutants run on that commit's lines. It is not a row in the gates
+  table, because a run with survivors still needs sorting rather than a red or green.
 
 Run each once before recording it. A gate that fails or can't start is recorded as broken, with
 its first error, so the next skill knows the repo isn't green before it starts.
@@ -74,7 +79,20 @@ decides at `compost:finish`.
 Exclusions agreed so far:
 
 - <path or pattern>: <why>
+
+## Mutation
+
+Tool: <cosmic-ray | mutmut | StrykerJS | cargo-mutants | ... | none>, <adopted | added>.
+Status: <working, last proved on <sha> | broken: <first error>>.
+
+`compost:verify` runs this over the branch's diff and sorts every surviving mutant as killed,
+equivalent, or excluded. The exclusions above apply to mutants too.
+
+```bash
+<the diff-scoped command, base included>
+```
 ````
 
 Delete rows for gates the repo doesn't have. Keep the Exclusions list, empty at first, so later
-agreements have a place to go.
+agreements have a place to go. With no mutation tool, keep the section with `Tool: none` so
+`compost:verify` and `compost:build` know to walk the mutations by hand.

@@ -33,7 +33,9 @@ edits the user made by hand.
      `packages/*` whose members have their own sources.
    - Tests and gates: the test layout and framework in use, coverage configuration, linters, type
      checkers, formatters, `.pre-commit-config.yaml`, `Makefile` or `justfile` targets, package
-     scripts, and the commands CI runs in `.github/workflows/` or `.gitlab-ci.yml`.
+     scripts, the commands CI runs in `.github/workflows/` or `.gitlab-ci.yml`, and mutation
+     testing config (`cosmic-ray.toml`, `[tool.mutmut]`, `stryker.config.*`,
+     `.cargo/mutants.toml`, a pitest plugin).
    - Telemetry: `.claude/harness/observability/`, and Logfire, Sentry, or OpenTelemetry in the
      dependencies or the app's startup code.
 
@@ -76,8 +78,10 @@ edits the user made by hand.
    `compost:verify` will run: the suite command, the coverage command and threshold (100% line
    coverage unless the project already sets one), linters, type checkers, and anything CI treats
    as required. Run each gate once. Record the ones that pass as gates; record a gate that fails
-   or doesn't run as broken, with its output's first error, rather than dropping it. Write
-   `docs/agents/testing.md` from the template in the same reference.
+   or doesn't run as broken, with its output's first error, rather than dropping it. Record the
+   mutation tool the same way: adopt one already configured, or offer the stack's default from
+   [mutation testing](../verify/references/mutation.md), and run it once over the last commit's
+   diff. Write `docs/agents/testing.md` from the template in the same reference.
 
 7. **Observability.** Find the telemetry the repo's running code emits with the detection ladder
    in [observability](references/observability.md): the observability harness, another stack

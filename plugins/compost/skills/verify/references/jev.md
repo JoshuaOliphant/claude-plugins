@@ -42,7 +42,7 @@ exclusion to bring to the user. Every `test` block goes back to `compost:build`.
 Measured on 24 real blocks from compost and skill-atlas: every block sorted right at 1.5, with no
 block between 1.24 and 2.02.
 
-## ac-exercised (step 4)
+## ac-exercised (step 5)
 
 Input: the repo root and the AC table, each AC-N with its Given/When/Then and the node id of its
 test, parametrized case included when a row stands for it.
@@ -67,7 +67,7 @@ back to `compost:build`.
 Measured on 22 labeled pairs: 20 right. The misses were a test whose constant hid the environment
 variable the criterion named, and a mock-based test of a nearby expiry instead of the exact one.
 
-## claim-backed (step 8)
+## claim-backed (step 9)
 
 Input: each claim the report will make, with the output of the command that backs it, inline or
 as a file you saved with `| tee`. Long output is clipped to its first 2,000 and last 8,000
