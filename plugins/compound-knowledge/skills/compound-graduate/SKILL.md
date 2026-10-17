@@ -31,7 +31,9 @@ edits the file read every session, so it is high-trust: always propose before ap
    python ${CLAUDE_PLUGIN_ROOT}/scripts/resolve_paths.py
    ```
 
-   Use `read_paths` as the scan corpus and `vault_root` (if set) for semantic queries.
+   Use `read_paths` as the scan corpus and `vault_root` (if set) for semantic queries. If it
+   exits non-zero, the solutions directory (`write_path`) does not exist: tell the user to run
+   `/compound-knowledge:setup`, and scan only the `read_paths` entries that exist.
 
 2. **Gather candidates** (prefer the most synthesized layer first):
    - Theses with frontmatter `confidence: solid` (then `evolving`) under any `wiki/theses/`
