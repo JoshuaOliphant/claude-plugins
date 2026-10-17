@@ -190,6 +190,6 @@ async def narrow(
     kept: list[str] = []
     for label, _ in answers.ranked("group", keep):
         if kept and len(kept) + len(split[label]) > CHOICE_LIMIT:
-            break
+            continue
         kept += split[label]
     return kept, answers

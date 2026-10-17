@@ -194,12 +194,14 @@ def test_narrow_asks_nothing_when_every_option_fits(monkeypatch):
         ({"a": ["1"], "b": ["2"], "c": ["3", "4"]}, "a", 2, ["1", "2"]),
         ({"a": ["1", "2"], "b": ["3"], "c": ["4"]}, "a", 2, ["1", "2", "3"]),
         ({"a": ["1", "2", "3"], "b": ["4"]}, "a", 2, ["1", "2", "3"]),
+        ({"a": ["1", "2"], "b": ["3", "4"], "c": ["5"]}, "a", 3, ["1", "2", "5"]),
     ],
     ids=[
         "keeps one group by default",
         "keeps the likeliest groups up to keep",
         "fills the cap exactly",
         "stops before the cap",
+        "skips a group past the cap for a smaller likely one",
     ],
 )
 def test_narrow_keeps_the_likeliest_groups_within_the_cap(monkeypatch, groups, chosen, keep, kept):

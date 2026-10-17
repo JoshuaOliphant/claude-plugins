@@ -142,7 +142,7 @@ def test_find_test_extends_the_chosen_test_only_when_it_covers_the_criterion(cov
     ("files", "wanted", "candidates"),
     [
         ({"f0.py": "ab", "f1.py": "cd", "f2.py": "ef"}, "test_e", ["f2.py::test_e", "f2.py::test_f"]),
-        ({"f0.py": "abcd", "f1.py": "e"}, "test_d", ["f0.py::test_d"]),
+        ({"f0.py": "abcd", "f1.py": "e"}, "test_d", ["f0.py::test_d", "f1.py::test_e"]),
     ],
     ids=["narrowed to the chosen files", "a file past the cap is split, so none of its tests is dropped"],
 )
