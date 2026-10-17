@@ -87,12 +87,12 @@ Exclusions agreed so far:
 Tool: <cosmic-ray | mutmut | StrykerJS | cargo-mutants | ... | none>, <adopted | added>.
 Status: <working, last proved on <sha> | broken: <first error>>.
 
-`compost:verify` runs this over the branch's diff and sorts every surviving mutant as killed,
-equivalent, or excluded. The exclusions above apply to mutants too.
+`compost:verify` runs this over the branch's diff and sorts every surviving mutant as
+unprotected behavior, equivalent, or excluded. The exclusions above apply to mutants too.
 
-```bash
-<the diff-scoped command, base included>
-```
+Run: the <tool> steps in compost's mutation reference, from `<directory>`, through
+`<uv run --group mutation | npx | cargo>`, with config `<path>`. Covers `<paths>`; other code gets
+only `compost:build`'s walk by hand.
 ````
 
 Delete rows for gates the repo doesn't have. Keep the Exclusions list, empty at first, so later

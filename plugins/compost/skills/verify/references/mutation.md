@@ -16,7 +16,12 @@ tree, so uncommitted work counts. Set the base once:
 
 ```bash
 base=$(git merge-base origin/main HEAD)   # the default branch, as compost:review reads it
+untracked=$(git ls-files --others --exclude-standard)
+[ -z "$untracked" ] || printf 'untracked, so never mutated: %s\nrun git add -N on the new sources\n' "$untracked"
 ```
+
+`git diff` leaves out untracked files, so a new module is never mutated until `git add -N` (or a
+real `git add`) puts it in the index; a run with untracked sources is not clean.
 
 ### Python: cosmic-ray
 
@@ -42,17 +47,20 @@ name = "local"
 Then, as one command so a failed baseline stops it:
 
 ```bash
-filter=$(mktemp) && printf '[cosmic-ray.filters.git-filter]\nbranch = "%s"\n' "$base" > "$filter" \
+filter=$(mktemp) && trap 'rm -f "$filter"' EXIT && printf '[cosmic-ray.filters.git-filter]\nbranch = "%s"\n' "$base" > "$filter" \
   && uv run cosmic-ray baseline cosmic-ray.toml \
   && rm -f .cosmic-ray.sqlite \
   && uv run cosmic-ray init cosmic-ray.toml .cosmic-ray.sqlite \
   && uv run cr-filter-git --config "$filter" .cosmic-ray.sqlite \
-  && PYTHONDONTWRITEBYTECODE=1 uv run cosmic-ray exec cosmic-ray.toml .cosmic-ray.sqlite \
-  && uv run cr-report .cosmic-ray.sqlite --surviving-only --show-diff
+  && uv run cosmic-ray exec cosmic-ray.toml .cosmic-ray.sqlite \
+  && uv run cr-report .cosmic-ray.sqlite --surviving-only --show-diff \
+  && python3 -c 'import sqlite3; db = sqlite3.connect(".cosmic-ray.sqlite"); print("mutants run:", db.execute("select count(*) from work_results where test_outcome is not null").fetchone()[0])'
 ```
 
-The filter only removes mutants, so a changed file outside `module-path` gets none and reads as
-clean: compare `git diff --stat "$base"` with what the report mutated.
+An empty survivor list reads the same whether every mutant was killed or none ran, so the last line
+counts the ones that ran. The filter only removes mutants, so a changed file outside `module-path`
+gets none: when the count is 0, or lower than `git diff --stat "$base"` suggests, the run did not
+check the change.
 
 `cr-filter-git` reads its base only from a config file and defaults to `master`, so the base goes
 in a throwaway one rather than the committed config.
@@ -109,7 +117,10 @@ compost; setup's proving run is the check.
   by every job, including the ones the git filter skipped; on that run 18 of 18 run mutants
   survived. Count the mutants that ran and the ones that survived yourself.
 - **Stale bytecode.** A mutant that keeps a file's size and lands in the same second as the last
-  write can leave Python running the old `.pyc`. Set `PYTHONDONTWRITEBYTECODE=1`.
+  write can leave Python running the old `.pyc`. cosmic-ray sets `PYTHONDONTWRITEBYTECODE=1` for
+  its own test runs; set it yourself for any other runner or a hand-made edit.
+- **A timeout counts as a kill.** cosmic-ray scores a test command that outruns `timeout` as
+  killed, so a slow suite turns survivors into kills. Keep the test command well under it.
 - **In-place tools leave a mutant behind when interrupted.** cosmic-ray restores each file after
   its mutant, but a timeout or Ctrl-C that stops the run itself can strand one. Run `git diff` afterwards and restore
   anything you did not write.

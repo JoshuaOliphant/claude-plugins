@@ -2,7 +2,11 @@
 module-path = "scripts"
 timeout = 60.0
 excluded-modules = []
-test-command = "python -m pytest -x -q -p no:cacheprovider --no-cov -n auto"
+# The whole suite, not the tests that import the mutated module: a test can reach a module through
+# a subprocess or a fixture. The two ignored files cannot: test_workflow.py stubs jev.py and
+# test_skill_drift_mod.py only reads the TypeScript hook. cosmic-ray scores a timeout as killed,
+# so keep this well under `timeout`.
+test-command = "python -m pytest -x -q -p no:cacheprovider --no-cov -n auto --ignore=tests/test_workflow.py --ignore=tests/test_skill_drift_mod.py"
 
 [cosmic-ray.distributor]
 name = "local"

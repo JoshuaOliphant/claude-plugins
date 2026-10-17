@@ -10,14 +10,16 @@ package = false
 
 [dependency-groups]
 dev = [
-    "cosmic-ray>=8.7.0",
     "pytest>=8",
     "pytest-asyncio>=0.23",
     "pytest-cov>=5",
-    "pytest-xdist>=3.8.0",
     "pyyaml>=6",
     "ruff>=0.6",
     "typesafe-sdk>=0.7.1",
+]
+mutation = [
+    "cosmic-ray>=8.7.0",
+    "pytest-xdist>=3.8.0",
 ]
 
 [tool.pytest.ini_options]
