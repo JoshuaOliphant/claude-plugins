@@ -2,6 +2,7 @@
 # ABOUTME: Kill rule: some expectation that passes reliably at baseline drops by at least 0.5 (absolute) on the mutant.
 import argparse
 import json
+import math
 from collections import defaultdict
 from pathlib import Path
 
@@ -12,7 +13,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("out", type=Path)
     parser.add_argument(
-        "--live", type=float, default=0.66, help="baseline pass rate for an expectation to count"
+        "--live",
+        type=float,
+        help="reference pass rate for an expectation to count (default: --drop, the least that a kill needs)",
     )
     # Absolute, not relative: identical copies of the skill already differ by 0.4 on one
     # expectation at 5 trials, so a "lost half its rate" rule would kill 0.8 -> 0.4 on noise.
@@ -23,6 +26,8 @@ def main() -> None:
         "--exclude-escaped", action="store_true", help="drop runs that read outside the sandbox"
     )
     args = parser.parse_args()
+    if args.live is None:
+        args.live = args.drop
 
     rows = read_rows(args.out)
     errors_path = args.out / "errors.jsonl"
@@ -46,24 +51,34 @@ def main() -> None:
         for i, ok in enumerate(row["verdict"]):
             passes[(row["variant"], row["case"], i)].append(ok)
 
-    def rate(variant: str, case: int, i: int) -> float | None:
-        seen = passes.get((variant, case, i))
+    # The reference is the baseline pooled with its byte-identical copies: one 5-trial baseline
+    # is itself a noisy sample, and which identical arm got called "baseline" decided what was live.
+    # Each identical copy is checked against the pool of the others, so it stays a fair noise test.
+    same = sorted({v for v, _, _ in passes if v.startswith("ctrl-same")})
+    reference_arms = ["baseline", *same]
+
+    def rate(variants: list[str], case: int, i: int) -> float | None:
+        seen = [ok for v in variants for ok in passes.get((v, case, i), [])]
         return sum(seen) / len(seen) if seen else None
 
-    base = {(c, i): rate("baseline", c, i) for (v, c, i) in passes if v == "baseline"}
-    live = {k: r for k, r in base.items() if r >= args.live}
-    print(f"\nexpectations live at baseline: {len(live)}/{len(base)}")
-    for (c, i), r in sorted(base.items()):
+    expectations = sorted({(c, i) for v, c, i in passes if v == "baseline"})
+    reference = {k: rate(reference_arms, *k) for k in expectations}
+    live = {k: r for k, r in reference.items() if r >= args.live}
+    print(
+        f"\nexpectations live in the reference ({' + '.join(reference_arms)}): {len(live)}/{len(reference)}"
+    )
+    for (c, i), r in sorted(reference.items()):
         print(
             f"  case {c} e{i + 1}: {r:.2f}{'' if (c, i) in live else '  (dead: cannot kill anything)'}"
         )
 
     verdicts = {}
     for variant, text in chunks.items():
+        arms = [a for a in reference_arms if a != variant]
         deltas = {
-            (c, i): r - rate(variant, c, i)
-            for (c, i), r in live.items()
-            if rate(variant, c, i) is not None
+            (c, i): rate(arms, c, i) - rate([variant], c, i)
+            for (c, i) in live
+            if rate([variant], c, i) is not None
         }
         if not deltas:
             continue
@@ -78,7 +93,6 @@ def main() -> None:
         return f"  {variant:13} mean drop {mean:+.2f}  killed by {by:18} {text.strip()[:70]!r}{up}"
 
     controls = sorted(v for v in verdicts if v.startswith("ctrl-"))
-    same = [v for v in controls if v.startswith("ctrl-same")]
     print("\nCONTROLS")
     for variant in controls:
         print(line(variant))
@@ -89,8 +103,27 @@ def main() -> None:
 
     mutants = [v for v in verdicts if not v.startswith("ctrl-")]
     killed = [v for v in mutants if verdicts[v][1]]
+
+    # Two identical copies cannot resolve a few-percent false-kill rate, so also estimate it:
+    # if a mutant changed nothing, its k passes in n runs are Binomial(n, reference rate).
+    def chance_kill(variant: str) -> float:
+        survive = 1.0
+        for c, i in live:
+            n = len(passes.get((variant, c, i), []))
+            p = rate([a for a in reference_arms if a != variant], c, i)
+            cutoff = p - args.drop
+            tail = sum(
+                math.comb(n, k) * p**k * (1 - p) ** (n - k)
+                for k in range(n + 1)
+                if k / n <= cutoff + 1e-9
+            )
+            survive *= 1 - tail
+        return 1 - survive
+
+    expected = sum(chance_kill(v) for v in mutants)
     print(
         f"\nmutation score: {len(killed)}/{len(mutants)} = {len(killed) / max(len(mutants), 1):.0%}"
+        f" (about {expected:.1f} kills expected by chance if no deletion mattered)"
     )
     print("\nKILLED")
     for variant in killed:
