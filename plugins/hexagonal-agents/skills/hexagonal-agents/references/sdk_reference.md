@@ -486,14 +486,11 @@ def _error(message: str) -> dict:
 
 ---
 
-## Version History
+## Version
 
-| Version | Key Changes |
-|---------|-------------|
-| 0.1.22 | Current stable |
-| 0.1.0 | Initial release |
-
-Check for updates:
+The examples here were checked against `claude-agent-sdk` 0.2.159. Every client takes its
+configuration as `ClaudeSDKClient(options=ClaudeAgentOptions(...))`. Check what you have
+installed with `uv pip show claude-agent-sdk`, and upgrade with:
 
 ```bash
 uv add claude-agent-sdk --upgrade
