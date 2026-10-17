@@ -81,9 +81,15 @@ def test_every_compost_reference_names_a_skill_workflow_or_agent():
     assert unknown == set()
 
 
+# A mod is a file whose `register` the hooks module imports; helpers and the module itself are not.
+MOD_IMPORT = re.compile(r"import \{[^}]*\bregister as \w+[^}]*\} from '\./([\w-]+)\.tsx?'")
+
+
 def test_pile_feeds_only_existing_skills_the_canon_or_mechanisms_and_notice_is_current():
     sources = pile.load(PLUGIN_ROOT / "pile.toml").sources
-    mods = {f"hooks/{path.stem}" for path in (PLUGIN_ROOT / "hooks").glob("*.ts*")}
+    module = (PLUGIN_ROOT / "hooks" / "compost.ts").read_text()
+    mods = {f"hooks/{name}" for name in MOD_IMPORT.findall(module)}
+    assert mods, "no mods found; MOD_IMPORT no longer matches how hooks/compost.ts imports a mod's register"
     targets = {path.name for path in SKILLS} | {"canon", "hooks"} | mods
     fed = {skill for source in sources for skills in source.feeds.values() for skill in skills}
     assert fed - targets == set()

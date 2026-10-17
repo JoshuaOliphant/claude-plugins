@@ -29,7 +29,7 @@ def test_classify_change_sends_every_adopt_and_adapt_to_be_read():
     labeled = cases("classify-change")
     by_source: dict[str, list[dict]] = {}
     for case in labeled:
-        change = {"path": case["path"], "skills": case["skills"], "diff": (evals_dir() / case["diff"]).read_text()}
+        change = {"path": case["path"], "targets": case["skills"], "diff": (evals_dir() / case["diff"]).read_text()}
         by_source.setdefault(case["source"], []).append(change)
     gathered = [meta.describe_changes(source, changes) for source, changes in by_source.items()]
     results = ask_live(meta.classify_change, gathered)

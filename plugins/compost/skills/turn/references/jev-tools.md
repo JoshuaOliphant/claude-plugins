@@ -21,7 +21,9 @@ changes were sent to be read, and 15 of the 26 ignores were recorded without rea
 wrongly. Jev over-calls adopt and adapt on long diffs that rework ideas compost already has, so
 treat its adopt/adapt split as a hint and read those yourself.
 
-Input: `source` (a name in `pile.toml`) and `paths` (upstream paths from `pile.py status`).
+Input: `source` (a name in `pile.toml`) and `paths` (upstream paths from `pile.py status`). Each
+change in the output lists the `feeds` targets its path maps to; a mechanism target (`hooks`,
+`hooks/<mod>`) is not sent to Jev as skill text, so read those changes yourself.
 `pin` and `head` default to the source's pin and upstream's `origin/HEAD`.
 
 ```json
@@ -31,9 +33,9 @@ Input: `source` (a name in `pile.toml`) and `paths` (upstream paths from `pile.p
 ```json
 {"tool": "classify-change", "source": "superpowers", "to_read": ["skills/writing-plans/SKILL.md"],
  "changes": [
-  {"path": "skills/writing-plans/SKILL.md", "skills": ["slice"], "verdict": "adapt", "confidence": 0.74,
+  {"path": "skills/writing-plans/SKILL.md", "targets": ["slice"], "verdict": "adapt", "confidence": 0.74,
    "probabilities": {"adapt": 0.74, "ignore": 0.21, "adopt": 0.05}, "needs_reading": true},
-  {"path": "skills/brainstorming/scripts/server.cjs", "skills": ["spec"], "verdict": "ignore",
+  {"path": "skills/brainstorming/scripts/server.cjs", "targets": ["spec"], "verdict": "ignore",
    "confidence": 0.99, "probabilities": {"ignore": 0.99, "adopt": 0.01, "adapt": 0.0}, "needs_reading": false}]}
 ```
 
