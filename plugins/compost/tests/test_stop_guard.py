@@ -142,3 +142,87 @@ def test_any_failure_allows_the_stop_silently_and_logs_one_line(transcript, caps
     assert capsys.readouterr().out == ""
     [line] = log.read_text().splitlines()
     assert logged in line
+
+
+LOADS_FINISH = {
+    "type": "assistant",
+    "message": {"id": "f0", "content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "compost:finish"}}]},
+}
+SLASH_FINISH = {
+    "type": "user",
+    "message": {
+        "content": "<command-message>compost:finish</command-message>\n<command-name>/compost:finish</command-name>"
+    },
+}
+WAITS = said("m9", "PR #52 merged. On naming: I'd call it Ledger. If you agree, I'd rename it.")
+
+
+def typed(content, **extra) -> dict:
+    return {"type": "user", "message": {"role": "user", "content": content}, **extra}
+
+
+@pytest.mark.parametrize(
+    "entries",
+    [
+        [LOADS_IMPLEMENT, said("m1", "PR #52 is up."), LOADS_FINISH, WAITS],
+        [SLASH_IMPLEMENT, said("m1", "PR #52 is up."), SLASH_FINISH, WAITS],
+        [LOADS_IMPLEMENT, LOADS_FINISH, said("m2", "Discarded."), typed("Which name do you like?"), WAITS],
+    ],
+    ids=["finish loaded after implement", "finish typed after implement", "finish then a question"],
+)
+def test_finish_ends_the_run_so_a_stop_after_it_is_never_judged(transcript, entries):
+    client = StubClient(lambda state, questions: {})
+    assert stop_guard.decide({"transcript_path": transcript(*entries)}, lambda: client) is None
+    assert client.calls == []
+
+
+def test_an_implement_load_after_finish_starts_a_new_run(transcript):
+    path = transcript(LOADS_IMPLEMENT, LOADS_FINISH, SLASH_IMPLEMENT, said("m1", "Which library do you prefer?"))
+    assert stop_guard.decide({"transcript_path": path}, judging(0.9, 0.1)) == {
+        "decision": "block",
+        "reason": stop_guard.REASON,
+    }
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        typed("Should the ledger live under scripts/?"),
+        typed([{"type": "text", "text": "Should the ledger live under scripts/?"}]),
+        typed("<system-reminder>The plan changed.</system-reminder>\nShould the ledger live under scripts/?"),
+    ],
+    ids=["plain string", "text block", "typed text beside an injected reminder"],
+)
+def test_a_stop_answering_a_message_typed_during_the_run_is_allowed(transcript, question):
+    client = StubClient(lambda state, questions: {})
+    path = transcript(LOADS_IMPLEMENT, said("m1", "Working on #78."), question, WAITS)
+    assert stop_guard.decide({"transcript_path": path}, lambda: client) is None
+    assert client.calls == []
+
+
+@pytest.mark.parametrize(
+    "injected",
+    [
+        typed([{"type": "tool_result", "tool_use_id": "t1", "content": "Should we?"}]),
+        typed("Base directory for this skill: compost/skills/implement", isMeta=True),
+        typed("<system-reminder>Should we?</system-reminder>"),
+        typed("<task-notification>\n<status>completed</status>\n</task-notification>"),
+        typed("Should the ledger live under scripts/?", isSidechain=True),
+        typed("<command-message>compost:verify</command-message>\n<command-name>/compost:verify</command-name>"),
+    ],
+    ids=["tool result", "meta entry", "system reminder", "task notification", "sidechain prompt", "bare command"],
+)
+def test_user_entries_claude_code_writes_do_not_count_as_typed(transcript, injected):
+    path = transcript(LOADS_IMPLEMENT, injected, said("m1", "Which library do you prefer?"))
+    assert stop_guard.decide({"transcript_path": path}, judging(0.9, 0.1))["decision"] == "block"
+
+
+def test_a_notification_after_the_answered_message_puts_the_run_back_on_its_own(transcript):
+    notification = typed("<task-notification>\n<status>completed</status>\n</task-notification>")
+    path = transcript(LOADS_IMPLEMENT, typed("Go on."), said("m1", "On it."), notification, WAITS)
+    assert stop_guard.decide({"transcript_path": path}, judging(0.9, 0.1))["decision"] == "block"
+
+
+def test_a_message_typed_before_the_run_started_does_not_attend_it(transcript):
+    path = transcript(typed("Implement #78 please."), SLASH_IMPLEMENT, said("m1", "Which library do you prefer?"))
+    assert stop_guard.decide({"transcript_path": path}, judging(0.9, 0.1))["decision"] == "block"
