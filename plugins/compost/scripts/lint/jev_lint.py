@@ -108,7 +108,7 @@ async def judge_unit(jev: Jev, unit: Unit, rules: list[Rule]) -> list[Judgment]:
     answers = await jev.ask("lint", unit.state, {rule.id: rule.question for rule in applicable})
     judgments = []
     for rule in applicable:
-        probability, label = rule.probability(answers[rule.id])
+        probability, label = rule.probability(answers)
         judgments.append(
             Judgment(
                 unit.path,
