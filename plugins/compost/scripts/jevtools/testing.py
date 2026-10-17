@@ -11,11 +11,11 @@ from pathlib import Path
 from typesafe_sdk import Choice, Noul, Score
 
 from jevtools import suite
-from jevtools.core import top
+from jevtools.core import narrow
 from jevtools.registry import BadInput, require, tool
 
-CHOICE_LIMIT = 254
 FILES_SHORTLIST = 3
+ALTERNATIVES = 2
 EXTEND_COVERED = 0.7
 FULL_SOURCE_CHARS = 4000
 
@@ -80,26 +80,25 @@ COVERED = Noul(
 )
 
 
+def files_of(groups: dict[str, list[str]]) -> Choice:
+    return file_question({name: ", ".join(node.split("::", 1)[1] for node in nodes) for name, nodes in groups.items()})
+
+
 async def shortlist(jev, criterion: str, tests: dict[str, str]) -> dict[str, str]:
-    if len(tests) <= CHOICE_LIMIT:
-        return {node: source[: suite.SOURCE_CHARS] for node, source in tests.items()}
     by_file: dict[str, list[str]] = {}
     for node in tests:
-        by_file.setdefault(node.split("::")[0], []).append(node.split("::", 1)[1])
-    files = {name: ", ".join(names) for name, names in list(by_file.items())[:CHOICE_LIMIT]}
-    answers = await jev.ask("find-test/file", {"criterion": criterion}, {"file": file_question(files)})
-    chosen = {name for name, _ in top(answers["file"]["probabilities"], FILES_SHORTLIST)}
-    narrowed = {node: source[: suite.SOURCE_CHARS] for node, source in tests.items() if node.split("::")[0] in chosen}
-    return dict(list(narrowed.items())[:CHOICE_LIMIT])
+        by_file.setdefault(node.split("::")[0], []).append(node)
+    nodes, _ = await narrow(jev, "find-test/file", {"criterion": criterion}, by_file, files_of, keep=FILES_SHORTLIST)
+    return {node: tests[node][: suite.SOURCE_CHARS] for node in nodes}
 
 
 async def place(jev, criterion: str, tests: dict[str, str]) -> dict:
     candidates = await shortlist(jev, criterion, tests)
     answers = await jev.ask("find-test", {"criterion": criterion}, {"neighbour": neighbour_question(candidates)})
-    ranked = top(answers["neighbour"]["probabilities"])
+    ranked = answers.ranked("neighbour", ALTERNATIVES + 1)
     best, confidence = ranked[0]
     state = {"criterion": criterion, "test": {"id": best, "source": tests[best]}}
-    covered = (await jev.ask("find-test/covered", state, {"covered": COVERED}))["covered"]["noul"]
+    covered = (await jev.ask("find-test/covered", state, {"covered": COVERED})).noul("covered")
     return {
         "criterion": criterion,
         "action": "extend" if covered >= EXTEND_COVERED else "add-beside",
@@ -187,7 +186,7 @@ async def compare(jev, change: dict) -> dict:
     async def pair(neighbour: dict) -> dict:
         state = {"added": added, "existing": {"test": neighbour["test"], "source": neighbour["source"]}}
         answers = await jev.ask("duplicate-test", state, {"same_behavior": SAME_BEHAVIOR})
-        same = answers["same_behavior"]["noul"]
+        same = answers.noul("same_behavior")
         return {"test": neighbour["test"], "same_behavior": round(same, 3), "similarity": neighbour["similarity"]}
 
     neighbours = await asyncio.gather(*(pair(n) for n in change["neighbours"]))
@@ -246,7 +245,7 @@ async def exercise(jev, criterion: dict) -> dict:
         "test": {"id": criterion["test"], "case": criterion["case"], "source": criterion["source"]},
     }
     answers = await jev.ask("ac-exercised", state, {"asserts_then": ASSERTS_THEN})
-    probability = answers["asserts_then"]["noul"]
+    probability = answers.noul("asserts_then")
     return {**found, "exercised": probability >= EXERCISED, "probability": round(probability, 3)}
 
 
@@ -370,13 +369,13 @@ TEST_VALUE = Score(
 
 
 async def value(jev, gap: dict) -> dict:
-    answer = (await jev.ask("test-value", gap, {"value": TEST_VALUE}))["value"]
+    answers = await jev.ask("test-value", gap, {"value": TEST_VALUE})
     return {
         "file": gap["file"],
         "lines": gap["lines"],
-        "decision": "exclude" if answer["score"] < EXCLUDE_BELOW else "test",
-        "score": round(answer["score"], 2),
-        "probabilities": answer["probabilities"],
+        "decision": "exclude" if answers.score("value") < EXCLUDE_BELOW else "test",
+        "score": round(answers.score("value"), 2),
+        "probabilities": answers.probabilities("value"),
     }
 
 
@@ -431,7 +430,7 @@ OUTPUT_BACKS_CLAIM = Noul(
 
 
 async def check_claim(jev, item: dict) -> dict:
-    probability = (await jev.ask("claim-backed", item, {"backed": OUTPUT_BACKS_CLAIM}))["backed"]["noul"]
+    probability = (await jev.ask("claim-backed", item, {"backed": OUTPUT_BACKS_CLAIM})).noul("backed")
     return {"claim": item["claim"], "backed": probability >= BACKED, "probability": round(probability, 3)}
 
 

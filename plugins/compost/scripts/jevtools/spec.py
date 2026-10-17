@@ -4,7 +4,6 @@ import asyncio
 
 from typesafe_sdk import Choice, Noul, Score
 
-from jevtools.core import top
 from jevtools.registry import BadInput, tool
 
 CLASSES = {
@@ -153,8 +152,8 @@ def classify_question() -> Choice:
 
 async def classify(jev, request: dict) -> dict:
     answers = await jev.ask("spec-class", request, {"class": classify_question()})
-    probabilities = answers["class"]["probabilities"]
-    ranked = top(probabilities, 2)
+    probabilities = answers.probabilities("class")
+    ranked = answers.ranked("class", 2)
     pick, confidence = ranked[0]
     chosen = pick
     if confidence < CLASS_CONFIDENCE:
@@ -222,8 +221,8 @@ async def question_value(jev, gathered: dict) -> dict:
         {
             "id": q["id"],
             "question": q["question"],
-            "value": round(answers[f"q{i}"]["score"], 3),
-            "probabilities": answers[f"q{i}"]["probabilities"],
+            "value": round(answers.score(f"q{i}"), 3),
+            "probabilities": answers.probabilities(f"q{i}"),
             "frontier": q["frontier"],
         }
         for i, q in enumerate(questions)
@@ -254,8 +253,7 @@ def gather_criteria(payload: dict) -> dict:
 async def grade(jev, criterion: dict) -> dict:
     answers = await jev.ask("ac-quality", {"criterion": criterion["text"]}, AC_DIMENSIONS)
     scores = {
-        name: round(answers[name]["score"] / (len(question.criteria) - 1), 3)
-        for name, question in AC_DIMENSIONS.items()
+        name: round(answers.score(name) / (len(question.criteria) - 1), 3) for name, question in AC_DIMENSIONS.items()
     }
     weakest = min(scores, key=scores.get)
     return {
@@ -288,7 +286,7 @@ def gather_rulings(payload: dict) -> dict:
 
 async def weigh(jev, ruling: dict) -> dict:
     answers = await jev.ask("adr-worthy", {"ruling": ruling}, ADR_TESTS)
-    tests = {name: round(answers[name]["noul"], 3) for name in ADR_TESTS}
+    tests = {name: round(answers.noul(name), 3) for name in ADR_TESTS}
     return {"what": ruling["what"], **tests, "offer_adr": all(tests[name] >= ADR_THRESHOLDS[name] for name in tests)}
 
 

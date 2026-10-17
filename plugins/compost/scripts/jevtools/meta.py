@@ -7,7 +7,6 @@ from pathlib import Path
 import pile
 from typesafe_sdk import Choice, Noul
 
-from jevtools.core import top
 from jevtools.registry import BadInput, require, tool
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[2]
@@ -138,12 +137,11 @@ async def classify(jev, gathered: dict, change: dict) -> dict:
         "rulings": RULINGS,
     }
     answers = await jev.ask("classify-change", state, {"verdict": VERDICT})
-    probabilities = answers["verdict"]["probabilities"]
-    verdict, confidence = top(probabilities, 1)[0]
+    [(verdict, confidence)] = answers.ranked("verdict", 1)
     return decided | {
         "verdict": verdict,
         "confidence": round(confidence, 3),
-        "probabilities": {name: round(value, 3) for name, value in probabilities.items()},
+        "probabilities": {name: round(value, 3) for name, value in answers.probabilities("verdict").items()},
         "needs_reading": verdict != "ignore" or confidence < RECORD_IGNORE_AT,
     }
 
@@ -188,15 +186,15 @@ def route_question(skills: dict[str, str]) -> Choice:
 
 async def route_one(jev, prompt: str, question: Choice) -> dict:
     answers = await jev.ask("route", {"request": prompt}, {"skill": question})
-    probabilities = answers["skill"]["probabilities"]
-    (skill, first), (_, second) = top(probabilities, 2)
+    ranked = answers.ranked("skill")
+    (skill, first), (_, second) = ranked[:2]
     margin = first - second
     return {
         "prompt": prompt,
         "skill": skill,
         "margin": round(margin, 3),
         "close": margin < CLOSE_MARGIN,
-        "probabilities": {name: round(value, 3) for name, value in top(probabilities, len(probabilities))},
+        "probabilities": {name: round(value, 3) for name, value in ranked},
     }
 
 
@@ -323,8 +321,8 @@ def gather_passages(payload: dict) -> dict:
 
 async def lint(jev, unit: dict) -> dict[str, float]:
     answers = await jev.ask("rulings-lint", {"policy": POLICY, "passage": unit}, LINT_QUESTIONS)
-    scores = {rule: answers[rule]["noul"] for rule in RULES}
-    gate, allowed = answers["gate"]["noul"], answers["allowed"]["noul"]
+    scores = {rule: answers.noul(rule) for rule in RULES}
+    gate, allowed = answers.noul("gate"), answers.noul("allowed")
     return {"unallowed_stop": gate * (1 - allowed)} | scores | {"gate": gate, "allowed": allowed}
 
 
@@ -384,7 +382,7 @@ def gather_stop(payload: dict) -> dict:
 async def stop_guard(jev, gathered: dict) -> dict:
     state = {"run": RUN, "allowed_stops": ALLOWED_STOPS, "message": gathered["message"]}
     answers = await jev.ask("stop-guard", state, {"waits": MESSAGE_WAITS, "allowed": MESSAGE_ALLOWED})
-    waits, allowed = answers["waits"]["noul"], answers["allowed"]["noul"]
+    waits, allowed = answers.noul("waits"), answers.noul("allowed")
     score = waits * (1 - allowed)
     return {
         "block": score >= BLOCK_AT,

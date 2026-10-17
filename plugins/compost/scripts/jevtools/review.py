@@ -7,16 +7,16 @@ from pathlib import Path
 
 from typesafe_sdk import Choice, Noul, NoulCriteria, Score
 
-from jevtools.core import top
+from jevtools import core
 from jevtools.registry import BadInput, require, tool
 
 CANON = Path(__file__).resolve().parents[2] / "canon"
 HUNK_CHARS = 4000
 FILE_DIFF_CHARS = 6000
 CHANGE_CHARS = 8000
-CHOICE_LIMIT = 250
 DOCUMENT_CHARS = 90_000
 MAX_PICKS = 3
+ALTERNATIVES = 2
 
 SKEPTIC_SEVERITY = 0.3
 SKEPTIC_CONFIDENCE = 0.25
@@ -131,16 +131,17 @@ async def triage(jev, finding: dict) -> dict:
         "finding": {key: finding[key] for key in ("file", "line", "claim", "evidence")},
         "hunk": finding["hunk"],
     }
-    answer = (await jev.ask("triage-finding", state, {"severity": SEVERITY}))["severity"]
-    probabilities = {name: round(value, 3) for name, value in answer["probabilities"].items()}
+    answers = await jev.ask("triage-finding", state, {"severity": SEVERITY})
+    probabilities, confidence = answers.probabilities("severity"), answers.confidence("severity")
+    [(severity, _)] = answers.ranked("severity", 1)
     return {
         "file": finding["file"],
         "line": finding["line"],
         "claim": finding["claim"],
-        "severity": top(answer["probabilities"], 1)[0][0],
-        "confidence": round(answer["confidence"], 3),
-        "probabilities": probabilities,
-        "worth_skeptic": worth_skeptic(answer["probabilities"], answer["confidence"]),
+        "severity": severity,
+        "confidence": round(confidence, 3),
+        "probabilities": {name: round(value, 3) for name, value in probabilities.items()},
+        "worth_skeptic": worth_skeptic(probabilities, confidence),
     }
 
 
@@ -190,12 +191,12 @@ RISK = Score(
 
 async def assess(jev, changed: dict, everything: list[str]) -> dict:
     state = {**changed, "changed_files": everything}
-    answer = (await jev.ask("review-risk", state, {"risk": RISK}))["risk"]
+    answers = await jev.ask("review-risk", state, {"risk": RISK})
     return {
         "file": changed["file"],
-        "score": round(answer["score"], 2),
-        "confidence": round(answer["confidence"], 3),
-        "structural": answer["score"] >= STRUCTURAL,
+        "score": round(answers.score("risk"), 2),
+        "confidence": round(answers.confidence("risk"), 3),
+        "structural": answers.score("risk") >= STRUCTURAL,
     }
 
 
@@ -261,10 +262,8 @@ def essay_question(essays: dict[str, dict]) -> Choice:
     gather_change,
 )
 async def canon_pick(jev, gathered: dict) -> dict:
-    answer = await jev.ask("canon-pick", {"change": gathered["change"]}, {"essay": essay_question(gathered["essays"])})
-    ranked = [
-        (stem, round(value, 3)) for stem, value in top(answer["essay"]["probabilities"], len(gathered["essays"]) + 1)
-    ]
+    answers = await jev.ask("canon-pick", {"change": gathered["change"]}, {"essay": essay_question(gathered["essays"])})
+    ranked = [(stem, round(value, 3)) for stem, value in answers.ranked("essay")]
     picks = [
         {"essay": f"{stem}.md", "title": gathered["essays"][stem]["title"], "probability": probability}
         for stem, probability in ranked
@@ -284,7 +283,7 @@ def numbered_lines(repo: Path, query: dict) -> list[tuple[int, str]]:
     selected = [(number, lines[number - 1]) for number in range(max(start, 1), min(end, len(lines)) + 1)]
     if not selected:
         raise BadInput(f"{query['file']} has no lines in {start}..{end}")
-    if len(selected) > CHOICE_LIMIT * CHOICE_LIMIT or sum(len(text) for _, text in selected) > DOCUMENT_CHARS:
+    if len(selected) > core.CHOICE_LIMIT * core.CHOICE_LIMIT or sum(len(text) for _, text in selected) > DOCUMENT_CHARS:
         raise BadInput(f"{query['file']} is too long to search; pass `start` and `end`")
     return selected
 
@@ -305,9 +304,8 @@ def document(lines: list[tuple[int, str]]) -> str:
     return "\n".join(f"L{number}| {text}" for number, text in lines)
 
 
-def windows(lines: list[tuple[int, str]]) -> dict[str, list[tuple[int, str]]]:
-    chunks = [lines[index : index + CHOICE_LIMIT] for index in range(0, len(lines), CHOICE_LIMIT)]
-    return {f"L{chunk[0][0]}-L{chunk[-1][0]}": chunk for chunk in chunks}
+def windows(ids: list[str]) -> dict[str, list[str]]:
+    return {f"{part[0]}-{part[-1]}": part for part in core.parts(ids)}
 
 
 def where_question(options: list[str], unit: str) -> Choice:
@@ -330,24 +328,23 @@ EXISTS = Noul(
 
 
 async def find(jev, query: dict) -> dict:
-    lines = query["lines"]
     base_state = {"claim": query["claim"], "file": query["file"]}
-    exists = None
-    if len(lines) > CHOICE_LIMIT:
-        chunks = windows(lines)
-        answers = await jev.ask(
-            "locate/window",
-            {**base_state, "document": document(lines)},
-            {"window": where_question(list(chunks), "range of line ids"), "exists": EXISTS},
-        )
-        lines = chunks[top(answers["window"]["probabilities"], 1)[0][0]]
-        exists = answers["exists"]["noul"]
-    questions = {"line": where_question([f"L{number}" for number, _ in lines], "line id")}
-    if exists is None:
+    ids, narrowed = await core.narrow(
+        jev,
+        "locate/window",
+        {**base_state, "document": document(query["lines"])},
+        windows([f"L{number}" for number, _ in query["lines"]]),
+        lambda groups: where_question(list(groups), "range of line ids"),
+        also={"exists": EXISTS},
+    )
+    kept = set(ids)
+    lines = [(number, text) for number, text in query["lines"] if f"L{number}" in kept]
+    questions = {"line": where_question(ids, "line id")}
+    if narrowed is None:
         questions["exists"] = EXISTS
     answers = await jev.ask("locate", {**base_state, "document": document(lines)}, questions)
-    exists = answers["exists"]["noul"] if exists is None else exists
-    ranked = top(answers["line"]["probabilities"])
+    exists = (narrowed or answers).noul("exists")
+    ranked = answers.ranked("line", ALTERNATIVES + 1)
     texts = dict(lines)
     best, probability = ranked[0]
     return {

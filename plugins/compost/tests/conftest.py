@@ -110,15 +110,16 @@ class StubClient:
 
 
 class StubJev:
-    """Stands in for jevtools.core.Jev in tool tests: `answer(tool, state, questions)` returns plain answer dicts."""
+    """Stands in for jevtools.core.Jev in tool tests: `answer(tool, state, questions)` returns plain answer dicts,
+    which reach the tool behind the same Answers view Jev.ask returns."""
 
     def __init__(self, answer):
         self.answer = answer
         self.calls: list[tuple[str, dict, dict]] = []
 
-    async def ask(self, tool: str, state: dict, questions: dict) -> dict:
+    async def ask(self, tool: str, state: dict, questions: dict) -> core.Answers:
         self.calls.append((tool, state, questions))
-        return self.answer(tool, state, questions)
+        return core.Answers(self.answer(tool, state, questions))
 
 
 def run_git(repo: Path, *args: str) -> str:
