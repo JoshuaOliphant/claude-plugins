@@ -7,10 +7,12 @@ import pile
 import pytest
 
 REPLACES = pile.Replaces(
-    plugins=("old@market", "synced-old@synced", "off@market", "absent@market"), skills=("tdd", "grill", "gone")
+    plugins=("old@market", "proj@market", "synced-old@synced", "off@market", "absent@market"),
+    skills=("tdd", "grill", "gone"),
 )
 INSTALLED = [
     {"id": "old@market", "scope": "user", "enabled": True},
+    {"id": "proj@market", "scope": "project", "enabled": True},
     {"id": "synced-old@synced", "scope": "synced", "enabled": True},
     {"id": "off@market", "scope": "user", "enabled": False},
     {"id": "keep@market", "scope": "user", "enabled": True},
@@ -36,7 +38,11 @@ def machine(claude_home, tmp_path):
 def test_find_active_separates_local_plugins_synced_plugins_and_skills():
     enabled = {plugin["id"]: plugin["scope"] for plugin in INSTALLED if plugin["enabled"]}
     active = pile.find_active(REPLACES, claude_config.Config(enabled, frozenset({"tdd", "grill"}), {"grill": "off"}))
-    assert (active.plugins, active.synced, active.skills) == (["old@market"], ["synced-old@synced"], ["tdd"])
+    assert (active.plugins, active.synced, active.skills) == (
+        ["old@market", "proj@market"],
+        ["synced-old@synced"],
+        ["tdd"],
+    )
 
 
 def test_the_shipped_pile_names_what_compost_replaces():

@@ -89,15 +89,18 @@ def test_status_lists_unmapped_files_up_to_a_limit(pile_file):
 def test_status_names_skills_the_canon_and_mechanisms_each_as_what_they_are(pile_file):
     source = pile.load(pile_file).sources[0]
     by_target = {
-        "spec": ["skills/to-spec/SKILL.md"],
+        "verify": ["skills/check/SKILL.md"],
+        "build": ["skills/make/SKILL.md"],
         "canon": ["docs/philosophy.md"],
         "hooks": ["hooks/hooks.json"],
         "hooks/skill-drift": ["mods/drift.ts"],
     }
     status = pile.render_status([pile.Drift(source, "f" * 40, by_target, [])])
     assert status.split("\n")[2:] == [
-        "  compost:spec",
-        "    skills/to-spec/SKILL.md",
+        "  compost:build",
+        "    skills/make/SKILL.md",
+        "  compost:verify",
+        "    skills/check/SKILL.md",
         "  canon",
         "    docs/philosophy.md",
         "  mechanism hooks",
