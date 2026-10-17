@@ -1,6 +1,7 @@
 # ABOUTME: Tests claude_config: the one policy for whether a plugin or skill is active on this machine, shared by
 # ABOUTME: skill_drift and `pile.py replaced`, against a fake `claude` CLI on PATH and a throwaway ~/.claude.
 import json
+import re
 
 import claude_config
 import pile
@@ -141,8 +142,14 @@ def test_orphans_come_only_from_marketplaces_whose_clone_has_a_catalog(claude_ho
         {"id": "dropped@listed", "scope": "local", "enabled": False},
         {"id": "dropped@uncloned", "scope": "user", "enabled": True},
         {"id": "dropped@managed", "scope": "managed", "enabled": True},
+        {"id": "dropped@pending", "scope": "user", "enabled": True},
     )
     (claude_home.add_marketplace("uncloned") / ".claude-plugin" / "marketplace.json").unlink()
+    nameless = claude_home.add_marketplace("nameless")
+    configured = json.loads(claude_home.marketplaces.read_text())
+    configured[-1] = {"source": "github", "repo": "acme/nameless", "installLocation": str(nameless)}
+    configured.append({"name": "pending", "source": "github", "repo": "acme/pending"})
+    claude_home.marketplaces.write_text(json.dumps(configured))
     claude_home.add_marketplace("listed", "kept")
     claude_home.add_marketplace("managed")
     assert claude_config.read(claude_home.dir).orphaned == [("dropped@listed", "local")]
@@ -151,13 +158,13 @@ def test_orphans_come_only_from_marketplaces_whose_clone_has_a_catalog(claude_ho
 @pytest.mark.parametrize(
     ("catalog", "message"),
     [
-        (b"{not json", "cannot read .*broken.*marketplace.json: Expecting property name"),
-        (b"\xff", "cannot read .*broken.*marketplace.json: 'utf-8' codec"),
-        (b"[]", "broken.*marketplace.json does not list plugins by name"),
-        (b"{}", "broken.*marketplace.json does not list plugins by name"),
-        (b'{"plugins": {"a": {}}}', "broken.*marketplace.json does not list plugins by name"),
-        (b'{"plugins": [{"source": "./a"}]}', "broken.*marketplace.json does not list plugins by name"),
-        (b'{"plugins": ["a"]}', "broken.*marketplace.json does not list plugins by name"),
+        (b"{not json", ": Expecting property name.*"),
+        (b"\xff", ": 'utf-8' codec.*"),
+        (b"[]", " does not list plugins by name"),
+        (b"{}", " does not list plugins by name"),
+        (b'{"plugins": {"a": {}}}', " does not list plugins by name"),
+        (b'{"plugins": [{"source": "./a"}]}', " does not list plugins by name"),
+        (b'{"plugins": ["a"]}', " does not list plugins by name"),
     ],
     ids=[
         "not-json",
@@ -169,11 +176,21 @@ def test_orphans_come_only_from_marketplaces_whose_clone_has_a_catalog(claude_ho
         "entry-not-object",
     ],
 )
-def test_an_unreadable_marketplace_catalog_is_reported(claude_home, catalog, message):
+def test_a_malformed_marketplace_catalog_is_skipped_with_a_warning(claude_home, tmp_path, capsys, catalog, message):
+    claude_home.install({"id": "gone@broken", "scope": "user", "enabled": True})
+    (claude_home.dir / "skills" / "tdd").mkdir(parents=True)
     clone = claude_home.add_marketplace("broken")
     (clone / ".claude-plugin" / "marketplace.json").write_bytes(catalog)
-    with pytest.raises(claude_config.ClaudeConfigError, match=message):
-        claude_config.read(claude_home.dir).orphaned
+    pile_path = tmp_path / "pile.toml"
+    pile_path.write_text('[replaces]\nskills = ["tdd"]\n')
+    assert pile.replaced(pile_path, claude_home.dir, apply=False) == (
+        "compost replaces these, and they are still active here:\n  skills to set off in skillOverrides: tdd"
+    )
+    warning = capsys.readouterr().err
+    assert re.fullmatch(
+        f"warning: (cannot read )?{clone}/.claude-plugin/marketplace.json{message}; its installs are not checked\n",
+        warning,
+    )
 
 
 @pytest.mark.parametrize(
