@@ -114,17 +114,18 @@ def test_gather_diff_needs_a_base_and_a_non_empty_diff(repo):
 
 
 def test_review_risk_ranks_files_and_flags_structural_ones_from_the_threshold():
-    scores = {"a.py": review.STRUCTURAL - 0.01, "b.py": review.STRUCTURAL, "c.md": 0.2}
+    scores = {"a.py": review.STRUCTURAL - 0.01, "b.py": review.STRUCTURAL, "c.md": 0.2, "d.py": 3.8}
     jev = StubJev(lambda tool, state, questions: {"risk": score(scores[state["file"]], 5)})
     files = [{"file": name, "status": "modified", "diff": "d"} for name in scores]
     result = asyncio.run(review.review_risk(jev, {"files": files}))
     assert [(entry["file"], entry["structural"]) for entry in result["files"]] == [
+        ("d.py", True),
         ("b.py", True),
         ("a.py", False),
         ("c.md", False),
     ]
     assert result["structural"] is True
-    assert jev.calls[0][1]["changed_files"] == ["a.py", "b.py", "c.md"]
+    assert jev.calls[0][1]["changed_files"] == ["a.py", "b.py", "c.md", "d.py"]
 
 
 def test_essay_heads_reads_each_title_and_opening_paragraph_but_not_the_readme():

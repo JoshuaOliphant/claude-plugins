@@ -183,17 +183,24 @@ def test_narrow_asks_nothing_when_every_option_fits(monkeypatch):
 @pytest.mark.parametrize(
     ("groups", "chosen", "keep", "kept"),
     [
-        ({"a": ["1", "2"], "b": ["3", "4"], "c": ["5"]}, "b", 1, ["3", "4"]),
+        ({"a": ["1"], "b": ["2"], "c": ["3", "4"]}, "a", None, ["1"]),
         ({"a": ["1"], "b": ["2"], "c": ["3", "4"]}, "a", 2, ["1", "2"]),
+        ({"a": ["1", "2"], "b": ["3"], "c": ["4"]}, "a", 2, ["1", "2", "3"]),
         ({"a": ["1", "2", "3"], "b": ["4"]}, "a", 2, ["1", "2", "3"]),
     ],
-    ids=["keeps the chosen group", "keeps the likeliest groups up to keep", "stops before the cap"],
+    ids=[
+        "keeps one group by default",
+        "keeps the likeliest groups up to keep",
+        "fills the cap exactly",
+        "stops before the cap",
+    ],
 )
 def test_narrow_keeps_the_likeliest_groups_within_the_cap(monkeypatch, groups, chosen, keep, kept):
     monkeypatch.setattr(core, "CHOICE_LIMIT", 3)
     jev = StubJev(picking_group(chosen, exists=0.6))
+    keeping = {} if keep is None else {"keep": keep}
     options, answers = asyncio.run(
-        core.narrow(jev, "t", {"s": 1}, groups, group_question, keep=keep, also={"exists": Noul(instructions="?")})
+        core.narrow(jev, "t", {"s": 1}, groups, group_question, **keeping, also={"exists": Noul(instructions="?")})
     )
     assert options == kept
     assert answers.noul("exists") == 0.6

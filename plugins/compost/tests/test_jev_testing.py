@@ -118,7 +118,12 @@ def placing(covered: float, confidence: float = 0.9):
     ids=["chosen test covers it", "chosen test does not cover it"],
 )
 def test_find_test_extends_the_chosen_test_only_when_it_covers_the_criterion(covered, action):
-    tests = {"a.py::test_one": "src one" + "x" * 800, "a.py::test_two": "src two", "b.py::test_three": "src three"}
+    tests = {
+        "a.py::test_one": "src one" + "x" * 800,
+        "a.py::test_two": "src two",
+        "b.py::test_three": "src three",
+        "b.py::test_four": "src four",
+    }
     jev = StubJev(placing(covered))
     result = asyncio.run(testing.find_test(jev, {"criteria": ["c1", "c2"], "tests": tests}))
     assert [p["action"] for p in result["placements"]] == [action, action]
@@ -334,11 +339,12 @@ def test_gather_gaps_rejects_bad_input(code, payload, message):
 
 
 def test_test_value_proposes_an_exclusion_below_the_threshold():
-    value = {"a.py": testing.EXCLUDE_BELOW - 0.01, "b.py": testing.EXCLUDE_BELOW}
+    value = {"a.py": testing.EXCLUDE_BELOW - 0.01, "b.py": testing.EXCLUDE_BELOW, "c.py": 2.75}
     jev = StubJev(lambda tool, state, questions: {"value": score(value[state["file"]])})
     gaps = [{"file": name, "lines": [3, 4], "enclosing": None, "excerpt": ">> 3 x"} for name in value]
     result = asyncio.run(testing.test_value(jev, {"gaps": gaps}))
-    assert [(b["decision"], b["score"]) for b in result["blocks"]] == [("exclude", 1.49), ("test", 1.5)]
+    decisions = [(b["decision"], b["score"]) for b in result["blocks"]]
+    assert decisions == [("exclude", 1.49), ("test", 1.5), ("test", 2.75)]
     assert result["exclude"] == ["a.py:3-4"]
     assert result["blocks"][0]["probabilities"] == score(0)["probabilities"]
     assert len(jev.calls[0][2]["value"].criteria) == len(testing.TEST_VALUE_LEVELS)
