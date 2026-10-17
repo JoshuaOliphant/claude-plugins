@@ -10,7 +10,7 @@ description: >
   a fix, so no confirmation phrase is ever spoken and the capture is otherwise missed; record the
   verdict, the evidence, and what would invalidate it. Saves structured YAML-frontmatter files for
   grep-based retrieval. Not for searching — use compound-retrieve for that.
-allowed-tools: [Read, Write, Edit, Grep, Glob]
+allowed-tools: [Read, Write, Edit, Grep, Glob, Bash]
 ---
 
 # Compound Capture
@@ -29,21 +29,26 @@ Capture solved problems and engineering principles as searchable YAML-frontmatte
 
 ### Connectors
 
-- **Solutions directory** — Resolved via path resolution (see Context). Default: `{project_root}/knowledge/solutions/`
+- **Solutions directory** — `write_path` from `scripts/resolve_paths.py` (see Context)
 - **Cross-project registry** — `~/.claude/compound-knowledge-registry.md`. Tracks all knowledge bases on the machine.
 
 ## Context
 
 ### Path Resolution
 
-Resolve the solutions directory before any operation. **First match wins:**
+Resolve the solutions directory before any operation by running the resolver on the project root:
 
-1. **Project-level override**: Read `{project_root}/.claude/compound-knowledge.local.md` — extract `solutions_path` value
-2. **User-level override**: Read `~/.claude/compound-knowledge.local.md` — extract `solutions_path` value
-3. **Default**: `{project_root}/knowledge/solutions/`
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/resolve_paths.py" "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+```
 
-If the resolved directory does not exist:
-> "Solutions directory not found at `{solutions_path}`. Run `/compound-knowledge:setup` to initialize it."
+It prints JSON; captures go to its `write_path`, stored as `{write_path}`. Never read the config
+file yourself.
+
+If the resolver exits 1, it still printed its JSON and `write_path` does not exist. Stop and tell
+the user what it printed to stderr (create the directory with `mkdir -p {write_path}`, or run
+`/compound-knowledge:setup` if there is no config yet). Any other failure prints no JSON: report
+the error and stop rather than guessing a path.
 
 ### Triviality Filter
 
@@ -63,7 +68,7 @@ If the resolved directory does not exist:
 ### Directory Structure
 
 ```
-{solutions_path}/
+{write_path}/
 ├── debugging/        # Service failures, error diagnosis
 ├── infrastructure/   # Networking, storage, resource issues
 ├── patterns/         # Design patterns, architectural approaches
@@ -105,7 +110,7 @@ python ${CLAUDE_PLUGIN_ROOT}/scripts/feedback_manager.py compound-knowledge show
 
 ### Step 1: Resolve Solutions Path
 
-Follow the Path Resolution algorithm from Context. Store as `{solutions_path}`.
+Run the resolver as described in Path Resolution and store its `write_path` as `{write_path}`.
 
 ### Step 2: Apply Triviality Filter
 
@@ -151,11 +156,11 @@ If critical fields are missing, ask and wait:
 
 ### Step 4: Check for Duplicates
 
-Search `{solutions_path}` for similar existing solutions:
+Search `{write_path}` for similar existing solutions:
 
 ```
-Grep(pattern="symptoms:.*{key_symptom}", path="{solutions_path}", output_mode="files_with_matches")
-Grep(pattern="title:.*{similar_term}", path="{solutions_path}", output_mode="files_with_matches")
+Grep(pattern="symptoms:.*{key_symptom}", path="{write_path}", output_mode="files_with_matches")
+Grep(pattern="title:.*{similar_term}", path="{write_path}", output_mode="files_with_matches")
 ```
 
 - **Different root cause** → Create new file, add `related_solutions` cross-reference
@@ -175,7 +180,7 @@ Capturing: {solution|principle}
   Title: {title}
   Project: {project}
   Component: {component}
-  Category: {problem_type} → {solutions_path}/{category}/
+  Category: {problem_type} → {write_path}/{category}/
   Severity: {severity}
   File: {filename}.md
 
@@ -200,7 +205,7 @@ Links must be **bidirectional** — if file A references file B, file B must ref
 
 Present summary:
 ```
-Created: {solutions_path}/{category}/{filename}.md
+Created: {write_path}/{category}/{filename}.md
 Related solutions:
   - [title](path) — {why related}
 Updated backlinks in:
@@ -218,7 +223,7 @@ Update `~/.claude/compound-knowledge-registry.md` so this knowledge base is disc
 
 ## Output
 
-A structured markdown file in `{solutions_path}/{category}/` with:
+A structured markdown file in `{write_path}/{category}/` with:
 - YAML frontmatter validated against `references/yaml-schema.md`
 - Structured body following `references/solution-template.md` or `references/principle-template.md`
 - Bidirectional cross-references to related solutions

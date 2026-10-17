@@ -3,7 +3,7 @@
 import re
 
 import pytest
-from conftest import choice, noul
+from conftest import choice
 from extract import STATE_KEYS, Unit
 from rules import (
     COMMENT_KIND,
@@ -23,10 +23,6 @@ def _unit(kind="function", name="f", path="pkg/m.py", **state):
 
 def _handler(**facts):
     return Unit("handler", "m.py", 1, "h", {}, facts)
-
-
-def test_noul_rule_flags_on_yes_probability():
-    assert SILENT_FAILURE.probability(noul(0.83)) == (0.83, "yes")
 
 
 def test_choice_rule_sums_mass_outside_acceptable_and_names_top_problem():

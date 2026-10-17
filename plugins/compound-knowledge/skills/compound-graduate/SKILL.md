@@ -28,10 +28,13 @@ edits the file read every session, so it is high-trust: always propose before ap
 1. **Resolve the corpus.** Run the resolver to get the read corpus and semantic root:
 
    ```bash
-   python ${CLAUDE_PLUGIN_ROOT}/scripts/resolve_paths.py
+   python3 "${CLAUDE_PLUGIN_ROOT}/scripts/resolve_paths.py" "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
    ```
 
-   Use `read_paths` as the scan corpus and `vault_root` (if set) for semantic queries.
+   Use `read_paths` as the scan corpus and `vault_root` (if set) for semantic queries. If it
+   exits 1, the solutions directory (`write_path`) does not exist: pass on the fix it printed to
+   stderr, and scan only the `read_paths` entries that exist. Any other failure prints no JSON:
+   report the error rather than guessing paths.
 
 2. **Gather candidates** (prefer the most synthesized layer first):
    - Theses with frontmatter `confidence: solid` (then `evolving`) under any `wiki/theses/`
