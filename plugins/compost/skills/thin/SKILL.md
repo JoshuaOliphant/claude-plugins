@@ -18,6 +18,11 @@ own suite, the matrix called five rejection tests redundant because the happy-pa
 kill an inverted guard, while cosmic-ray has no operator that deletes the guard, which only the
 rejection tests would catch. Every verdict gets one more check by hand before a test goes.
 
+Jev's `duplicate-test`, which `compost:build` runs on each new test, reads tests instead of
+running them, so it also judges what mutation can't see: tests over files and docs, string
+assertions, tests whose lines no coverage context records. Where the two disagree, the break by
+hand decides.
+
 ## Steps
 
 1. **Start green.** Run the suite and stop if it fails: on a red baseline every mutant counts as
@@ -41,15 +46,17 @@ rejection tests would catch. Every verdict gets one more check by hand before a 
    against every test that covers the line, so it costs about one suite run per mutant line:
 
    ```bash
-   uv run python ${CLAUDE_PLUGIN_ROOT}/scripts/thin.py matrix "$T/contexts.json" \
-     --only "$T/candidates.json" --cosmic-ray "uv run --with cosmic-ray cosmic-ray" \
-     --test-command "python -m pytest -q -p no:cacheprovider --no-cov" > "$T/matrix.json"
+   uv run --with cosmic-ray python ${CLAUDE_PLUGIN_ROOT}/scripts/thin.py matrix "$T/contexts.json" \
+     --only "$T/candidates.json" --pytest-args "-q -p no:cacheprovider --no-cov" > "$T/matrix.json"
    uv run ${CLAUDE_PLUGIN_ROOT}/scripts/thin.py verdict "$T/matrix.json" > "$T/verdict.json"
    ```
 
-   It mutates files in place and restores each one; run `git status` afterwards and restore any
-   file a killed run left mutated. Over a few hundred mutants, split the modules across git
-   worktrees and run them in parallel ([kill matrix](references/kill-matrix.md)).
+   The matrix runs inside the project's environment, so its imports resolve as the tests' do. It
+   first runs the covering tests unmutated and stops with exit 2 unless they all pass: under a
+   broken setup, such as an interpreter without the project's packages, every run fails, every
+   test kills every mutant, and the verdict would call all but one test redundant. Each mutant
+   runs in a child forked from the warm process, served from memory, one per core
+   ([kill matrix](references/kill-matrix.md)); files on disk never change.
 
 4. **Read the verdict.** Each candidate is one of:
    - **keep**: it kills a mutant no other test kills (`unique` names them).

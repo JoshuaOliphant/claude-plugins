@@ -24,6 +24,10 @@ addopts = "-m \"not jev\" --cov=pile --cov=jev --cov=jevtools --cov=stop_guard -
 markers = ["jev: live evals against the TypeSafe API (uv run --group dev pytest -m jev)"]
 testpaths = ["tests"]
 
+[tool.coverage.run]
+# thin.py runs each mutant in a forked child that ends with os._exit; this saves the child's coverage first.
+patch = ["_exit"]
+
 [tool.coverage.report]
 fail_under = 100
 show_missing = true

@@ -1,17 +1,21 @@
 # ABOUTME: Finds redundant tests for compost:thin: per-test coverage narrows the candidates, a full kill matrix
-# ABOUTME: (every failing test per mutant, not the first) proves which ones no mutant needs. Stdlib only.
+# ABOUTME: (every failing test per mutant, not the first) proves which ones no mutant needs. The matrix runs in the
+# ABOUTME: project's environment, which needs pytest and cosmic-ray; the rest is stdlib.
 import argparse
+import importlib.abc
+import importlib.machinery
 import json
 import os
 import shlex
-import sqlite3
-import subprocess
+import signal
 import sys
 import tempfile
+import time
 import xml.etree.ElementTree as ET
 from collections import defaultdict
-from contextlib import closing
 from pathlib import Path
+
+import pytest
 
 
 def covered_lines(contexts: dict) -> dict[str, set[tuple[str, int]]]:
@@ -58,21 +62,52 @@ def candidates(contexts: dict) -> dict:
     }
 
 
-def mutants(module: str, cosmic_ray: list[str]) -> list[dict]:
-    """Every mutation cosmic-ray would make in one module, read back from a throwaway session."""
-    with tempfile.TemporaryDirectory() as tmp:
-        config, session = Path(tmp) / "cr.toml", Path(tmp) / "session.sqlite"
-        config.write_text(
-            f'[cosmic-ray]\nmodule-path = "{module}"\ntimeout = 30.0\nexcluded-modules = []\ntest-command = "true"\n'
-            '[cosmic-ray.distributor]\nname = "local"\n'
-        )
-        subprocess.run([*cosmic_ray, "init", str(config), str(session)], check=True, capture_output=True)
-        with closing(sqlite3.connect(session)) as db:
-            rows = db.execute(
-                "SELECT operator_name, occurrence, start_pos_row FROM mutation_specs"
-                " ORDER BY start_pos_row, operator_name, occurrence"
-            ).fetchall()
-    return [{"module": module, "operator": op, "occurrence": occ, "line": line} for op, occ, line in rows]
+class BaselineError(Exception):
+    pass
+
+
+def mutants(module: str) -> list[dict]:
+    """Every mutation cosmic-ray would make in one module, in line order."""
+    from cosmic_ray.commands.init import _all_work_items  # private, but it is how cosmic-ray init lists mutants
+
+    found = [
+        {"module": module, "operator": m.operator_name, "args": m.operator_args, "occurrence": m.occurrence,
+         "line": m.start_pos[0]}
+        for item in _all_work_items([Path(module)], {})
+        for m in item.mutations
+    ]  # fmt: skip
+    return sorted(found, key=lambda m: (m["line"], m["operator"], m["occurrence"]))
+
+
+def mutate(source: str, mutant: dict) -> str | None:
+    """The mutated source, or None when cosmic-ray can't make it (its own AST walk crashes on a few)."""
+    from cosmic_ray.mutating import mutate_code
+    from cosmic_ray.plugins import get_operator
+
+    try:
+        return mutate_code(source, get_operator(mutant["operator"])(**mutant["args"]), mutant["occurrence"])
+    except AttributeError:  # seen on a node parso builds without a `value`
+        return None
+
+
+class MutatedSource(importlib.abc.MetaPathFinder, importlib.abc.Loader):
+    """Serves one file's mutated source to whatever imports it, so the file on disk never changes."""
+
+    def __init__(self, path: str, source: str):
+        self.path, self.source = Path(path).resolve(), source
+
+    def find_spec(self, name, path=None, target=None):
+        spec = importlib.machinery.PathFinder.find_spec(name, path)
+        if spec is not None and spec.origin and Path(spec.origin).resolve() == self.path:
+            spec.loader = self
+            return spec
+        return None
+
+    def create_module(self, spec):
+        return None
+
+    def exec_module(self, module):
+        exec(compile(self.source, str(self.path), "exec"), module.__dict__)  # noqa: S102 - running the mutant is the point
 
 
 def junit_key(node_id: str) -> tuple[str, str]:
@@ -81,32 +116,70 @@ def junit_key(node_id: str) -> tuple[str, str]:
     return (".".join([path.removesuffix(".py").replace("/", "."), *scopes]), name)
 
 
-def failing(test_command: list[str], tests: list[str], timeout: float) -> set[str] | None:
-    """The tests among `tests` that fail, or None when the run produced no report (a crash or a timeout)."""
+def read_report(report: Path, tests: list[str]) -> set[str] | None:
+    """The tests among `tests` that failed, or None when the run left no report (a crash or a timeout)."""
+    if not report.exists():
+        return None
+    by_key = {junit_key(test): test for test in tests}
+    failed = set()
+    for case in ET.parse(report).getroot().iter("testcase"):
+        if case.find("failure") is not None or case.find("error") is not None:
+            failed.add(by_key.get((case.get("classname"), case.get("name"))))
+    return failed - {None}
+
+
+def run_child(pytest_args: list[str], tests: list[str], report: Path, module: str | None, source: str | None):
+    """Run pytest in this forked process, with the mutant served from memory, then exit without returning."""
+    quiet = os.open(os.devnull, os.O_RDWR)
+    for fd in (0, 1, 2):  # an open stdin lets a mutant that reads it block until the timeout
+        os.dup2(quiet, fd)
+    sys.dont_write_bytecode = True
+    if module is not None:
+        sys.meta_path.insert(0, MutatedSource(module, source))
+    code = 1
+    try:
+        code = int(pytest.main([*pytest_args, f"--junitxml={report}", *tests]))
+    finally:
+        os._exit(code)
+
+
+def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers: int) -> list[set[str] | None]:
+    """Run each (module, source, tests) job in a child forked from this already-warm process, `workers` at a time.
+
+    Forking skips the interpreter start and pytest import that dominate a short test run, and serving the mutant
+    from memory leaves the tree untouched, so the children can run side by side.
+    """
+    results = {}
     with tempfile.TemporaryDirectory() as tmp:
-        report = Path(tmp) / "junit.xml"
-        # A mutant the same size as the original, written within the same second, can otherwise run as its stale .pyc.
-        env = {**os.environ, "PYTHONPYCACHEPREFIX": str(Path(tmp) / "pycache")}
-        command = [*test_command, f"--junitxml={report}", *tests]
-        try:
-            subprocess.run(command, capture_output=True, timeout=timeout, env=env, check=False)
-        except subprocess.TimeoutExpired:
-            return None
-        if not report.exists():
-            return None
-        by_key = {junit_key(test): test for test in tests}
-        failed = set()
-        for case in ET.parse(report).getroot().iter("testcase"):
-            if case.find("failure") is not None or case.find("error") is not None:
-                failed.add(by_key.get((case.get("classname"), case.get("name"))))
-        return failed - {None}
+        pending, running = list(enumerate(jobs)), {}
+        while pending or running:
+            while pending and len(running) < workers:
+                index, (module, source, tests) = pending.pop(0)
+                report = Path(tmp) / f"{index}.xml"
+                pid = os.fork()
+                if pid == 0:
+                    run_child(pytest_args, tests, report, module, source)
+                running[pid] = (index, tests, report, time.monotonic() + timeout)
+            for pid, (index, tests, report, deadline) in list(running.items()):
+                done, _ = os.waitpid(pid, os.WNOHANG)
+                if not done and time.monotonic() < deadline:
+                    continue
+                if not done:
+                    os.kill(pid, signal.SIGKILL)
+                    os.waitpid(pid, 0)
+                results[index] = read_report(report, tests) if done else None
+                del running[pid]
+            time.sleep(0.005)
+    return [results[index] for index in range(len(jobs))]
 
 
-def kill_matrix(contexts: dict, only: list[str] | None, test_command: list[str], cosmic_ray: list[str],
-                timeout: float, log=print) -> dict:  # fmt: skip
+def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], timeout: float, workers: int,
+                log=print) -> dict:  # fmt: skip
     """Run each mutant on a line the selected tests cover against every test covering that line; record each killer.
 
-    Only the selected tests are mutated over every line they run, so only they can be judged from the result.
+    Only the selected tests are mutated over every line they run, so only they can be judged from the result. The
+    tests must pass unmutated first: under a broken setup every run fails, every test kills every mutant, and the
+    verdict would call all but one of them redundant.
     """
     lines = covered_lines(contexts)
     selected = set(only) if only is not None else set(lines)
@@ -115,31 +188,34 @@ def kill_matrix(contexts: dict, only: list[str] | None, test_command: list[str],
         for pair in pairs:
             on_line[pair].add(name)
     wanted = {pair for name in selected & set(lines) for pair in lines[name]}
-    rows = []
+    everyone = sorted({test for pair in wanted for test in on_line[pair]})
+    [baseline] = fork_runs([(None, None, everyone)], pytest_args, timeout, 1)
+    if baseline is None or baseline:
+        raise BaselineError(
+            "the unmutated tests left no report: check the interpreter has pytest and the tests import"
+            if baseline is None
+            else f"{len(baseline)} tests fail unmutated, e.g. {min(baseline)}: fix them first"
+        )
+    jobs, made = [], []
     for module in sorted({path for path, _ in wanted}):
-        source = Path(module).read_bytes()
-        for mutant in mutants(module, cosmic_ray):
+        source = Path(module).read_text()
+        for mutant in mutants(module):
             if (module, mutant["line"]) not in wanted:
                 continue
-            covering = sorted(on_line[(module, mutant["line"])])
-            try:
-                applied = subprocess.run(
-                    [*cosmic_ray, "apply", module, mutant["operator"], str(mutant["occurrence"])],
-                    capture_output=True,
-                    check=False,
-                )
-                killers = failing(test_command, covering, timeout) if applied.returncode == 0 else None
-            finally:
-                Path(module).write_bytes(source)
-            if applied.returncode != 0:
+            mutated = mutate(source, mutant)
+            if mutated is None:
                 continue
-            crashed = killers is None
-            row = {**mutant, "covering": covering, "killers": covering if crashed else sorted(killers)}
-            if crashed:
-                row["crashed"] = True
-            rows.append(row)
-            log(f"{module}:{mutant['line']} {mutant['operator']}#{mutant['occurrence']} "
-                f"killed by {len(row['killers'])}/{len(covering)}")  # fmt: skip
+            covering = sorted(on_line[(module, mutant["line"])])
+            jobs.append((module, mutated, covering))
+            made.append({k: v for k, v in mutant.items() if k != "args"} | {"covering": covering})
+    rows = []
+    for row, killers in zip(made, fork_runs(jobs, pytest_args, timeout, workers)):
+        row["killers"] = row["covering"] if killers is None else sorted(killers)
+        if killers is None:
+            row["crashed"] = True
+        rows.append(row)
+        log(f"{row['module']}:{row['line']} {row['operator']}#{row['occurrence']} "
+            f"killed by {len(row['killers'])}/{len(row['covering'])}")  # fmt: skip
     return {"selected": sorted(selected & set(lines)), "mutants": rows}
 
 
@@ -189,9 +265,9 @@ def main(argv: list[str] | None = None) -> int:
     chosen = run.add_mutually_exclusive_group()
     chosen.add_argument("--only", help="a candidates JSON; mutate only lines its candidates cover")
     chosen.add_argument("--tests", nargs="+", help="node ids; mutate only lines these tests cover")
-    run.add_argument("--test-command", default="python -m pytest -q -p no:cacheprovider --no-cov")
-    run.add_argument("--cosmic-ray", default="cosmic-ray", help="how to invoke cosmic-ray, e.g. 'uv run cosmic-ray'")
+    run.add_argument("--pytest-args", default="-q -p no:cacheprovider", help="add --no-cov under a coverage gate")
     run.add_argument("--timeout", type=float, default=300.0, help="seconds per mutant's test run")
+    run.add_argument("--workers", type=int, default=os.cpu_count(), help="mutants run side by side")
     judge = sub.add_parser("verdict", help="keep, redundant, or kills-nothing for every test in a matrix")
     judge.add_argument("matrix")
     args = parser.parse_args(argv)
@@ -200,14 +276,18 @@ def main(argv: list[str] | None = None) -> int:
         result = candidates(json.loads(Path(args.contexts).read_text()))
     elif args.command == "matrix":
         only = json.loads(Path(args.only).read_text())["candidates"] if args.only else args.tests
-        result = kill_matrix(
-            json.loads(Path(args.contexts).read_text()),
-            only,
-            shlex.split(args.test_command),
-            shlex.split(args.cosmic_ray),
-            args.timeout,
-            log=lambda line: print(line, file=sys.stderr, flush=True),
-        )
+        try:
+            result = kill_matrix(
+                json.loads(Path(args.contexts).read_text()),
+                only,
+                shlex.split(args.pytest_args),
+                args.timeout,
+                args.workers,
+                log=lambda line: print(line, file=sys.stderr, flush=True),
+            )
+        except BaselineError as error:
+            print(f"thin: baseline failed: {error}", file=sys.stderr)
+            return 2
     else:
         result = verdict(json.loads(Path(args.matrix).read_text()))
     print(json.dumps(result, indent=1))

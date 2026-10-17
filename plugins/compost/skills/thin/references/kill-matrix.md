@@ -8,8 +8,8 @@ counts as killed by every test that covers its line.
 
 ## What it found on compost
 
-Run on compost's own suite at 100% line coverage, four modules (`jevtools/spec.py`,
-`jevtools/meta.py`, `jevtools/review.py`, `lint/extract.py`), 1,315 mutants:
+Run on compost's own suite at 100% line coverage, five modules (`jevtools/spec.py`,
+`jevtools/meta.py`, `jevtools/review.py`, `lint/extract.py`, `skill_drift.py`), 1,577 mutants:
 
 - Line coverage alone flagged 68 of the 358 tests that run measured code as exact duplicates of
   another, and a greedy line cover kept 170 of 358.
@@ -27,31 +27,42 @@ Line coverage is a cheap filter, then, and a poor judge: about half its candidat
 
 ## Cost
 
-Each mutant costs one cosmic-ray process and one pytest process, about two seconds on a small
-suite before the tests themselves run. 1,315 mutants took about 10 minutes as one run per module,
-five in parallel on four cores. `--only` keeps the cost to the candidates' lines.
+A short test run is mostly startup: starting Python, importing pytest, collecting. So `thin.py`
+imports pytest once, then forks a child per mutant that serves the mutated module from memory
+through an import hook. Nothing on disk changes, so children run side by side, one per core.
+On `stop_guard.py`'s 100 covered mutants, every runner gave the same killers for every mutant:
 
-Mutation is in place, so parallel runs need separate trees. One git worktree per module works:
+| Runner | Wall |
+| --- | --- |
+| `cosmic-ray apply`, then a fresh pytest process, per mutant | 272 s |
+| fork after import, mutant in memory, 1 worker | 47 s |
+| the same, 4 workers | 14 s |
 
-```bash
-git worktree add --detach "$T/wt-<module>" HEAD
-```
-
-Run `thin.py matrix` in each with a contexts file filtered to that module, then merge the
-`mutants` lists and take the union of `selected` before `verdict`. Remove the worktrees afterwards
-with `git worktree remove`.
+`--only` keeps the count to the candidates' lines; on suites with slow tests, running only the
+tests that cover each line is what keeps each mutant cheap.
 
 ## Gotchas
 
+- **A broken setup reports perfect tests.** Run under an interpreter without pytest or the
+  project's packages, every mutant's run errors, and an error counts as a kill. For a gate that
+  reads as a perfect score; for thinning it is worse, since every test then kills every mutant and
+  all but one look redundant. `thin.py matrix` runs the covering tests unmutated first and stops
+  with exit 2 unless every one passes.
+- **stdin must be closed.** A mutant can turn a branch into one that reads stdin, and a child that
+  inherits an open one blocks until its timeout: one measured run went from 22 seconds to 172 with
+  the same verdicts. Each child reads `/dev/null`.
 - **cosmic-ray can crash on a mutant.** Its AST walk raised `AttributeError` on one mutant in
-  compost's `skill_drift.py`. `thin.py` leaves out any mutant `cosmic-ray apply` can't make; a
-  driver of your own needs the same guard.
-- **Stale bytecode.** A mutant the same size as the original, written in the same second, can run
-  as the old `.pyc`. `thin.py` gives each test run a fresh `PYTHONPYCACHEPREFIX`.
-- **Coverage gates.** `--no-cov` in the test command keeps a `fail_under` in `addopts` from
-  failing every mutant's run.
+  compost's `skill_drift.py`. `thin.py` leaves out any mutant cosmic-ray can't make; a driver of
+  your own needs the same guard.
+- **No stale bytecode.** Mutants never touch the file, and children don't write `.pyc` files, so a
+  mutant can't run as the original's bytecode.
+- **Coverage gates.** `--no-cov` in `--pytest-args` saves each run the coverage work. The verdict
+  reads the junit report, not the exit code, so a `fail_under` in `addopts` doesn't spoil it.
 - **Judge only what was mutated in full.** A test outside `--only` was mutated only where it
   overlaps the candidates, so `verdict` always keeps it and never judges it.
+- **The parent must not import the code under test.** A child serves the mutant through an import
+  hook, which only sees modules imported after the fork. `thin.py` imports pytest before forking
+  and nothing from the project.
 
 ## Other stacks
 

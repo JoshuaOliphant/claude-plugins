@@ -1,5 +1,5 @@
-# ABOUTME: Tests thin.py: coverage candidates from per-test contexts, the kill matrix against a real cosmic-ray and a
-# ABOUTME: real pytest run on a toy project, and the keep / redundant / kills-nothing verdict.
+# ABOUTME: Tests thin.py: coverage candidates from per-test contexts, the kill matrix run by real cosmic-ray and real
+# ABOUTME: pytest in forked children on a toy project, the baseline guard, and the keep / redundant / kills-nothing verdict.
 import json
 import sys
 import textwrap
@@ -7,8 +7,7 @@ import textwrap
 import pytest
 import thin
 
-PYTEST = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]
-COSMIC_RAY = [sys.executable, "-m", "cosmic_ray.cli"]
+PYTEST = ["-q", "-p", "no:cacheprovider"]
 
 
 def contexts(files: dict[str, dict[int, list[str]]]) -> dict:
@@ -53,12 +52,12 @@ def toy(tmp_path, monkeypatch):
 
 @pytest.fixture(scope="module")
 def toy_matrix(tmp_path_factory):
-    """The toy's full kill matrix, run once: each mutant costs a cosmic-ray and a pytest process."""
+    """The toy's full kill matrix, run once and shared by the tests that read it."""
     root = tmp_path_factory.mktemp("toy")
     with pytest.MonkeyPatch.context() as patch:
         patch.chdir(root)
         report = make_toy(root)
-        return root, thin.kill_matrix(report, None, PYTEST, COSMIC_RAY, 60, log=NO_LOG)
+        return root, thin.kill_matrix(report, None, PYTEST, 60, 2, log=NO_LOG)
 
 
 def test_candidates_are_tests_whose_lines_equal_or_sit_inside_anothers():
@@ -96,23 +95,48 @@ def test_junit_key_matches_what_pytest_writes(node_id, key):
     assert thin.junit_key(node_id) == key
 
 
-def test_failing_reads_failures_from_the_junit_report(toy, tmp_path):
-    (tmp_path / "age.py").write_text("def adult(age):\n    return age == 18\n")
-    assert thin.failing(PYTEST, ["test_age.py::test_boundary", "test_age.py::test_grown_up"], 60) == {
-        "test_age.py::test_boundary"
-    }
+def test_read_report_names_the_failed_and_errored_tests_it_was_asked_about(tmp_path):
+    report = tmp_path / "junit.xml"
+    report.write_text(
+        "<testsuites><testsuite>"
+        '<testcase classname="t" name="a"><failure/></testcase>'
+        '<testcase classname="t" name="b"><error/></testcase>'
+        '<testcase classname="t" name="c"/>'
+        '<testcase classname="t" name="unasked"><failure/></testcase>'
+        "</testsuite></testsuites>"
+    )
+    assert thin.read_report(report, ["t.py::a", "t.py::b", "t.py::c"]) == {"t.py::a", "t.py::b"}
+    assert thin.read_report(tmp_path / "missing.xml", ["t.py::a"]) is None
 
 
-@pytest.mark.parametrize(
-    "command",
-    [[sys.executable, "-c", "pass"], [sys.executable, "-c", "import time; time.sleep(5)"]],
-    ids=["no report", "timeout"],
-)
-def test_failing_is_none_when_the_run_leaves_no_report(toy, command):
-    assert thin.failing(command, ["test_age.py::test_boundary"], 0.5) is None
+def test_mutated_source_serves_the_mutant_and_leaves_other_imports_alone(tmp_path, monkeypatch):
+    (tmp_path / "toy_served.py").write_text("VALUE = 1\n")
+    monkeypatch.syspath_prepend(str(tmp_path))
+    finder = thin.MutatedSource(str(tmp_path / "toy_served.py"), "VALUE = 2\n")
+    monkeypatch.setattr(sys, "meta_path", [finder, *sys.meta_path])
+    monkeypatch.delitem(sys.modules, "toy_served", raising=False)
+    import toy_served
+
+    assert toy_served.VALUE == 2
+    assert (tmp_path / "toy_served.py").read_text() == "VALUE = 1\n"
+    assert finder.find_spec("json") is None
+    assert finder.find_spec("no_such_module_anywhere") is None
+    monkeypatch.delitem(sys.modules, "toy_served")
 
 
-def test_the_kill_matrix_runs_every_covering_test_and_restores_the_module(toy_matrix):
+def test_mutate_makes_the_mutant_in_memory_or_none_when_cosmic_ray_cannot(tmp_path, monkeypatch):
+    (tmp_path / "cmp.py").write_text("x = a >= b\n")
+    [eq] = [m for m in thin.mutants(str(tmp_path / "cmp.py")) if m["operator"].endswith("GtE_Eq")]
+    assert thin.mutate("x = a >= b\n", eq) == "x = a == b\n"
+
+    def crash(*args):
+        raise AttributeError("'PythonNode' object has no attribute 'value'")
+
+    monkeypatch.setattr("cosmic_ray.mutating.mutate_code", crash)
+    assert thin.mutate("x = a >= b\n", eq) is None
+
+
+def test_the_kill_matrix_runs_every_covering_test_without_touching_the_file(toy_matrix):
     root, matrix = toy_matrix
     assert (root / "age.py").read_text() == "def adult(age):\n    return age >= 18\n"
     assert matrix["selected"] == TOY_TESTS
@@ -134,17 +158,91 @@ def test_the_verdict_keeps_the_boundary_and_flags_the_restatement_and_the_no_op(
     assert tests["test_age.py::test_runs_only"] == {"verdict": "kills-nothing", "kills": 0}
 
 
-def test_only_limits_mutation_to_the_selected_tests_lines(toy, tmp_path):
+def one_mutant(monkeypatch, line: int = 2, mutated: str | None = "def adult(age):\n    return age > 18\n"):
+    """Swap cosmic-ray's mutant list for a single `>=` to `>` on `line`, made as `mutated`."""
+    mutant = {"module": "age.py", "operator": "gt", "args": {}, "occurrence": 0, "line": line}
+    monkeypatch.setattr(thin, "mutants", lambda module: [mutant])
+    monkeypatch.setattr(thin, "mutate", lambda source, m: mutated)
+
+
+def test_only_limits_mutation_to_the_selected_tests_lines(toy, monkeypatch):
     toy["files"]["other.py"] = {"contexts": {"1": ["test_age.py::test_elsewhere|run"]}}
     only = ["test_age.py::test_grown_up"]
-    assert thin.kill_matrix(toy, only, PYTEST, fake_cosmic_ray(tmp_path, "gt"), 60, log=NO_LOG) == {
+    one_mutant(monkeypatch)
+    assert thin.kill_matrix(toy, only, PYTEST, 60, 2, log=NO_LOG) == {
         "selected": only,
         "mutants": [
             {"module": "age.py", "operator": "gt", "occurrence": 0, "line": 2, "covering": TOY_TESTS,
              "killers": ["test_age.py::test_boundary", "test_age.py::test_grown_up"]},
         ],
     }  # fmt: skip
-    assert thin.kill_matrix(toy, only, PYTEST, fake_cosmic_ray(tmp_path, "gt", line=1), 60, log=NO_LOG)["mutants"] == []
+    one_mutant(monkeypatch, line=1)
+    assert thin.kill_matrix(toy, only, PYTEST, 60, 2, log=NO_LOG)["mutants"] == []
+
+
+def test_a_mutant_cosmic_ray_cannot_make_is_left_out(toy, monkeypatch):
+    one_mutant(monkeypatch, mutated=None)
+    assert thin.kill_matrix(toy, None, PYTEST, 60, 2, log=NO_LOG)["mutants"] == []
+
+
+def test_a_mutant_that_kills_the_run_counts_as_killed_by_every_covering_test(toy, monkeypatch):
+    one_mutant(monkeypatch, mutated="import os\nos._exit(3)\n")
+    [row] = thin.kill_matrix(toy, None, PYTEST, 60, 2, log=NO_LOG)["mutants"]
+    assert row["crashed"] and row["killers"] == row["covering"] == TOY_TESTS
+
+
+def test_a_run_past_its_timeout_is_killed_and_leaves_no_report(toy, tmp_path):
+    (tmp_path / "test_slow.py").write_text("import time\ndef test_slow():\n    time.sleep(30)\n")
+    assert thin.fork_runs([(None, None, ["test_slow.py::test_slow"])], PYTEST, 1, 1) == [None]
+
+
+def test_children_read_stdin_from_devnull_so_a_read_cannot_block(toy, tmp_path):
+    (tmp_path / "test_stdin.py").write_text("import os\ndef test_reads():\n    assert os.read(0, 1) == b''\n")
+    assert thin.fork_runs([(None, None, ["test_stdin.py::test_reads"])], PYTEST, 20, 1) == [set()]
+
+
+@pytest.mark.parametrize(
+    ("pytest_args", "test_body", "message"),
+    [
+        (["--no-such-option"], "assert adult(18)", "left no report"),
+        (PYTEST, "assert not adult(18)", "1 tests fail unmutated, e.g. test_age.py::test_grown_up"),
+    ],
+    ids=["broken setup", "red baseline"],
+)
+def test_the_matrix_refuses_to_run_on_a_baseline_that_is_not_green(toy, tmp_path, pytest_args, test_body, message):
+    source = (tmp_path / "test_age.py").read_text().replace("assert adult(18)\n", f"{test_body}\n")
+    (tmp_path / "test_age.py").write_text(source)
+    with pytest.raises(thin.BaselineError, match=message):
+        thin.kill_matrix(toy, None, pytest_args, 60, 2, log=NO_LOG)
+
+
+def test_main_runs_each_stage_and_prints_json(toy, tmp_path, capsys, monkeypatch):
+    one_mutant(monkeypatch)
+    (tmp_path / "ctx.json").write_text(json.dumps(toy))
+    assert thin.main(["candidates", "ctx.json"]) == 0
+    found = json.loads(capsys.readouterr().out)
+    assert found["candidates"] == TOY_TESTS
+    (tmp_path / "cands.json").write_text(json.dumps(found))
+    assert thin.main(["matrix", "ctx.json", "--only", "cands.json", "--pytest-args", " ".join(PYTEST)]) == 0
+    out = capsys.readouterr()
+    assert "age.py:2 gt#0 killed by 2/3" in out.err
+    (tmp_path / "matrix.json").write_text(out.out)
+    assert thin.main(["verdict", "matrix.json"]) == 0
+    assert json.loads(capsys.readouterr().out)["minimal"] == ["test_age.py::test_boundary"]
+
+
+def test_main_matrix_takes_node_ids_in_place_of_a_candidates_file(toy, tmp_path, capsys, monkeypatch):
+    one_mutant(monkeypatch)
+    (tmp_path / "ctx.json").write_text(json.dumps(toy))
+    args = ["matrix", "ctx.json", "--tests", "test_age.py::test_runs_only", "--workers", "1"]
+    assert thin.main([*args, "--pytest-args", " ".join(PYTEST)]) == 0
+    assert json.loads(capsys.readouterr().out)["selected"] == ["test_age.py::test_runs_only"]
+
+
+def test_main_exits_2_and_says_why_when_the_baseline_fails(toy, tmp_path, capsys):
+    (tmp_path / "ctx.json").write_text(json.dumps(toy))
+    assert thin.main(["matrix", "ctx.json", "--pytest-args=--no-such-option"]) == 2
+    assert "thin: baseline failed: the unmutated tests left no report" in capsys.readouterr().err
 
 
 def test_the_verdict_never_judges_a_test_outside_the_selection():
@@ -178,61 +276,3 @@ def test_a_test_needed_only_jointly_has_no_single_subsumer():
     assert len(result["minimal"]) == 2
     dropped = next(t for t, entry in result["tests"].items() if entry["verdict"] == "redundant")
     assert result["tests"][dropped]["subsumed_by"] is None
-
-
-def fake_cosmic_ray(tmp_path, operator: str, line: int = 2) -> list[str]:
-    """A stand-in with cosmic-ray's session table and one mutant: `>=` to `>`, or a failed apply."""
-    fake = tmp_path / "fake_cr.py"
-    fake.write_text(
-        textwrap.dedent(f"""\
-            import pathlib, sqlite3, sys
-            if sys.argv[1] == "init":
-                db = sqlite3.connect(sys.argv[3])
-                db.execute("CREATE TABLE mutation_specs (operator_name, occurrence, start_pos_row)")
-                db.execute("INSERT INTO mutation_specs VALUES ('{operator}', 0, {line})")
-                db.commit()
-            elif sys.argv[3] == "broken":
-                sys.exit(1)
-            else:
-                path = pathlib.Path(sys.argv[2])
-                path.write_text(path.read_text().replace(">=", ">"))
-            """)
-    )
-    return [sys.executable, str(fake)]
-
-
-def test_a_mutant_that_crashes_the_run_counts_as_killed_by_every_covering_test(toy, tmp_path):
-    no_report = [sys.executable, "-c", "pass"]
-    matrix = thin.kill_matrix(toy, None, no_report, fake_cosmic_ray(tmp_path, "gt"), 60, log=NO_LOG)
-    [row] = matrix["mutants"]
-    assert row["crashed"] and row["killers"] == row["covering"] == TOY_TESTS
-
-
-def test_a_mutant_cosmic_ray_cannot_apply_is_left_out(toy, tmp_path):
-    matrix = thin.kill_matrix(toy, None, PYTEST, fake_cosmic_ray(tmp_path, "broken"), 60, log=NO_LOG)
-    assert matrix["mutants"] == []
-
-
-def test_main_runs_each_stage_and_prints_json(toy, tmp_path, capsys):
-    (tmp_path / "ctx.json").write_text(json.dumps(toy))
-    assert thin.main(["candidates", "ctx.json"]) == 0
-    found = json.loads(capsys.readouterr().out)
-    assert found["candidates"] == TOY_TESTS
-    (tmp_path / "cands.json").write_text(json.dumps(found))
-    cosmic_ray = " ".join(fake_cosmic_ray(tmp_path, "gt"))
-    test_command = " ".join(PYTEST)
-    args = ["matrix", "ctx.json", "--only", "cands.json", "--cosmic-ray", cosmic_ray, "--test-command", test_command]
-    assert thin.main(args) == 0
-    out = capsys.readouterr()
-    assert "age.py:2 gt#0 killed by 2/3" in out.err
-    (tmp_path / "matrix.json").write_text(out.out)
-    assert thin.main(["verdict", "matrix.json"]) == 0
-    assert json.loads(capsys.readouterr().out)["minimal"] == ["test_age.py::test_boundary"]
-
-
-def test_main_matrix_takes_node_ids_in_place_of_a_candidates_file(toy, tmp_path, capsys):
-    (tmp_path / "ctx.json").write_text(json.dumps(toy))
-    cosmic_ray = " ".join(fake_cosmic_ray(tmp_path, "gt"))
-    args = ["matrix", "ctx.json", "--tests", "test_age.py::test_runs_only", "--cosmic-ray", cosmic_ray]
-    assert thin.main([*args, "--test-command", " ".join(PYTEST)]) == 0
-    assert json.loads(capsys.readouterr().out)["selected"] == ["test_age.py::test_runs_only"]
