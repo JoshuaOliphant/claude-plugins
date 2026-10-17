@@ -6,10 +6,16 @@ from conftest import commit, run_git
 
 
 def test_load_reads_sources_with_their_feeds(pile_file):
-    acme, own, watch = pile.load(pile_file)
+    acme, own, watch = pile.load(pile_file).sources
     assert (acme.role, own.role, watch.role) == ("input", "frozen", "reference")
     assert acme.feeds["skills/to-tickets"] == ["slice", "spec"]
     assert own.feeds == {}
+
+
+def test_load_reads_the_replaces_table_and_tolerates_its_absence(pile_file):
+    assert pile.load(pile_file).replaces == pile.Replaces((), ())
+    pile_file.write_text(pile_file.read_text() + '\n[replaces]\nplugins = ["a@b"]\n')
+    assert pile.load(pile_file).replaces == pile.Replaces(("a@b",), ())
 
 
 VALID = '[[source]]\nname = "x"\nrepo = "a/b"\nrole = "input"\nlicense = "MIT"\npin = "c"\n'
@@ -53,11 +59,11 @@ def test_map_changes_matches_whole_path_segments(changed, by_skill, unmapped):
 
 
 def test_status_reports_nothing_new_then_changes_after_upstream_moves(pile_file, upstream):
-    assert pile.render_status(pile.drift(pile.load(pile_file))) == (
-        f"acme (acme/skills): nothing new since {pile.load(pile_file)[0].pin[:7]}"
+    assert pile.render_status(pile.drift(pile.load(pile_file).sources)) == (
+        f"acme (acme/skills): nothing new since {pile.load(pile_file).sources[0].pin[:7]}"
     )
     head = commit(upstream, {"skills/to-spec/SKILL.md": "spec v2\n", "LICENSE": "MIT\n"}, "second")
-    [item] = pile.drift(pile.load(pile_file))
+    [item] = pile.drift(pile.load(pile_file).sources)
     assert (item.head, item.by_skill, item.unmapped) == (head, {"spec": ["skills/to-spec/SKILL.md"]}, ["LICENSE"])
     status = pile.render_status([item])
     assert f"diffs: git -C {pile.CLONES / 'acme_skills'} diff" in status
@@ -67,13 +73,13 @@ def test_status_reports_nothing_new_then_changes_after_upstream_moves(pile_file,
 def test_a_renamed_fed_skill_still_reports_under_the_skill_it_fed(pile_file, upstream):
     run_git(upstream, "mv", "skills/to-spec", "skills/spec-writer")
     commit(upstream, {"notes/my notes.md": "spaced\n"}, "rename and add a spaced path")
-    [item] = pile.drift(pile.load(pile_file))
+    [item] = pile.drift(pile.load(pile_file).sources)
     assert item.by_skill == {"spec": ["skills/to-spec/SKILL.md"]}
     assert item.unmapped == ["notes/my notes.md", "skills/spec-writer/SKILL.md"]
 
 
 def test_status_lists_unmapped_files_up_to_a_limit(pile_file):
-    source = pile.load(pile_file)[0]
+    source = pile.load(pile_file).sources[0]
     unmapped = [f"docs/{n:02}.md" for n in range(pile.UNMAPPED_SHOWN + 2)]
     status = pile.render_status([pile.Drift(source, "f" * 40, {}, unmapped)])
     assert f"    docs/{pile.UNMAPPED_SHOWN - 1:02}.md\n    and 2 more" in status
@@ -117,7 +123,7 @@ def test_advance_refuses_a_pin_two_sources_share(pile_file):
 
 
 def test_notice_lists_inputs_and_frozen_sources_but_not_references(pile_file):
-    notice = pile.render_notice(pile.load(pile_file))
+    notice = pile.render_notice(pile.load(pile_file).sources)
     assert "- acme: https://github.com/acme/skills (MIT), from " in notice
     assert "- own: https://github.com/me/old-plugins (MIT), from aaaaaaaaaaaa" in notice
     assert "else/skills" not in notice
@@ -129,7 +135,7 @@ def test_cli_status_prints_the_report(pile_file, capsys):
 
 
 def test_cli_advance_prints_the_move(pile_file, upstream, capsys):
-    old = pile.load(pile_file)[0].pin
+    old = pile.load(pile_file).sources[0].pin
     head = commit(upstream, {"README.md": "readme v2\n"}, "second")
     assert pile.main(["--pile", str(pile_file), "advance", "acme", head]) == 0
     assert capsys.readouterr().out == f"acme: {old[:7]} → {head[:7]}\n"
@@ -145,7 +151,7 @@ def test_cli_notice_writes_then_checks(pile_file, capsys):
     assert pile.main(["--pile", str(pile_file), "notice", "--check"]) == 1
     assert "is out of date; run `pile.py notice`" in capsys.readouterr().err
     assert pile.main(["--pile", str(pile_file), "notice"]) == 0
-    assert notice.read_text() == pile.render_notice(pile.load(pile_file))
+    assert notice.read_text() == pile.render_notice(pile.load(pile_file).sources)
     assert pile.main(["--pile", str(pile_file), "notice", "--check"]) == 0
     notice.write_text("stale\n")
     assert pile.main(["--pile", str(pile_file), "notice", "--check"]) == 1

@@ -82,7 +82,7 @@ def test_every_compost_reference_names_a_skill_workflow_or_agent():
 
 
 def test_pile_feeds_only_existing_skills_or_the_canon_and_notice_is_current():
-    sources = pile.load(PLUGIN_ROOT / "pile.toml")
+    sources = pile.load(PLUGIN_ROOT / "pile.toml").sources
     targets = {path.name for path in SKILLS} | {"canon"}
     fed = {skill for source in sources for skills in source.feeds.values() for skill in skills}
     assert fed - targets == set()

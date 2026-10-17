@@ -108,7 +108,7 @@ def gather_changes(payload: dict) -> dict:
     if not payload["paths"]:
         raise BadInput("`paths` is empty")
     try:
-        sources = {source.name: source for source in pile.load(Path(payload.get("pile", pile.PILE)))}
+        sources = {source.name: source for source in pile.load(Path(payload.get("pile", pile.PILE))).sources}
         if payload["source"] not in sources:
             raise BadInput(f"no source named {payload['source']!r} in pile.toml")
         source = sources[payload["source"]]

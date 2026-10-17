@@ -1,20 +1,18 @@
-# ABOUTME: Reads compost's pile.toml: the sources compost was made from, and what it replaces on a machine.
+# ABOUTME: Reads compost's pile.toml: the sources compost was made from, and the plugins and skills it replaces.
 # ABOUTME: CLI: `status`/`advance`/`notice` track upstream sources; `replaced` finds and turns off superseded skills.
 import argparse
 import dataclasses
-import json
-import os
 import subprocess
 import sys
-import tempfile
 import tomllib
 from dataclasses import MISSING, dataclass, field
 from pathlib import Path
 
+import claude_config
+
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 PILE = PLUGIN_ROOT / "pile.toml"
 CLONES = Path.home() / ".cache" / "compost" / "upstream"
-CLAUDE_DIR = Path.home() / ".claude"
 UNMAPPED_SHOWN = 20
 
 ROLES = ("input", "frozen", "reference")
@@ -39,11 +37,23 @@ class Drift:
     unmapped: list[str]
 
 
+@dataclass(frozen=True)
+class Replaces:
+    plugins: tuple[str, ...]
+    skills: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class Pile:
+    sources: list[Source]
+    replaces: Replaces
+
+
 class PileError(Exception):
     pass
 
 
-def load(path: Path = PILE) -> list[Source]:
+def load(path: Path = PILE) -> Pile:
     try:
         data = tomllib.loads(path.read_text())
     except (OSError, tomllib.TOMLDecodeError) as error:
@@ -60,7 +70,8 @@ def load(path: Path = PILE) -> list[Source]:
         if entry["role"] not in ROLES:
             raise PileError(f"{entry['name']}: role must be one of {', '.join(ROLES)}, not {entry['role']!r}")
         sources.append(Source(**entry))
-    return sources
+    table = data.get("replaces", {})
+    return Pile(sources, Replaces(tuple(table.get("plugins", [])), tuple(table.get("skills", []))))
 
 
 def map_changes(changed: list[str], feeds: dict[str, list[str]]) -> tuple[dict[str, list[str]], list[str]]:
@@ -145,7 +156,7 @@ def render_status(report: list[Drift]) -> str:
 
 
 def advance(path: Path, name: str, commit: str) -> tuple[str, str]:
-    sources = {source.name: source for source in load(path)}
+    sources = {source.name: source for source in load(path).sources}
     if name not in sources:
         raise PileError(f"no source named {name!r} in {path.name}")
     source = sources[name]
@@ -177,12 +188,6 @@ def render_notice(sources: list[Source]) -> str:
     return "\n".join(lines) + "\n"
 
 
-@dataclass(frozen=True)
-class Replaces:
-    plugins: tuple[str, ...]
-    skills: tuple[str, ...]
-
-
 @dataclass
 class Active:
     plugins: list[str]
@@ -190,60 +195,13 @@ class Active:
     skills: list[str]
 
 
-def load_replaces(path: Path = PILE) -> Replaces:
-    try:
-        table = tomllib.loads(path.read_text()).get("replaces", {})
-    except (OSError, tomllib.TOMLDecodeError) as error:
-        raise PileError(f"cannot read {path}: {error}") from error
-    return Replaces(tuple(table.get("plugins", [])), tuple(table.get("skills", [])))
-
-
-def find_active(replaces: Replaces, installed: list[dict], skill_names: set[str], overrides: dict) -> Active:
-    enabled = {plugin["id"]: plugin.get("scope") for plugin in installed if plugin.get("enabled")}
-    listed = [plugin_id for plugin_id in replaces.plugins if plugin_id in enabled]
+def find_active(replaces: Replaces, config: claude_config.Config) -> Active:
+    listed = [plugin_id for plugin_id in replaces.plugins if config.is_active(plugin_id)]
     return Active(
-        plugins=[plugin_id for plugin_id in listed if enabled[plugin_id] != "synced"],
-        synced=[plugin_id for plugin_id in listed if enabled[plugin_id] == "synced"],
-        skills=[name for name in replaces.skills if name in skill_names and overrides.get(name) != "off"],
+        plugins=[plugin_id for plugin_id in listed if config.enabled[plugin_id] != "synced"],
+        synced=[plugin_id for plugin_id in listed if config.enabled[plugin_id] == "synced"],
+        skills=[name for name in replaces.skills if config.is_active(name)],
     )
-
-
-def claude(*args: str) -> str:
-    try:
-        result = subprocess.run(["claude", *args], capture_output=True, text=True, check=False)
-    except FileNotFoundError as error:
-        raise PileError("the claude CLI is not on PATH") from error
-    if result.returncode != 0:
-        raise PileError(f"claude {' '.join(args)} failed: {result.stderr.strip() or result.stdout.strip()}")
-    return result.stdout
-
-
-def installed_plugins() -> list[dict]:
-    return json.loads(claude("plugin", "list", "--json"))
-
-
-def personal_skills(claude_dir: Path) -> set[str]:
-    skills = claude_dir / "skills"
-    return {entry.name for entry in skills.iterdir()} if skills.is_dir() else set()
-
-
-def read_settings(claude_dir: Path) -> dict:
-    path = claude_dir / "settings.json"
-    try:
-        return json.loads(path.read_text()) if path.exists() else {}
-    except json.JSONDecodeError as error:
-        raise PileError(f"{path} is not valid JSON: {error}") from error
-
-
-def turn_off_skills(claude_dir: Path, names: list[str]) -> None:
-    settings = read_settings(claude_dir)
-    overrides = settings.setdefault("skillOverrides", {})
-    for name in names:
-        overrides[name] = "off"
-    path = claude_dir / "settings.json"
-    with tempfile.NamedTemporaryFile("w", dir=claude_dir, delete=False, suffix=".tmp") as handle:
-        handle.write(json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
-    os.replace(handle.name, path)
 
 
 def render_active(active: Active) -> str:
@@ -260,16 +218,14 @@ def render_active(active: Active) -> str:
 
 
 def replaced(pile: Path, claude_dir: Path, apply: bool) -> str:
-    replaces = load_replaces(pile)
-    overrides = read_settings(claude_dir).get("skillOverrides", {})
-    active = find_active(replaces, installed_plugins(), personal_skills(claude_dir), overrides)
+    active = find_active(load(pile).replaces, claude_config.read(claude_dir))
     report = render_active(active)
     if not apply or not (active.plugins or active.skills):
         return report
     for plugin_id in active.plugins:
-        claude("plugin", "disable", plugin_id, "--json")
+        claude_config.claude("plugin", "disable", plugin_id, "--json")
     if active.skills:
-        turn_off_skills(claude_dir, active.skills)
+        claude_config.turn_off_skills(claude_dir, active.skills)
     done = [f"disabled {len(active.plugins)} plugins", f"set {len(active.skills)} skills off in skillOverrides"]
     remaining = f"; still to do by hand: {', '.join(active.synced)} on claude.ai" if active.synced else ""
     return f"{report}\n{'; '.join(done)}{remaining}. Restart Claude Code to apply."
@@ -281,7 +237,7 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     superseded = commands.add_parser("replaced", help="list what compost replaces that is still active on this machine")
     superseded.add_argument("--apply", action="store_true", help="disable those plugins and set those skills off")
-    superseded.add_argument("--claude-dir", type=Path, default=CLAUDE_DIR)
+    superseded.add_argument("--claude-dir", type=Path, default=claude_config.CLAUDE_DIR)
     commands.add_parser("status", help="list upstream changes since each input's pin, by compost skill")
     move = commands.add_parser("advance", help="move SOURCE's pin to COMMIT, resolved to a full hash upstream")
     move.add_argument("source")
@@ -293,20 +249,20 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "replaced":
             print(replaced(args.pile, args.claude_dir, args.apply))
         elif args.command == "status":
-            print(render_status(drift(load(args.pile))))
+            print(render_status(drift(load(args.pile).sources)))
         elif args.command == "advance":
             old, new = advance(args.pile, args.source, args.commit)
             print(f"{args.source}: {old[:7]} → {new[:7]}")
         else:
             notice_path = args.pile.parent / "NOTICE"
-            expected = render_notice(load(args.pile))
+            expected = render_notice(load(args.pile).sources)
             if args.check:
                 if not notice_path.exists() or notice_path.read_text() != expected:
                     print(f"{notice_path} is out of date; run `pile.py notice`", file=sys.stderr)
                     return 1
             else:
                 notice_path.write_text(expected)
-    except PileError as error:
+    except (PileError, claude_config.ClaudeConfigError) as error:
         print(error, file=sys.stderr)
         return 1
     return 0
