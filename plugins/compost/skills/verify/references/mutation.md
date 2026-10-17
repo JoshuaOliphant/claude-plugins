@@ -38,6 +38,7 @@ Then, with `<base>` as a branch name or SHA:
 
 ```bash
 filter=$(mktemp) && printf '[cosmic-ray.filters.git-filter]\nbranch = "%s"\n' "<base>" > "$filter"
+uv run cosmic-ray baseline cosmic-ray.toml   # non-zero: the setup is broken, stop here
 rm -f .cosmic-ray.sqlite
 uv run cosmic-ray init cosmic-ray.toml .cosmic-ray.sqlite
 uv run cr-filter-git --config "$filter" .cosmic-ray.sqlite
@@ -103,9 +104,12 @@ compost; setup's proving run is the check.
 - **In-place tools leave mutants behind when killed.** cosmic-ray restores each file after its
   mutant, but a timeout or Ctrl-C mid-run can strand one. Run `git diff` afterwards and restore
   anything you did not write.
-- **Baseline first.** The suite must be green before the run, or every mutant counts as killed.
-  `compost:verify` runs this after its gates, so that holds there; run `cosmic-ray baseline` when
-  using it on its own.
+- **A broken setup reports perfect tests.** cosmic-ray counts a test command that errors as
+  a killed mutant. Run outside `uv run`, cosmic-ray's `python` resolved to an interpreter without
+  pytest and reported all 154 of `stop_guard.py`'s mutants killed in 5 seconds, where the real
+  run kills 111 and leaves 43. Run the baseline (`cosmic-ray baseline`, or the stack's suite on the
+  unmutated tree) in the same environment right before the run, and stop on a non-zero exit. A
+  run where nothing survives on more than a few lines deserves the same suspicion.
 - **The base branch.** Diff against the commit the branch started from, the same base
   `compost:review` reads. Against a stale local `main`, the filter mutates other people's lines.
 
