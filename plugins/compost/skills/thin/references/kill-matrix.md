@@ -58,6 +58,9 @@ tests that cover each line is what keeps each mutant cheap.
   mutant can't run as the original's bytecode.
 - **Coverage gates.** `--no-cov` in `--pytest-args` saves each run the coverage work. The verdict
   reads the junit report, not the exit code, so a `fail_under` in `addopts` doesn't spoil it.
+- **Tests that share a port or a fixed path.** Children run side by side, each with its own
+  `--basetemp`, but anything else two tests both claim can fail one of them for no mutant's sake,
+  which reads as a kill. Run such a suite with `--workers 1`.
 - **Judge only what was mutated in full.** A test outside `--only` was mutated only where it
   overlaps the candidates, so `verdict` always keeps it and never judges it.
 - **The parent must not import the code under test.** A child serves the mutant through an import

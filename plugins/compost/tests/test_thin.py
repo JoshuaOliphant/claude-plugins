@@ -88,24 +88,32 @@ def test_greedy_cover_skips_what_is_already_covered():
 
 @pytest.mark.parametrize(
     ("node_id", "key"),
-    [("tests/test_x.py::test_y[a b]", ("tests.test_x", "test_y[a b]")), ("t.py::TestC::test_y", ("t.TestC", "test_y"))],
-    ids=["function", "class"],
+    [
+        ("tests/test_x.py::test_y[a b]", ("tests.test_x", "test_y[a b]")),
+        ("t.py::TestC::test_y", ("t.TestC", "test_y")),
+        ("t.py::test_route[a::b]", ("t", "test_route[a::b]")),
+    ],
+    ids=["function", "class", "parameter holding ::"],
 )
 def test_junit_key_matches_what_pytest_writes(node_id, key):
     assert thin.junit_key(node_id) == key
 
 
-def test_read_report_names_the_failed_and_errored_tests_it_was_asked_about(tmp_path):
+def test_read_report_keeps_failures_it_cannot_match_instead_of_dropping_them(tmp_path):
     report = tmp_path / "junit.xml"
     report.write_text(
         "<testsuites><testsuite>"
         '<testcase classname="t" name="a"><failure/></testcase>'
         '<testcase classname="t" name="b"><error/></testcase>'
         '<testcase classname="t" name="c"/>'
-        '<testcase classname="t" name="unasked"><failure/></testcase>'
+        '<testcase classname="t" name="passing stranger"/>'
+        '<testcase classname="" name="t"><error/></testcase>'
         "</testsuite></testsuites>"
     )
-    assert thin.read_report(report, ["t.py::a", "t.py::b", "t.py::c"]) == {"t.py::a", "t.py::b"}
+    found = thin.read_report(report, ["t.py::a", "t.py::b", "t.py::c", "t.py::d"])
+    assert found.named == {"t.py::a", "t.py::b", "t.py::c"}
+    assert found.failed == {"t.py::a", "t.py::b"}
+    assert found.strays == ["::t"]
     assert thin.read_report(tmp_path / "missing.xml", ["t.py::a"]) is None
 
 
@@ -185,10 +193,21 @@ def test_a_mutant_cosmic_ray_cannot_make_is_left_out(toy, monkeypatch):
     assert thin.kill_matrix(toy, None, PYTEST, 60, 2, log=NO_LOG)["mutants"] == []
 
 
-def test_a_mutant_that_kills_the_run_counts_as_killed_by_every_covering_test(toy, monkeypatch):
-    one_mutant(monkeypatch, mutated="import os\nos._exit(3)\n")
+@pytest.mark.parametrize(
+    "mutated", ["import os\nos._exit(3)\n", "raise ImportError('boom')\n"], ids=["no report", "collection error"]
+)
+def test_a_mutant_that_breaks_the_run_counts_as_killed_by_every_covering_test(toy, monkeypatch, mutated):
+    one_mutant(monkeypatch, mutated=mutated)
     [row] = thin.kill_matrix(toy, None, PYTEST, 60, 2, log=NO_LOG)["mutants"]
     assert row["crashed"] and row["killers"] == row["covering"] == TOY_TESTS
+
+
+def test_an_empty_selection_runs_nothing(toy, monkeypatch):
+    monkeypatch.setattr(thin, "fork_runs", lambda *args: pytest.fail("with no node ids pytest runs the whole suite"))
+    assert thin.kill_matrix(toy, ["test_age.py::test_not_in_contexts"], PYTEST, 60, 2, log=NO_LOG) == {
+        "selected": [],
+        "mutants": [],
+    }
 
 
 def test_a_run_past_its_timeout_is_killed_and_leaves_no_report(toy, tmp_path):
@@ -198,7 +217,17 @@ def test_a_run_past_its_timeout_is_killed_and_leaves_no_report(toy, tmp_path):
 
 def test_children_read_stdin_from_devnull_so_a_read_cannot_block(toy, tmp_path):
     (tmp_path / "test_stdin.py").write_text("import os\ndef test_reads():\n    assert os.read(0, 1) == b''\n")
-    assert thin.fork_runs([(None, None, ["test_stdin.py::test_reads"])], PYTEST, 20, 1) == [set()]
+    [report] = thin.fork_runs([(None, None, ["test_stdin.py::test_reads"])], PYTEST, 20, 1)
+    assert report.named == {"test_stdin.py::test_reads"} and report.failed == set()
+
+
+def test_children_drop_compost_scripts_from_sys_path_so_its_modules_cannot_shadow_the_projects(toy, tmp_path):
+    (tmp_path / "test_path.py").write_text(
+        f"import sys\nfrom pathlib import Path\ndef test_path():\n"
+        f"    assert {str(thin.SCRIPTS)!r} not in [str(Path(p or '.').resolve()) for p in sys.path]\n"
+    )
+    [report] = thin.fork_runs([(None, None, ["test_path.py::test_path"])], PYTEST, 20, 1)
+    assert report.named == {"test_path.py::test_path"} and report.failed == set()
 
 
 @pytest.mark.parametrize(
@@ -206,8 +235,10 @@ def test_children_read_stdin_from_devnull_so_a_read_cannot_block(toy, tmp_path):
     [
         (["--no-such-option"], "assert adult(18)", "left no report"),
         (PYTEST, "assert not adult(18)", "1 tests fail unmutated, e.g. test_age.py::test_grown_up"),
+        ([*PYTEST, "--junitprefix=pkg"], "assert adult(18)", "never names test_age.py::test_boundary"),
+        (PYTEST, "assert adult(18)\nthis is not python", "names a failure no selected test matches: ::test_age"),
     ],
-    ids=["broken setup", "red baseline"],
+    ids=["broken setup", "red baseline", "junit prefix", "collection error"],
 )
 def test_the_matrix_refuses_to_run_on_a_baseline_that_is_not_green(toy, tmp_path, pytest_args, test_body, message):
     source = (tmp_path / "test_age.py").read_text().replace("assert adult(18)\n", f"{test_body}\n")

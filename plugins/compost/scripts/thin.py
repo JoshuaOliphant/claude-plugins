@@ -15,7 +15,7 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 from pathlib import Path
 
-import pytest
+SCRIPTS = Path(__file__).resolve().parent
 
 
 def covered_lines(contexts: dict) -> dict[str, set[tuple[str, int]]]:
@@ -111,44 +111,63 @@ class MutatedSource(importlib.abc.MetaPathFinder, importlib.abc.Loader):
 
 
 def junit_key(node_id: str) -> tuple[str, str]:
-    """The (classname, name) pair pytest's junit report writes for a node id."""
-    path, *scopes, name = node_id.split("::")
-    return (".".join([path.removesuffix(".py").replace("/", "."), *scopes]), name)
+    """The (classname, name) pair pytest's junit report writes for a node id; parameters may themselves hold `::`."""
+    address, bracket, params = node_id.partition("[")
+    path, *scopes, name = address.split("::")
+    return (".".join([path.removesuffix(".py").replace("/", "."), *scopes]), name + bracket + params)
 
 
-def read_report(report: Path, tests: list[str]) -> set[str] | None:
-    """The tests among `tests` that failed, or None when the run left no report (a crash or a timeout)."""
-    if not report.exists():
-        return None
-    by_key = {junit_key(test): test for test in tests}
-    failed = set()
-    for case in ET.parse(report).getroot().iter("testcase"):
-        if case.find("failure") is not None or case.find("error") is not None:
-            failed.add(by_key.get((case.get("classname"), case.get("name"))))
-    return failed - {None}
+class Report:
+    """What one run's junit report says about the tests it was asked to run."""
+
+    def __init__(self, path: Path, tests: list[str]):
+        by_key = {junit_key(test): test for test in tests}
+        self.named, self.failed, self.strays = set(), set(), []
+        for case in ET.parse(path).getroot().iter("testcase"):
+            test = by_key.get((case.get("classname"), case.get("name")))
+            broke = case.find("failure") is not None or case.find("error") is not None
+            if test is not None:
+                self.named.add(test)
+                if broke:
+                    self.failed.add(test)
+            elif broke:  # a collection error, or a junit_prefix that changes every classname
+                self.strays.append(f"{case.get('classname')}::{case.get('name')}")
+
+
+def read_report(report: Path, tests: list[str]) -> Report | None:
+    """The run's report, or None when it left none (a crash or a timeout)."""
+    return Report(report, tests) if report.exists() else None
 
 
 def run_child(pytest_args: list[str], tests: list[str], report: Path, module: str | None, source: str | None):
     """Run pytest in this forked process, with the mutant served from memory, then exit without returning."""
+    import pytest
+
     quiet = os.open(os.devnull, os.O_RDWR)
     for fd in (0, 1, 2):  # an open stdin lets a mutant that reads it block until the timeout
         os.dup2(quiet, fd)
     sys.dont_write_bytecode = True
+    # Run as a script, this directory is sys.path[0], and its modules would shadow the project's of the same name.
+    sys.path[:] = [entry for entry in sys.path if Path(entry or ".").resolve() != SCRIPTS]
     if module is not None:
         sys.meta_path.insert(0, MutatedSource(module, source))
+    # os._exit skips pytest's cleanup, so each child's tmp_path lives under a directory the parent removes.
+    basetemp = report.with_suffix(".tmp")
     code = 1
     try:
-        code = int(pytest.main([*pytest_args, f"--junitxml={report}", *tests]))
+        code = int(pytest.main([*pytest_args, f"--basetemp={basetemp}", f"--junitxml={report}", *tests]))
     finally:
         os._exit(code)
 
 
-def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers: int) -> list[set[str] | None]:
+def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers: int) -> list[Report | None]:
     """Run each (module, source, tests) job in a child forked from this already-warm process, `workers` at a time.
 
     Forking skips the interpreter start and pytest import that dominate a short test run, and serving the mutant
     from memory leaves the tree untouched, so the children can run side by side.
     """
+    import pytest  # noqa: F401 - imported before forking so that no child pays for it
+
     results = {}
     with tempfile.TemporaryDirectory() as tmp:
         pending, running = list(enumerate(jobs)), {}
@@ -189,12 +208,18 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
             on_line[pair].add(name)
     wanted = {pair for name in selected & set(lines) for pair in lines[name]}
     everyone = sorted({test for pair in wanted for test in on_line[pair]})
+    if not everyone:  # with no node ids, pytest would run the whole suite
+        return {"selected": sorted(selected & set(lines)), "mutants": []}
     [baseline] = fork_runs([(None, None, everyone)], pytest_args, timeout, 1)
-    if baseline is None or baseline:
+    if baseline is None:
+        raise BaselineError("the unmutated tests left no report: check the interpreter has pytest and the tests import")
+    if baseline.strays:
+        raise BaselineError(f"the report names a failure no selected test matches: {baseline.strays[0]}")
+    if baseline.failed:
+        raise BaselineError(f"{len(baseline.failed)} tests fail unmutated, e.g. {min(baseline.failed)}: fix them first")
+    if missing := set(everyone) - baseline.named:
         raise BaselineError(
-            "the unmutated tests left no report: check the interpreter has pytest and the tests import"
-            if baseline is None
-            else f"{len(baseline)} tests fail unmutated, e.g. {min(baseline)}: fix them first"
+            f"the report never names {min(missing)}: check junit_prefix, and that thin runs from the rootdir"
         )
     jobs, made = [], []
     for module in sorted({path for path, _ in wanted}):
@@ -209,9 +234,10 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
             jobs.append((module, mutated, covering))
             made.append({k: v for k, v in mutant.items() if k != "args"} | {"covering": covering})
     rows = []
-    for row, killers in zip(made, fork_runs(jobs, pytest_args, timeout, workers)):
-        row["killers"] = row["covering"] if killers is None else sorted(killers)
-        if killers is None:
+    for row, report in zip(made, fork_runs(jobs, pytest_args, timeout, workers)):
+        crashed = report is None or bool(report.strays)  # a mutant that breaks collection kills every covering test
+        row["killers"] = row["covering"] if crashed else sorted(report.failed)
+        if crashed:
             row["crashed"] = True
         rows.append(row)
         log(f"{row['module']}:{row['line']} {row['operator']}#{row['occurrence']} "

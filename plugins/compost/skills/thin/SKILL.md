@@ -59,7 +59,8 @@ hand decides.
    ([kill matrix](references/kill-matrix.md)); files on disk never change.
 
 4. **Read the verdict.** Each candidate is one of:
-   - **keep**: it kills a mutant no other test kills (`unique` names them).
+   - **keep**: it is in `minimal`. `unique` names the mutants only it kills; it is empty when the
+     test ties with another that kills exactly the same mutants, and the cover kept this one.
    - **redundant**: every mutant it kills, `subsumed_by` also kills; `null` means only several
      tests together cover it, so removing it is safe but removing two of that set may not be.
    - **kills-nothing**: it runs the lines but fails for no mutant.
