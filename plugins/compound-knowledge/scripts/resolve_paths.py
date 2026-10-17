@@ -2,6 +2,8 @@
 """
 ABOUTME: Resolves compound-knowledge read/write reservoir paths from .local.md config.
 ABOUTME: Supports a write_path + read_paths split with a solutions_path back-compat alias.
+The CLI is the only place skills and agents get these paths from; it exits 1 when write_path
+does not exist, so a broken or uninitialized config is loud.
 """
 
 import json
@@ -52,8 +54,18 @@ def resolve(project_root: Path, home: Path) -> dict:
 
 
 def main(argv: list) -> int:
+    """Print the resolved paths as JSON; exit 1 when write_path does not exist yet."""
     project_root, home = config_loader.cli_roots(argv)
-    print(json.dumps(resolve(project_root, home), indent=2))
+    paths = resolve(project_root, home)
+    print(json.dumps(paths, indent=2))
+    if not Path(paths["write_path"]).is_dir():
+        print(
+            f"write_path {paths['write_path']} does not exist; create it with "
+            f"`mkdir -p {paths['write_path']}`, or run /compound-knowledge:setup "
+            "if no config exists yet.",
+            file=sys.stderr,
+        )
+        return 1
     return 0
 
 

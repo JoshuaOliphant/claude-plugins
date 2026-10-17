@@ -22,7 +22,7 @@ yours to do without asking.
    ```bash
    worktree_path=$(git rev-parse --show-toplevel)
    branch=$(git branch --show-current)          # empty on a detached HEAD
-   main_root=$(git -C "$(git rev-parse --git-common-dir)/.." rev-parse --show-toplevel)
+   main_root=$(git worktree list --porcelain | sed -n '1s/^worktree //p')  # the main checkout
    ```
 
    A detached HEAD means the harness manages this workspace. Push it as a named branch
@@ -32,21 +32,29 @@ yours to do without asking.
    parent issue may name an integration branch for its sub-issues. Otherwise it is the default
    branch (`gh repo view --json defaultBranchRef -q .defaultBranchRef.name`). State it in the PR.
 
-4. **Run the suite on the actual merge result.** A green branch proves only the branch. Build
-   the merge in a throwaway worktree so neither branch moves:
+4. **Run the suite on the actual merge result.** A green branch proves only the branch. Start
+   with the cheap check:
 
    ```bash
-   check="$main_root/.worktrees/merge-check-<issue>"
    git fetch origin
-   git worktree add --detach "$check" origin/<target>
-   git -C "$check" merge --no-ff --no-edit "$branch"
+   git merge-base --is-ancestor origin/<target> HEAD
    ```
 
-   Install dependencies there, run the full suite and the recorded gates, then
-   `git worktree remove "$check"`. A conflict means the target moved:
-   merge the target into your branch, resolve, and go back through `compost:verify`. Do not
-   rebase a branch you have already pushed. A red merge result stops here and goes to
-   `compost:diagnose`.
+   Exit 0 means the target hasn't moved past your branch, so the merge result is HEAD's own
+   tree and `compost:verify`'s run on HEAD is the merge-result run. Exit 1 means the target
+   moved: merge it into your branch (`git merge --no-ff --no-edit origin/<target>`), resolve any
+   conflict, and go back through `compost:verify`; the branch then holds the merge result. This needs no second
+   worktree and no `git -C`, which a worktree-isolated session refuses. Do not rebase a branch
+   you have already pushed. A red merge result stops here and goes to `compost:diagnose`. Any
+   other exit is an error (a wrong target name, a failed fetch): fix it before going on.
+
+   Where your branch must not take the target's commits yet, build the merge in a throwaway
+   worktree instead: `git worktree add --detach "$main_root/.worktrees/merge-check-<issue>"
+   origin/<target>`, `cd` into it, `git merge --no-ff --no-edit <head>` (your branch's
+   `git rev-parse HEAD`, taken before the `cd`, so a detached HEAD works too), install
+   dependencies, run the full suite and the recorded gates, then `cd` back and
+   `git worktree remove` it. A worktree-isolated session may refuse to work outside its own
+   worktree; then take the merge-into-the-branch path above.
 
 5. **Open or update the pull request.** Push the branch and open a draft PR against the target,
    or update the open one. The body has five sections: Goal, Decisions, Changes, Validation,

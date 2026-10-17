@@ -25,7 +25,8 @@ seeing. Pick the smallest view that makes the key point clear.>
 ## Validation
 
 - Suite: `<command>`: <N passed, 0 failed> on the branch, and <N passed> on the merge result
-  with `<target>`.
+  with `<target>`, or "`<target>` at `<sha>` is an ancestor of HEAD, so the branch run is the
+  merge-result run".
 - Gates: <each gate and its result>. Coverage <N>%<, with proposed exclusions listed under Risk>.
 - Acceptance criteria:
 
