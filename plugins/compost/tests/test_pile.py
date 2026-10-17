@@ -46,16 +46,16 @@ def test_load_reports_a_missing_file(tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("changed", "by_skill", "unmapped"),
+    ("changed", "by_target", "unmapped"),
     [
         (["skills/to-spec"], {"spec": ["skills/to-spec"]}, []),
         (["skills/to-tickets/x.md"], {"slice": ["skills/to-tickets/x.md"], "spec": ["skills/to-tickets/x.md"]}, []),
         (["skills/to-spec-extra/SKILL.md", "README.md"], {}, ["skills/to-spec-extra/SKILL.md", "README.md"]),
     ],
 )
-def test_map_changes_matches_whole_path_segments(changed, by_skill, unmapped):
+def test_map_changes_matches_whole_path_segments(changed, by_target, unmapped):
     feeds = {"skills/to-spec/": ["spec"], "skills/to-tickets": ["slice", "spec"]}
-    assert pile.map_changes(changed, feeds) == (by_skill, unmapped)
+    assert pile.map_changes(changed, feeds) == (by_target, unmapped)
 
 
 def test_status_reports_nothing_new_then_changes_after_upstream_moves(pile_file, upstream):
@@ -64,17 +64,17 @@ def test_status_reports_nothing_new_then_changes_after_upstream_moves(pile_file,
     )
     head = commit(upstream, {"skills/to-spec/SKILL.md": "spec v2\n", "LICENSE": "MIT\n"}, "second")
     [item] = pile.drift(pile.load(pile_file).sources)
-    assert (item.head, item.by_skill, item.unmapped) == (head, {"spec": ["skills/to-spec/SKILL.md"]}, ["LICENSE"])
+    assert (item.head, item.by_target, item.unmapped) == (head, {"spec": ["skills/to-spec/SKILL.md"]}, ["LICENSE"])
     status = pile.render_status([item])
     assert f"diffs: git -C {pile.CLONES / 'acme_skills'} diff" in status
-    assert "  compost:spec\n    skills/to-spec/SKILL.md\n  feed no compost skill:\n    LICENSE" in status
+    assert "  compost:spec\n    skills/to-spec/SKILL.md\n  feed nothing in compost:\n    LICENSE" in status
 
 
 def test_a_renamed_fed_skill_still_reports_under_the_skill_it_fed(pile_file, upstream):
     run_git(upstream, "mv", "skills/to-spec", "skills/spec-writer")
     commit(upstream, {"notes/my notes.md": "spaced\n"}, "rename and add a spaced path")
     [item] = pile.drift(pile.load(pile_file).sources)
-    assert item.by_skill == {"spec": ["skills/to-spec/SKILL.md"]}
+    assert item.by_target == {"spec": ["skills/to-spec/SKILL.md"]}
     assert item.unmapped == ["notes/my notes.md", "skills/spec-writer/SKILL.md"]
 
 
@@ -84,6 +84,27 @@ def test_status_lists_unmapped_files_up_to_a_limit(pile_file):
     status = pile.render_status([pile.Drift(source, "f" * 40, {}, unmapped)])
     assert f"    docs/{pile.UNMAPPED_SHOWN - 1:02}.md\n    and 2 more" in status
     assert f"docs/{pile.UNMAPPED_SHOWN:02}.md" not in status
+
+
+def test_status_names_skills_the_canon_and_mechanisms_each_as_what_they_are(pile_file):
+    source = pile.load(pile_file).sources[0]
+    by_target = {
+        "spec": ["skills/to-spec/SKILL.md"],
+        "canon": ["docs/philosophy.md"],
+        "hooks": ["hooks/hooks.json"],
+        "hooks/skill-drift": ["mods/drift.ts"],
+    }
+    status = pile.render_status([pile.Drift(source, "f" * 40, by_target, [])])
+    assert status.split("\n")[2:] == [
+        "  compost:spec",
+        "    skills/to-spec/SKILL.md",
+        "  canon",
+        "    docs/philosophy.md",
+        "  mechanism hooks",
+        "    hooks/hooks.json",
+        "  mechanism hooks/skill-drift",
+        "    mods/drift.ts",
+    ]
 
 
 def test_compare_reports_a_pin_upstream_does_not_have(pile_file):

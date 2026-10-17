@@ -33,7 +33,7 @@ class Source:
 class Drift:
     source: Source
     head: str
-    by_skill: dict[str, list[str]]
+    by_target: dict[str, list[str]]
     unmapped: list[str]
 
 
@@ -75,15 +75,15 @@ def load(path: Path = PILE) -> Pile:
 
 
 def map_changes(changed: list[str], feeds: dict[str, list[str]]) -> tuple[dict[str, list[str]], list[str]]:
-    by_skill: dict[str, list[str]] = {}
+    by_target: dict[str, list[str]] = {}
     unmapped = []
     for path in changed:
-        skills = sorted({skill for prefix, targets in feeds.items() if _under(path, prefix) for skill in targets})
-        if not skills:
+        fed = sorted({target for prefix, targets in feeds.items() if _under(path, prefix) for target in targets})
+        if not fed:
             unmapped.append(path)
-        for skill in skills:
-            by_skill.setdefault(skill, []).append(path)
-    return by_skill, unmapped
+        for target in fed:
+            by_target.setdefault(target, []).append(path)
+    return by_target, unmapped
 
 
 def _under(path: str, prefix: str) -> bool:
@@ -130,25 +130,41 @@ def drift(sources: list[Source]) -> list[Drift]:
         if source.role != "input":
             continue
         head, changed = git_compare(source.repo, source.pin)
-        by_skill, unmapped = map_changes(changed, source.feeds)
-        report.append(Drift(source, head, by_skill, unmapped))
+        by_target, unmapped = map_changes(changed, source.feeds)
+        report.append(Drift(source, head, by_target, unmapped))
     return report
+
+
+def is_mechanism(target: str) -> bool:
+    """A `feeds` target names a compost skill, `canon` for the essays, or a mechanism: `hooks` for compost's hooks
+    as a whole, or `hooks/<mod>` for one mod in its hooks/ directory."""
+    return target == "hooks" or target.startswith("hooks/")
+
+
+def target_label(target: str) -> str:
+    if is_mechanism(target):
+        return f"mechanism {target}"
+    return "canon" if target == "canon" else f"compost:{target}"
+
+
+def _target_order(target: str) -> tuple[int, str]:
+    return (2 if is_mechanism(target) else 1 if target == "canon" else 0, target)
 
 
 def render_status(report: list[Drift]) -> str:
     lines = []
     for item in report:
         source = item.source
-        if not item.by_skill and not item.unmapped:
+        if not item.by_target and not item.unmapped:
             lines.append(f"{source.name} ({source.repo}): nothing new since {source.pin[:7]}")
             continue
         lines.append(f"{source.name} ({source.repo}): {source.pin[:7]} → {item.head}")
         lines.append(f"  diffs: git -C {clone_path(source.repo)} diff {source.pin} {item.head} -- <path>")
-        for skill, paths in sorted(item.by_skill.items()):
-            lines.append(f"  compost:{skill}")
-            lines.extend(f"    {path}" for path in paths)
+        for target in sorted(item.by_target, key=_target_order):
+            lines.append(f"  {target_label(target)}")
+            lines.extend(f"    {path}" for path in item.by_target[target])
         if item.unmapped:
-            lines.append("  feed no compost skill:")
+            lines.append("  feed nothing in compost:")
             lines.extend(f"    {path}" for path in item.unmapped[:UNMAPPED_SHOWN])
             if len(item.unmapped) > UNMAPPED_SHOWN:
                 lines.append(f"    and {len(item.unmapped) - UNMAPPED_SHOWN} more")

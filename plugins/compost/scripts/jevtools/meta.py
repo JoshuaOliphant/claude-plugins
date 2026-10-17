@@ -89,8 +89,8 @@ RECORD_IGNORE_AT = 0.6
 
 
 def fed_skills(path: str, feeds: dict[str, list[str]]) -> list[str]:
-    by_skill, _ = pile.map_changes([path], feeds)
-    return sorted(by_skill)
+    by_target, _ = pile.map_changes([path], feeds)
+    return sorted(by_target)
 
 
 def describe_changes(source: str, changes: list[dict], root: Path = PLUGIN_ROOT) -> dict:

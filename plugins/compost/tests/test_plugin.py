@@ -81,9 +81,10 @@ def test_every_compost_reference_names_a_skill_workflow_or_agent():
     assert unknown == set()
 
 
-def test_pile_feeds_only_existing_skills_or_the_canon_and_notice_is_current():
+def test_pile_feeds_only_existing_skills_the_canon_or_mechanisms_and_notice_is_current():
     sources = pile.load(PLUGIN_ROOT / "pile.toml").sources
-    targets = {path.name for path in SKILLS} | {"canon"}
+    mods = {f"hooks/{path.stem}" for path in (PLUGIN_ROOT / "hooks").glob("*.ts*")}
+    targets = {path.name for path in SKILLS} | {"canon", "hooks"} | mods
     fed = {skill for source in sources for skills in source.feeds.values() for skill in skills}
     assert fed - targets == set()
     assert (PLUGIN_ROOT / "NOTICE").read_text() == pile.render_notice(sources)
