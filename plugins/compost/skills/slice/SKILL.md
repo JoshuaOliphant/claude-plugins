@@ -20,7 +20,10 @@ The tracker is the only plan. No markdown plan files, no second task list.
    in `docs/agents/issue-tracker.md` (if it is missing, run `compost:setup` now, then continue).
    Read `CONTEXT.md`, the ADRs in the area, and the code the spec touches. Use the glossary's
    terms in every title and body. If there is no spec, or it still has open questions, go back to
-   `compost:spec` first.
+   `compost:spec` first. If the compound-knowledge plugin is installed, use
+   `compound-knowledge:compound-retrieve` on the area the spec touches before cutting slices, so
+   known gotchas shape each issue's Files and its blocking edges. Without the plugin, skip this step
+   and say nothing about it.
 
 2. **Lock the file structure.** Before cutting issues, list the files to create or change and the
    one responsibility each will hold. Split by what changes together, not by technical layer.
