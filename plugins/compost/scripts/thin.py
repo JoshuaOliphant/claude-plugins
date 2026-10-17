@@ -101,11 +101,26 @@ def predicate_shaped(value: ast.expr) -> bool:
     return False
 
 
+def kinds(annotation: ast.expr) -> list[str]:
+    """The type names an annotation allows, lowercased: `Optional["List[str]"]` gives list and none."""
+    if isinstance(annotation, ast.Constant) and isinstance(annotation.value, str):  # a forward reference
+        return kinds(ast.parse(annotation.value, mode="eval").body)
+    if isinstance(annotation, ast.BinOp):  # X | Y
+        return kinds(annotation.left) + kinds(annotation.right)
+    if isinstance(annotation, ast.Subscript):
+        outer = kinds(annotation.value)
+        inner = annotation.slice.elts if isinstance(annotation.slice, ast.Tuple) else [annotation.slice]
+        if outer == ["optional"]:
+            return [*kinds(inner[0]), "none"]
+        return [kind for part in inner for kind in kinds(part)] if outer == ["union"] else outer
+    name = annotation.attr if isinstance(annotation, ast.Attribute) else getattr(annotation, "id", "none")
+    return [name.lower()]
+
+
 def return_constants(function: ast.FunctionDef | ast.AsyncFunctionDef, value: ast.expr) -> list[str]:
     """The constants a `return value` in `function` is swapped for: by its annotation, else by the value's shape."""
     if function.returns is not None:
-        kinds = [part.strip().split("[")[0] for part in ast.unparse(function.returns).split("|")]
-        found = [constant for kind in kinds for constant in RETURN_CONSTANTS.get(kind, ["None"])]
+        found = [constant for kind in kinds(function.returns) for constant in RETURN_CONSTANTS.get(kind, ["None"])]
     else:
         found = ["True", "False"] if predicate_shaped(value) else ["None"]
     return [constant for constant in dict.fromkeys(found) if constant != ast.unparse(value)]
@@ -118,12 +133,11 @@ def nudged(literal: str) -> list[str]:
     return [str(value - step), str(value + step)]
 
 
-def breaks(tree: ast.Module, source: str):
+def breaks(tree: ast.Module, source: str, parents: dict[ast.AST, ast.AST]):
     """Yield (operator, node, text, expression) for each break of the module: put `text` where `node` is.
 
     An expression's text is parenthesized when it goes in; a statement's goes in as it is.
     """
-    parents = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
     annotations = {
         id(part)
         for node in ast.walk(tree)
@@ -158,9 +172,12 @@ def breaks(tree: ast.Module, source: str):
                 for drop in range(len(terms.elts)):
                     kept = ", ".join(segment(elt) for index, elt in enumerate(terms.elts) if index != drop)
                     yield "thin/DropTerm", node, f"{node.func.id}([{kept}])", True
-        elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+        elif isinstance(node, (ast.Constant, ast.JoinedStr)) and isinstance(getattr(node, "value", ""), str):
+            # An f-string goes whole; its literal parts, docstrings, and annotations are left alone.
             if not isinstance(parent, (ast.Expr, ast.JoinedStr, ast.FormattedValue)) and id(node) not in annotations:
-                other = "YY" if node.value == "XX" else "XX"  # nothing of the original left for `in` or a regex to find
+                other = (
+                    "YY" if getattr(node, "value", None) == "XX" else "XX"
+                )  # nothing of the original left for `in` or a regex to find
                 yield "thin/ReplaceString", node, repr(other), True
         elif isinstance(node, ast.Constant) and type(node.value) is float:
             ordered = isinstance(parent, ast.Compare) and all(isinstance(op, ORDERINGS) for op in parent.ops)
@@ -183,11 +200,17 @@ def breaks(tree: ast.Module, source: str):
 def extra_mutants(module: str) -> list[dict]:
     """The breaks cosmic-ray has no operator for (#124), each the span of `module` it replaces and its new text."""
     source = Path(module).read_text()
+    tree = ast.parse(source)
+    parents = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
     found, counts = [], defaultdict(int)
-    for operator, node, text, expression in breaks(ast.parse(source), source):
+    for operator, node, text, expression in breaks(tree, source, parents):
         span = [node.lineno, node.col_offset, node.end_lineno, node.end_col_offset]
-        found.append({"module": module, "operator": operator, "occurrence": counts[operator], "line": node.lineno,
-                      "args": {"span": span, "text": text, "expression": expression}})  # fmt: skip
+        statement = node
+        while not isinstance(statement, ast.stmt):
+            statement = parents[statement]
+        # Coverage records a statement on its first line, so a break further down it goes by that line.
+        found.append({"module": module, "operator": operator, "occurrence": counts[operator],
+                      "line": statement.lineno, "args": {"span": span, "text": text, "expression": expression}})  # fmt: skip
         counts[operator] += 1
     return found
 
@@ -229,11 +252,11 @@ def mutants(module: str, extra: bool = True) -> list[dict]:
 
 def mutate(source: str, mutant: dict) -> str | None:
     """The mutated source, or None when the mutant can't be made (cosmic-ray's AST walk crashes on a few)."""
+    if mutant["operator"].startswith(EXTRA):
+        return splice(source, **mutant["args"])
     from cosmic_ray.mutating import mutate_code
     from cosmic_ray.plugins import get_operator
 
-    if mutant["operator"].startswith(EXTRA):
-        return splice(source, **mutant["args"])
     try:
         return mutate_code(source, get_operator(mutant["operator"])(**mutant["args"]), mutant["occurrence"])
     except AttributeError:  # seen on a node parso builds without a `value`
@@ -386,6 +409,8 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
     baseline's wall time, at least 30 seconds: a mutant that hangs costs that, not a fixed five minutes.
     """
     lines = covered_lines(contexts)
+    imported = {(path, int(line)) for path, info in contexts["files"].items()
+                for line, names in info["contexts"].items() if "" in names}  # fmt: skip
     selected = set(only) if only is not None else set(lines)
     on_line = defaultdict(set)
     for name, pairs in lines.items():
@@ -399,10 +424,11 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
     jobs, made = [], []
     for module in sorted({path for path, _ in wanted}):
         source = Path(module).read_text()
-        in_module = sorted({test for (path, _), tests in on_line.items() if path == module for test in tests})
+        in_module = sorted({test for path, line in wanted if path == module for test in on_line[(path, line)]})
         for mutant in mutants(module, extra):
-            # A threshold set at import, `FOUND = 0.7`, runs under no test: try it on every test of its module.
-            at_import = mutant["operator"] == "thin/NudgeThreshold" and (module, mutant["line"]) not in on_line
+            # A threshold set at import, `FOUND = 0.7`, runs under no test: try it on the module's selected tests.
+            place = (module, mutant["line"])
+            at_import = mutant["operator"] == "thin/NudgeThreshold" and place in imported and place not in on_line
             if (module, mutant["line"]) not in wanted and not at_import:
                 continue
             mutated = mutate(source, mutant)
@@ -486,14 +512,19 @@ def survivors(contexts: dict, changed: dict[str, set[int]], pytest_args: list[st
         elif report is None or report.strays:
             outcome = "crashed"
         else:
-            outcome = "killed" if report.failed else "survived"
+            outcome = "killed" if report.failed else "survived_strings" if is_string(row) else "survived"
         outcomes[outcome].append(row)
         log(f"{mutant_id(row)} {outcome}")
     return (
         counts
         | {kind: len(outcomes[kind]) for kind in ("killed", "survived", "timeouts", "crashed")}
-        | {"survivors": outcomes["survived"]}
+        | {"survivors": outcomes["survived"], "survived_strings": outcomes["survived_strings"]}
     )
+
+
+def is_string(row: dict) -> bool:
+    """A changed string survives most often as an equivalent mutant (a message nobody reads), so it is listed apart."""
+    return row["operator"] == "thin/ReplaceString"
 
 
 def mutant_id(row: dict) -> str:
@@ -528,9 +559,11 @@ def verdict(matrix: dict) -> dict:
             over = [o for o in sorted(keep) if mine <= kills[o]]
             entry["subsumed_by"] = over[0] if over else None
         tests[test] = entry
-    survived = sorted(mutant_id(row) for row in rows if not row["killers"])
-    strings = [m for m in survived if " thin/ReplaceString#" in m]  # most likely equivalent: a message nobody reads
-    return {"mutants": len(rows), "survived": [m for m in survived if m not in strings], "survived_strings": strings,
+    survived = {False: [], True: []}
+    for row in sorted(rows, key=mutant_id):
+        if not row["killers"]:
+            survived[is_string(row)].append(mutant_id(row))
+    return {"mutants": len(rows), "survived": survived[False], "survived_strings": survived[True],
             "minimal": sorted(keep & selected), "tests": tests}  # fmt: skip
 
 

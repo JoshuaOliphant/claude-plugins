@@ -159,6 +159,12 @@ def test_mutate_makes_the_mutant_in_memory_or_none_when_cosmic_ray_cannot(tmp_pa
          ["def f(x) -> bool:\n    return (True)\n", "def f(x) -> bool:\n    return (False)\n"]),
         ("def f(x) -> list[str] | None:\n    return x\n", "ReturnConstant",
          ["def f(x) -> list[str] | None:\n    return ([])\n", "def f(x) -> list[str] | None:\n    return (None)\n"]),
+        ("def f(x) -> Optional['bool']:\n    return x\n", "ReturnConstant",
+         ["def f(x) -> Optional['bool']:\n    return (True)\n", "def f(x) -> Optional['bool']:\n    return (False)\n",
+          "def f(x) -> Optional['bool']:\n    return (None)\n"]),
+        ("def f(x) -> t.Union[t.List[int], None]:\n    return x\n", "ReturnConstant",
+         ["def f(x) -> t.Union[t.List[int], None]:\n    return ([])\n",
+          "def f(x) -> t.Union[t.List[int], None]:\n    return (None)\n"]),
         ("def f(x):\n    return x.is_file()\n", "ReturnConstant",
          ["def f(x):\n    return (True)\n", "def f(x):\n    return (False)\n"]),
         ("def f(x):\n    return x + 1\n", "ReturnConstant", ["def f(x):\n    return (None)\n"]),
@@ -172,7 +178,8 @@ def test_mutate_makes_the_mutant_in_memory_or_none_when_cosmic_ray_cannot(tmp_pa
         ("if (a and\n        b):\n    pass\n", "DropTerm", ["if (((b)\n)):\n    pass\n", "if (((a)\n)):\n    pass\n"]),
         ('def f(x: "Path"):\n    """Doc."""\n    return {"k": ""}[f"{x}-"]\n', "ReplaceString",
          ['def f(x: "Path"):\n    """Doc."""\n    return {(\'XX\'): ""}[f"{x}-"]\n',
-          'def f(x: "Path"):\n    """Doc."""\n    return {"k": (\'XX\')}[f"{x}-"]\n']),
+          'def f(x: "Path"):\n    """Doc."""\n    return {"k": (\'XX\')}[f"{x}-"]\n',
+          'def f(x: "Path"):\n    """Doc."""\n    return {"k": ""}[(\'XX\')]\n']),
         ("def f(s):\n    return s >= 0.7 and s < 1e-3 and s == 0.5 and s > 18\n", "NudgeThreshold",
          ["def f(s):\n    return s >= (0.69) and s < 1e-3 and s == 0.5 and s > 18\n",
           "def f(s):\n    return s >= (0.71) and s < 1e-3 and s == 0.5 and s > 18\n",
@@ -185,9 +192,10 @@ def test_mutate_makes_the_mutant_in_memory_or_none_when_cosmic_ray_cannot(tmp_pa
           "a = p.removeprefix('x').upper\nb = list((ys))\nc = sorted(ys, key=len)\np.strip()\n",
           "a = p.removeprefix('x').upper\nb = list(dict.fromkeys(ys))\nc = (ys)\np.strip()\n"]),
     ],
-    ids=["guard", "call statement, not docstring", "no elif", "bool annotation", "first of a union",
+    ids=["guard", "call statement, not docstring", "no elif", "bool annotation", "first of a union", "optional forward reference",
+         "typing union",
          "predicate method", "no annotation", "predicate call in a branch", "only the other bool", "one per term",
-         "all() terms", "one term left", "lines kept", "strings but docstrings f-strings annotations", "ordered float comparisons",
+         "all() terms", "one term left", "lines kept", "strings and whole f-strings, not docstrings or annotations", "ordered float comparisons",
          "module constants", "same-type methods and wrappers"],
 )  # fmt: skip
 def test_thin_operators_make_the_breaks_cosmic_ray_cannot(tmp_path, source, operator, expected):
@@ -228,6 +236,10 @@ def passes(score):
 
 
 PASS = 0.7
+
+
+def unused(score):
+    return score > 0.5
 """
 
 GUARDS_TESTS = {
@@ -253,7 +265,8 @@ def guards_matrix(tmp_path_factory):
     ids = {name: f"test_guards.py::{name}" for name in GUARDS_TESTS}
     runs = {2: ["test_parses", "test_rejects_negative"], 3: ["test_rejects_negative"], 4: ["test_parses"],
             8: ["test_is_test", "test_is_not_test"], 12: ["test_ready"], 16: ["test_at_threshold", "test_just_under"]}  # fmt: skip
-    report = contexts({"guards.py": {1: [""], 19: [""]} | {n: [f"{ids[t]}|run" for t in ts] for n, ts in runs.items()}})
+    imported = {1: [""], 19: [""], 22: [""]}
+    report = contexts({"guards.py": imported | {n: [f"{ids[t]}|run" for t in ts] for n, ts in runs.items()}})
     with pytest.MonkeyPatch.context() as patch:
         patch.chdir(root)
         return thin.kill_matrix(report, None, PYTEST, 60, 4, log=NO_LOG)
@@ -283,6 +296,13 @@ def test_the_matrix_tries_a_threshold_set_at_import_on_every_test_of_its_module(
     rows = [row for row in guards_matrix["mutants"] if row["line"] == 19]
     assert {row["operator"] for row in rows} == {"thin/NudgeThreshold"}
     assert all(row["covering"] == sorted(f"test_guards.py::{name}" for name in GUARDS_TESTS) for row in rows)
+    assert not [row for row in guards_matrix["mutants"] if row["line"] == 23]  # a compare no test runs is no gap
+
+
+def test_a_break_inside_a_statement_goes_by_the_line_coverage_records(tmp_path):
+    (tmp_path / "m.py").write_text('def f():\n    raise ValueError(\n        "negative"\n    )\n')
+    [string] = [m for m in thin.extra_mutants(str(tmp_path / "m.py")) if m["operator"] == "thin/ReplaceString"]
+    assert string["line"] == 2 and string["args"]["span"][0] == 3
 
 
 def test_stock_operators_leave_thin_out(tmp_path):
@@ -599,6 +619,19 @@ def test_main_survivors_exits_0_when_every_mutant_is_killed(toy_repo, tmp_path, 
     assert thin.main(args) == 0
     result = json.loads(capsys.readouterr().out)
     assert result["mutants"] == result["killed"] > 0
+
+
+def test_main_survivors_lists_string_survivors_apart_with_thins_operators(toy_repo, tmp_path, capsys):
+    toy, base = toy_repo
+    (tmp_path / "age.py").write_text("def adult(age):\n    return age >= 18\nLABEL = 'adult'\n")
+    (tmp_path / "ctx.json").write_text(json.dumps(toy))
+    args = ["survivors", "ctx.json", "--base", base, "--paths", "age.py", "--pytest-args", " ".join(PYTEST)]
+    assert thin.main(args) == 3
+    capsys.readouterr()
+    assert thin.main([*args, "--operators", "all"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["survived"] == 0 and result["survivors"] == []
+    assert [row["mutated"] for row in result["survived_strings"]] == ["LABEL = ('XX')"]
 
 
 def test_main_survivors_exits_3_when_changed_lines_make_no_mutant(toy_repo, tmp_path, capsys):
