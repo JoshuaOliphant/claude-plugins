@@ -71,7 +71,7 @@ write_path: /absolute/path/to/knowledge/solutions/
 
 The skills and agent get their paths from `scripts/resolve_paths.py`, which prints `write_path` (where captures go), `read_paths` (every directory searched) and `vault_root` as JSON, and exits 1 when `write_path` does not exist yet.
 
-**Other keys**: `read_paths` (comma-separated extra directories to search), and `vault_root` (the whole vault for wide reads) are also accepted. `solutions_path` is a back-compat alias for `write_path`. Semantic search (vault-recommender) runs only when `vault_root` is set.
+**Other keys**: `read_paths` (comma-separated extra directories to search), and `vault_root` (the whole vault for wide reads) are also accepted. `solutions_path` is a back-compat alias for `write_path`. Every path accepts `~`, and a relative path resolves against the project root. Semantic search (vault-recommender) runs only when `vault_root` is set.
 
 ### Component values
 
