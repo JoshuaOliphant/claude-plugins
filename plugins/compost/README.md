@@ -25,6 +25,7 @@ with review done by subagents every time, and records its rulings on the issue.
 | `diagnose` | Any bug or failing test, before a fix |
 | `deepen` | Module and interface design, refactoring for testability |
 | `prune` | Docs that drifted from the code: move what's worth keeping into the code, keep only the core docs |
+| `thin` | Tests no mutant needs: find them with a kill matrix, confirm each by hand, fold or delete |
 | `pause` | Stop at a safe point and pick the work back up later |
 | `wait-what` | You lost the thread: Claude re-pitches it with the missing context, in glossary terms (you invoke it) |
 | `fan-out` | Competing designs or hypotheses, tried in parallel and judged |

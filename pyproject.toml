@@ -13,6 +13,7 @@ package = false
 # Repo-wide dev tooling. Individual plugins that need more (e.g. compost's
 # coverage gate) declare their own dependency-group in their own pyproject.toml.
 dev = [
+    "cosmic-ray>=8.7.0",
     "pytest>=8",
     "pytest-asyncio>=0.23",
     "pyyaml>=6.0.3",
