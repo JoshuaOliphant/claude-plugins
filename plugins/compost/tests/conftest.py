@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
@@ -179,3 +180,33 @@ license = "Apache-2.0"
 pin = "bbbbbbbbbbbbbbbb"
 ''')
     return path
+
+
+@dataclass
+class ClaudeHome:
+    dir: Path
+    listing: Path
+    disabled: Path
+
+    def install(self, *plugins: dict) -> None:
+        """Sets what `claude plugin list --json` prints: dicts shaped like the CLI's, `{"id", "scope", "enabled"}`."""
+        self.listing.write_text(json.dumps(list(plugins)))
+
+
+@pytest.fixture
+def claude_home(tmp_path, monkeypatch) -> ClaudeHome:
+    """A throwaway ~/.claude, and a `claude` CLI on PATH that lists what `install` set and logs `plugin disable` ids."""
+    home = ClaudeHome(tmp_path / ".claude", tmp_path / "installed.json", tmp_path / "disabled.log")
+    home.dir.mkdir()
+    home.install()
+    binary = tmp_path / "bin" / "claude"
+    binary.parent.mkdir()
+    binary.write_text(
+        "#!/bin/sh\n"
+        f'if [ "$2" = list ]; then cat "{home.listing}"; exit 0; fi\n'
+        f'if [ "$2" = disable ]; then echo "$3" >> "{home.disabled}"; exit 0; fi\n'
+        "exit 1\n"
+    )
+    binary.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{binary.parent}{os.pathsep}{os.environ['PATH']}")
+    return home

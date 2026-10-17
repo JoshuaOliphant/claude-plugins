@@ -89,8 +89,8 @@ RECORD_IGNORE_AT = 0.6
 
 
 def fed_skills(path: str, feeds: dict[str, list[str]]) -> list[str]:
-    by_skill, _ = pile.map_changes([path], feeds)
-    return sorted(by_skill)
+    by_target, _ = pile.map_changes([path], feeds)
+    return sorted(by_target)
 
 
 def describe_changes(source: str, changes: list[dict], root: Path = PLUGIN_ROOT) -> dict:
@@ -108,7 +108,7 @@ def gather_changes(payload: dict) -> dict:
     if not payload["paths"]:
         raise BadInput("`paths` is empty")
     try:
-        sources = {source.name: source for source in pile.load(Path(payload.get("pile", pile.PILE)))}
+        sources = {source.name: source for source in pile.load(Path(payload.get("pile", pile.PILE))).sources}
         if payload["source"] not in sources:
             raise BadInput(f"no source named {payload['source']!r} in pile.toml")
         source = sources[payload["source"]]
