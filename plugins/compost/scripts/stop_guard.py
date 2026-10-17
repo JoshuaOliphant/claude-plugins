@@ -22,8 +22,8 @@ from jevtools.core import open_client
 LOG = Path.home() / ".cache" / "compost" / "stop-guard.log"
 IMPLEMENT = "compost:implement"
 FINISH = "compost:finish"
-# Text Claude Code writes into user entries: <command-name>, <system-reminder>, <task-notification> and the like.
-INJECTED = re.compile(r"<([a-z][a-z-]*)>.*?</\1>", re.DOTALL)
+# Text Claude Code writes into user entries: <command-name>, <system-reminder>, <teammate-message teammate_id=...>.
+INJECTED = re.compile(r"<([a-z][a-z-]*)(?:\s[^>]*)?>.*?</\1>", re.DOTALL)
 # A <command-name> entry appears only when the user typed a slash command; a skill Claude loads is a Skill tool_use.
 COMMAND = re.compile(r"<command-name>/[^<]+</command-name>")
 # Main-thread entries Claude Code writes as user entries that no one typed: skill bodies, compaction summaries.

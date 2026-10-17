@@ -219,6 +219,7 @@ def test_a_stop_answering_a_message_typed_during_the_run_is_allowed(transcript, 
         user("This session is being continued from a previous conversation.", isCompactSummary=True),
         user("Shown in the transcript only.", isVisibleInTranscriptOnly=True),
         {**LOADS_FINISH, "isSidechain": True},
+        user('<teammate-message teammate_id="w1">Should we?</teammate-message>'),
     ],
     ids=[
         "tool result",
@@ -229,6 +230,7 @@ def test_a_stop_answering_a_message_typed_during_the_run_is_allowed(transcript, 
         "compaction summary",
         "transcript-only entry",
         "sidechain finish load",
+        "teammate message",
     ],
 )
 def test_user_entries_claude_code_writes_do_not_count_as_typed(transcript, injected):
