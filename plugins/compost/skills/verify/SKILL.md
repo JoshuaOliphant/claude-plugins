@@ -54,9 +54,11 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    - In a recorded exclusion: leave it. A new exclusion is proposed exactly like a coverage one,
      and the same unattended rule applies.
 
-   There is no score to reach; a survivor left unsorted fails the step. Run `git diff` after the
-   run and restore any mutant an interrupted run left behind. With no tool recorded, skip this step;
-   `compost:build` has already walked the mutations by hand.
+   There is no score to reach; a survivor left unsorted fails the step, and so does a run that
+   mutated nothing on lines the tool covers. Run `git diff` after the run and restore any mutant an
+   interrupted run left behind. Lines the tool does not cover, outside its recorded paths or in
+   another language, have only `compost:build`'s walk by hand: name them in the report. With no
+   tool recorded, skip this step for the same reason.
 
 5. **Map every acceptance criterion to a passing test.** Build a table from this run's results:
    AC-N, the test's node id, and pass or fail. Find the tests in the placement map

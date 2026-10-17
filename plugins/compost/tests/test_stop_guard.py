@@ -52,8 +52,9 @@ def judging(waits: float, allowed: float):
     return lambda: StubClient(lambda state, questions: {"waits": noul(waits), "allowed": noul(allowed)})
 
 
-def test_a_question_mid_implement_is_sent_back_with_the_ruling_instruction(transcript):
-    path = transcript(LOADS_IMPLEMENT, said("m1", "Which library do you prefer?"))
+@pytest.mark.parametrize("loaded", [LOADS_IMPLEMENT, SLASH_IMPLEMENT], ids=["skill tool", "typed command"])
+def test_a_question_mid_implement_is_sent_back_with_the_ruling_instruction(transcript, loaded):
+    path = transcript(loaded, said("m1", "Which library do you prefer?"))
     verdict = stop_guard.decide({"transcript_path": path, "stop_hook_active": False}, judging(0.9, 0.1))
     assert verdict == {"decision": "block", "reason": stop_guard.REASON}
     assert "post a ruling as an issue comment" in verdict["reason"]

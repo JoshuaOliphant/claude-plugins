@@ -75,3 +75,6 @@ trees/
 .worktrees/
 # and the harness worktrees Claude Code falls back to
 .claude/worktrees/
+
+# compost mutation-testing session database (cosmic-ray)
+/plugins/compost/.cosmic-ray.sqlite

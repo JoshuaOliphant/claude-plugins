@@ -259,9 +259,11 @@ def test_children_read_stdin_from_devnull_so_a_read_cannot_block(toy, tmp_path):
 
 
 def test_children_drop_compost_scripts_from_sys_path_so_its_modules_cannot_shadow_the_projects(toy, tmp_path):
+    kept = [p for p in sys.path if Path(p or ".").resolve() != thin.SCRIPTS]
     (tmp_path / "test_path.py").write_text(
         f"import sys\nfrom pathlib import Path\ndef test_path():\n"
         f"    assert {str(thin.SCRIPTS)!r} not in [str(Path(p or '.').resolve()) for p in sys.path]\n"
+        f"    assert set({kept!r}) <= set(sys.path)\n"
     )
     [report] = thin.fork_runs([(None, None, ["test_path.py::test_path"])], PYTEST, 20, 1)
     assert report.named == {"test_path.py::test_path"} and report.failed == set()
