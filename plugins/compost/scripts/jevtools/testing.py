@@ -11,11 +11,10 @@ from pathlib import Path
 from typesafe_sdk import Choice, Noul, Score
 
 from jevtools import suite
-from jevtools.core import narrow
+from jevtools.core import ALTERNATIVES, narrow
 from jevtools.registry import BadInput, require, tool
 
 FILES_SHORTLIST = 3
-ALTERNATIVES = 2
 EXTEND_COVERED = 0.7
 FULL_SOURCE_CHARS = 4000
 
@@ -80,7 +79,7 @@ COVERED = Noul(
 )
 
 
-def files_of(groups: dict[str, list[str]]) -> Choice:
+def file_group_question(groups: dict[str, list[str]]) -> Choice:
     return file_question({name: ", ".join(node.split("::", 1)[1] for node in nodes) for name, nodes in groups.items()})
 
 
@@ -88,7 +87,9 @@ async def shortlist(jev, criterion: str, tests: dict[str, str]) -> dict[str, str
     by_file: dict[str, list[str]] = {}
     for node in tests:
         by_file.setdefault(node.split("::")[0], []).append(node)
-    nodes, _ = await narrow(jev, "find-test/file", {"criterion": criterion}, by_file, files_of, keep=FILES_SHORTLIST)
+    nodes, _ = await narrow(
+        jev, "find-test/file", {"criterion": criterion}, by_file, file_group_question, keep=FILES_SHORTLIST
+    )
     return {node: tests[node][: suite.SOURCE_CHARS] for node in nodes}
 
 

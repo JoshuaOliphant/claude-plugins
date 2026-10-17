@@ -21,6 +21,8 @@ CACHE = Path.home() / ".cache" / "compost" / "jev-cache.json"
 # The most options one Choice may carry. typesafe-sdk 0.7.1 does not encode the API's cap, so this is the
 # lower of the two values compost has used (250 and 254); see the ruling on issue #105.
 CHOICE_LIMIT = 250
+# Runners-up a tool reports beside its pick.
+ALTERNATIVES = 2
 
 
 class Unavailable(Exception):

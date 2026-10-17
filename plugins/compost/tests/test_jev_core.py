@@ -115,12 +115,10 @@ def test_answers_are_read_through_the_view_and_cached_as_plain_dicts(tmp_path):
     assert len(client.calls) == 1
 
 
-ANSWER_KEYS = {"type", "noul", "choice", "probabilities", "confidence", "score", "legend"}
-
-
 def answer_reads(source: str) -> list[int]:
-    """Lines that index the SDK's answer shape: a subscript on a `jev.ask` result (directly or through the name it
-    was bound to), or on anything by one of the answer dict's keys."""
+    """Lines that reach past the Answers view: a subscript on a `jev.ask` result (directly or through the name it
+    was bound to), or a read of the view's `.raw` dicts. The view has no `__getitem__`, so any other subscript on
+    it fails at run time."""
     tree = ast.parse(source)
 
     def is_ask(node) -> bool:
@@ -134,22 +132,21 @@ def answer_reads(source: str) -> list[int]:
         for target in node.targets
         if isinstance(target, ast.Name)
     }
-    return [
+    return sorted(
         node.lineno
         for node in ast.walk(tree)
-        if isinstance(node, ast.Subscript)
-        and (
-            is_ask(node.value)
-            or (isinstance(node.value, ast.Name) and node.value.id in bound)
-            or (isinstance(node.slice, ast.Constant) and node.slice.value in ANSWER_KEYS)
+        if (
+            isinstance(node, ast.Subscript)
+            and (is_ask(node.value) or (isinstance(node.value, ast.Name) and node.value.id in bound))
         )
-    ]
+        or (isinstance(node, ast.Attribute) and node.attr == "raw")
+    )
 
 
 def test_answer_reads_finds_every_way_of_indexing_an_answer():
     source = (
         'async def f(jev, answer):\n    a = await jev.ask("t", {}, {})\n    a["q"]\n'
-        '    (await jev.ask("t", {}, {}))["q"]\n    answer["noul"]\n    answer["q"]\n'
+        '    (await jev.ask("t", {}, {}))["q"]\n    answers.raw["q"]["noul"]\n    entry["score"]\n'
     )
     assert answer_reads(source) == [3, 4, 5]
 

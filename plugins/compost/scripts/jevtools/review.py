@@ -3,7 +3,6 @@
 import asyncio
 import re
 import subprocess
-from operator import itemgetter
 from pathlib import Path
 
 from typesafe_sdk import Choice, Noul, NoulCriteria, Score
@@ -17,7 +16,6 @@ FILE_DIFF_CHARS = 6000
 CHANGE_CHARS = 8000
 DOCUMENT_CHARS = 90_000
 MAX_PICKS = 3
-ALTERNATIVES = 2
 
 SKEPTIC_SEVERITY = 0.3
 SKEPTIC_CONFIDENCE = 0.25
@@ -209,7 +207,7 @@ async def assess(jev, changed: dict, everything: list[str]) -> dict:
 async def review_risk(jev, gathered: dict) -> dict:
     everything = [changed["file"] for changed in gathered["files"]]
     assessed = await asyncio.gather(*(assess(jev, changed, everything) for changed in gathered["files"]))
-    ranked = sorted(assessed, key=itemgetter("score"), reverse=True)
+    ranked = sorted(assessed, key=lambda entry: -entry["score"])
     return {"files": ranked, "structural": any(entry["structural"] for entry in ranked)}
 
 
@@ -345,7 +343,7 @@ async def find(jev, query: dict) -> dict:
         questions["exists"] = EXISTS
     answers = await jev.ask("locate", {**base_state, "document": document(lines)}, questions)
     exists = (narrowed or answers).noul("exists")
-    ranked = answers.ranked("line", ALTERNATIVES + 1)
+    ranked = answers.ranked("line", core.ALTERNATIVES + 1)
     texts = dict(lines)
     best, probability = ranked[0]
     return {
