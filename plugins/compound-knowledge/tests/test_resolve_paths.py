@@ -151,5 +151,7 @@ def test_cli_exit_reflects_write_path_existence(tmp_path, capsys, create_write_p
     assert json.loads(out)["write_path"] == f"{write_dir}/"
     if exit_code:
         assert "/compound-knowledge:setup" in err
+        # setup can't create a configured write_path, so the message also says how to create it.
+        assert f"mkdir -p {write_dir}/" in err
     else:
         assert err == ""

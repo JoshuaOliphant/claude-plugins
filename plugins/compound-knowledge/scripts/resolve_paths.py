@@ -60,8 +60,9 @@ def main(argv: list) -> int:
     print(json.dumps(paths, indent=2))
     if not Path(paths["write_path"]).is_dir():
         print(
-            f"write_path {paths['write_path']} does not exist; "
-            "run /compound-knowledge:setup to create it.",
+            f"write_path {paths['write_path']} does not exist; create it with "
+            f"`mkdir -p {paths['write_path']}`, or run /compound-knowledge:setup "
+            "if no config exists yet.",
             file=sys.stderr,
         )
         return 1

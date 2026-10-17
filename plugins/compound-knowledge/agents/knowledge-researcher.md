@@ -4,7 +4,7 @@ description: >
   Search the knowledge base's read paths for relevant past solutions by YAML frontmatter.
   Use before implementing features or fixing bugs to surface institutional
   knowledge and prevent repeated mistakes. Designed for speed (<30s).
-allowed-tools: [Read, Glob, Grep, Bash]
+tools: Read, Glob, Grep, Bash
 model: haiku
 ---
 
@@ -12,17 +12,17 @@ You are the knowledge-researcher agent. Your job is to search a solutions direct
 
 ## Path Resolution
 
-The caller may provide `read_paths` in the prompt. If not, run the resolver from the project root
+The caller may provide `read_paths` in the prompt. If not, run the resolver on the project root
 and take `read_paths` from the JSON it prints:
 
 ```bash
-python ${CLAUDE_PLUGIN_ROOT}/scripts/resolve_paths.py
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/resolve_paths.py" "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 ```
 
 Never read the config file yourself. Skip any `read_paths` entry that does not exist. If the
-resolver exits non-zero, the solutions directory (`write_path`, the first `read_paths` entry) does
-not exist: report that and that `/compound-knowledge:setup` creates it, then search the remaining
-entries.
+resolver exits 1, the solutions directory (`write_path`, the first `read_paths` entry) does not
+exist: report that with the fix it printed to stderr, then search the remaining entries. Any other
+failure prints no JSON: report the error and return no results rather than guessing paths.
 
 Run Steps 2-7 for **every** entry in `read_paths`; `{read_path}` below means each entry in turn.
 The first entry is the primary knowledge base.
@@ -119,7 +119,7 @@ Read the full content of the **top 2-5 solutions** (based on score). Extract:
 
 **Trigger**: Only run this step if the primary search returned **<3 scored results** AND the registry from Step 0 contains other knowledge bases.
 
-For each additional registered knowledge base:
+For each additional registered knowledge base not already in `read_paths`:
 
 1. Run the same parallel Grep pattern from Step 3 against that KB's path
 2. Read frontmatter of matches (Step 5 logic)

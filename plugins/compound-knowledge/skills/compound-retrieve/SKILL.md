@@ -24,18 +24,19 @@ You are not a search engine. You don't just return results — you interpret the
 
 ### Where your knowledge lives
 
-Run the resolver from the project root before searching:
+Run the resolver on the project root before searching:
 
 ```bash
-python ${CLAUDE_PLUGIN_ROOT}/scripts/resolve_paths.py
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/resolve_paths.py" "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 ```
 
 It prints JSON. Search **every** directory in `read_paths` (the solutions directory is always the
 first entry, `{write_path}`); use `vault_root` (if set) for semantic search. Never read the config
 file yourself. Skip any `read_paths` entry that does not exist.
 
-If the resolver exits non-zero, the solutions directory (`write_path`) does not exist: say so and
-suggest `/compound-knowledge:setup`, then search the remaining entries.
+If the resolver exits 1, the solutions directory (`write_path`) does not exist: say so, pass on
+the fix it printed to stderr, then search the remaining entries. Any other failure prints no JSON:
+report the error rather than guessing paths.
 
 You also know about a **cross-project registry** at `~/.claude/compound-knowledge-registry.md` that maps other projects' knowledge bases. When local results are thin (<3 hits), you search across projects.
 
@@ -64,7 +65,7 @@ Grep(pattern="tags:.*{keyword}", path="{read_path}", output_mode="files_with_mat
 Grep(pattern="symptoms:.*{error}", path="{read_path}", output_mode="files_with_matches")
 ```
 
-Read the cross-project registry at `~/.claude/compound-knowledge-registry.md` to discover other knowledge bases. When local results are thin (<3 hits), search across registered KBs too.
+Read the cross-project registry at `~/.claude/compound-knowledge-registry.md` to discover other knowledge bases. When local results are thin (<3 hits), search across registered KBs too, skipping any that is already in `read_paths`.
 
 For candidates, read frontmatter first (`limit: 20`), score by relevance, then full-read the top 3-5.
 

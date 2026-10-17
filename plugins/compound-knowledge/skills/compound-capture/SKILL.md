@@ -36,17 +36,19 @@ Capture solved problems and engineering principles as searchable YAML-frontmatte
 
 ### Path Resolution
 
-Resolve the solutions directory before any operation by running the resolver from the project root:
+Resolve the solutions directory before any operation by running the resolver on the project root:
 
 ```bash
-python ${CLAUDE_PLUGIN_ROOT}/scripts/resolve_paths.py
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/resolve_paths.py" "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 ```
 
 It prints JSON; captures go to its `write_path`, stored as `{write_path}`. Never read the config
 file yourself.
 
-If the resolver exits non-zero, `write_path` does not exist. Stop and tell the user:
-> "Solutions directory not found at `{write_path}`. Run `/compound-knowledge:setup` to initialize it."
+If the resolver exits 1, it still printed its JSON and `write_path` does not exist. Stop and tell
+the user what it printed to stderr (create the directory with `mkdir -p {write_path}`, or run
+`/compound-knowledge:setup` if there is no config yet). Any other failure prints no JSON: report
+the error and stop rather than guessing a path.
 
 ### Triviality Filter
 
