@@ -17,7 +17,10 @@ Mutation sees only what its operators model, so its verdict is a lead, not a rul
 own suite the matrix called 117 tests removable, and breaking the code by hand confirmed 26. Most
 of the rest were rejection tests: the happy-path tests already kill an inverted guard, while
 cosmic-ray has no operator that deletes the guard, which only the rejection tests would catch.
-Every verdict gets one more check by hand before a test goes.
+`thin.py` now adds its own operators for those breaks (a deleted guard or statement, a constant
+return, a dropped boolean term, a changed string, a nudged threshold, a dropped call), so fewer
+verdicts are wrong ([kill matrix](references/kill-matrix.md#thins-own-operators)), but mutation
+still models only what it models. Every verdict gets one more check by hand before a test goes.
 
 Jev's `duplicate-test`, which `compost:build` runs on each new test, reads tests instead of
 running them, so it also judges what mutation can't see: tests over files and docs, string
@@ -52,6 +55,7 @@ hand decides.
    uv run ${CLAUDE_PLUGIN_ROOT}/scripts/thin.py verdict "$T/matrix.json" > "$T/verdict.json"
    ```
 
+   `--operators stock` leaves out thin's own operators, to compare a run with stock cosmic-ray's.
    The matrix runs inside the project's environment, so its imports resolve as the tests' do. It
    first runs the covering tests unmutated and stops with exit 2 unless they all pass: under a
    broken setup, such as an interpreter without the project's packages, every run fails, every
@@ -70,7 +74,8 @@ hand decides.
    outside it keeps every kill, while removing two redundant tests chosen one at a time may not.
 
    `survived` lists mutants no test kills. They are a coverage gap, not this skill's job: hand them
-   to `compost:build` as its step 10 does.
+   to `compost:build` as its step 10 does. `survived_strings` lists the changed strings no test
+   noticed apart, since most are messages nobody reads; hand on the ones that are flags or keys.
 
 5. **Confirm each verdict by breaking the code by hand.** For every redundant or kills-nothing
    test, name the behavior only it seems to pin, then break exactly that in the code: delete the
@@ -79,10 +84,10 @@ hand decides.
    deselecting `test_main` also drops `test_main_again`; when a longer id starts with this one,
    run `-k "not <exact name>"` instead. If another test fails, the verdict holds. If none does, the test stays: say which break only it catches. Always confirm by
    hand, before touching the test, when it is:
-   - a negative or rejection case (`returns False`, `raises`): cosmic-ray never deletes a
-     statement or returns a constant;
-   - an assertion on a string, a message, or rendered output: cosmic-ray never mutates string
-     literals;
+   - a negative or rejection case (`returns False`, `raises`): thin's operators delete only `if`
+     guards and call statements, and return only the constants a function's annotation allows;
+   - an assertion on a string, a message, or rendered output: a string is changed whole, so a test
+     on one part of a message, or on text built from several, may pin what no mutant breaks;
    - a regression test for a bug found in history (`git log -S` on its name, an issue link): the
      bug it pins may be no mutant at all.
 

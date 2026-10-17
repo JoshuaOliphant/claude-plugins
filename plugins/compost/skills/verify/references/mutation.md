@@ -51,6 +51,12 @@ broke the run outright, such as an annotation that no longer evaluates, and no t
 `--paths` names source, never tests. `--no-cov` keeps a coverage gate in `addopts` from failing
 every run.
 
+It runs cosmic-ray's operators only. `--operators all` adds thin's own, the breaks cosmic-ray never
+makes: a deleted statement or guard, a constant return, a dropped boolean term, a changed string, a
+nudged float threshold, a dropped same-type call ([kill matrix](../../thin/references/kill-matrix.md#thins-own-operators)).
+A surviving string mutant is listed apart, in `survived_strings`, and doesn't fail the run, since it
+is most often a message nobody reads.
+
 ### JavaScript and TypeScript: StrykerJS
 
 Stryker has no diff mode, but `--mutate` takes line ranges (`file:start-end`, comma-separated),
