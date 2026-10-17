@@ -129,9 +129,14 @@ test('an issue that cannot be fetched fails the Spec axis instead of skipping it
 
 test('a given issue is the only spec source, whatever issue the scoping agent picked from the conversation', async () => {
   const relayed = { ...SCOPE, spec: { ...SCOPE.spec, source: '#53' } }
-  const graded = await run({ issue: 7 }, reviewers({ scope: relayed }))
+  const graded = await run({ issue: 7 }, reviewers({ scope: relayed, spec: { findings: [BLOCKER] } }))
   assert.equal(graded.result.specSource, '#7')
   assert.match(graded.prompts['Spec reviewer'], /Spec source: #7\n/)
+  for (const label of ['Spec reviewer', 'Spec skeptic 1.1']) {
+    const prompt = graded.prompts[label]
+    assert.ok(prompt.includes(SCOPE.spec.text), `${label} carries the spec text`)
+    assert.match(prompt, /Grade only against the spec text in this prompt\. Do not fetch any issue or spec file yourself/)
+  }
 
   const swapped = { ...SCOPE, spec: { found: true, source: '#53', number: 53, text: 'AC-1: Given issue 53' } }
   const refused = await run({ issue: 7 }, reviewers({ scope: swapped }))
