@@ -56,6 +56,7 @@ Run: the cosmic-ray steps in compost's mutation reference
 `scripts/` only; the other plugins, and compost's TypeScript hooks and workflows, get only
 `compost:build`'s walk by hand.
 
-Open: both survivors on 861127d are `session()`'s `concurrency=8` default in
-`scripts/jevtools/core.py`, mutated to 7 and 9. They change throughput, not behavior. Proposed
-exclusion, not yet agreed: tuning constants (concurrency limits, timeouts).
+Sorted: both survivors on 861127d are `session()`'s `concurrency=8` default in
+`scripts/jevtools/core.py`, mutated to 7 and 9: equivalent, since they change throughput only and
+no correctness test can tell 7, 8 and 9 apart. Tuning constants are sorted one at a time, not
+excluded as a pattern; where a limit has an edge that breaks behavior (0, negative), test the edge.
