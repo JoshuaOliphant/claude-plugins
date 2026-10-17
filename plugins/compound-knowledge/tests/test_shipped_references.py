@@ -81,5 +81,7 @@ def test_setup_writes_write_path_not_the_alias():
 
 def test_setup_can_edit_an_existing_config_in_place():
     """setup keeps a config's other keys when it changes write_path, which needs the Edit tool."""
-    front_matter = (PLUGIN_ROOT / "commands" / "setup.md").read_text(encoding="utf-8").split("---")[1]
+    front_matter = (
+        (PLUGIN_ROOT / "commands" / "setup.md").read_text(encoding="utf-8").split("---")[1]
+    )
     assert "Edit" in front_matter
