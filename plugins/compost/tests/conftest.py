@@ -47,10 +47,19 @@ def sweep(scored: list[tuple[float, bool]], thresholds: list[float]) -> None:
 TENTHS = [round(0.05 * step, 2) for step in range(1, 20)]
 
 
+def ts_default(path: Path) -> dict:
+    """A TypeScript module whose text after `export default` is plain JSON, shared by the TS and Python suites."""
+    return json.loads(path.read_text().split("\nexport default", 1)[1])
+
+
 def skill_drift_judgments() -> dict:
-    """The skill-drift mod's questions and thresholds; the text after `export default` is plain JSON."""
-    text = (PLUGIN_ROOT / "hooks" / "skill-drift-judgments.ts").read_text()
-    return json.loads(text.split("\nexport default", 1)[1])
+    """The skill-drift mod's questions and thresholds."""
+    return ts_default(PLUGIN_ROOT / "hooks" / "skill-drift-judgments.ts")
+
+
+def skill_drift_hit() -> dict:
+    """The hit tests/skill-drift.test.ts asserts the mod writes, as it lands in the log."""
+    return ts_default(PLUGIN_ROOT / "tests" / "skill-drift-hit.ts")
 
 
 @pytest.fixture(autouse=True)

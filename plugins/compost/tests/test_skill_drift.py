@@ -1,11 +1,12 @@
 # ABOUTME: Tests `skill_drift.py`: grouping skill-drift hits into cross-session patterns on active skills, routing each
-# ABOUTME: to its owner, splitting by skill version, and recording reviews. Runs against a throwaway ~/.claude and repo.
+# ABOUTME: to its owner, splitting by skill version, /drift's summary, and recording reviews, on a throwaway ~/.claude.
 import importlib
 import json
 import sys
 
 import pytest
 import skill_drift
+from conftest import skill_drift_hit
 
 
 def hit(**fields) -> dict:
@@ -71,6 +72,7 @@ def test_a_pattern_needs_the_same_kind_in_two_sessions(machine, hits, expected):
 def test_min_sessions_is_adjustable_and_a_missing_log_is_empty(machine):
     claude_dir, repo, log = machine
     assert skill_drift.patterns(claude_dir, repo) == {"patterns": [], "retired": {}, "unreadable": 0}
+    assert skill_drift.summary(claude_dir) == "skill-drift: no drift recorded yet"
     log(hit())
     assert [p["sessions"] for p in found(machine, min_sessions=1)["patterns"]] == [1]
 
@@ -83,6 +85,45 @@ def test_min_sessions_is_adjustable_and_a_missing_log_is_empty(machine):
 def test_hits_on_retired_skills_are_counted_and_left_out(machine, skill):
     machine[2](hit(skill=skill, session="s1"), hit(skill=skill, session="s2"))
     assert found(machine) == {"patterns": [], "retired": {skill: 2}, "unreadable": 0}
+    assert (
+        skill_drift.summary(machine[0]) == "skill-drift: no open drift\nskill-drift: 2 hits on retired skills left out"
+    )
+
+
+def test_summary_lists_the_open_hits_patterns_counts(machine):
+    """/drift's summary leaves out what `patterns` leaves out: reviewed hits, retired skills, earlier skill versions."""
+    claude_dir, _, log = machine
+    log(
+        hit(session="s0", skill_hash="v0", at=1),
+        hit(session="s1"),
+        hit(session="s2", at=1500, p=0.8, prompt="build issue #13"),
+        hit(session="s3", at=2000, prompt="build issue #14"),
+        hit(skill="grilling", kind="missing_guidance", session="s1", p=0.61, prompt="grill me on the plan"),
+        hit(skill="stick-shift:build", session="s4"),
+    )
+    skill_drift.mark(claude_dir, ["s3:t1:compost:build:deviated"])
+    assert skill_drift.summary(claude_dir) == (
+        "compost:build  deviated×2 sessions (pattern)\n"
+        '  latest: deviated p=0.80 on "build issue #13"\n'
+        "grilling  missing_guidance×1 session\n"
+        '  latest: missing_guidance p=0.61 on "grill me on the plan"\n'
+        "skill-drift: 1 hits on retired skills left out"
+    )
+    assert [(p["skill"], p["sessions"]) for p in found(machine, min_sessions=1)["patterns"]] == [
+        ("compost:build", 2),
+        ("grilling", 1),
+    ]
+
+
+def test_a_hit_the_mod_writes_reads_back_whole(machine):
+    """The contract between hooks/skill-drift.ts, which writes hits, and read_log: tests/skill-drift.test.ts asserts the
+    mod writes exactly this hit, so a field either side adds or renames fails one of the two suites."""
+    claude_dir, _, log = machine
+    written = skill_drift_hit()
+    log(written)
+    read = skill_drift.read_log(claude_dir)
+    assert (read.hits, read.unreadable) == ([skill_drift.Hit(**written)], 0)
+    assert read.hits[0].evidence.startswith("USER: run the verify gates")
 
 
 @pytest.mark.parametrize(
@@ -147,6 +188,10 @@ def test_unreadable_lines_are_counted_not_dropped_silently(machine):
         handle.write("not json\n\n" + json.dumps({"skill": "x"}) + "\n")
     report = found(machine)
     assert (len(report["patterns"]), report["unreadable"]) == (1, 2)
+    assert skill_drift.summary(claude_dir).splitlines()[::2] == [
+        "compost:build  deviated×2 sessions (pattern)",
+        "skill-drift: 2 unreadable log lines left out",
+    ]
 
 
 def test_cli_prints_patterns_and_marks_reviews(machine, capsys, monkeypatch):
@@ -155,6 +200,8 @@ def test_cli_prints_patterns_and_marks_reviews(machine, capsys, monkeypatch):
     monkeypatch.chdir(repo)
     assert skill_drift.main(["--claude-dir", str(claude_dir), "patterns"]) == 0
     assert json.loads(capsys.readouterr().out)["patterns"][0]["file"] == "plugins/compost/skills/build/SKILL.md"
+    assert skill_drift.main(["--claude-dir", str(claude_dir), "summary"]) == 0
+    assert capsys.readouterr().out.startswith("compost:build  deviated×2 sessions (pattern)\n")
     assert skill_drift.main(["--claude-dir", str(claude_dir), "mark", "s1:t1:compost:build:deviated"]) == 0
     assert capsys.readouterr().out == "1 hits reviewed in all\n"
 
