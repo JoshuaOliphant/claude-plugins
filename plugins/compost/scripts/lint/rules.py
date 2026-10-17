@@ -39,6 +39,12 @@ class Rule:
             return 0.0, answer["choice"]
         return sum(flagged.values()), max(flagged, key=flagged.get)
 
+    def applies_to(self, unit: Unit) -> bool:
+        return unit.kind == self.kind and self.applies(unit)
+
+    def flags(self, probability: float, override: float | None = None) -> bool:
+        return probability >= (self.threshold if override is None else override)
+
     def message_for(self, label: str) -> str:
         return self.actions.get(label, self.message)
 

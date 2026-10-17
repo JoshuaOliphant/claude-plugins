@@ -52,7 +52,7 @@ def unit_for_case(index: int, case: dict) -> Unit:
     else:
         path = "tests/test_example.py" if rule.id == "test-smell" else "app/example.py"
         units = extract_source_units(path, case["source"])
-    unit = next((u for u in units if u.kind == rule.kind and rule.applies(u)), None)
+    unit = next((u for u in units if rule.applies_to(u)), None)
     if unit is None:
         raise ValueError(f"case {index} ({rule.id}) contains no {rule.kind} unit the rule applies to")
     return Unit(unit.kind, f"case{index}/{unit.path}", unit.line, unit.name, unit.state)
@@ -113,7 +113,7 @@ def report(scored: list[Scored]) -> None:
             precision = true_positives / len(flagged) if flagged else float("nan")
             recall = true_positives / positives if positives else float("nan")
             print(f"  threshold {threshold}: flagged {len(flagged):3}  precision {precision:.2f}  recall {recall:.2f}")
-        misses = [row for row in rows if (row.probability >= 0.5) != row.should_flag]
+        misses = [row for row in rows if RULES_BY_ID[rule_id].flags(row.probability) != row.should_flag]
         for row in misses[:12]:
             kind = "missed" if row.should_flag else "false alarm"
             print(f"    {kind:11} p={row.probability:.2f} [{row.label}] {row.source}")

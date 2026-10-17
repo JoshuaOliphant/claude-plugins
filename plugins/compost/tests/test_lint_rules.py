@@ -47,9 +47,18 @@ def test_test_smell_applies_to_test_functions_including_methods():
     assert not TEST_SMELL.applies(_unit(name="total"))
 
 
-def test_weakening_applies_to_test_paths_only():
-    assert TEST_WEAKENING.applies(_unit(kind="hunk", path="tests/test_orders.py"))
-    assert not TEST_WEAKENING.applies(_unit(kind="hunk", path="pkg/orders.py"))
+def test_weakening_applies_to_test_path_hunks_only():
+    assert TEST_WEAKENING.applies_to(_unit(kind="hunk", path="tests/test_orders.py"))
+    assert not TEST_WEAKENING.applies_to(_unit(kind="hunk", path="pkg/orders.py"))
+    assert not TEST_WEAKENING.applies_to(_unit(kind="function", path="tests/test_orders.py"))
+
+
+def test_a_rule_flags_at_its_own_threshold_unless_overridden():
+    assert SILENT_FAILURE.threshold == 0.7
+    assert SILENT_FAILURE.flags(0.7)
+    assert not SILENT_FAILURE.flags(0.69)
+    assert SILENT_FAILURE.flags(0.0, override=0.0)
+    assert not SILENT_FAILURE.flags(0.95, override=0.96)
 
 
 def test_comment_labels_carry_their_own_action():
