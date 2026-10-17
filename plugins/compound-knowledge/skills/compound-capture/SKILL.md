@@ -155,6 +155,8 @@ Grep(pattern="symptoms:.*{key_symptom}", path="{write_path}", output_mode="files
 Grep(pattern="title:.*{similar_term}", path="{write_path}", output_mode="files_with_matches")
 ```
 
+Ignore hits under `_archive/`: those lessons were retired, so never update or link to them.
+
 - **Different root cause** → Create new file, add `related_solutions` cross-reference
 - **Same issue, new context** → Update existing file
 - **Exact duplicate** → Skip, inform user: "This is already documented in [file]"

@@ -68,5 +68,6 @@ After applying:
 ## Verify
 
 For each merge and replace, run the same frontmatter `Grep` a retrieval would (`symptoms:.*<error>`)
-over `{write_path}`: it should now return the surviving file and nothing under `_archive/`. Report
-the counts before and after (files, merges, archives) so the user can see what the pass did.
+over `{write_path}` and drop the `_archive/` hits, as retrieval does: what remains should be the
+surviving file alone. Report the counts before and after (files, merges, archives) so the user
+can see what the pass did.

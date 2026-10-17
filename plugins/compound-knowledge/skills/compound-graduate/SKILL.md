@@ -52,7 +52,7 @@ It rewrites what retrieval returns, so it also proposes before applying.
      directory in `read_paths`. Read the YAML `confidence:` field — do NOT grep for inline
      `[solid]` markers; wiki pages encode confidence in frontmatter, not the body.
    - High-severity solution files (`severity: critical` or `severity: high`) and any
-     `critical-patterns.md` in `read_paths`.
+     `critical-patterns.md` in `read_paths`. Skip anything under `_archive/`: garden retired it.
    - Use `Grep` for keywords; when `vault_root` is set, use the `vault-recommender` MCP for
      topic clusters keyword search would miss. See `references/promote-workflow.md` for the
      two confidence conventions and full candidate heuristics.
@@ -98,8 +98,8 @@ and the verification checklist.
    or drop `related_solutions` links (they stay bidirectional), repoint `critical-patterns.md`
    citations, and update the registry count.
 
-6. **Verify** that a retrieval-style frontmatter `Grep` for each merged lesson's symptoms now
-   lands on the survivor alone, and report the counts before and after.
+6. **Verify** that a retrieval-style frontmatter `Grep` for each merged lesson's symptoms, with
+   `_archive/` hits dropped as retrieval drops them, lands on the survivor alone, and report the counts before and after.
 
 See `references/garden-workflow.md` for the verdict table, candidate heuristics, and the
 consistency rules.

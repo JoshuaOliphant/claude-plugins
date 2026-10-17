@@ -42,7 +42,7 @@ Updated automatically when solutions are captured or `/compound-knowledge:setup`
 2. **Append-only for new entries**: New knowledge bases are appended at the end of the "Registered Knowledge Bases" section.
 3. **Path is the unique key**: Two entries with different project names but the same path are considered duplicates. Use the path to match.
 4. **Component list**: Extract unique values by running `Grep(pattern="^component:", path="{write_path}", output_mode="content")` and deduplicating. Limit to the top 10 most frequent components.
-5. **Solution count**: Count via `Glob(pattern="**/*.md", path="{write_path}")` and subtract 1 for `critical-patterns.md` if it exists and every file under `_archive/`.
+5. **Solution count**: Count via `Glob(pattern="**/*.md", path="{write_path}")`, leave out every path under `_archive/`, then subtract 1 for `critical-patterns.md` if it exists.
 
 ## When to Update
 

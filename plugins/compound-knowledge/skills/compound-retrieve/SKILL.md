@@ -34,6 +34,8 @@ It prints JSON. Search **every** directory in `read_paths` (the solutions direct
 first entry, `{write_path}`); use `vault_root` (if set) for semantic search. Never read the config
 file yourself. Skip any `read_paths` entry that does not exist.
 
+Anything under an `_archive/` directory is out of every search here, grep and semantic alike: `compound-graduate`'s garden face moved it there because it no longer applies. Drop such hits before scoring.
+
 If the resolver exits 1, the solutions directory (`write_path`) does not exist: say so, pass on
 the fix it printed to stderr, then search the remaining entries. Any other failure prints no JSON:
 report the error rather than guessing paths.
@@ -56,8 +58,6 @@ Grep(pattern="symptoms:.*{error}", path="{read_path}", output_mode="files_with_m
 ```
 
 Read the cross-project registry at `~/.claude/compound-knowledge-registry.md` to discover other knowledge bases. When local results are thin (<3 hits), search across registered KBs too, skipping any that is already in `read_paths`.
-
-Drop any hit under an `_archive/` directory: `compound-graduate`'s garden face moved it there because it no longer applies.
 
 For candidates, read frontmatter first (`limit: 20`), score by relevance, then full-read the top 3-5.
 
