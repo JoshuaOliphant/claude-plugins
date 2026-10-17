@@ -21,8 +21,10 @@ claude-plugins/
 │   ├── compost/                    # One SDLC workflow composted from several skill collections
 │   └── superfan/                   # Scheduled per-component telemetry watchers (headless Claude + launchd)
 ├── scripts/
+│   ├── cloud-setup.sh                 # Cloud environment setup script: installs compost + typesafe plugins
 │   ├── check_all.py                   # One-command repo health check (versions + sync + tests + lint + format)
 │   ├── check_marketplace_versions.py  # Asserts marketplace.json ⇄ plugin.json (versions + registration)
+│   ├── check_version_bumps.py         # CI on PRs into main: every changed plugin has a bumped version
 │   ├── sync_shared.py                 # Asserts/regenerates per-plugin copies of shared artifacts
 │   └── shared/                        # Canonical sources for artifacts duplicated across plugins
 ├── knowledge/                      # Captured solutions (compound-knowledge output for this repo)
@@ -129,6 +131,13 @@ When changing a plugin:
    check is bidirectional: it also fails if a directory under `plugins/` has no
    marketplace entry, or if a non-plugin directory (no `.claude-plugin/plugin.json`)
    is sitting under `plugins/`.
+
+On an integration branch that merges several issues (a `compost:implement` run), lanes leave
+versions alone, since per-lane bumps conflict on every merge. One commit on that branch bumps
+every plugin the branch changed before it merges to `main`. A lane commit without a bump is not a
+finding; a branch reaching `main` with a changed plugin still at its old version is. CI enforces
+this on pull requests into `main` with `python scripts/check_version_bumps.py` (base
+`origin/main`; a plugin's `tests/` doesn't count as shipped content).
 
 ## Testing and Development
 

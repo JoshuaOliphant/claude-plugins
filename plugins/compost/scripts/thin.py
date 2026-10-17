@@ -143,6 +143,7 @@ def run_child(pytest_args: list[str], tests: list[str], report: Path, module: st
     """Run pytest in this forked process, with the mutant served from memory, then exit without returning."""
     import pytest
 
+    os.setsid()  # its own process group, so the parent can stop whatever the tests start along with it
     quiet = os.open(os.devnull, os.O_RDWR)
     for fd in (0, 1, 2):  # an open stdin lets a mutant that reads it block until the timeout
         os.dup2(quiet, fd)
@@ -160,11 +161,21 @@ def run_child(pytest_args: list[str], tests: list[str], report: Path, module: st
         os._exit(code)
 
 
-def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers: int) -> list[Report | None]:
+def stop_group(pid: int) -> None:
+    """Kill what is left of a child's process group: a mutant can leave a test's own subprocesses running."""
+    try:
+        os.killpg(pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+
+
+def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers: int,
+              progress=None) -> list[Report | None]:  # fmt: skip
     """Run each (module, source, tests) job in a child forked from this already-warm process, `workers` at a time.
 
     Forking skips the interpreter start and pytest import that dominate a short test run, and serving the mutant
-    from memory leaves the tree untouched, so the children can run side by side.
+    from memory leaves the tree untouched, so the children can run side by side. `progress(done, total)` is
+    called as each job finishes.
     """
     import pytest  # noqa: F401 - imported before forking so that no child pays for it
 
@@ -183,22 +194,25 @@ def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers
                 done, _ = os.waitpid(pid, os.WNOHANG)
                 if not done and time.monotonic() < deadline:
                     continue
+                stop_group(pid)
                 if not done:
-                    os.kill(pid, signal.SIGKILL)
                     os.waitpid(pid, 0)
                 results[index] = read_report(report, tests) if done else None
                 del running[pid]
+                if progress:
+                    progress(len(results), len(jobs))
             time.sleep(0.005)
     return [results[index] for index in range(len(jobs))]
 
 
-def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], timeout: float, workers: int,
-                log=print) -> dict:  # fmt: skip
+def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], timeout: float | None,
+                workers: int, log=print) -> dict:  # fmt: skip
     """Run each mutant on a line the selected tests cover against every test covering that line; record each killer.
 
     Only the selected tests are mutated over every line they run, so only they can be judged from the result. The
     tests must pass unmutated first: under a broken setup every run fails, every test kills every mutant, and the
-    verdict would call all but one of them redundant.
+    verdict would call all but one of them redundant. With no `timeout`, a mutant's run gets ten times the
+    baseline's wall time, at least 30 seconds: a mutant that hangs costs that, not a fixed five minutes.
     """
     lines = covered_lines(contexts)
     selected = set(only) if only is not None else set(lines)
@@ -210,7 +224,9 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
     everyone = sorted({test for pair in wanted for test in on_line[pair]})
     if not everyone:  # with no node ids, pytest would run the whole suite
         return {"selected": sorted(selected & set(lines)), "mutants": []}
-    [baseline] = fork_runs([(None, None, everyone)], pytest_args, timeout, 1)
+    started = time.monotonic()
+    [baseline] = fork_runs([(None, None, everyone)], pytest_args, timeout or 3600, 1)
+    timeout = timeout or max(30.0, 10 * (time.monotonic() - started))
     if baseline is None:
         raise BaselineError("the unmutated tests left no report: check the interpreter has pytest and the tests import")
     if baseline.strays:
@@ -234,7 +250,12 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
             jobs.append((module, mutated, covering))
             made.append({k: v for k, v in mutant.items() if k != "args"} | {"covering": covering})
     rows = []
-    for row, report in zip(made, fork_runs(jobs, pytest_args, timeout, workers)):
+
+    def progress(done: int, total: int) -> None:
+        if done % 100 == 0 or done == total:
+            log(f"{done}/{total} mutants run")
+
+    for row, report in zip(made, fork_runs(jobs, pytest_args, timeout, workers, progress)):
         crashed = report is None or bool(report.strays)  # a mutant that breaks collection kills every covering test
         row["killers"] = row["covering"] if crashed else sorted(report.failed)
         if crashed:
@@ -292,7 +313,7 @@ def main(argv: list[str] | None = None) -> int:
     chosen.add_argument("--only", help="a candidates JSON; mutate only lines its candidates cover")
     chosen.add_argument("--tests", nargs="+", help="node ids; mutate only lines these tests cover")
     run.add_argument("--pytest-args", default="-q -p no:cacheprovider", help="add --no-cov under a coverage gate")
-    run.add_argument("--timeout", type=float, default=300.0, help="seconds per mutant's test run")
+    run.add_argument("--timeout", type=float, help="seconds per mutant's test run; default 10x the baseline's")
     run.add_argument("--workers", type=int, default=os.cpu_count(), help="mutants run side by side")
     judge = sub.add_parser("verdict", help="keep, redundant, or kills-nothing for every test in a matrix")
     judge.add_argument("matrix")

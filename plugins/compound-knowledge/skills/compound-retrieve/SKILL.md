@@ -2,7 +2,7 @@
 name: compound-retrieve
 description: >
   MUST check before starting any debugging session, investigating unfamiliar code, or planning a
-  feature that might have been attempted before. Searches past solutions in knowledge/solutions/ to
+  feature that might have been attempted before. Searches past solutions in every configured read path to
   prevent repeated mistakes. Designed to be fast (<30s). Trigger proactively: before ANY bug
   investigation, before implementing patterns that feel like they should already exist, or when the
   user says "this looks familiar", "have we seen this", "check knowledge". Not for capturing — use
@@ -24,13 +24,19 @@ You are not a search engine. You don't just return results — you interpret the
 
 ### Where your knowledge lives
 
-Your solutions directory is resolved by first match:
+Run the resolver on the project root before searching:
 
-1. **Project-level override**: `{project_root}/.claude/compound-knowledge.local.md` → `solutions_path` value
-2. **User-level override**: `~/.claude/compound-knowledge.local.md` → `solutions_path` value
-3. **Default**: `{project_root}/knowledge/solutions/`
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/resolve_paths.py" "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+```
 
-If the directory doesn't exist, say so and suggest `/compound-knowledge:setup`.
+It prints JSON. Search **every** directory in `read_paths` (the solutions directory is always the
+first entry, `{write_path}`); use `vault_root` (if set) for semantic search. Never read the config
+file yourself. Skip any `read_paths` entry that does not exist.
+
+If the resolver exits 1, the solutions directory (`write_path`) does not exist: say so, pass on
+the fix it printed to stderr, then search the remaining entries. Any other failure prints no JSON:
+report the error rather than guessing paths.
 
 You also know about a **cross-project registry** at `~/.claude/compound-knowledge-registry.md` that maps other projects' knowledge bases. When local results are thin (<3 hits), you search across projects.
 
@@ -50,16 +56,16 @@ Apply **retrieval_depth** and **general** feedback to how many results you surfa
 
 Search solutions using parallel Grep calls on YAML frontmatter fields. This is your primary retrieval method — fast and precise for structured metadata.
 
-Extract keywords from the task (project names, technology terms, error strings, component types), then run **4+ parallel Grep calls**:
+Extract keywords from the task (project names, technology terms, error strings, component types), then run **4+ parallel Grep calls** for each `{read_path}` in `read_paths`:
 
 ```
-Grep(pattern="project:.*{name}", path="{solutions_path}", output_mode="files_with_matches")
-Grep(pattern="component:.*{tech}", path="{solutions_path}", output_mode="files_with_matches")
-Grep(pattern="tags:.*{keyword}", path="{solutions_path}", output_mode="files_with_matches")
-Grep(pattern="symptoms:.*{error}", path="{solutions_path}", output_mode="files_with_matches")
+Grep(pattern="project:.*{name}", path="{read_path}", output_mode="files_with_matches")
+Grep(pattern="component:.*{tech}", path="{read_path}", output_mode="files_with_matches")
+Grep(pattern="tags:.*{keyword}", path="{read_path}", output_mode="files_with_matches")
+Grep(pattern="symptoms:.*{error}", path="{read_path}", output_mode="files_with_matches")
 ```
 
-Read the cross-project registry at `~/.claude/compound-knowledge-registry.md` to discover other knowledge bases. When local results are thin (<3 hits), search across registered KBs too.
+Read the cross-project registry at `~/.claude/compound-knowledge-registry.md` to discover other knowledge bases. When local results are thin (<3 hits), search across registered KBs too, skipping any that is already in `read_paths`.
 
 For candidates, read frontmatter first (`limit: 20`), score by relevance, then full-read the top 3-5.
 
@@ -73,7 +79,7 @@ Use vault-recommender for **topic-based queries** — when the user describes a 
 vault-recommender --vault {vault_root} recommend --topic "{query}" --top-k 5 --json
 ```
 
-Where `{vault_root}` is the parent directory of the solutions path (e.g., if solutions are at `~/second_brain/knowledge/solutions/`, the vault is `~/second_brain/`).
+Where `{vault_root}` is the resolver's `vault_root`. When it is null, no vault is configured: use grep only.
 
 **When to use semantic search:**
 - The grep-based researcher returns <3 results
@@ -90,7 +96,7 @@ If `vault-recommender` isn't installed or fails, fall back to grep-only results 
 
 ### Critical patterns
 
-You MUST always read `{solutions_path}/critical-patterns.md` if it exists. This file contains high-severity warnings that apply across all tasks. Check it every time, regardless of what grep finds. If it doesn't exist, skip silently.
+You MUST always read `critical-patterns.md` in each `read_paths` entry if it exists. This file contains high-severity warnings that apply across all tasks. Check it every time, regardless of what grep finds. If it doesn't exist, skip silently.
 
 **Report what you checked even when nothing matches.** Say "Checked critical-patterns.md — no patterns apply to this task" so the user knows the bases were covered.
 

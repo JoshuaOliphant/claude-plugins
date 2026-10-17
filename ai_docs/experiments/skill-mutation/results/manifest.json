@@ -1,0 +1,10 @@
+{
+ "skill_sha": "4fe7c2302bdfce3be3516c07d3dd6aa15af81530",
+ "evals_sha": "7081de479d4eeeaf7e792a21f1cd66f3c05175a6",
+ "model": "haiku",
+ "judge_model": "sonnet",
+ "agents": [
+  "knowledge-researcher"
+ ],
+ "home_seed": ""
+}

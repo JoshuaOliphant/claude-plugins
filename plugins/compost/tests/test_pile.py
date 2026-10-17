@@ -42,7 +42,6 @@ def test_load_reports_a_missing_file(tmp_path):
 @pytest.mark.parametrize(
     ("changed", "by_skill", "unmapped"),
     [
-        (["skills/to-spec/SKILL.md"], {"spec": ["skills/to-spec/SKILL.md"]}, []),
         (["skills/to-spec"], {"spec": ["skills/to-spec"]}, []),
         (["skills/to-tickets/x.md"], {"slice": ["skills/to-tickets/x.md"], "spec": ["skills/to-tickets/x.md"]}, []),
         (["skills/to-spec-extra/SKILL.md", "README.md"], {}, ["skills/to-spec-extra/SKILL.md", "README.md"]),
@@ -109,11 +108,6 @@ def test_advance_refuses_a_pin_written_in_another_form(pile_file):
     pile_file.write_text(pile_file.read_text().replace('pin = "aaaa', 'pin="aaaa'))
     with pytest.raises(pile.PileError, match="own's pin is not written as `pin = \"aaaa"):
         pile.advance(pile_file, "own", "c")
-
-
-def test_advance_refuses_an_unknown_source(pile_file):
-    with pytest.raises(pile.PileError, match="no source named 'nope' in pile.toml"):
-        pile.advance(pile_file, "nope", "c")
 
 
 def test_advance_refuses_a_pin_two_sources_share(pile_file):

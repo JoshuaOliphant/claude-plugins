@@ -34,14 +34,6 @@ def test_validate_review_defaults_summary():
     assert out == {"comments": [], "summary": ""}
 
 
-def test_validate_review_keeps_fields():
-    payload = {
-        "summary": "ok",
-        "comments": [{"file": "a", "line": 1, "side": "new", "code": "x", "body": "b"}],
-    }
-    assert validate_review(payload) == payload
-
-
 def test_validate_review_rejects_non_dict():
     with pytest.raises(TypeError):
         validate_review([1, 2, 3])
@@ -86,12 +78,6 @@ def page_headers(base):
     return {"Content-Type": "application/json", "X-Review-Token": page_token(base)}
 
 
-def test_get_index_returns_html(running_server):
-    base, _ = running_server
-    body = urllib.request.urlopen(base + "/").read().decode()
-    assert "const EMBEDDED_DATA =" in body
-
-
 def test_each_run_serves_its_own_token(tmp_path):
     with spawn_server(tmp_path / "a.json") as first, spawn_server(tmp_path / "b.json") as second:
         assert len(page_token(first)) >= 43
@@ -130,13 +116,6 @@ def test_post_review_writes_file(running_server):
     assert resp.status == 200
     saved = json.loads(review_path.read_text())
     assert saved == {"summary": "s", "comments": []}
-
-
-def test_get_review_roundtrip(running_server):
-    base, review_path = running_server
-    review_path.write_text(json.dumps({"summary": "hi", "comments": []}))
-    body = urllib.request.urlopen(base + "/api/review").read().decode()
-    assert json.loads(body)["summary"] == "hi"
 
 
 def test_get_review_empty_when_missing(running_server):

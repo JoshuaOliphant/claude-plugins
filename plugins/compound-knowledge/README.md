@@ -59,19 +59,19 @@ To point all projects at a shared knowledge base (e.g., a second brain), create 
 ```markdown
 # ~/.claude/compound-knowledge.local.md
 # Compound Knowledge Settings
-solutions_path: ~/path/to/your/knowledge/solutions/
+write_path: ~/path/to/your/knowledge/solutions/
 ```
 
 **Project-level** (overrides user-level for one project):
 ```markdown
 # {project}/.claude/compound-knowledge.local.md
 # Compound Knowledge Settings
-solutions_path: /absolute/path/to/knowledge/solutions/
+write_path: /absolute/path/to/knowledge/solutions/
 ```
 
-**Resolution order**: project-level → user-level → default.
+The skills and agent get their paths from `scripts/resolve_paths.py`, which prints `write_path` (where captures go), `read_paths` (every directory searched) and `vault_root` as JSON, and exits 1 when `write_path` does not exist yet.
 
-**Other keys**: `write_path` (where captures go), `read_paths` (comma-separated extra directories to search), and `vault_root` (the whole vault for wide reads) are also accepted. `solutions_path` is a back-compat alias for `write_path`; if both are set, `write_path` wins.
+**Other keys**: `read_paths` (comma-separated extra directories to search), and `vault_root` (the whole vault for wide reads) are also accepted. `solutions_path` is a back-compat alias for `write_path`. Semantic search (vault-recommender) runs only when `vault_root` is set.
 
 ### Component values
 
@@ -123,7 +123,7 @@ Problem solved → Gather context → Check for duplicates → Validate YAML →
 2. **Extract** title, project, component, symptoms, severity from conversation
 3. **Deduplicate** — grep existing solutions for similar symptoms/titles
 4. **Validate** YAML fields against schema enums
-5. **Write** solution file to `{solutions_path}/{category}/{filename}.md`
+5. **Write** solution file to `{write_path}/{category}/{filename}.md`
 6. **Cross-reference** related solutions
 7. **Register** — update `~/.claude/compound-knowledge-registry.md` with current counts and components
 
@@ -133,7 +133,7 @@ Problem solved → Gather context → Check for duplicates → Validate YAML →
 New task → Read registry → Extract keywords → Parallel grep → Score candidates → Cross-project search → Return top matches
 ```
 
-1. **Resolve** solutions path from config
+1. **Resolve** paths with `scripts/resolve_paths.py`; search every `read_paths` entry
 2. **Search** directly, or via the `knowledge-researcher` agent (haiku) when a caller dispatches it
 3. **Read registry** to identify all knowledge bases on the machine
 4. **Grep** frontmatter fields in parallel (project, component, symptoms, tags)

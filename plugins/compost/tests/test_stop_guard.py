@@ -143,3 +143,107 @@ def test_any_failure_allows_the_stop_silently_and_logs_one_line(transcript, caps
     assert capsys.readouterr().out == ""
     [line] = log.read_text().splitlines()
     assert logged in line
+
+
+LOADS_FINISH = {
+    "type": "assistant",
+    "message": {"id": "f0", "content": [{"type": "tool_use", "name": "Skill", "input": {"skill": "compost:finish"}}]},
+}
+SLASH_FINISH = {
+    "type": "user",
+    "message": {
+        "content": "<command-message>compost:finish</command-message>\n<command-name>/compost:finish</command-name>"
+    },
+}
+NOTIFIED = {
+    "type": "user",
+    "message": {"content": "<task-notification>\n<status>completed</status>\n</task-notification>"},
+}
+WAITS = said("m9", "PR #52 merged. On naming: I'd call it Ledger. If you agree, I'd rename it.")
+
+
+def user(content, **extra) -> dict:
+    return {"type": "user", "message": {"role": "user", "content": content}, **extra}
+
+
+@pytest.mark.parametrize(
+    "entries",
+    [
+        [LOADS_IMPLEMENT, said("m1", "PR #52 is up."), LOADS_FINISH, WAITS],
+        [SLASH_IMPLEMENT, said("m1", "PR #52 is up."), SLASH_FINISH, WAITS],
+        [LOADS_IMPLEMENT, LOADS_FINISH, said("m2", "Discarded."), NOTIFIED, WAITS],
+    ],
+    ids=["finish loaded after implement", "finish typed after implement", "finish then a notification"],
+)
+def test_finish_ends_the_run_so_a_stop_after_it_is_never_judged(transcript, entries):
+    client = StubClient(lambda state, questions: {})
+    assert stop_guard.decide({"transcript_path": transcript(*entries)}, lambda: client) is None
+    assert client.calls == []
+
+
+def test_an_implement_load_after_finish_starts_a_new_run(transcript):
+    path = transcript(LOADS_IMPLEMENT, LOADS_FINISH, SLASH_IMPLEMENT, said("m1", "Which library do you prefer?"))
+    assert stop_guard.decide({"transcript_path": path}, judging(0.9, 0.1)) == {
+        "decision": "block",
+        "reason": stop_guard.REASON,
+    }
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        user("Should the ledger live under scripts/?"),
+        user([{"type": "text", "text": "Should the ledger live under scripts/?"}]),
+        user("<system-reminder>The plan changed.</system-reminder>\nShould the ledger live under scripts/?"),
+        user(
+            "<command-message>compost:wait-what</command-message>\n<command-name>/compost:wait-what</command-name>\n"
+            "<command-args>what's a ledger?</command-args>"
+        ),
+    ],
+    ids=["plain string", "text block", "typed text beside an injected reminder", "slash command typed mid-run"],
+)
+def test_a_stop_answering_a_message_typed_during_the_run_is_allowed(transcript, question):
+    client = StubClient(lambda state, questions: {})
+    path = transcript(LOADS_IMPLEMENT, said("m1", "Working on #78."), question, WAITS)
+    assert stop_guard.decide({"transcript_path": path}, lambda: client) is None
+    assert client.calls == []
+
+
+@pytest.mark.parametrize(
+    "injected",
+    [
+        user([{"type": "tool_result", "tool_use_id": "t1", "content": "Should we?"}]),
+        user("Base directory for this skill: compost/skills/implement", isMeta=True),
+        user("<system-reminder>Should we?</system-reminder>"),
+        user("<task-notification>\n<status>completed</status>\n</task-notification>"),
+        user("Should the ledger live under scripts/?", isSidechain=True),
+        user("This session is being continued from a previous conversation.", isCompactSummary=True),
+        user("Shown in the transcript only.", isVisibleInTranscriptOnly=True),
+        {**LOADS_FINISH, "isSidechain": True},
+        user('<teammate-message teammate_id="w1">Should we?</teammate-message>'),
+    ],
+    ids=[
+        "tool result",
+        "meta entry",
+        "system reminder",
+        "task notification",
+        "sidechain prompt",
+        "compaction summary",
+        "transcript-only entry",
+        "sidechain finish load",
+        "teammate message",
+    ],
+)
+def test_user_entries_claude_code_writes_do_not_count_as_typed(transcript, injected):
+    path = transcript(LOADS_IMPLEMENT, injected, said("m1", "Which library do you prefer?"))
+    assert stop_guard.decide({"transcript_path": path}, judging(0.9, 0.1))["decision"] == "block"
+
+
+def test_a_notification_after_the_answered_message_puts_the_run_back_on_its_own(transcript):
+    path = transcript(LOADS_IMPLEMENT, user("Go on."), said("m1", "On it."), NOTIFIED, WAITS)
+    assert stop_guard.decide({"transcript_path": path}, judging(0.9, 0.1))["decision"] == "block"
+
+
+def test_a_message_typed_before_the_run_started_does_not_attend_it(transcript):
+    path = transcript(user("Implement #78 please."), SLASH_IMPLEMENT, said("m1", "Which library do you prefer?"))
+    assert stop_guard.decide({"transcript_path": path}, judging(0.9, 0.1))["decision"] == "block"

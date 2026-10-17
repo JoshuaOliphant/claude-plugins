@@ -44,3 +44,44 @@ def test_no_dangling_symlinks():
         if path.is_symlink() and not path.exists()
     ]
     assert dangling == []
+
+
+@pytest.mark.parametrize(
+    "doc",
+    [doc for doc in INSTRUCTION_DOCS if doc != PLUGIN_ROOT / "commands" / "setup.md"],
+    ids=lambda p: p.relative_to(PLUGIN_ROOT).as_posix(),
+)
+def test_only_setup_names_the_config_file(doc):
+    """Readers take paths from scripts/resolve_paths.py; only setup, which writes the config, names it."""
+    text = doc.read_text(encoding="utf-8")
+    assert "compound-knowledge.local.md" not in text
+    assert "first match" not in text.lower()
+
+
+@pytest.mark.parametrize(
+    "doc",
+    [
+        "skills/compound-capture/SKILL.md",
+        "skills/compound-retrieve/SKILL.md",
+        "agents/knowledge-researcher.md",
+        "commands/setup.md",
+    ],
+)
+def test_path_readers_delegate_to_the_resolver(doc):
+    assert "scripts/resolve_paths.py" in (PLUGIN_ROOT / doc).read_text(encoding="utf-8")
+
+
+def test_setup_writes_write_path_not_the_alias():
+    """setup writes the key the resolver prefers, so its config can't be shadowed by its own alias."""
+    text = (PLUGIN_ROOT / "commands" / "setup.md").read_text(encoding="utf-8")
+    config_keys = re.findall(r"^\s*(\w+)\s*:", text, re.MULTILINE)
+    assert "write_path" in config_keys
+    assert "solutions_path" not in config_keys
+
+
+def test_setup_can_edit_an_existing_config_in_place():
+    """setup keeps a config's other keys when it changes write_path, which needs the Edit tool."""
+    front_matter = (
+        (PLUGIN_ROOT / "commands" / "setup.md").read_text(encoding="utf-8").split("---")[1]
+    )
+    assert "Edit" in front_matter

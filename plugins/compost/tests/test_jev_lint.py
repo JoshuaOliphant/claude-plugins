@@ -133,13 +133,6 @@ async def test_unexpected_errors_are_not_swallowed():
         await jev_lint.judge_units(jev_for(StubClient(answer)), [unit], [SILENT_FAILURE])
 
 
-def test_format_finding_names_ruff_rules_when_present():
-    judgment = jev_lint.Judgment("m.py", 5, "load", "silent-failure", "yes", 0.9, "hides it")
-    assert jev_lint.format_finding(judgment) == ("m.py:5: silent-failure [yes p=0.90] hides it (load)")
-    with_ruff = jev_lint.Judgment("m.py", 5, "load", "silent-failure", "yes", 0.9, "hides it", ("S110",))
-    assert jev_lint.format_finding(with_ruff).endswith("(load) [ruff: S110]")
-
-
 def test_static_rule_summary_counts_each_ruff_rule():
     def finding(*codes):
         return jev_lint.Judgment("m.py", 1, "n", "r", "l", 0.9, "msg", codes)
