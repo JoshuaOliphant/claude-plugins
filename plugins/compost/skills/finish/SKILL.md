@@ -77,20 +77,31 @@ yours to do without asking.
    - With an open PR, mark it ready with `gh pr ready <n>` (the forge refuses to merge a draft),
      then merge through the forge with a merge commit: `gh pr merge <n> --merge`. That is the
      forge's `--no-ff`. Never squash or rebase unless the user asks for it.
-   - Without a PR, merge from the main checkout, never from inside the worktree:
-     `git -C "$main_root" switch <target>`, `git -C "$main_root" pull --ff-only`, then
-     `git -C "$main_root" merge --no-ff "$branch"`. Run the suite on the result. If it is red,
-     stop with the branch and worktree in place and nothing pushed. If it is green, push the
-     target, then close the issue, or the parent, the way the tracker says (for a local tracker,
-     `Status: closed` and a closing note naming the merge commit).
+   - Without a PR, build the merge commit in this worktree on a detached HEAD, so the main
+     checkout is never touched and no `git -C` is needed:
 
-   Then remove the worktree from `$main_root`. Use the harness's exit tool (such as
-   `ExitWorktree` with remove) if it created the worktree; otherwise
-   `git worktree remove "$worktree_path"`. If removal is refused because of uncommitted files,
-   list them with `git -C "$worktree_path" status --porcelain -uall` and ask the user whether to
-   commit, move, or delete them. Never add `--force` on your own. Delete the branch with
-   `git branch -d "$branch"`, which refuses if the branch is not merged, and delete the remote
-   branch. Pull the target in `$main_root` first so `-d` can see the merge.
+     ```bash
+     git status --porcelain -uall    # must be empty: commit or ask about anything listed
+     git fetch origin
+     git switch --detach origin/<target>
+     git merge --no-ff -m "Merge branch '$branch' into <target>" "$branch"
+     ```
+
+     Run the suite on the result. If it is red, `git switch "$branch"` and stop with the branch
+     and worktree in place and nothing pushed. If it is green, `git push origin HEAD:<target>`;
+     a rejected push means the target moved, so fetch and go back to step 4. Then close the issue,
+     or the parent, the way the tracker says (for a local tracker, `Status: closed` and a closing
+     note naming the merge commit). With no remote, the target branch must be updated in place,
+     which means changing the checkout that has it: do that only in a session that is not
+     worktree-isolated, by running the same merge from `$main_root` with the target checked out.
+
+   Then remove the worktree. Use the harness's exit tool (such as `ExitWorktree` with remove) if
+   it created the worktree; otherwise `cd "$main_root"` and `git worktree remove "$worktree_path"`.
+   If removal is refused because of uncommitted files, list them (`git status --porcelain -uall`
+   inside the worktree) and ask the user whether to commit, move, or delete them. Never add
+   `--force` on your own. Delete the branch with `git branch -d "$branch"`, which refuses if the
+   branch is not merged (into its upstream, or into HEAD when it has none); after a forge merge,
+   fetch first. Delete the remote branch too.
 
 8. **Discard only on request, and only after the user types "discard".** When the user asks to
    throw the work away, show what will be lost: the branch, the commits
