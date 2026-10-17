@@ -206,7 +206,10 @@ def authorize(token, required_scope, now):
 Every realistic mutation is caught. To run these mutations rather than imagine them, use the
 mutation tool `docs/agents/testing.md` records, scoped to the diff
 ([mutation testing](../../verify/references/mutation.md)). It also tries the mutations this table
-never listed. The AC maps to
+never listed. With no tool recorded, make each edit by hand and set `PYTHONDONTWRITEBYTECODE=1` or
+delete `__pycache__` between runs: an edit that keeps the file's size and lands in the same second
+as the last one can leave Python running the stale bytecode, and the run reports on code that is
+no longer on disk. The AC maps to
 `test_authorize_denies[expired-at-exact-instant]` and
 `test_authorize_denies[expired-seconds-ago]`.
 

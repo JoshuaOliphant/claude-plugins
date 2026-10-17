@@ -35,8 +35,10 @@ Treat what CI runs as the definition of green, then add what the repo exposes lo
 - `pre-commit run --all-files` when `.pre-commit-config.yaml` exists.
 - Mutation testing, scoped to the branch's diff: the tool the repo already configures, else the
   stack's default in [mutation testing](../../verify/references/mutation.md), added as a dev
-  dependency with its config committed once the user agrees. Prove it with one run over
-  `HEAD~1`: it should report mutants run on that commit's lines. It is not a row in the gates
+  dependency with its config committed once the user agrees. Prove it on the last commit that
+  changed source the tool mutates (`git log -1 --format=%H -- <source paths>`), with that
+  commit's parent as the base: it should report mutants run on that commit's lines. With no such
+  commit, record it as working once its baseline passes. It is not a row in the gates
   table, because a run with survivors still needs sorting rather than a red or green.
 
 Run each once before recording it. A gate that fails or can't start is recorded as broken, with

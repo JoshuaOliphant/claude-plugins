@@ -55,7 +55,7 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
      and the same unattended rule applies.
 
    There is no score to reach; a survivor left unsorted fails the step. Run `git diff` after the
-   run and restore any mutant a killed run left behind. With no tool recorded, skip this step;
+   run and restore any mutant an interrupted run left behind. With no tool recorded, skip this step;
    `compost:build` has already walked the mutations by hand.
 
 5. **Map every acceptance criterion to a passing test.** Build a table from this run's results:
