@@ -396,13 +396,26 @@ def gone(pid: int) -> bool:
         return True
 
 
+SLEEP = "subprocess.Popen(['sleep', '60'], start_new_session={})"
+NESTED = "import pathlib, subprocess, time; pathlib.Path('spawned.pid').write_text(str({}.pid)); time.sleep(60)"
+
+
 @pytest.mark.parametrize(("then", "timeout"), [("pass", 20), ("time.sleep(30)", 2)], ids=["exits", "times out"])
-def test_what_a_test_starts_dies_with_its_run(toy, tmp_path, then, timeout):
+@pytest.mark.parametrize(
+    "spawn",
+    [SLEEP.format(False), SLEEP.format(True), f"subprocess.Popen([sys.executable, '-c', {NESTED.format(SLEEP.format(True))!r}], start_new_session=True)"],
+    ids=["in its group", "in a session of its own", "a session inside a session"],
+)  # fmt: skip
+def test_what_a_test_starts_dies_with_its_run(toy, tmp_path, then, timeout, spawn):
+    # A session of its own is how a nested run's child escapes: thin.py's own tests fork runs, and so do its mutants.
     (tmp_path / "test_spawn.py").write_text(
-        "import pathlib, subprocess, time\n"
+        "import pathlib, subprocess, sys, time\n"
         "def test_spawn():\n"
-        "    child = subprocess.Popen(['sleep', '60'])\n"
-        "    pathlib.Path('spawned.pid').write_text(str(child.pid))\n"
+        f"    child = {spawn}\n"
+        "    if child.args[0] == 'sleep':\n"
+        "        pathlib.Path('spawned.pid').write_text(str(child.pid))\n"
+        "    while not pathlib.Path('spawned.pid').exists():\n"
+        "        time.sleep(0.01)\n"
         f"    {then}\n"
     )
     thin.fork_runs([(None, None, ["test_spawn.py::test_spawn"])], PYTEST, timeout, 1)
@@ -411,6 +424,17 @@ def test_what_a_test_starts_dies_with_its_run(toy, tmp_path, then, timeout):
     while not gone(pid) and time.monotonic() < deadline:
         time.sleep(0.05)
     assert gone(pid)
+
+
+def test_orphans_are_left_to_init_where_the_platform_cannot_adopt_them(monkeypatch):
+    monkeypatch.setattr(thin.ctypes, "CDLL", lambda *args, **kwargs: object())  # a libc without prctl, as on macOS
+    assert thin.adopt_orphans(True) is False
+    assert thin.parent_of(os.getpid()) == os.getppid()
+    gone_pid = os.fork()
+    if gone_pid == 0:
+        os._exit(0)
+    os.waitpid(gone_pid, 0)
+    assert thin.parent_of(gone_pid) is None
 
 
 def test_children_read_stdin_from_devnull_so_a_read_cannot_block(toy, tmp_path):

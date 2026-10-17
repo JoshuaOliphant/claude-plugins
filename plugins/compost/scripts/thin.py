@@ -3,6 +3,8 @@
 # ABOUTME: mutants on a branch's changed lines for compost:verify. Mutant runs need pytest and cosmic-ray.
 import argparse
 import ast
+import contextlib
+import ctypes
 import functools
 import importlib.abc
 import importlib.machinery
@@ -346,6 +348,43 @@ def stop_group(pid: int) -> None:
         pass
 
 
+PR_SET_CHILD_SUBREAPER = 36  # from <sys/prctl.h>
+
+
+def adopt_orphans(on: bool) -> bool:
+    """Have orphaned descendants reparent to this process, not init (Linux only); False where it can't.
+
+    A child's process group isn't enough: a process that starts a session of its own leaves the group, and thin.py's
+    own tests do that, since each forked run calls `setsid`. Under a mutant of thin.py, those nested runs outlive
+    their run and pile up (#128). Adopted, they come back here once their parent is gone, to be killed.
+    """
+    try:
+        return ctypes.CDLL(None, use_errno=True).prctl(PR_SET_CHILD_SUBREAPER, int(on), 0, 0, 0) == 0
+    except AttributeError:  # no prctl, as on macOS
+        return False
+
+
+def parent_of(pid: int) -> int | None:
+    """A process's parent id from /proc, or None once it is gone."""
+    with contextlib.suppress(OSError):
+        return int(Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[1])
+    return None
+
+
+def kill_orphans(running: dict) -> int:
+    """Kill and reap every child of this process that no job started: what a finished or killed run left behind."""
+    me = os.getpid()
+    orphans = [int(e.name) for e in Path("/proc").iterdir() if e.name.isdigit() and int(e.name) not in running]
+    orphans = [pid for pid in orphans if parent_of(pid) == me]
+    for pid in orphans:
+        stop_group(pid)  # one that left with setsid leads a group of its own
+        with contextlib.suppress(ProcessLookupError):
+            os.kill(pid, signal.SIGKILL)
+        with contextlib.suppress(ChildProcessError):
+            os.waitpid(pid, 0)
+    return len(orphans)
+
+
 def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers: int,
               progress=None) -> list[Report | TimedOut | None]:  # fmt: skip
     """Run each (module, source, tests) job in a child forked from this already-warm process, `workers` at a time.
@@ -357,6 +396,7 @@ def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers
     import pytest  # noqa: F401 - imported before forking so that no child pays for it
 
     results = {}
+    adopted = adopt_orphans(True)
     with tempfile.TemporaryDirectory() as tmp:
         pending, running = list(enumerate(jobs)), {}
         while pending or running:
@@ -376,9 +416,15 @@ def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers
                     os.waitpid(pid, 0)
                 results[index] = read_report(report, tests) if done else TIMED_OUT
                 del running[pid]
+                if adopted:
+                    kill_orphans(running)
                 if progress:
                     progress(len(results), len(jobs))
             time.sleep(0.005)
+    if adopted:
+        while kill_orphans({}):  # an orphan's own children come back once it is killed
+            pass
+        adopt_orphans(False)
     return [results[index] for index in range(len(jobs))]
 
 
