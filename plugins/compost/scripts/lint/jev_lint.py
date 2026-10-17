@@ -102,7 +102,7 @@ def select_rules(ids: str | None) -> list[Rule]:
 
 
 async def judge_unit(jev: Jev, unit: Unit, rules: list[Rule]) -> list[Judgment]:
-    applicable = [rule for rule in rules if rule.kind == unit.kind and rule.applies(unit)]
+    applicable = [rule for rule in rules if rule.applies_to(unit)]
     if not applicable:
         return []
     answers = await jev.ask("lint", unit.state, {rule.id: rule.question for rule in applicable})
@@ -173,8 +173,8 @@ def summary_line(
 
 
 def findings_above_threshold(judgments: list[Judgment], rules: list[Rule], override: float | None) -> list[Judgment]:
-    thresholds = {rule.id: rule.threshold if override is None else override for rule in rules}
-    above = (j for j in judgments if j.probability >= thresholds[j.rule])
+    rules_by_id = {rule.id: rule for rule in rules}
+    above = (j for j in judgments if rules_by_id[j.rule].flags(j.probability, override))
     return sorted(above, key=lambda j: -j.probability)
 
 

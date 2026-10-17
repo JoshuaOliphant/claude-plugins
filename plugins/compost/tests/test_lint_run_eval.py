@@ -100,22 +100,26 @@ async def test_judge_stops_when_jev_failed_rather_than_scoring_a_partial_run():
         await run_eval.judge([_case("a")], lambda: failing)
 
 
-def test_report_prints_precision_recall_and_the_disagreements(capsys):
+def test_report_prints_precision_recall_and_the_disagreements_at_the_rules_own_threshold(capsys):
+    # silent-failure flags at 0.7, so p=0.60 is a miss when it should flag and clean when it should not.
     scored = [
         run_eval.Scored("silent-failure", True, 0.95, "yes", "caught"),
         run_eval.Scored("silent-failure", False, 0.80, "yes", "false alarm here"),
         run_eval.Scored("silent-failure", True, 0.20, "yes", "missed here"),
+        run_eval.Scored("silent-failure", True, 0.60, "yes", "missed below the rule threshold"),
+        run_eval.Scored("silent-failure", False, 0.60, "yes", "clean below the rule threshold"),
     ]
 
     run_eval.report(scored)
 
     lines = capsys.readouterr().out.splitlines()
-    assert lines[1] == "== silent-failure: 3 cases, 2 should flag =="
-    assert lines[2] == "  threshold 0.5: flagged   2  precision 0.50  recall 0.50"
-    assert lines[4] == "  threshold 0.9: flagged   1  precision 1.00  recall 0.50"
+    assert lines[1] == "== silent-failure: 5 cases, 3 should flag =="
+    assert lines[2] == "  threshold 0.5: flagged   4  precision 0.50  recall 0.67"
+    assert lines[4] == "  threshold 0.9: flagged   1  precision 1.00  recall 0.33"
     assert lines[5:] == [
         "    false alarm p=0.80 [yes] false alarm here",
         "    missed      p=0.20 [yes] missed here",
+        "    missed      p=0.60 [yes] missed below the rule threshold",
     ]
 
 
