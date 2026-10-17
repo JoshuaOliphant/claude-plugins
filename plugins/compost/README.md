@@ -135,7 +135,9 @@ of `pile.toml`. Leaving them on gives Claude two answers to every request, so se
 still active on the machine and, with your yes, turns them off: it disables their plugins and sets
 their personal and skills-CLI skills to `"off"` under `skillOverrides` in `~/.claude/settings.json`.
 Plugins synced from claude.ai have to be turned off there. Nothing is deleted, so turning one back
-on is a settings change. To check a machine directly: `uv run scripts/pile.py replaced [--apply]`.
+on is a settings change. Setup also lists plugins still installed that their marketplace no longer
+lists, and with a separate yes uninstalls them. To check a machine directly:
+`uv run scripts/pile.py replaced [--apply [--keep-orphans]]`.
 
 ## Development
 

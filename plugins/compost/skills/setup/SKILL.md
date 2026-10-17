@@ -122,8 +122,15 @@ edits the user made by hand.
     the user the report and, with their yes, run it again with `--apply`: it disables the plugins
     through `claude plugin disable` and sets the skills to `"off"` in `skillOverrides` in
     `~/.claude/settings.json`, keeping everything else there. Plugins synced from claude.ai can
-    only be turned off in the user's claude.ai settings, so pass those on. Nothing is deleted:
-    re-enabling a plugin or removing an override turns it back on. This is per machine, so on a
+    only be turned off in the user's claude.ai settings, so pass those on. None of this deletes
+    anything: re-enabling a plugin or removing an override turns it back on.
+
+    The report also lists, under its own heading, **orphaned installs**: plugins still installed
+    whose marketplace's clone no longer lists them, enabled or not. They load stale copies and fail
+    every marketplace update. `--apply` uninstalls them through `claude plugin uninstall`, keeping
+    their data directories, and unlike disabling this cannot be undone, since the marketplace no
+    longer offers them. Ask about them as a separate yes: if the user wants the superseded ones
+    turned off but the orphans kept, run `--apply --keep-orphans`. This is per machine, so on a
     second repo the report usually says nothing is active.
 
 11. **Check and commit.** Re-read every file you wrote. List the directories above the repo that
