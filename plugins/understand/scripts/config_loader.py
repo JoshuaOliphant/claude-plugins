@@ -5,9 +5,10 @@
 
 Resolution order is project-level (`<project>/.claude/<name>.local.md`) then
 user-level (`<home>/.claude/<name>.local.md`), else empty. Callers layer their
-own typing, defaults, and path normalization on top of the raw dict returned
-here — this module only owns the file format and the project>user>default
-precedence, which every consuming plugin shares.
+own typing and defaults on top of the raw dict returned here. This module owns
+what every consuming plugin shares: the file format, the project>user>default
+precedence, and `directory()`, the one rule for turning a directory setting
+into a path.
 """
 
 from __future__ import annotations
@@ -39,6 +40,14 @@ def find_config(project_root: Path, home: Path, config_name: str) -> tuple[dict,
     if user_cfg.exists():
         return parse_config(user_cfg), "user"
     return {}, "default"
+
+
+def directory(value: str, project_root: Path) -> str:
+    """Normalize a directory setting: expand ~, anchor a relative path to project_root, one trailing /."""
+    path = Path(value).expanduser()
+    if not path.is_absolute():
+        path = project_root / path
+    return str(path).rstrip("/") + "/"
 
 
 def cli_roots(argv: list) -> tuple[Path, Path]:

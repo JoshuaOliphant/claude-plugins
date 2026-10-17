@@ -1,8 +1,10 @@
-# ABOUTME: Reads this machine's Claude Code config: plugins as the `claude` CLI lists them, personal skills, settings.json.
-# ABOUTME: Owns the one policy for whether a plugin or skill is active here; skill_drift and `pile.py replaced` share it.
+# ABOUTME: Reads this machine's Claude Code config: plugins and marketplace catalogs via the `claude` CLI, personal
+# ABOUTME: skills, settings.json.
+# ABOUTME: Owns the policy for whether a plugin or skill is active here, shared by skill_drift and `pile.py replaced`.
 import json
 import os
 import subprocess
+import sys
 import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -10,6 +12,7 @@ from functools import cached_property
 from pathlib import Path
 
 CLAUDE_DIR = Path.home() / ".claude"
+UNINSTALLABLE_SCOPES = frozenset({"user", "project", "local"})
 
 
 class ClaudeConfigError(Exception):
@@ -30,12 +33,50 @@ def claude(*args: str, claude_dir: Path | None = None) -> str:
     return result.stdout
 
 
-def installed_plugins(claude_dir: Path | None = None) -> list[dict]:
-    output = claude("plugin", "list", "--json", claude_dir=claude_dir)
+def _claude_json(*args: str, claude_dir: Path | None) -> list[dict]:
+    output = claude(*args, "--json", claude_dir=claude_dir)
     try:
         return json.loads(output)
     except json.JSONDecodeError as error:
-        raise ClaudeConfigError(f"claude plugin list --json printed no JSON: {error}") from error
+        raise ClaudeConfigError(f"claude {' '.join(args)} --json printed no JSON: {error}") from error
+
+
+def installed_plugins(claude_dir: Path | None = None) -> list[dict]:
+    return _claude_json("plugin", "list", claude_dir=claude_dir)
+
+
+def marketplace_listings(claude_dir: Path | None = None) -> dict[str, frozenset[str]]:
+    """Each configured marketplace, mapped to the plugin names its local clone's catalog lists. A marketplace with
+    no clone yet, no catalog, or a malformed one is left out, with a warning on stderr for a malformed one: nothing
+    can be said about what it lists."""
+    listings = {}
+    for marketplace in _claude_json("plugin", "marketplace", "list", claude_dir=claude_dir):
+        name, location = marketplace.get("name"), marketplace.get("installLocation")
+        if not (name and location):
+            continue
+        catalog = Path(location) / ".claude-plugin" / "marketplace.json"
+        if not catalog.is_file():
+            continue
+        try:
+            listings[name] = catalog_names(catalog)
+        except ClaudeConfigError as error:
+            print(f"warning: {error}; its installs are not checked", file=sys.stderr)
+    return listings
+
+
+def catalog_names(catalog: Path) -> frozenset[str]:
+    """The plugin names a marketplace's own `marketplace.json` lists; it is the marketplace's content, so a catalog
+    that is unreadable or not shaped as `{"plugins": [{"name": ...}]}` raises rather than being trusted."""
+    try:
+        data = json.loads(catalog.read_text())
+    except (OSError, ValueError) as error:
+        raise ClaudeConfigError(f"cannot read {catalog}: {error}") from error
+    plugins = data.get("plugins") if isinstance(data, dict) else None
+    if not isinstance(plugins, list) or not all(
+        isinstance(plugin, dict) and isinstance(plugin.get("name"), str) for plugin in plugins
+    ):
+        raise ClaudeConfigError(f"{catalog} does not list plugins by name")
+    return frozenset(plugin["name"] for plugin in plugins)
 
 
 def personal_skills(claude_dir: Path) -> set[str]:
@@ -71,6 +112,7 @@ class Config:
     personal: frozenset[str]
     overrides: dict[str, str]
     list_plugins: Callable[[], list[dict]]
+    list_marketplaces: Callable[[], dict[str, frozenset[str]]] = dict
 
     @cached_property
     def _listing(self) -> list[dict]:
@@ -88,6 +130,20 @@ class Config:
             if plugin.get("enabled"):
                 scopes.setdefault(plugin["id"], set()).add(plugin.get("scope"))
         return frozenset(plugin_id for plugin_id, found in scopes.items() if found == {"synced"})
+
+    @cached_property
+    def orphaned(self) -> list[tuple[str, str]]:
+        """Installs, enabled or not, as `(plugin@marketplace, scope)`, that their marketplace's clone no longer lists.
+        Installs from a marketplace with no clone (claude.ai's synced plugins, a removed marketplace) prove nothing,
+        and a scope the CLI cannot uninstall from is not offered."""
+        listings = self.list_marketplaces()
+        orphans = []
+        for plugin in self._listing:
+            name, _, marketplace = plugin["id"].partition("@")
+            scope = plugin.get("scope")
+            if marketplace in listings and name not in listings[marketplace] and scope in UNINSTALLABLE_SCOPES:
+                orphans.append((plugin["id"], scope))
+        return orphans
 
     def plugin_enabled(self, plugin_id: str) -> bool:
         """`plugin_id` is `plugin@marketplace`."""
@@ -111,4 +167,5 @@ def read(claude_dir: Path) -> Config:
         personal=frozenset(personal_skills(claude_dir)),
         overrides=read_settings(claude_dir).get("skillOverrides", {}),
         list_plugins=lambda: installed_plugins(claude_dir),
+        list_marketplaces=lambda: marketplace_listings(claude_dir),
     )

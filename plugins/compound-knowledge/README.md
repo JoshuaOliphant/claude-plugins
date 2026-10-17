@@ -71,7 +71,7 @@ write_path: /absolute/path/to/knowledge/solutions/
 
 The skills and agent get their paths from `scripts/resolve_paths.py`, which prints `write_path` (where captures go), `read_paths` (every directory searched) and `vault_root` as JSON, and exits 1 when `write_path` does not exist yet.
 
-**Other keys**: `read_paths` (comma-separated extra directories to search), and `vault_root` (the whole vault for wide reads) are also accepted. `solutions_path` is a back-compat alias for `write_path`. Semantic search (vault-recommender) runs only when `vault_root` is set.
+**Other keys**: `read_paths` (comma-separated extra directories to search), and `vault_root` (the whole vault for wide reads) are also accepted. `solutions_path` is a back-compat alias for `write_path`. Every path accepts `~`, and a relative path resolves against the project root. Semantic search (vault-recommender) runs only when `vault_root` is set.
 
 ### Component values
 
@@ -146,7 +146,7 @@ New task → Read registry → Extract keywords → Parallel grep → Score cand
 
 - **compound-capture** — Capture solved problems as structured YAML-frontmatter solution files. Runs after solving a non-trivial problem to extract title, component, severity, symptoms, and root cause.
 - **compound-retrieve** — Search registered knowledge bases for past solutions before starting a new task. Searches project-level solutions first, then cross-project via registry if <3 hits found.
-- **compound-graduate** — Promote accumulated knowledge (especially synthesized wiki theses) into the always-loaded living context (`CLAUDE.md` / `AGENTS.md`). The "improve" stroke: proposes concrete, evergreen edits and verifies the system would catch the pattern next session.
+- **compound-graduate** — Promote accumulated knowledge (especially synthesized wiki theses) into the always-loaded living context (`CLAUDE.md` / `AGENTS.md`). The "improve" stroke: proposes concrete, evergreen edits and verifies the system would catch the pattern next session. Its garden face sorts each solution into keep, update, merge, replace, or archive, so retrieval stays sharp as the corpus grows; archived files move to `_archive/`, which retrieval skips.
 
 ## Directory Structure
 

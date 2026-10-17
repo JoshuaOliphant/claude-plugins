@@ -2,6 +2,10 @@
 # ABOUTME: (every failing test per mutant, not the first) proves which ones no mutant needs. `survivors` runs the
 # ABOUTME: mutants on a branch's changed lines for compost:verify. Mutant runs need pytest and cosmic-ray.
 import argparse
+import ast
+import contextlib
+import ctypes
+import functools
 import importlib.abc
 import importlib.machinery
 import json
@@ -14,6 +18,7 @@ import tempfile
 import time
 import xml.etree.ElementTree as ET
 from collections import defaultdict
+from decimal import Decimal
 from pathlib import Path
 
 SCRIPTS = Path(__file__).resolve().parent
@@ -74,8 +79,170 @@ class TimedOut:
 TIMED_OUT = TimedOut()
 
 
-def mutants(module: str) -> list[dict]:
-    """Every mutation cosmic-ray would make in one module, in line order."""
+OWN = "thin/"  # the operators below, for breaks cosmic-ray never makes; `--operators stock` leaves them out
+PREDICATE_CALLS = {"isinstance", "issubclass", "hasattr", "callable", "all", "any", "bool"}
+PREDICATE_METHODS = {"startswith", "endswith", "exists", "isdigit", "isalpha", "isalnum", "isspace", "isupper",
+                     "islower", "isidentifier", "isdisjoint", "issubset", "issuperset"}  # and any is_* or has_*  # fmt: skip
+RETURN_CONSTANTS = {"bool": ["True", "False"], "str": ['""'], "list": ["[]"], "dict": ["{}"], "set": ["set()"],
+                    "tuple": ["()"], "int": ["0"], "float": ["0.0"]}  # fmt: skip
+SAME_TYPE_METHODS = {"strip", "lstrip", "rstrip", "removeprefix", "removesuffix", "lower", "upper", "casefold",
+                     "replace", "expanduser", "resolve", "absolute"}  # fmt: skip
+ORDERINGS = (ast.Lt, ast.LtE, ast.Gt, ast.GtE)
+WRAPPERS = {"sorted", "fromkeys"}  # `sorted(xs)` and `dict.fromkeys(xs)` become `xs`
+
+
+def predicate_shaped(value: ast.expr) -> bool:
+    """Whether a returned expression reads as a yes or no, so its function gets True and False as constants."""
+    if isinstance(value, (ast.Compare, ast.BoolOp)) or isinstance(value, ast.UnaryOp) and isinstance(value.op, ast.Not):
+        return True
+    if isinstance(value, ast.Constant):
+        return isinstance(value.value, bool)
+    if isinstance(value, ast.Call):
+        func = value.func
+        if isinstance(func, ast.Name):
+            return func.id in PREDICATE_CALLS
+        return isinstance(func, ast.Attribute) and (
+            func.attr in PREDICATE_METHODS or func.attr.startswith(("is_", "has_"))
+        )
+    return False
+
+
+def kinds(annotation: ast.expr) -> list[str]:
+    """The type names an annotation allows, lowercased: `Optional["List[str]"]` gives list and none."""
+    if isinstance(annotation, ast.Constant) and isinstance(annotation.value, str):  # a forward reference
+        return kinds(ast.parse(annotation.value, mode="eval").body)
+    if isinstance(annotation, ast.BinOp):  # X | Y
+        return kinds(annotation.left) + kinds(annotation.right)
+    if isinstance(annotation, ast.Subscript):
+        outer = kinds(annotation.value)
+        inner = annotation.slice.elts if isinstance(annotation.slice, ast.Tuple) else [annotation.slice]
+        if outer == ["optional"]:
+            return [*kinds(inner[0]), "none"]
+        return [kind for part in inner for kind in kinds(part)] if outer == ["union"] else outer
+    name = annotation.attr if isinstance(annotation, ast.Attribute) else getattr(annotation, "id", "none")
+    return [name.lower()]
+
+
+def return_constants(function: ast.FunctionDef | ast.AsyncFunctionDef, value: ast.expr) -> list[str]:
+    """The constants a `return value` in `function` is swapped for: by its annotation, else by the value's shape."""
+    if function.returns is not None:
+        found = [constant for kind in kinds(function.returns) for constant in RETURN_CONSTANTS.get(kind, ["None"])]
+    else:
+        found = ["True", "False"] if predicate_shaped(value) else ["None"]
+    return [constant for constant in dict.fromkeys(found) if constant != ast.unparse(value)]
+
+
+def nudged(literal: str) -> list[str]:
+    """A float threshold one step either side, the step one digit finer than the literal: 0.7 gives 0.69 and 0.71."""
+    value = Decimal(literal.replace("_", ""))
+    step = Decimal(1).scaleb(value.as_tuple().exponent - 1)
+    return [str(value - step), str(value + step)]
+
+
+def breaks(tree: ast.Module, source: str, parents: dict[ast.AST, ast.AST]):
+    """Yield (operator, node, text, expression) for each break of the module: put `text` where `node` is.
+
+    An expression's text is parenthesized when it goes in; a statement's goes in as it is.
+    """
+    annotations = {
+        id(part)
+        for node in ast.walk(tree)
+        for field in ("annotation", "returns")
+        if isinstance(getattr(node, field, None), ast.expr)
+        for part in ast.walk(getattr(node, field))
+    }  # fmt: skip
+    segment = functools.partial(ast.get_source_segment, source)
+    for node in ast.walk(tree):
+        parent = parents.get(node)
+        if (
+            isinstance(node, ast.Expr)
+            and isinstance(node.value, ast.Call)
+            or (isinstance(node, ast.If) and not node.orelse and not segment(node).startswith("elif"))
+        ):
+            yield "thin/DeleteStatement", node, "pass", False
+        elif isinstance(node, ast.Return) and node.value is not None:
+            function = parent
+            while not isinstance(function, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Module)):
+                function = parents[function]
+            if not isinstance(function, ast.Module):
+                for constant in return_constants(function, node.value):
+                    yield "thin/ReturnConstant", node.value, constant, True
+        elif isinstance(node, ast.BoolOp):
+            joiner = " and " if isinstance(node.op, ast.And) else " or "
+            for drop in range(len(node.values)):
+                kept = [f"({segment(value)})" for index, value in enumerate(node.values) if index != drop]
+                yield "thin/DropTerm", node, joiner.join(kept), True
+        elif isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in ("all", "any"):
+            [terms] = node.args if len(node.args) == 1 else [None]
+            if isinstance(terms, (ast.List, ast.Tuple, ast.Set)) and len(terms.elts) > 1:
+                for drop in range(len(terms.elts)):
+                    kept = ", ".join(segment(elt) for index, elt in enumerate(terms.elts) if index != drop)
+                    yield "thin/DropTerm", node, f"{node.func.id}([{kept}])", True
+        elif isinstance(node, (ast.Constant, ast.JoinedStr)) and isinstance(getattr(node, "value", ""), str):
+            # An f-string goes whole; its literal parts, docstrings, and annotations are left alone.
+            if not isinstance(parent, (ast.Expr, ast.JoinedStr, ast.FormattedValue)) and id(node) not in annotations:
+                other = (
+                    "YY" if getattr(node, "value", None) == "XX" else "XX"
+                )  # nothing of the original left for `in` or a regex to find
+                yield "thin/ReplaceString", node, repr(other), True
+        elif isinstance(node, ast.Constant) and type(node.value) is float:
+            if isinstance(parent, ast.UnaryOp) and isinstance(parent.op, ast.USub):  # -0.5 is a unary minus on 0.5
+                node, parent = parent, parents[parent]
+            ordered = isinstance(parent, ast.Compare) and all(isinstance(op, ORDERINGS) for op in parent.ops)
+            scope = parent
+            while not isinstance(scope, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)):
+                scope = parents[scope]
+            if ordered or isinstance(scope, ast.Module):  # compared here, or a module or class constant read later
+                for text in nudged(segment(node)):
+                    yield "thin/NudgeThreshold", node, text, True
+        if isinstance(node, ast.Call) and not isinstance(parent, ast.Expr):  # a call statement is deleted instead
+            name = getattr(node.func, "attr", getattr(node.func, "id", None))
+            if isinstance(node.func, ast.Attribute) and name in SAME_TYPE_METHODS:
+                yield "thin/DropCall", node, segment(node.func.value), True
+            elif name in WRAPPERS and len(node.args) == 1:
+                yield "thin/DropCall", node, segment(node.args[0]), True
+
+
+def own_mutants(module: str) -> list[dict]:
+    """The breaks cosmic-ray has no operator for (#124), each the span of `module` it replaces and its new text."""
+    source = Path(module).read_text()
+    tree = ast.parse(source)
+    parents = {child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)}
+    found, counts = [], defaultdict(int)
+    for operator, node, text, expression in breaks(tree, source, parents):
+        span = [node.lineno, node.col_offset, node.end_lineno, node.end_col_offset]
+        statement = node
+        while not isinstance(statement, ast.stmt):
+            statement = parents[statement]
+        # Coverage records a statement on its first line, so a break further down it goes by that line.
+        found.append({"module": module, "operator": operator, "occurrence": counts[operator],
+                      "line": statement.lineno, "args": {"span": span, "text": text, "expression": expression}})  # fmt: skip
+        counts[operator] += 1
+    return found
+
+
+def splice(source: str, span: list[int], text: str, expression: bool) -> str | None:
+    """`source` with `text` in place of the span, padded so no line moves; None when the result doesn't parse.
+
+    ast's columns count UTF-8 bytes, so the splice works on bytes.
+    """
+    data = source.encode()
+    starts = [0]
+    for line in data.splitlines(keepends=True):
+        starts.append(starts[-1] + len(line))
+    begin, end = starts[span[0] - 1] + span[1], starts[span[2] - 1] + span[3]
+    pad = "\n" * max(0, data[begin:end].count(b"\n") - text.count("\n"))
+    new = f"({text}{pad})" if expression else text + pad
+    mutated = (data[:begin] + new.encode() + data[end:]).decode()
+    try:
+        ast.parse(mutated)
+    except SyntaxError:
+        return None
+    return mutated
+
+
+def mutants(module: str, own: bool = True) -> list[dict]:
+    """Every mutation cosmic-ray would make in one module, and with `own` thin's own operators too, in line order."""
     from cosmic_ray.commands.init import _all_work_items  # private, but it is how cosmic-ray init lists mutants
 
     found = [
@@ -84,11 +251,15 @@ def mutants(module: str) -> list[dict]:
         for item in _all_work_items([Path(module)], {})
         for m in item.mutations
     ]  # fmt: skip
+    if own:
+        found += own_mutants(module)
     return sorted(found, key=lambda m: (m["line"], m["operator"], m["occurrence"]))
 
 
 def mutate(source: str, mutant: dict) -> str | None:
-    """The mutated source, or None when cosmic-ray can't make it (its own AST walk crashes on a few)."""
+    """The mutated source, or None when the mutant can't be made (cosmic-ray's AST walk crashes on a few)."""
+    if mutant["operator"].startswith(OWN):
+        return splice(source, **mutant["args"])
     from cosmic_ray.mutating import mutate_code
     from cosmic_ray.plugins import get_operator
 
@@ -177,6 +348,43 @@ def stop_group(pid: int) -> None:
         pass
 
 
+PR_SET_CHILD_SUBREAPER = 36  # from <sys/prctl.h>
+
+
+def adopt_orphans(on: bool) -> bool:
+    """Have orphaned descendants reparent to this process, not init (Linux only); False where it can't.
+
+    A child's process group isn't enough: a process that starts a session of its own leaves the group, and thin.py's
+    own tests do that, since each forked run calls `setsid`. Under a mutant of thin.py, those nested runs outlive
+    their run and pile up (#128). Adopted, they come back here once their parent is gone, to be killed.
+    """
+    try:
+        return ctypes.CDLL(None, use_errno=True).prctl(PR_SET_CHILD_SUBREAPER, int(on), 0, 0, 0) == 0
+    except AttributeError:  # no prctl, as on macOS
+        return False
+
+
+def parent_of(pid: int) -> int | None:
+    """A process's parent id from /proc, or None once it is gone."""
+    with contextlib.suppress(OSError):
+        return int(Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[1])
+    return None
+
+
+def kill_orphans(running: dict) -> int:
+    """Kill and reap every child of this process that no job started: what a finished or killed run left behind."""
+    me = os.getpid()
+    orphans = [int(e.name) for e in Path("/proc").iterdir() if e.name.isdigit() and int(e.name) not in running]
+    orphans = [pid for pid in orphans if parent_of(pid) == me]
+    for pid in orphans:
+        stop_group(pid)  # one that left with setsid leads a group of its own
+        with contextlib.suppress(ProcessLookupError):
+            os.kill(pid, signal.SIGKILL)
+        with contextlib.suppress(ChildProcessError):
+            os.waitpid(pid, 0)
+    return len(orphans)
+
+
 def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers: int,
               progress=None) -> list[Report | TimedOut | None]:  # fmt: skip
     """Run each (module, source, tests) job in a child forked from this already-warm process, `workers` at a time.
@@ -188,6 +396,7 @@ def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers
     import pytest  # noqa: F401 - imported before forking so that no child pays for it
 
     results = {}
+    adopted = adopt_orphans(True)
     with tempfile.TemporaryDirectory() as tmp:
         pending, running = list(enumerate(jobs)), {}
         while pending or running:
@@ -207,9 +416,15 @@ def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers
                     os.waitpid(pid, 0)
                 results[index] = read_report(report, tests) if done else TIMED_OUT
                 del running[pid]
+                if adopted:
+                    kill_orphans(running)
                 if progress:
                     progress(len(results), len(jobs))
             time.sleep(0.005)
+    if adopted:
+        while kill_orphans({}):  # an orphan's own children come back once it is killed
+            pass
+        adopt_orphans(False)
     return [results[index] for index in range(len(jobs))]
 
 
@@ -235,7 +450,7 @@ def check_baseline(tests: list[str], pytest_args: list[str], timeout: float | No
 
 
 def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], timeout: float | None,
-                workers: int, log=print) -> dict:  # fmt: skip
+                workers: int, log=print, own: bool = True) -> dict:  # fmt: skip
     """Run each mutant on a line the selected tests cover against every test covering that line; record each killer.
 
     Only the selected tests are mutated over every line they run, so only they can be judged from the result. The
@@ -244,6 +459,8 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
     baseline's wall time, at least 30 seconds: a mutant that hangs costs that, not a fixed five minutes.
     """
     lines = covered_lines(contexts)
+    imported = {(path, int(line)) for path, info in contexts["files"].items()
+                for line, names in info["contexts"].items() if "" in names}  # fmt: skip
     selected = set(only) if only is not None else set(lines)
     on_line = defaultdict(set)
     for name, pairs in lines.items():
@@ -257,15 +474,20 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
     jobs, made = [], []
     for module in sorted({path for path, _ in wanted}):
         source = Path(module).read_text()
-        for mutant in mutants(module):
-            if (module, mutant["line"]) not in wanted:
+        in_module = sorted({test for path, line in wanted if path == module for test in on_line[(path, line)]})
+        for mutant in mutants(module, own):
+            # A threshold set at import, `FOUND = 0.7`, runs under no test: try it on the module's selected tests.
+            place = (module, mutant["line"])
+            at_import = mutant["operator"] == "thin/NudgeThreshold" and place in imported and place not in on_line
+            if (module, mutant["line"]) not in wanted and not at_import:
                 continue
             mutated = mutate(source, mutant)
             if mutated is None:
                 continue
-            covering = sorted(on_line[(module, mutant["line"])])
+            covering = in_module if at_import else sorted(on_line[(module, mutant["line"])])
             jobs.append((module, mutated, covering))
-            made.append({k: v for k, v in mutant.items() if k != "args"} | {"covering": covering})
+            made.append({k: v for k, v in mutant.items() if k != "args"}
+                        | {"mutated": first_difference(source, mutated), "covering": covering})  # fmt: skip
     rows = []
 
     def progress(done: int, total: int) -> None:
@@ -310,7 +532,7 @@ def first_difference(source: str, mutated: str) -> str:
 
 
 def survivors(contexts: dict, changed: dict[str, set[int]], pytest_args: list[str], timeout: float | None, workers: int,
-              log=print) -> dict:  # fmt: skip
+              log=print, own: bool = False) -> dict:  # fmt: skip
     """Run each mutant on a changed line, stopping at the first failing test, and report the ones no test notices.
 
     A changed line no test runs, such as a module constant or a default argument that runs only at import,
@@ -324,7 +546,7 @@ def survivors(contexts: dict, changed: dict[str, set[int]], pytest_args: list[st
     jobs, made = [], []
     for module in sorted(changed):
         source = Path(module).read_text()
-        for mutant in mutants(module):
+        for mutant in mutants(module, own):
             if mutant["line"] not in changed[module] or (mutated := mutate(source, mutant)) is None:
                 continue
             jobs.append((module, mutated, sorted(on_line.get((module, mutant["line"]), everyone))))
@@ -340,14 +562,19 @@ def survivors(contexts: dict, changed: dict[str, set[int]], pytest_args: list[st
         elif report is None or report.strays:
             outcome = "crashed"
         else:
-            outcome = "killed" if report.failed else "survived"
+            outcome = "killed" if report.failed else "survived_strings" if is_string(row) else "survived"
         outcomes[outcome].append(row)
         log(f"{mutant_id(row)} {outcome}")
     return (
         counts
         | {kind: len(outcomes[kind]) for kind in ("killed", "survived", "timeouts", "crashed")}
-        | {"survivors": outcomes["survived"]}
+        | {"survivors": outcomes["survived"], "survived_strings": outcomes["survived_strings"]}
     )
+
+
+def is_string(row: dict) -> bool:
+    """A changed string survives most often as an equivalent mutant (a message nobody reads), so it is listed apart."""
+    return row["operator"] == "thin/ReplaceString"
 
 
 def mutant_id(row: dict) -> str:
@@ -382,8 +609,12 @@ def verdict(matrix: dict) -> dict:
             over = [o for o in sorted(keep) if mine <= kills[o]]
             entry["subsumed_by"] = over[0] if over else None
         tests[test] = entry
-    survived = sorted(mutant_id(row) for row in rows if not row["killers"])
-    return {"mutants": len(rows), "survived": survived, "minimal": sorted(keep & selected), "tests": tests}
+    survived = {False: [], True: []}
+    for row in sorted(rows, key=mutant_id):
+        if not row["killers"]:
+            survived[is_string(row)].append(mutant_id(row))
+    return {"mutants": len(rows), "survived": survived[False], "survived_strings": survived[True],
+            "minimal": sorted(keep & selected), "tests": tests}  # fmt: skip
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -399,6 +630,8 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--pytest-args", default="-q -p no:cacheprovider", help="add --no-cov under a coverage gate")
     run.add_argument("--timeout", type=float, help="seconds per mutant's test run; default 10x the baseline's")
     run.add_argument("--workers", type=int, default=os.cpu_count(), help="mutants run side by side")
+    run.add_argument("--operators", choices=["all", "stock"], default="all",
+                     help="stock: cosmic-ray's only, without thin's own (thin/...), to compare with a stock run")  # fmt: skip
     judge = sub.add_parser("verdict", help="keep, redundant, or kills-nothing for every test in a matrix")
     judge.add_argument("matrix")
     diff = sub.add_parser(
@@ -412,6 +645,7 @@ def main(argv: list[str] | None = None) -> int:
     for flag in ("--pytest-args", "--timeout", "--workers"):
         action = next(a for a in run._actions if flag in a.option_strings)
         diff.add_argument(flag, type=action.type, default=action.default, help=action.help)
+    diff.add_argument("--operators", choices=["all", "stock"], default="stock", help="all: add thin's own operators")
     args = parser.parse_args(argv)
 
     if args.command == "candidates":
@@ -425,6 +659,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.timeout,
                 args.workers,
                 log=lambda line: print(line, file=sys.stderr, flush=True),
+                own=args.operators == "all",
             )
         except BaselineError as error:
             print(f"thin: baseline failed: {error}", file=sys.stderr)
@@ -448,6 +683,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.timeout,
                 args.workers,
                 log=lambda line: print(line, file=sys.stderr, flush=True),
+                own=args.operators == "all",
             )
         except BaselineError as error:
             print(f"thin: baseline failed: {error}", file=sys.stderr)

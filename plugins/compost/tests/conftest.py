@@ -47,10 +47,19 @@ def sweep(scored: list[tuple[float, bool]], thresholds: list[float]) -> None:
 TENTHS = [round(0.05 * step, 2) for step in range(1, 20)]
 
 
+def ts_default(path: Path) -> dict:
+    """A TypeScript module whose text after `export default` is plain JSON, shared by the TS and Python suites."""
+    return json.loads(path.read_text().split("\nexport default", 1)[1])
+
+
 def skill_drift_judgments() -> dict:
-    """The skill-drift mod's questions and thresholds; the text after `export default` is plain JSON."""
-    text = (PLUGIN_ROOT / "hooks" / "skill-drift-judgments.ts").read_text()
-    return json.loads(text.split("\nexport default", 1)[1])
+    """The skill-drift mod's questions and thresholds."""
+    return ts_default(PLUGIN_ROOT / "hooks" / "skill-drift-judgments.ts")
+
+
+def skill_drift_hit() -> dict:
+    """The hit tests/skill-drift.test.ts asserts the mod writes, as it lands in the log."""
+    return ts_default(PLUGIN_ROOT / "tests" / "skill-drift-hit.ts")
 
 
 @pytest.fixture(autouse=True)
@@ -189,19 +198,41 @@ class ClaudeHome:
     listing: Path
     disabled: Path
     calls: Path
+    marketplaces: Path
+    uninstalled: Path
 
     def install(self, *plugins: dict) -> None:
         """Sets what `claude plugin list --json` prints: dicts shaped like the CLI's, `{"id", "scope", "enabled"}`."""
         self.listing.write_text(json.dumps(list(plugins)))
 
+    def add_marketplace(self, name: str, *plugins: str) -> Path:
+        """Configures marketplace `name` with a clone whose marketplace.json lists `plugins`; returns the clone."""
+        clone = self.dir / "plugins" / "marketplaces" / name
+        (clone / ".claude-plugin").mkdir(parents=True)
+        catalog = {"name": name, "plugins": [{"name": plugin, "source": f"./plugins/{plugin}"} for plugin in plugins]}
+        (clone / ".claude-plugin" / "marketplace.json").write_text(json.dumps(catalog))
+        configured = json.loads(self.marketplaces.read_text())
+        configured.append({"name": name, "source": "github", "repo": f"acme/{name}", "installLocation": str(clone)})
+        self.marketplaces.write_text(json.dumps(configured))
+        return clone
+
 
 @pytest.fixture
 def claude_home(tmp_path, monkeypatch) -> ClaudeHome:
-    """A throwaway ~/.claude, and a `claude` CLI on PATH that lists what `install` set and logs `plugin disable` ids.
-    `calls` gets one line per run: the subcommand and the CLAUDE_CONFIG_DIR it saw (`unset` when none)."""
-    home = ClaudeHome(tmp_path / ".claude", tmp_path / "installed.json", tmp_path / "disabled.log", tmp_path / "calls")
+    """A throwaway ~/.claude, and a `claude` CLI on PATH that lists what `install` and `add_marketplace` set, logs
+    `plugin disable` ids, and logs `plugin uninstall` as `id scope`. `calls` gets one line per run: the subcommand
+    and the CLAUDE_CONFIG_DIR it saw (`unset` when none)."""
+    home = ClaudeHome(
+        tmp_path / ".claude",
+        tmp_path / "installed.json",
+        tmp_path / "disabled.log",
+        tmp_path / "calls",
+        tmp_path / "marketplaces.json",
+        tmp_path / "uninstalled.log",
+    )
     home.dir.mkdir()
     home.install()
+    home.marketplaces.write_text("[]")
     binary = tmp_path / "bin" / "claude"
     binary.parent.mkdir()
     binary.write_text(
@@ -209,6 +240,8 @@ def claude_home(tmp_path, monkeypatch) -> ClaudeHome:
         f'echo "$2 ${{CLAUDE_CONFIG_DIR-unset}}" >> "{home.calls}"\n'
         f'if [ "$2" = list ]; then cat "{home.listing}"; exit 0; fi\n'
         f'if [ "$2" = disable ]; then echo "$3" >> "{home.disabled}"; exit 0; fi\n'
+        f'if [ "$2" = marketplace ] && [ "$3" = list ]; then cat "{home.marketplaces}"; exit 0; fi\n'
+        f'if [ "$2" = uninstall ] && [ "$4" = --scope ]; then echo "$3 $5" >> "{home.uninstalled}"; exit 0; fi\n'
         "exit 1\n"
     )
     binary.chmod(0o755)

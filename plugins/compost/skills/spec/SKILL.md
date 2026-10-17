@@ -21,6 +21,9 @@ a quick lookup can answer.
    the area, the relevant code, and recent commits. Use the glossary's terms from here on
    ([ubiquitous language](../../canon/ubiquitous-language.md)). Send subagents after facts you
    still need and keep going while they run; only the questions that depend on a fact wait for it.
+   If the compound-knowledge plugin is installed, use `compound-knowledge:compound-retrieve` on the
+   request's topic; each lesson that applies enters the spec as a constraint, an edge case, or a
+   settled decision. Without the plugin, skip this step and say nothing about it.
    If the request already lives in an issue, thread, or doc that settles the decisions, synthesize
    the spec from it without an interview: classify it (step 2), then skip to step 6.
 

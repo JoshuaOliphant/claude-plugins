@@ -24,6 +24,9 @@ resolver exits 1, the solutions directory (`write_path`, the first `read_paths` 
 exist: report that with the fix it printed to stderr, then search the remaining entries. Any other
 failure prints no JSON: report the error and return no results rather than guessing paths.
 
+In every step below (frontmatter grep, broadened content grep, cross-project search), drop any
+hit under an `_archive/` directory: `compound-graduate`'s garden face archived it.
+
 Run Steps 2-7 for **every** entry in `read_paths`; `{read_path}` below means each entry in turn.
 The first entry is the primary knowledge base.
 
