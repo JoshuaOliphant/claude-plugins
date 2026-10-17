@@ -19,9 +19,10 @@ and take `read_paths` from the JSON it prints:
 python ${CLAUDE_PLUGIN_ROOT}/scripts/resolve_paths.py
 ```
 
-Never read the config file yourself. If the resolver exits non-zero, the solutions directory
-(`write_path`, the first `read_paths` entry) does not exist: report that and that
-`/compound-knowledge:setup` creates it, then search the `read_paths` entries that do exist.
+Never read the config file yourself. Skip any `read_paths` entry that does not exist. If the
+resolver exits non-zero, the solutions directory (`write_path`, the first `read_paths` entry) does
+not exist: report that and that `/compound-knowledge:setup` creates it, then search the remaining
+entries.
 
 Run Steps 2-7 for **every** entry in `read_paths`; `{read_path}` below means each entry in turn.
 The first entry is the primary knowledge base.
@@ -175,7 +176,7 @@ Return your findings in this structure:
 [Only present if Step 8 was triggered and found results]
 
 ### 1. [Solution Title]
-- **File**: `{other_solutions_path}/{category}/{filename}.md`
+- **File**: `{other_kb_path}/{category}/{filename}.md`
 - **Source KB**: {other-project-name}
 - **Project**: {project} | **Component**: {component}
 - **Relevance**: [why this matches - 1 sentence]

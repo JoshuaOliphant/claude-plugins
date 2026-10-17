@@ -56,3 +56,15 @@ def test_only_setup_names_the_config_file(doc):
     text = doc.read_text(encoding="utf-8")
     assert "compound-knowledge.local.md" not in text
     assert "first match" not in text.lower()
+
+
+@pytest.mark.parametrize(
+    "doc",
+    [
+        "skills/compound-capture/SKILL.md",
+        "skills/compound-retrieve/SKILL.md",
+        "agents/knowledge-researcher.md",
+    ],
+)
+def test_path_readers_delegate_to_the_resolver(doc):
+    assert "scripts/resolve_paths.py" in (PLUGIN_ROOT / doc).read_text(encoding="utf-8")
