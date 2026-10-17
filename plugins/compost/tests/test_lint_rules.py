@@ -45,12 +45,13 @@ def test_docstring_rule_applies_only_with_a_docstring():
 def test_test_smell_applies_to_test_functions_including_methods():
     assert TEST_SMELL.applies(_unit(name="TestOrders.test_total"))
     assert not TEST_SMELL.applies(_unit(name="total"))
+    assert not TEST_SMELL.applies(_unit(kind="log_call", name="test_total"))
 
 
 def test_weakening_applies_to_test_path_hunks_only():
-    assert TEST_WEAKENING.applies_to(_unit(kind="hunk", path="tests/test_orders.py"))
-    assert not TEST_WEAKENING.applies_to(_unit(kind="hunk", path="pkg/orders.py"))
-    assert not TEST_WEAKENING.applies_to(_unit(kind="function", path="tests/test_orders.py"))
+    assert TEST_WEAKENING.applies(_unit(kind="hunk", path="tests/test_orders.py"))
+    assert not TEST_WEAKENING.applies(_unit(kind="hunk", path="pkg/orders.py"))
+    assert not TEST_WEAKENING.applies(_unit(kind="function", path="tests/test_orders.py"))
 
 
 def test_a_rule_flags_at_its_own_threshold_unless_overridden():

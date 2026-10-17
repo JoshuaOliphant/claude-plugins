@@ -17,7 +17,7 @@ class Rule:
     acceptable: frozenset[str] = frozenset()
     threshold: float = 0.5
     actions: dict[str, str] = field(default_factory=dict, hash=False)
-    applies: Callable[[Unit], bool] = lambda _unit: True
+    when: Callable[[Unit], bool] = lambda _unit: True
     static_equivalents: Callable[[str, Unit], tuple[str, ...]] = lambda _label, _unit: ()
 
     def __post_init__(self) -> None:
@@ -39,8 +39,8 @@ class Rule:
             return 0.0, answer["choice"]
         return sum(flagged.values()), max(flagged, key=flagged.get)
 
-    def applies_to(self, unit: Unit) -> bool:
-        return unit.kind == self.kind and self.applies(unit)
+    def applies(self, unit: Unit) -> bool:
+        return unit.kind == self.kind and self.when(unit)
 
     def flags(self, probability: float, override: float | None = None) -> bool:
         return probability >= (self.threshold if override is None else override)
@@ -212,7 +212,7 @@ DOCSTRING_QUALITY = Rule(
         "contradicts": "fix: the docstring claims behavior the code does not have",
         "omits_surprise": "extend: name the side effect or failure mode a caller must know",
     },
-    applies=lambda unit: "docstring" in unit.state,
+    when=lambda unit: "docstring" in unit.state,
     question=Choice(
         instructions="Judge the docstring `docstring` against the code in `function`.",
         criteria={
@@ -253,7 +253,7 @@ TEST_SMELL = Rule(
     message="test cannot catch the regression it claims to guard",
     threshold=0.7,
     acceptable=frozenset({"meaningful", "smoke"}),
-    applies=lambda unit: unit.name.rsplit(".", 1)[-1].startswith("test_"),
+    when=lambda unit: unit.name.rsplit(".", 1)[-1].startswith("test_"),
     question=Choice(
         instructions=("Judge whether the test `function` can fail when the behavior it names breaks."),
         criteria={
@@ -306,7 +306,7 @@ TEST_WEAKENING = Rule(
     threshold=0.7,
     kind="hunk",
     message="change weakens the tests",
-    applies=lambda unit: is_test_path(unit.path),
+    when=lambda unit: is_test_path(unit.path),
     question=Noul(
         instructions=(
             "Does the change in `hunk` (removed lines in `removed`, added lines in `added`) weaken the tests?"

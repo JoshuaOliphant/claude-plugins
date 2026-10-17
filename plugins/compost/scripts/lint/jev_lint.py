@@ -102,7 +102,7 @@ def select_rules(ids: str | None) -> list[Rule]:
 
 
 async def judge_unit(jev: Jev, unit: Unit, rules: list[Rule]) -> list[Judgment]:
-    applicable = [rule for rule in rules if rule.applies_to(unit)]
+    applicable = [rule for rule in rules if rule.applies(unit)]
     if not applicable:
         return []
     answers = await jev.ask("lint", unit.state, {rule.id: rule.question for rule in applicable})

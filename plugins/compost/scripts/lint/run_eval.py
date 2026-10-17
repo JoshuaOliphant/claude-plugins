@@ -52,7 +52,7 @@ def unit_for_case(index: int, case: dict) -> Unit:
     else:
         path = "tests/test_example.py" if rule.id == "test-smell" else "app/example.py"
         units = extract_source_units(path, case["source"])
-    unit = next((u for u in units if rule.applies_to(u)), None)
+    unit = next((u for u in units if rule.applies(u)), None)
     if unit is None:
         raise ValueError(f"case {index} ({rule.id}) contains no {rule.kind} unit the rule applies to")
     return Unit(unit.kind, f"case{index}/{unit.path}", unit.line, unit.name, unit.state)
