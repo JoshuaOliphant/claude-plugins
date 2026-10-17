@@ -78,6 +78,7 @@ The task function wraps your agent for evaluation:
 
 ```python
 # evals/test_agent.py
+import asyncio
 import json
 import tempfile
 from dataclasses import dataclass
@@ -99,6 +100,10 @@ from app.tools import create_tools_server
 SERVER = "app_tools"
 TOOL_PREFIX = f"mcp__{SERVER}__"
 
+# The tools read the module-global DATA_FILE, so runs that overlap (evaluate()
+# runs cases concurrently) would share one store. Run them one at a time.
+_store_lock = asyncio.Lock()
+
 
 @dataclass
 class EvalResult:
@@ -118,41 +123,18 @@ async def run_agent_task(
     """
     Task function that runs the agent and returns structured results.
     """
-    with tempfile.TemporaryDirectory() as tmp:
-        # Isolate state: point the tools' JSON store at a seeded temp file
-        data_file = Path(tmp) / "data.json"
-        data_file.write_text(json.dumps(initial_state or {}))
-        app.tools.DATA_FILE = data_file
-
-        server = create_tools_server()
-        options = ClaudeAgentOptions(
-            model="claude-sonnet-5-5",
-            system_prompt=_build_system_prompt(),
-            mcp_servers={SERVER: server},
-            allowed_tools=[f"mcp__{SERVER}"],  # server-level rule: every tool on app_tools
-        )
-
-        html_parts: list[str] = []
-        tool_calls: list[dict] = []
-        result: ResultMessage | None = None
-
-        async with ClaudeSDKClient(options=options) as client:
-            await client.query(user_message)
-            async for msg in client.receive_response():
-                if isinstance(msg, AssistantMessage):
-                    for block in msg.content:
-                        if isinstance(block, TextBlock):
-                            html_parts.append(block.text)
-                        elif isinstance(block, ToolUseBlock):
-                            # Log calls from the stream; the server's tools are not wrappable
-                            tool_calls.append({
-                                "name": block.name.removeprefix(TOOL_PREFIX),
-                                "args": block.input,
-                            })
-                elif isinstance(msg, ResultMessage):
-                    result = msg
-
-        final_state = json.loads(data_file.read_text())
+    async with _store_lock:
+        original_data_file = app.tools.DATA_FILE
+        with tempfile.TemporaryDirectory() as tmp:
+            # Isolate state: point the tools' JSON store at a seeded temp file
+            data_file = Path(tmp) / "data.json"
+            data_file.write_text(json.dumps(initial_state or {}))
+            app.tools.DATA_FILE = data_file
+            try:
+                html_parts, tool_calls, result = await _converse(user_message)
+            finally:
+                app.tools.DATA_FILE = original_data_file
+            final_state = json.loads(data_file.read_text())
 
     usage = (result.usage if result else None) or {}
     return EvalResult(
@@ -160,8 +142,47 @@ async def run_agent_task(
         tool_calls=tool_calls,
         final_state=final_state,
         turn_count=result.num_turns if result else 0,
-        total_tokens=usage.get("input_tokens", 0) + usage.get("output_tokens", 0),
+        # input_tokens excludes cached prompt tokens, so count those too
+        total_tokens=sum(usage.get(k, 0) for k in (
+            "input_tokens",
+            "cache_creation_input_tokens",
+            "cache_read_input_tokens",
+            "output_tokens",
+        )),
     )
+
+
+async def _converse(
+    user_message: str,
+) -> tuple[list[str], list[dict], ResultMessage | None]:
+    options = ClaudeAgentOptions(
+        model="claude-sonnet-5-5",
+        system_prompt=_build_system_prompt(),
+        mcp_servers={SERVER: create_tools_server()},
+        allowed_tools=[f"mcp__{SERVER}"],  # server-level rule: every tool on app_tools
+    )
+
+    html_parts: list[str] = []
+    tool_calls: list[dict] = []
+    result: ResultMessage | None = None
+
+    async with ClaudeSDKClient(options=options) as client:
+        await client.query(user_message)
+        async for msg in client.receive_response():
+            if isinstance(msg, AssistantMessage):
+                for block in msg.content:
+                    if isinstance(block, TextBlock):
+                        html_parts.append(block.text)
+                    elif isinstance(block, ToolUseBlock):
+                        # Log calls from the stream; the server's tools are not wrappable
+                        tool_calls.append({
+                            "name": block.name.removeprefix(TOOL_PREFIX),
+                            "args": block.input,
+                        })
+            elif isinstance(msg, ResultMessage):
+                result = msg
+
+    return html_parts, tool_calls, result
 ```
 
 ---
