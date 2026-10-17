@@ -61,6 +61,13 @@ def test_the_shipped_pile_names_what_compost_replaces():
     assert "tdd" in replaces.skills
 
 
+@pytest.mark.parametrize("kind", ["plugins", "synced", "skills"])
+def test_any_one_superseded_kind_heads_the_report_as_superseded(kind):
+    active = pile.Active(plugins=[], synced=[], skills=[], orphaned=[("retired@market", "user")])
+    getattr(active, kind).append("x")
+    assert pile.render_active(active).startswith("compost replaces these, and they are still active here:\n")
+
+
 def test_report_without_apply_changes_nothing(machine):
     claude_dir, pile_path, log = machine
     before = (claude_dir / "settings.json").read_text()

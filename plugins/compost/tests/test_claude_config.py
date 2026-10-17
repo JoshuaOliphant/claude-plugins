@@ -142,9 +142,9 @@ def test_orphans_come_only_from_marketplaces_whose_clone_has_a_catalog(claude_ho
         {"id": "dropped@uncloned", "scope": "user", "enabled": True},
         {"id": "dropped@managed", "scope": "managed", "enabled": True},
     )
+    (claude_home.add_marketplace("uncloned") / ".claude-plugin" / "marketplace.json").unlink()
     claude_home.add_marketplace("listed", "kept")
     claude_home.add_marketplace("managed")
-    (claude_home.add_marketplace("uncloned") / ".claude-plugin" / "marketplace.json").unlink()
     assert claude_config.read(claude_home.dir).orphaned == [("dropped@listed", "local")]
 
 
