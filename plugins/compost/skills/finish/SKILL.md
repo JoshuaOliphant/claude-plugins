@@ -22,7 +22,7 @@ yours to do without asking.
    ```bash
    worktree_path=$(git rev-parse --show-toplevel)
    branch=$(git branch --show-current)          # empty on a detached HEAD
-   main_root=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+   main_root=$(git worktree list --porcelain | sed -n '1s/^worktree //p')  # the main checkout
    ```
 
    A detached HEAD means the harness manages this workspace. Push it as a named branch
@@ -42,7 +42,7 @@ yours to do without asking.
 
    Exit 0 means the target hasn't moved past your branch, so the merge result is HEAD's own
    tree and `compost:verify`'s run on HEAD is the merge-result run. Exit 1 means the target
-   moved: merge it into your branch (`git merge --no-ff origin/<target>`), resolve any
+   moved: merge it into your branch (`git merge --no-ff --no-edit origin/<target>`), resolve any
    conflict, and go back through `compost:verify`; the branch then holds the merge result. This needs no second
    worktree and no `git -C`, which a worktree-isolated session refuses. Do not rebase a branch
    you have already pushed. A red merge result stops here and goes to `compost:diagnose`. Any
