@@ -1,10 +1,13 @@
 """
 ABOUTME: Tests for resolve_paths.py reservoir path resolution.
-ABOUTME: Covers defaults, solutions_path back-compat, read/write split, precedence, vault_root.
+ABOUTME: Covers defaults, solutions_path back-compat, read/write split, precedence, vault_root, CLI exit.
 """
 
+import json
 import sys
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import resolve_paths  # noqa: E402
@@ -123,3 +126,32 @@ def test_read_paths_write_forced_first(tmp_path):
     _write_cfg(proj, "write_path: /vault/solutions/\nread_paths: /vault/wiki/, /vault/solutions/\n")
     result = resolve_paths.resolve(proj, home)
     assert result["read_paths"] == ["/vault/solutions/", "/vault/wiki/"]
+
+
+@pytest.mark.parametrize(
+    "create_write_path, exit_code",
+    [
+        pytest.param(True, 0, id="write-path-exists-exits-zero"),
+        pytest.param(False, 1, id="write-path-missing-exits-nonzero"),
+    ],
+)
+def test_cli_exit_reflects_write_path_existence(tmp_path, capsys, create_write_path, exit_code):
+    home = tmp_path / "home"
+    home.mkdir()
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    write_dir = tmp_path / "vault" / "solutions"
+    if create_write_path:
+        write_dir.mkdir(parents=True)
+    _write_cfg(proj, f"write_path: {write_dir}\nread_paths: {tmp_path / 'wiki'}\n")
+
+    assert resolve_paths.main(["resolve_paths.py", str(proj), str(home)]) == exit_code
+
+    out, err = capsys.readouterr()
+    assert json.loads(out)["write_path"] == f"{write_dir}/"
+    if exit_code:
+        assert "/compound-knowledge:setup" in err
+        # setup can't create a configured write_path, so the message also says how to create it.
+        assert f"mkdir -p {write_dir}/" in err
+    else:
+        assert err == ""

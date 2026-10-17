@@ -18,6 +18,17 @@ jobs:
       - name: Run version, shared-sync, test, lint, and format checks
         run: uv run --group dev python scripts/check_all.py
 
+  version-bumps:
+    name: Changed plugins have bumped versions
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check every changed plugin's version against main
+        run: python3 scripts/check_version_bumps.py --base origin/main
+
   compost-coverage:
     name: compost coverage gate
     runs-on: ubuntu-latest

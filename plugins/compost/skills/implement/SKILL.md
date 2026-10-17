@@ -113,7 +113,8 @@ the work so each step can be checked before the next builds on it
 
    compost's Stop hook holds you to this list during an implement run: when your last message waits
    on the user for anything else, Jev flags it and the hook sends you back to post a ruling and
-   continue.
+   continue. The run ends when `compost:finish` loads, and a turn that answers a message the user
+   typed is attended, so waiting on them there is allowed.
 
    When the run repeats a mistake (a command that needs a flag, a fixture that lies, a service that
    must be up), record the gotcha with `compound-knowledge:compound-capture` if it is installed, so
