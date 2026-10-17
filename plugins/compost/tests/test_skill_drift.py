@@ -173,3 +173,10 @@ def test_skill_drift_runs_without_pile(machine, monkeypatch):
     claude_dir, repo, log = machine
     log(hit(session="s1"), hit(session="s2"))
     assert [p["skill"] for p in fresh.patterns(claude_dir, repo)["patterns"]] == ["compost:build"]
+
+
+def test_personal_skill_hits_need_no_claude_cli(machine, monkeypatch):
+    claude_dir, repo, log = machine
+    log(hit(skill="grilling", session="s1"), hit(skill="grilling", session="s2"))
+    monkeypatch.setenv("PATH", "")
+    assert [p["skill"] for p in skill_drift.patterns(claude_dir, repo)["patterns"]] == ["grilling"]

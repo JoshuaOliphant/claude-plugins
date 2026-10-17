@@ -90,19 +90,26 @@ def classifying(probabilities: dict[str, float]):
 
 
 @pytest.mark.parametrize(
-    ("probabilities", "verdict", "needs_reading"),
+    ("probabilities", "verdict", "needs_reading", "targets"),
     [
-        ({"adopt": 0.1, "adapt": 0.3, "ignore": 0.6}, "ignore", False),
-        ({"adopt": 0.11, "adapt": 0.3, "ignore": 0.59}, "ignore", True),
-        ({"adopt": 0.9, "adapt": 0.05, "ignore": 0.05}, "adopt", True),
-        ({"adopt": 0.05, "adapt": 0.9, "ignore": 0.05}, "adapt", True),
+        ({"adopt": 0.1, "adapt": 0.3, "ignore": 0.6}, "ignore", False, ["spec"]),
+        ({"adopt": 0.11, "adapt": 0.3, "ignore": 0.59}, "ignore", True, ["spec"]),
+        ({"adopt": 0.9, "adapt": 0.05, "ignore": 0.05}, "adopt", True, ["spec"]),
+        ({"adopt": 0.05, "adapt": 0.9, "ignore": 0.05}, "adapt", True, ["spec"]),
+        ({"adopt": 0.0, "adapt": 0.0, "ignore": 1.0}, "ignore", True, ["spec", "hooks/skill-drift"]),
     ],
-    ids=["confident ignore is recorded", "unsure ignore is read", "adopt is read", "adapt is read"],
+    ids=[
+        "confident ignore is recorded",
+        "unsure ignore is read",
+        "adopt is read",
+        "adapt is read",
+        "a change feeding a mechanism is always read",
+    ],
 )
-def test_classify_change_records_only_confident_ignores(probabilities, verdict, needs_reading):
+def test_classify_change_records_only_confident_ignores(probabilities, verdict, needs_reading, targets):
     gathered = {
         "source": "acme",
-        "changes": [{"path": "skills/to-spec/SKILL.md", "targets": ["spec"], "diff": "+spec v2"}],
+        "changes": [{"path": "skills/to-spec/SKILL.md", "targets": targets, "diff": "+spec v2"}],
         "skill_texts": {"spec": "spec text"},
         "catalog": {"spec": "spec description"},
     }

@@ -239,7 +239,7 @@ def replaced(pile: Path, claude_dir: Path, apply: bool) -> str:
     if not apply or not (active.plugins or active.skills):
         return report
     for plugin_id in active.plugins:
-        claude_config.claude("plugin", "disable", plugin_id, "--json")
+        claude_config.claude("plugin", "disable", plugin_id, "--json", claude_dir=claude_dir)
     if active.skills:
         claude_config.turn_off_skills(claude_dir, active.skills)
     done = [f"disabled {len(active.plugins)} plugins", f"set {len(active.skills)} skills off in skillOverrides"]

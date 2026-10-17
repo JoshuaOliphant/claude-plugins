@@ -143,7 +143,10 @@ async def classify(jev, gathered: dict, change: dict) -> dict:
         "verdict": verdict,
         "confidence": round(confidence, 3),
         "probabilities": {name: round(value, 3) for name, value in answers.probabilities("verdict").items()},
-        "needs_reading": verdict != "ignore" or confidence < RECORD_IGNORE_AT,
+        # Jev never sees a mechanism's text, so its ignore cannot clear a change that feeds one.
+        "needs_reading": verdict != "ignore"
+        or confidence < RECORD_IGNORE_AT
+        or any(pile.is_mechanism(target) for target in change["targets"]),
     }
 
 

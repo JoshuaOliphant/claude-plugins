@@ -34,17 +34,31 @@ def test_skill_drift_and_replaced_agree_on_whether_a_plugin_is_active(claude_hom
 
 
 CONFIG = claude_config.Config(
-    enabled=frozenset({"compost@oliphant", "old@market"}),
-    synced=frozenset({"old@market"}),
     personal=frozenset({"grilling", "tdd"}),
     overrides={"tdd": "off", "compost:pause": "off", "grilling": "user-invocable-only"},
+    list_plugins=lambda: [
+        {"id": "compost@oliphant", "scope": "user", "enabled": True},
+        {"id": "old@market", "scope": "synced", "enabled": True},
+        {"id": "both@market", "scope": "synced", "enabled": True},
+        {"id": "both@market", "scope": "project", "enabled": True},
+    ],
 )
 
 
 @pytest.mark.parametrize(
     ("plugin_id", "enabled", "synced"),
-    [("compost@oliphant", True, False), ("old@market", True, True), ("compost@elsewhere", False, False)],
-    ids=["plugin-enabled", "synced-plugin-enabled", "same-name-other-marketplace"],
+    [
+        ("compost@oliphant", True, False),
+        ("old@market", True, True),
+        ("both@market", True, False),
+        ("compost@elsewhere", False, False),
+    ],
+    ids=[
+        "plugin-enabled",
+        "synced-plugin-enabled",
+        "synced-and-local-is-turned-off-locally",
+        "same-name-other-marketplace",
+    ],
 )
 def test_a_plugin_is_enabled_and_synced_by_its_full_id(plugin_id, enabled, synced):
     assert (CONFIG.plugin_enabled(plugin_id), CONFIG.is_synced(plugin_id)) == (enabled, synced)
@@ -79,13 +93,41 @@ def test_read_takes_enabled_and_synced_plugins_from_the_cli_and_skills_from_clau
         {"id": "off@m", "scope": "user", "enabled": False},
         {"id": "web@m", "scope": "synced", "enabled": True},
     )
-    assert claude_config.read(claude_home.dir) == claude_config.Config(
-        frozenset({"on@m", "web@m"}), frozenset({"web@m"}), frozenset(), {}
+    config = claude_config.read(claude_home.dir)
+    assert (config.enabled, config.synced, config.personal, config.overrides) == (
+        frozenset({"on@m", "web@m"}),
+        frozenset({"web@m"}),
+        frozenset(),
+        {},
     )
     (claude_home.dir / "skills" / "mine").mkdir(parents=True)
     (claude_home.dir / "settings.json").write_text(json.dumps({"skillOverrides": {"x": "off"}}))
     assert claude_config.read(claude_home.dir).personal == frozenset({"mine"})
     assert claude_config.read(claude_home.dir).overrides == {"x": "off"}
+
+
+@pytest.mark.parametrize("default", [False, True], ids=["other-claude-dir", "default-claude-dir"])
+def test_the_cli_lists_plugins_from_the_claude_dir_the_settings_come_from(claude_home, monkeypatch, default):
+    if default:
+        monkeypatch.setattr(claude_config, "CLAUDE_DIR", claude_home.dir)
+    assert claude_config.read(claude_home.dir).enabled == frozenset()
+    assert claude_home.calls.read_text() == f"list {'unset' if default else claude_home.dir}\n"
+
+
+def test_plugins_are_listed_only_when_a_plugin_is_asked_about(claude_home):
+    (claude_home.dir / "skills" / "mine").mkdir(parents=True)
+    config = claude_config.read(claude_home.dir)
+    assert (config.skill_active("mine"), config.skill_active("gone")) == (True, False)
+    assert not claude_home.calls.exists()
+    assert not config.skill_active("compost:build")
+    assert not config.plugin_enabled("compost@oliphant")
+    assert claude_home.calls.read_text() == f"list {claude_home.dir}\n"
+
+
+def test_unparseable_cli_output_is_reported(claude_home):
+    claude_home.listing.write_text("Warning: update available\n[]")
+    with pytest.raises(claude_config.ClaudeConfigError, match="claude plugin list --json printed no JSON: "):
+        claude_config.read(claude_home.dir).enabled
 
 
 @pytest.mark.parametrize(
@@ -101,7 +143,7 @@ def test_cli_problems_are_reported(claude_home, tmp_path, monkeypatch, path, mes
         path = str(failing)
     monkeypatch.setenv("PATH", path)
     with pytest.raises(claude_config.ClaudeConfigError, match=message):
-        claude_config.read(claude_home.dir)
+        claude_config.read(claude_home.dir).enabled
 
 
 def test_unreadable_settings_are_reported(claude_home):

@@ -36,10 +36,7 @@ def machine(claude_home, tmp_path):
 
 
 def test_find_active_separates_local_plugins_synced_plugins_and_skills():
-    enabled = frozenset(plugin["id"] for plugin in INSTALLED if plugin["enabled"])
-    config = claude_config.Config(
-        enabled, frozenset({"synced-old@synced"}), frozenset({"tdd", "grill"}), {"grill": "off"}
-    )
+    config = claude_config.Config(frozenset({"tdd", "grill"}), {"grill": "off"}, lambda: INSTALLED)
     active = pile.find_active(REPLACES, config)
     assert (active.plugins, active.synced, active.skills) == (
         ["old@market", "proj@market"],
@@ -72,6 +69,7 @@ def test_apply_disables_plugins_and_merges_overrides_into_settings(machine):
     claude_dir, pile_path, log = machine
     report = pile.replaced(pile_path, claude_dir, apply=True)
     assert log.read_text() == "old@market\n"
+    assert (claude_dir.parent / "calls").read_text() == f"list {claude_dir}\ndisable {claude_dir}\n"
     settings = json.loads((claude_dir / "settings.json").read_text())
     assert settings == {"env": {"A": "1"}, "skillOverrides": {"grill": "off", "tdd": "off"}}
     assert report.endswith(
