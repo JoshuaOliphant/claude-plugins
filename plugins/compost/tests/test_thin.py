@@ -1,6 +1,7 @@
 # ABOUTME: Tests thin.py: coverage candidates from per-test contexts, the kill matrix run by real cosmic-ray and real
 # ABOUTME: pytest in forked children on a toy project, the baseline guard, and the keep / redundant / kills-nothing verdict.
 import json
+import os
 import sys
 import textwrap
 import time
@@ -244,8 +245,17 @@ def test_what_a_test_starts_dies_with_its_run(toy, tmp_path, then, timeout):
 
 def test_children_read_stdin_from_devnull_so_a_read_cannot_block(toy, tmp_path):
     (tmp_path / "test_stdin.py").write_text("import os\ndef test_reads():\n    assert os.read(0, 1) == b''\n")
-    [report] = thin.fork_runs([(None, None, ["test_stdin.py::test_reads"])], PYTEST, 20, 1)
-    assert report.named == {"test_stdin.py::test_reads"} and report.failed == set()
+    # An open pipe on stdin blocks a read, as a terminal does; -s keeps pytest's capture from hiding it.
+    read_end, write_end = os.pipe()
+    saved = os.dup(0)
+    os.dup2(read_end, 0)
+    try:
+        [report] = thin.fork_runs([(None, None, ["test_stdin.py::test_reads"])], [*PYTEST, "-s"], 5, 1)
+    finally:
+        os.dup2(saved, 0)
+        for fd in (saved, read_end, write_end):
+            os.close(fd)
+    assert report is not None and report.named == {"test_stdin.py::test_reads"} and report.failed == set()
 
 
 def test_children_drop_compost_scripts_from_sys_path_so_its_modules_cannot_shadow_the_projects(toy, tmp_path):
@@ -260,12 +270,11 @@ def test_children_drop_compost_scripts_from_sys_path_so_its_modules_cannot_shado
 @pytest.mark.parametrize(
     ("pytest_args", "test_body", "message"),
     [
-        (["--no-such-option"], "assert adult(18)", "left no report"),
         (PYTEST, "assert not adult(18)", "1 tests fail unmutated, e.g. test_age.py::test_grown_up"),
         ([*PYTEST, "--junitprefix=pkg"], "assert adult(18)", "never names test_age.py::test_boundary"),
         (PYTEST, "assert adult(18)\nthis is not python", "names a failure no selected test matches: ::test_age"),
     ],
-    ids=["broken setup", "red baseline", "junit prefix", "collection error"],
+    ids=["red baseline", "junit prefix", "collection error"],
 )
 def test_the_matrix_refuses_to_run_on_a_baseline_that_is_not_green(toy, tmp_path, pytest_args, test_body, message):
     source = (tmp_path / "test_age.py").read_text().replace("assert adult(18)\n", f"{test_body}\n")

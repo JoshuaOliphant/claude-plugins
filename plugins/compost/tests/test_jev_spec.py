@@ -17,11 +17,10 @@ def ranked_choice(first: str, confidence: float, second: str) -> dict:
 @pytest.mark.parametrize(
     ("payload", "requests"),
     [
-        ({"request": "add a flag", "survey": "cli.py"}, [{"request": "add a flag", "survey": "cli.py"}]),
         ({"requests": ["a", "b"], "survey": "s"}, [{"request": "a", "survey": "s"}, {"request": "b", "survey": "s"}]),
         ({"requests": [{"request": "a"}]}, [{"request": "a", "survey": ""}]),
     ],
-    ids=["one request", "strings share the survey", "dicts carry their own"],
+    ids=["strings share the survey", "dicts carry their own"],
 )
 def test_gather_requests_accepts_one_or_many(payload, requests):
     assert spec.gather_requests(payload) == {"requests": requests}

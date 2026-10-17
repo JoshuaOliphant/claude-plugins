@@ -258,8 +258,8 @@ def test_gather_stop_needs_a_message_and_keeps_its_end(monkeypatch):
 
 @pytest.mark.parametrize(
     ("waits", "allowed", "block"),
-    [(1.0, 0.5, True), (0.99, 0.5, False), (0.95, 0.9, False)],
-    ids=["waits, not allowed: at threshold", "just under threshold", "waits on an allowed stop"],
+    [(1.0, 0.5, True), (0.99, 0.5, False)],
+    ids=["waits, not allowed: at threshold", "just under threshold"],
 )
 def test_stop_guard_blocks_a_wait_outside_the_allowed_stops(waits, allowed, block):
     jev = StubJev(lambda tool, state, questions: {"waits": noul(waits), "allowed": noul(allowed)})

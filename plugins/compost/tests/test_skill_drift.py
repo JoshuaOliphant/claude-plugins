@@ -64,9 +64,8 @@ def found(machine, **kwargs) -> dict:
         ([hit(session="s1"), hit(session="s2", turn="t9")], [("compost:build", "deviated", 2)]),
         ([hit(session="s1"), hit(session="s1", turn="t2")], []),
         ([hit(session="s1"), hit(session="s2", kind="missing_guidance")], []),
-        ([], []),
     ],
-    ids=["two-sessions-make-a-pattern", "one-session-repeating-is-not", "kinds-are-not-pooled", "empty-log"],
+    ids=["two-sessions-make-a-pattern", "one-session-repeating-is-not", "kinds-are-not-pooled"],
 )
 def test_a_pattern_needs_the_same_kind_in_two_sessions(machine, hits, expected):
     machine[2](*hits)

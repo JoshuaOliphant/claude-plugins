@@ -14,9 +14,10 @@ fails for each mutant (not only the first), and a test whose kills another test 
 nothing that mutation can see.
 
 Mutation sees only what its operators model, so its verdict is a lead, not a ruling. On compost's
-own suite, the matrix called five rejection tests redundant because the happy-path tests already
-kill an inverted guard, while cosmic-ray has no operator that deletes the guard, which only the
-rejection tests would catch. Every verdict gets one more check by hand before a test goes.
+own suite the matrix called 117 tests removable, and breaking the code by hand confirmed 26. Most
+of the rest were rejection tests: the happy-path tests already kill an inverted guard, while
+cosmic-ray has no operator that deletes the guard, which only the rejection tests would catch.
+Every verdict gets one more check by hand before a test goes.
 
 Jev's `duplicate-test`, which `compost:build` runs on each new test, reads tests instead of
 running them, so it also judges what mutation can't see: tests over files and docs, string
@@ -74,8 +75,9 @@ hand decides.
 5. **Confirm each verdict by breaking the code by hand.** For every redundant or kills-nothing
    test, name the behavior only it seems to pin, then break exactly that in the code: delete the
    guard it exercises, return a constant from the predicate, drop the side effect, swap the
-   message. Run the suite without the test (`--deselect <node id>`). If another test fails, the
-   verdict holds. If none does, the test stays: say which break only it catches. Always confirm by
+   message. Run the suite without the test. `--deselect` matches node ids by prefix, so
+   deselecting `test_main` also drops `test_main_again`; when a longer id starts with this one,
+   run `-k "not <exact name>"` instead. If another test fails, the verdict holds. If none does, the test stays: say which break only it catches. Always confirm by
    hand, before touching the test, when it is:
    - a negative or rejection case (`returns False`, `raises`): cosmic-ray never deletes a
      statement or returns a constant;

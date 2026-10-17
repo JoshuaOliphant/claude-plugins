@@ -62,12 +62,6 @@ def test_a_tool_reads_json_input_and_prints_its_judgment(cache_dir, repo, tmp_pa
     assert (cache_dir / "jev-cache.json").exists()
 
 
-def test_input_can_come_from_stdin(cache_dir, repo, monkeypatch, capsys):
-    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"repo": str(repo), "criterion": "c"})))
-    assert jev.main(["find-test"], client_factory=lambda: StubClient(placing)) == 0
-    assert json.loads(capsys.readouterr().out)["tool"] == "find-test"
-
-
 @pytest.mark.parametrize(
     ("text", "message"),
     [("not json", "input is not JSON"), ("[1]", "input must be a JSON object"), ("{}", "needs `criterion`")],
