@@ -4,9 +4,11 @@
 # dependencies = ["typesafe-sdk>=0.7.1"]
 # ///
 # ABOUTME: Stop hook for compost:implement runs: blocks a stop that waits on the user for anything but an allowed stop.
+# ABOUTME: A run ends when compost:finish loads; a message the user typed during the run makes waiting on them fine.
 # ABOUTME: Jev's stop-guard tool judges the final message; any error or a missing key allows the stop and logs a line.
 import asyncio
 import json
+import re
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -19,7 +21,9 @@ from jevtools.core import open_client
 
 LOG = Path.home() / ".cache" / "compost" / "stop-guard.log"
 IMPLEMENT = "compost:implement"
-COMMAND = f"<command-name>/{IMPLEMENT}</command-name>"
+FINISH = "compost:finish"
+# Text Claude Code writes into user entries: <command-name>, <system-reminder>, <task-notification> and the like.
+INJECTED = re.compile(r"<([a-z][a-z-]*)>.*?</\1>", re.DOTALL)
 REASON = (
     "compost stop-guard: this implement run is unattended, and your last message waits on the user for something "
     f"outside the allowed stops ({'; '.join(meta.ALLOWED_STOPS)}). Decide it yourself, post a ruling as an issue "
@@ -47,14 +51,39 @@ def blocks(entry: dict) -> list:
     return [block for block in content or [] if isinstance(block, dict)]
 
 
-def loads_implement(entry: dict) -> bool:
+def loads(entry: dict, skill: str) -> bool:
     for block in blocks(entry):
-        skill = (block.get("input") or {}).get("skill")
-        if block.get("type") == "tool_use" and block.get("name") == "Skill" and skill == IMPLEMENT:
+        named = (block.get("input") or {}).get("skill")
+        if block.get("type") == "tool_use" and block.get("name") == "Skill" and named == skill:
             return True
-        if entry.get("type") == "user" and block.get("type") == "text" and COMMAND in block.get("text", ""):
+        command = f"<command-name>/{skill}</command-name>"
+        if entry.get("type") == "user" and block.get("type") == "text" and command in block.get("text", ""):
             return True
     return False
+
+
+def prompt(entry: dict) -> list[str]:
+    """The text of a main-thread user entry that can start a turn; tool results and meta entries carry none."""
+    if entry.get("type") != "user" or entry.get("isMeta") or entry.get("isSidechain"):
+        return []
+    return [block.get("text", "") for block in blocks(entry) if block.get("type") == "text"]
+
+
+def typed(texts: list[str]) -> bool:
+    """Whether the user typed a prompt, as opposed to Claude Code injecting it (<task-notification> and the like)."""
+    return any(INJECTED.sub("", text).strip() for text in texts)
+
+
+def unattended_run(transcript: list[dict]) -> bool:
+    """An implement run is on (no compost:finish since it loaded) and the latest prompt since then is not typed."""
+    starts = [index for index, entry in enumerate(transcript) if loads(entry, IMPLEMENT)]
+    if not starts:
+        return False
+    since = transcript[starts[-1] + 1 :]
+    if any(loads(entry, FINISH) for entry in since):
+        return False
+    prompts = [texts for texts in map(prompt, since) if texts]
+    return not (prompts and typed(prompts[-1]))
 
 
 def final_message(transcript: list[dict]) -> str:
@@ -79,7 +108,7 @@ def decide(hook: dict, client_factory=open_client) -> dict | None:
     if IMPLEMENT not in text:
         return None
     transcript = entries(text)
-    if not any(map(loads_implement, transcript)):
+    if not unattended_run(transcript):
         return None
     message = hook.get("last_assistant_message") or final_message(transcript)
     if not message.strip():
