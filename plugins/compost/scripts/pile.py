@@ -223,7 +223,7 @@ def find_active(replaces: Replaces, config: claude_config.Config) -> Active:
     )
 
 
-def render_active(active: Active) -> str:
+def render_active(active: Active, keep_orphans: bool) -> str:
     if active.plugins or active.synced or active.skills:
         lines = ["compost replaces these, and they are still active here:"]
     else:
@@ -237,16 +237,19 @@ def render_active(active: Active) -> str:
     if active.orphaned:
         lines.append("Installs their marketplace no longer lists:")
         orphans = ", ".join(f"{plugin_id} ({scope} scope)" for plugin_id, scope in active.orphaned)
-        lines.append(f"  plugins to uninstall: {orphans}")
+        lines.append(f"  {'kept, as --keep-orphans asked' if keep_orphans else 'plugins to uninstall'}: {orphans}")
     return "\n".join(lines)
 
 
 def replaced(pile: Path, claude_dir: Path, apply: bool, keep_orphans: bool = False) -> str:
     """With `apply`, disables superseded plugins, sets superseded skills off, and uninstalls orphaned installs unless
-    `keep_orphans`. An uninstall keeps the plugin's data directory, since a delisted plugin cannot be reinstalled."""
+    `keep_orphans`. A superseded plugin that is also orphaned is uninstalled rather than disabled, unless kept. An
+    uninstall keeps the plugin's data directory, since a delisted plugin cannot be reinstalled."""
     active = find_active(load(pile).replaces, claude_config.read(claude_dir))
-    report = render_active(active)
     orphans = [] if keep_orphans else active.orphaned
+    uninstalling = {plugin_id for plugin_id, _ in orphans}
+    active = dataclasses.replace(active, plugins=[plugin for plugin in active.plugins if plugin not in uninstalling])
+    report = render_active(active, keep_orphans)
     if not apply or not (active.plugins or active.skills or orphans):
         return report
     for plugin_id in active.plugins:

@@ -4,6 +4,7 @@
 import json
 import os
 import subprocess
+import sys
 import tempfile
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -45,19 +46,27 @@ def installed_plugins(claude_dir: Path | None = None) -> list[dict]:
 
 
 def marketplace_listings(claude_dir: Path | None = None) -> dict[str, frozenset[str]]:
-    """Each configured marketplace, mapped to the plugin names its local clone's catalog lists. A marketplace whose
-    clone has no catalog is left out: nothing can be said about what it lists."""
+    """Each configured marketplace, mapped to the plugin names its local clone's catalog lists. A marketplace with
+    no clone yet, no catalog, or a malformed one is left out, with a warning on stderr for a malformed one: nothing
+    can be said about what it lists."""
     listings = {}
     for marketplace in _claude_json("plugin", "marketplace", "list", claude_dir=claude_dir):
-        catalog = Path(marketplace["installLocation"]) / ".claude-plugin" / "marketplace.json"
-        if catalog.is_file():
-            listings[marketplace["name"]] = catalog_names(catalog)
+        name, location = marketplace.get("name"), marketplace.get("installLocation")
+        if not (name and location):
+            continue
+        catalog = Path(location) / ".claude-plugin" / "marketplace.json"
+        if not catalog.is_file():
+            continue
+        try:
+            listings[name] = catalog_names(catalog)
+        except ClaudeConfigError as error:
+            print(f"warning: {error}; its installs are not checked", file=sys.stderr)
     return listings
 
 
 def catalog_names(catalog: Path) -> frozenset[str]:
     """The plugin names a marketplace's own `marketplace.json` lists; it is the marketplace's content, so a catalog
-    that is unreadable or not shaped as `{"plugins": [{"name": ...}]}` is reported rather than trusted."""
+    that is unreadable or not shaped as `{"plugins": [{"name": ...}]}` raises rather than being trusted."""
     try:
         data = json.loads(catalog.read_text())
     except (OSError, ValueError) as error:

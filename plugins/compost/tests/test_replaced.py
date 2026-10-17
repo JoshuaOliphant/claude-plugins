@@ -68,7 +68,9 @@ def test_the_shipped_pile_names_what_compost_replaces():
 def test_any_one_superseded_kind_heads_the_report_as_superseded(kind):
     active = pile.Active(plugins=[], synced=[], skills=[], orphaned=[("retired@market", "user")])
     getattr(active, kind).append("x")
-    assert pile.render_active(active).startswith("compost replaces these, and they are still active here:\n")
+    assert pile.render_active(active, keep_orphans=False).startswith(
+        "compost replaces these, and they are still active here:\n"
+    )
 
 
 def test_report_without_apply_changes_nothing(machine):
@@ -77,7 +79,7 @@ def test_report_without_apply_changes_nothing(machine):
     report = pile.replaced(pile_path, claude_dir, apply=False)
     assert report == (
         "compost replaces these, and they are still active here:\n"
-        "  plugins to disable: old@market, dropped-old@market\n"
+        "  plugins to disable: old@market\n"
         "  skills to set off in skillOverrides: tdd\n"
         "  synced from claude.ai, turn off in your claude.ai settings: synced-old@synced\n"
         "Installs their marketplace no longer lists:\n"
@@ -88,30 +90,36 @@ def test_report_without_apply_changes_nothing(machine):
 
 
 def test_apply_disables_plugins_merges_overrides_into_settings_and_uninstalls_orphans(machine, claude_home):
-    """dropped-old is superseded and orphaned at once: it is disabled, then uninstalled."""
+    """dropped-old is superseded and orphaned at once: it is uninstalled, not disabled first."""
     claude_dir, pile_path, log = machine
     report = pile.replaced(pile_path, claude_dir, apply=True)
-    assert log.read_text() == "old@market\ndropped-old@market\n"
+    assert log.read_text() == "old@market\n"
     uninstalled = "dropped-old@market user\nretired@market user\nretired@market project\n"
     assert claude_home.uninstalled.read_text() == uninstalled
-    calls = ["list", "marketplace", "disable", "disable", "uninstall", "uninstall", "uninstall"]
+    calls = ["list", "marketplace", "disable", "uninstall", "uninstall", "uninstall"]
     assert claude_home.calls.read_text() == "".join(f"{call} {claude_dir}\n" for call in calls)
     settings = json.loads((claude_dir / "settings.json").read_text())
     assert settings == {"env": {"A": "1"}, "skillOverrides": {"grill": "off", "tdd": "off"}}
     assert report.endswith(
-        "disabled 2 plugins; set 1 skills off in skillOverrides; uninstalled 3 installs their marketplace no longer"
+        "disabled 1 plugins; set 1 skills off in skillOverrides; uninstalled 3 installs their marketplace no longer"
         " lists; still to do by hand: synced-old@synced on claude.ai. Restart Claude Code to apply."
     )
     assert "skills to set off" not in pile.replaced(pile_path, claude_dir, apply=False)
 
 
-def test_apply_creates_settings_and_skips_the_hand_note_when_nothing_is_synced(machine):
-    claude_dir, pile_path, _ = machine
+def test_apply_creates_settings_and_skips_the_hand_note_when_nothing_is_synced(machine, claude_home):
+    """With --keep-orphans, dropped-old (superseded and orphaned) is disabled instead of uninstalled."""
+    claude_dir, pile_path, log = machine
     (claude_dir / "settings.json").unlink()
-    pile_path.write_text('[replaces]\nplugins = []\nskills = ["tdd"]\n')
+    pile_path.write_text('[replaces]\nplugins = ["dropped-old@market"]\nskills = ["tdd"]\n')
     report = pile.replaced(pile_path, claude_dir, apply=True, keep_orphans=True)
     assert json.loads((claude_dir / "settings.json").read_text()) == {"skillOverrides": {"tdd": "off"}}
-    assert report.endswith("set 1 skills off in skillOverrides. Restart Claude Code to apply.")
+    assert log.read_text() == "dropped-old@market\n"
+    assert not claude_home.uninstalled.exists()
+    assert report.startswith(
+        "compost replaces these, and they are still active here:\n  plugins to disable: dropped-old"
+    )
+    assert report.endswith("disabled 1 plugins; set 1 skills off in skillOverrides. Restart Claude Code to apply.")
 
 
 def test_nothing_active_says_so_and_apply_does_nothing(machine, claude_home):
@@ -134,11 +142,8 @@ def test_orphaned_installs_are_reported_alone_and_uninstalled_only_on_apply(
     claude_dir, pile_path, log = machine
     pile_path.write_text('[replaces]\nplugins = ["off@market"]\nskills = ["gone"]\n')
     assert pile.main(["--pile", str(pile_path), "replaced", "--claude-dir", str(claude_dir), *flags]) == 0
-    report = (
-        "Nothing compost replaces is active here.\n"
-        "Installs their marketplace no longer lists:\n"
-        f"  plugins to uninstall: {ORPHANS}\n"
-    )
+    action = "kept, as --keep-orphans asked" if "--keep-orphans" in flags else "plugins to uninstall"
+    report = f"Nothing compost replaces is active here.\nInstalls their marketplace no longer lists:\n  {action}: {ORPHANS}\n"
     if uninstalled:
         report += "disabled 0 plugins; set 0 skills off in skillOverrides; uninstalled 3 installs their marketplace"
         report += " no longer lists. Restart Claude Code to apply.\n"
