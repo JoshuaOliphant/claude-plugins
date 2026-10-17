@@ -4,7 +4,9 @@ import json
 import os
 import subprocess
 import tempfile
+from collections.abc import Callable
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 
 CLAUDE_DIR = Path.home() / ".claude"
@@ -14,9 +16,13 @@ class ClaudeConfigError(Exception):
     pass
 
 
-def claude(*args: str) -> str:
+def claude(*args: str, claude_dir: Path | None = None) -> str:
+    """Runs the CLI against `claude_dir` through CLAUDE_CONFIG_DIR when it is not the default ~/.claude."""
+    env = None
+    if claude_dir is not None and claude_dir != CLAUDE_DIR:
+        env = os.environ | {"CLAUDE_CONFIG_DIR": str(claude_dir)}
     try:
-        result = subprocess.run(["claude", *args], capture_output=True, text=True, check=False)
+        result = subprocess.run(["claude", *args], capture_output=True, text=True, check=False, env=env)
     except FileNotFoundError as error:
         raise ClaudeConfigError("the claude CLI is not on PATH") from error
     if result.returncode != 0:
@@ -24,8 +30,12 @@ def claude(*args: str) -> str:
     return result.stdout
 
 
-def installed_plugins() -> list[dict]:
-    return json.loads(claude("plugin", "list", "--json"))
+def installed_plugins(claude_dir: Path | None = None) -> list[dict]:
+    output = claude("plugin", "list", "--json", claude_dir=claude_dir)
+    try:
+        return json.loads(output)
+    except json.JSONDecodeError as error:
+        raise ClaudeConfigError(f"claude plugin list --json printed no JSON: {error}") from error
 
 
 def personal_skills(claude_dir: Path) -> set[str]:
@@ -52,16 +62,32 @@ def turn_off_skills(claude_dir: Path, names: list[str]) -> None:
     os.replace(handle.name, path)
 
 
-@dataclass(frozen=True)
+@dataclass
 class Config:
-    """Enabled plugins come from `claude plugin list --json`: the CLI merges every settings scope and the plugins
-    synced from claude.ai, which `enabledPlugins` in ~/.claude/settings.json alone does not. `synced` holds the
-    enabled ones only claude.ai can turn off. Skills are switched off only by `skillOverrides` in settings.json."""
+    """Enabled plugins come from `claude plugin list --json`, run only when a plugin or plugin skill is asked about:
+    the CLI merges every settings scope and the plugins synced from claude.ai, which `enabledPlugins` in
+    settings.json alone does not. Skills are switched off only by `skillOverrides` in settings.json."""
 
-    enabled: frozenset[str]
-    synced: frozenset[str]
     personal: frozenset[str]
     overrides: dict[str, str]
+    list_plugins: Callable[[], list[dict]]
+
+    @cached_property
+    def _listing(self) -> list[dict]:
+        return self.list_plugins()
+
+    @cached_property
+    def enabled(self) -> frozenset[str]:
+        return frozenset(plugin["id"] for plugin in self._listing if plugin.get("enabled"))
+
+    @cached_property
+    def synced(self) -> frozenset[str]:
+        """Enabled ids only claude.ai can turn off: synced, with no enabled install at a local scope."""
+        scopes: dict[str, set] = {}
+        for plugin in self._listing:
+            if plugin.get("enabled"):
+                scopes.setdefault(plugin["id"], set()).add(plugin.get("scope"))
+        return frozenset(plugin_id for plugin_id, found in scopes.items() if found == {"synced"})
 
     def plugin_enabled(self, plugin_id: str) -> bool:
         """`plugin_id` is `plugin@marketplace`."""
@@ -81,11 +107,8 @@ class Config:
 
 
 def read(claude_dir: Path) -> Config:
-    overrides = read_settings(claude_dir).get("skillOverrides", {})
-    enabled = [plugin for plugin in installed_plugins() if plugin.get("enabled")]
     return Config(
-        enabled=frozenset(plugin["id"] for plugin in enabled),
-        synced=frozenset(plugin["id"] for plugin in enabled if plugin.get("scope") == "synced"),
         personal=frozenset(personal_skills(claude_dir)),
-        overrides=overrides,
+        overrides=read_settings(claude_dir).get("skillOverrides", {}),
+        list_plugins=lambda: installed_plugins(claude_dir),
     )
