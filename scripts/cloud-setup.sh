@@ -2,7 +2,9 @@
 # ABOUTME: Setup script for Claude Code cloud environments: installs the plugins sessions here use.
 # ABOUTME: The environment's own setup script runs this; every step is idempotent and only warns on failure.
 #
-# Usage: bash scripts/cloud-setup.sh
+# Usage: bash /home/user/claude-plugins/scripts/cloud-setup.sh
+# Cloud sessions start in /home/user, one level above the clone, so the environment's setup
+# script must use this absolute path; `bash scripts/cloud-setup.sh` exits 127 there.
 set -uo pipefail
 
 warn() { echo "cloud-setup: warn: $*" >&2; }
