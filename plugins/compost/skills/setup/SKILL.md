@@ -80,8 +80,8 @@ edits the user made by hand.
    as required. Run each gate once. Record the ones that pass as gates; record a gate that fails
    or doesn't run as broken, with its output's first error, rather than dropping it. Record the
    mutation tool the same way: adopt one already configured, or offer the stack's default from
-   [mutation testing](../verify/references/mutation.md), and run it once over the last commit's
-   diff. Write `docs/agents/testing.md` from the template in the same reference.
+   [mutation testing](../verify/references/mutation.md), and run it once over the last commit
+   that changed source. Write `docs/agents/testing.md` from the template in the same reference.
 
 7. **Observability.** Find the telemetry the repo's running code emits with the detection ladder
    in [observability](references/observability.md): the observability harness, another stack
