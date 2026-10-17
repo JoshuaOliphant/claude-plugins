@@ -9,7 +9,8 @@ pytest, adopted from the existing suites.
   which also puts its `scripts/` on the import path; the other `tests/` suites insert `scripts/`
   into `sys.path` in each test file.
 - The repo-level scripts under `scripts/` keep theirs in `scripts/tests/`, collected by the root
-  `pytest` run; each test file inserts `scripts/` into `sys.path`.
+  `pytest` run; each test file inserts the directory of the module it tests (`scripts/`, or
+  `scripts/shared/` for the canonical shared copies) into `sys.path`.
 - Plugins with their own `pyproject.toml` (compost) run their suite from
   their directory with their own dev group and coverage gate.
 - Each acceptance criterion AC-N maps to a test node id or parametrize id, recorded in the
