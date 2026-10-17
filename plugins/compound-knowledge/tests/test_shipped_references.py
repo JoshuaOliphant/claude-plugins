@@ -74,5 +74,12 @@ def test_path_readers_delegate_to_the_resolver(doc):
 def test_setup_writes_write_path_not_the_alias():
     """setup writes the key the resolver prefers, so its config can't be shadowed by its own alias."""
     text = (PLUGIN_ROOT / "commands" / "setup.md").read_text(encoding="utf-8")
-    assert "write_path: " in text
-    assert "solutions_path: " not in text
+    config_keys = re.findall(r"^\s*(\w+)\s*:", text, re.MULTILINE)
+    assert "write_path" in config_keys
+    assert "solutions_path" not in config_keys
+
+
+def test_setup_can_edit_an_existing_config_in_place():
+    """setup keeps a config's other keys when it changes write_path, which needs the Edit tool."""
+    front_matter = (PLUGIN_ROOT / "commands" / "setup.md").read_text(encoding="utf-8").split("---")[1]
+    assert "Edit" in front_matter
