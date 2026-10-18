@@ -1,0 +1,10 @@
+enforced c1 calls 10 first edit at 7 exercised before edit 1
+enforced c2 calls 11 first edit at 7 exercised before edit 1
+enforced c3 calls 10 first edit at 6 exercised before edit 0
+enforced c4 calls 11 first edit at 6 exercised before edit 1
+enforced c5 calls 9 first edit at 7 exercised before edit 2
+enforced c6 calls 10 first edit at 7 exercised before edit 1
+enforced c7 calls 10 first edit at 8 exercised before edit 4
+enforced c8 calls 14 first edit at 8 exercised before edit 1
+enforced c9 calls 10 first edit at 8 exercised before edit 1
+enforced c10 calls 12 first edit at 6 exercised before edit 1
