@@ -22,7 +22,8 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-# `uv run --group dev pytest` from the repo root discovers every plugin's tests and scripts/tests.
+# `uv run --group dev pytest` from the repo root discovers every plugin's tests, scripts/tests, and the
+# experiment harnesses' tests under ai_docs/experiments.
 # compost's coverage-gated config lives in its own pyproject and only applies
 # when pytest is invoked from that directory; at the repo root those tests still
 # run (without the coverage gate). compost's live Jev evals call the TypeSafe API and need a key,

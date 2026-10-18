@@ -59,7 +59,7 @@ On Linux the sandbox needs `bubblewrap` and `socat` (`apt-get install bubblewrap
 **Bookkeeping.**
 - Mutant labels are SKILL.md line numbers.
 - Timeouts, errors, unparseable verdicts and a wrong served model go to `errors.jsonl`, never into scores.
-- Calls that name a path outside the sandbox set `escaped` per row. Since #140 they read nothing; the flag counts attempts.
+- Calls that name a path outside the sandbox set `escaped` per row. Since #140 the flag counts attempts: the only outside paths a call can read are the system dirs in `SYSTEM_DIRS` (`/usr`, `/etc`, ...), which hold no copy of the skill or the KB.
 - `manifest.json` refuses to resume into an `--out` whose inputs changed.
 
 ## Results: compound-retrieve, shipped evals (2026-10-17)
@@ -158,7 +158,7 @@ The evals now ship their own fixtures (`evals/fixtures/`): a KB holding every en
 
 ## Results: compound-retrieve, sandboxed for #140 (2026-10-18)
 
-`results-140/`: the same `--controls-only` run as `results-116/` (5 trials, no agents, `--plugin-root plugins/compound-knowledge`) under the sandbox described above. 100 runs, 0 infra errors, subject cost $0.55.
+`results-140/`: the same `--controls-only` run as `results-116/` (5 trials, no agents, `--plugin-root plugins/compound-knowledge`) under the sandbox described above. 100 runs, 0 infra errors, subject cost $0.55. It ran at commit 6e22f85; #141 has since changed compound-knowledge's scripts, so a resume into `results-140/` is refused.
 
 - **Nothing outside the sandbox can be read.** 15 runs still name an outside path (`escaped`), against 66 before, and all are guesses at a HOME that doesn't exist (`/home/user/projects/skill-lab/...`, `/root/projects/...`). The file tools refuse them and Bash sees no such path. No run read the memory dir: the subject no longer learns its path from its prompt, and the mount hides it.
 - **Case 5 separates.** c5e1 (reports no knowledge dir) and c5e2 (suggests setup) go from 1.0 in all three reference arms to 0.0 without the skill. Before, the no-skill arm passed them at 0.8 and 0.6 by running the installed plugin's resolver.
