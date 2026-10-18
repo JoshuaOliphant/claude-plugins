@@ -25,7 +25,7 @@ a quick lookup can answer.
    request's topic; each lesson that applies enters the spec as a constraint, an edge case, or a
    settled decision. Without the plugin, skip this step and say nothing about it.
    If the request already lives in an issue, thread, or doc that settles the decisions, synthesize
-   the spec from it without an interview: classify it (step 2), then skip to step 6.
+   the spec from it without an interview: classify it and deepen the ask (step 2), then skip to step 6.
 
 2. **Classify in one line, out loud,** so the user can override it. Ask Jev first: run `spec-class`
    with the request and what the survey found ([jev](references/jev.md)), state its `class` and its
@@ -41,6 +41,11 @@ a quick lookup can answer.
    found mid-spec upgrades the class, and nothing downgrades. If the request holds several
    independent subsystems, say so now and spec the first one; the rest become their own specs.
 
+   For Bounded and Architectural requests, then deepen the ask: answer the four questions in
+   [deeper ask](references/deeper-ask.md) (what a professional would do, the rawest material, the
+   methods and tools, what independent check would show the result right) before the first round.
+   Spikes skip it.
+
 3. **Spike: state the question and the probe, then run it.** Two or three sentences on what you
    will try, then find out as cheaply as correctness allows, usually with a throwaway prototype
    ([prototype](references/prototype.md)). Report the answer as a recommendation. Anything you
@@ -55,6 +60,9 @@ a quick lookup can answer.
    ranks them by how much the answer changes what gets built and returns the `round` to ask and the
    ones to `assume` ([jev](references/jev.md)). Exit 3: cut by the rules in
    [questions](references/questions.md).
+
+   When the deeper ask ran, its adoption question joins the first round and its outcome becomes a
+   bullet in the refined prompt.
 
    Gaps too small to be worth a question become assumptions: pick the conservative reading, list
    it, and keep going. The user corrects assumptions by reading the spec.
@@ -117,6 +125,7 @@ a quick lookup can answer.
    - Describe behavior and decisions, never file paths or code: both go stale within days. The
      exception is a prototype snippet that pins a decision more precisely than prose can (a state
      machine, a schema, a type shape), trimmed to the decision and marked as from the prototype.
+   - When the deeper ask ran, at least one AC-N names the independent check from its fourth answer.
    - Name the seams the tests will use: prefer existing ones, the highest one that works, and as
      few as possible ([seams](../../canon/seams.md)).
 
