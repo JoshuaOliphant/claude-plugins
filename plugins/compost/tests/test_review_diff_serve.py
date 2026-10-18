@@ -51,7 +51,14 @@ _MINE = '{"summary": "mine", "comments": []}'
 
 @contextmanager
 def spawn_server(review_path):
-    """Run a ReviewHandler server on a free port for the duration of the block."""
+    """Run a ReviewHandler server on a free port for the duration of the block.
+
+    Open it inside the test body, never in a fixture. The client has its reply before the handler
+    returns, so a handler's last line (a `return` after an error reply) can still be running when
+    the test does. Under `--cov-context=test`, coverage drops a line another thread records while
+    pytest-cov switches from the run context to teardown (#147). `shutdown()` waits for the request
+    in flight, so leaving the block here keeps every handler line inside the test.
+    """
     server = start_server(_DIFF, review_path, 0)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     try:
@@ -59,13 +66,6 @@ def spawn_server(review_path):
     finally:
         server.shutdown()
         server.server_close()
-
-
-@pytest.fixture
-def running_server(tmp_path):
-    review_path = tmp_path / "review.json"
-    with spawn_server(review_path) as base:
-        yield base, review_path
 
 
 def page_token(base):
@@ -84,62 +84,64 @@ def test_each_run_serves_its_own_token(tmp_path):
         assert page_token(first) != page_token(second)
 
 
-def test_page_loads_on_localhost(running_server):
-    base, _ = running_server
-    port = base.rsplit(":", 1)[1]
-    req = urllib.request.Request(base + "/", headers={"Host": f"localhost:{port}"})
-    assert "const EMBEDDED_DATA =" in urllib.request.urlopen(req).read().decode()
+def test_page_loads_on_localhost(tmp_path):
+    with spawn_server(tmp_path / "review.json") as base:
+        port = base.rsplit(":", 1)[1]
+        req = urllib.request.Request(base + "/", headers={"Host": f"localhost:{port}"})
+        assert "const EMBEDDED_DATA =" in urllib.request.urlopen(req).read().decode()
 
 
 @pytest.mark.parametrize("method", ["GET", "POST"])
 @pytest.mark.parametrize(
     "host", ["attacker.example:{port}", "127.0.0.1:1", "localhost"], ids=["rebound", "wrong-port", "no-port"]
 )
-def test_request_with_foreign_host_is_forbidden(running_server, method, host):
-    base, review_path = running_server
+def test_request_with_foreign_host_is_forbidden(tmp_path, method, host):
+    review_path = tmp_path / "review.json"
     review_path.write_text(_MINE)
-    port = base.rsplit(":", 1)[1]
-    headers = {**page_headers(base), "Host": host.format(port=port)}
-    data = _FORGED if method == "POST" else None
-    req = urllib.request.Request(base + "/api/review", data=data, headers=headers, method=method)
-    with pytest.raises(urllib.error.HTTPError) as exc:
-        urllib.request.urlopen(req)
+    with spawn_server(review_path) as base:
+        port = base.rsplit(":", 1)[1]
+        headers = {**page_headers(base), "Host": host.format(port=port)}
+        data = _FORGED if method == "POST" else None
+        req = urllib.request.Request(base + "/api/review", data=data, headers=headers, method=method)
+        with pytest.raises(urllib.error.HTTPError) as exc:
+            urllib.request.urlopen(req)
     assert exc.value.code == 403
     assert review_path.read_text() == _MINE
 
 
-def test_post_review_writes_file(running_server):
-    base, review_path = running_server
-    payload = json.dumps({"summary": "s", "comments": []}).encode()
-    req = urllib.request.Request(base + "/api/review", data=payload, headers=page_headers(base))
-    resp = urllib.request.urlopen(req)
+def test_post_review_writes_file(tmp_path):
+    review_path = tmp_path / "review.json"
+    with spawn_server(review_path) as base:
+        payload = json.dumps({"summary": "s", "comments": []}).encode()
+        req = urllib.request.Request(base + "/api/review", data=payload, headers=page_headers(base))
+        resp = urllib.request.urlopen(req)
     assert resp.status == 200
     saved = json.loads(review_path.read_text())
     assert saved == {"summary": "s", "comments": []}
 
 
-def test_get_review_empty_when_missing(running_server):
-    base, _ = running_server
-    body = urllib.request.urlopen(base + "/api/review").read().decode()
+def test_get_review_empty_when_missing(tmp_path):
+    with spawn_server(tmp_path / "review.json") as base:
+        body = urllib.request.urlopen(base + "/api/review").read().decode()
     assert json.loads(body) == {}
 
 
-def test_review_roundtrip_through_server(running_server):
+def test_review_roundtrip_through_server(tmp_path):
     # The real user loop: POST a review to the running server, then GET it back
     # from the SAME server and confirm it matches. Exercises the write and read
     # halves against each other, not just against the filesystem.
-    base, _ = running_server
     payload = {
         "summary": "looks good",
         "comments": [{"file": "a.py", "line": 3, "side": "new", "body": "nit"}],
     }
-    req = urllib.request.Request(
-        base + "/api/review",
-        data=json.dumps(payload).encode(),
-        headers=page_headers(base),
-    )
-    assert urllib.request.urlopen(req).status == 200
-    got = json.loads(urllib.request.urlopen(base + "/api/review").read().decode())
+    with spawn_server(tmp_path / "review.json") as base:
+        req = urllib.request.Request(
+            base + "/api/review",
+            data=json.dumps(payload).encode(),
+            headers=page_headers(base),
+        )
+        assert urllib.request.urlopen(req).status == 200
+        got = json.loads(urllib.request.urlopen(base + "/api/review").read().decode())
     assert got["summary"] == "looks good"
     assert got["comments"] == payload["comments"]
 
@@ -160,11 +162,11 @@ def test_post_review_returns_500_on_write_failure(tmp_path):
         assert exc.value.code == 500
 
 
-def test_post_invalid_json_returns_400(running_server):
-    base, _ = running_server
-    req = urllib.request.Request(base + "/api/review", data=b"not json", headers=page_headers(base))
-    with pytest.raises(urllib.error.HTTPError) as exc:
-        urllib.request.urlopen(req)
+def test_post_invalid_json_returns_400(tmp_path):
+    with spawn_server(tmp_path / "review.json") as base:
+        req = urllib.request.Request(base + "/api/review", data=b"not json", headers=page_headers(base))
+        with pytest.raises(urllib.error.HTTPError) as exc:
+            urllib.request.urlopen(req)
     assert exc.value.code == 400
 
 
@@ -177,28 +179,28 @@ def test_post_invalid_json_returns_400(running_server):
         pytest.param({"Content-Type": "application/json", "X-Review-Token": "guessed"}, id="wrong-token"),
     ],
 )
-def test_post_without_page_token_is_forbidden(running_server, headers):
-    base, review_path = running_server
+def test_post_without_page_token_is_forbidden(tmp_path, headers):
+    review_path = tmp_path / "review.json"
     review_path.write_text(_MINE)
-    req = urllib.request.Request(base + "/api/review", data=_FORGED, headers=headers)
-    with pytest.raises(urllib.error.HTTPError) as exc:
-        urllib.request.urlopen(req)
+    with spawn_server(review_path) as base:
+        req = urllib.request.Request(base + "/api/review", data=_FORGED, headers=headers)
+        with pytest.raises(urllib.error.HTTPError) as exc:
+            urllib.request.urlopen(req)
     assert exc.value.code == 403
     assert review_path.read_text() == _MINE
 
 
-def test_unknown_get_returns_404(running_server):
-    base, _ = running_server
-    with pytest.raises(urllib.error.HTTPError) as exc:
+def test_unknown_get_returns_404(tmp_path):
+    with spawn_server(tmp_path / "review.json") as base, pytest.raises(urllib.error.HTTPError) as exc:
         urllib.request.urlopen(base + "/nope")
     assert exc.value.code == 404
 
 
-def test_unknown_post_returns_404(running_server):
-    base, _ = running_server
-    req = urllib.request.Request(base + "/nope", data=b"{}", headers={"Content-Type": "application/json"})
-    with pytest.raises(urllib.error.HTTPError) as exc:
-        urllib.request.urlopen(req)
+def test_unknown_post_returns_404(tmp_path):
+    with spawn_server(tmp_path / "review.json") as base:
+        req = urllib.request.Request(base + "/nope", data=b"{}", headers={"Content-Type": "application/json"})
+        with pytest.raises(urllib.error.HTTPError) as exc:
+            urllib.request.urlopen(req)
     assert exc.value.code == 404
 
 

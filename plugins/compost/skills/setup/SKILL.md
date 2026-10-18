@@ -51,9 +51,10 @@ edits the user made by hand.
    [GitHub](references/issue-tracker-github.md), [GitLab](references/issue-tracker-gitlab.md),
    or [local](references/issue-tracker-local.md). Each carries the label vocabulary compost uses;
    if the tracker already has labels for the same roles, map them in the table rather than
-   creating duplicates. For GitHub or GitLab, list the tracker's labels (`gh label list` /
-   `glab label list`) and create every label in the table that it lacks (`gh label create` /
-   `glab label create`) now, so the first `--label spec` doesn't fail.
+   creating duplicates. For GitHub or GitLab, list the tracker's labels
+   (`gh api repos/{owner}/{repo}/labels --paginate --jq '.[].name'` / `glab label list`) and create
+   every label in the table that it lacks (the template's label command / `glab label create`) now,
+   so the first issue labelled `spec` doesn't fail.
 
 4. **Domain docs.** Default to a single context: one `CONTEXT.md` and `docs/adr/` at the root.
    Write that without asking. Offer a `CONTEXT-MAP.md` with one `CONTEXT.md` per context only
@@ -107,12 +108,14 @@ edits the user made by hand.
    Then add or update the `## Agent skills` block in whichever file holds the project
    instructions. Replace an existing block in place; leave the surrounding sections alone.
 
-9. **Check the Jev key.** Run `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py status`. It only
-   looks for a TypeSafe key (`TYPESAFE_API_KEY`, then the macOS Keychain item `typesafe`) and calls
-   nothing. Exit 0 means the Jev tools will answer. Exit 3 means every Jev step will fall back to
-   your own judgment: tell the user what they lose (cheaper test placement, review triage, the
-   Stop guard in unattended runs) and pass on the command it printed, for them to run themselves,
-   for example as `! security add-generic-password -s typesafe -a "$USER" -w`. Never ask for the key
+9. **Check the Jev key.** Run `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py status`. It looks for
+   a TypeSafe key (`TYPESAFE_API_KEY`, then the macOS Keychain item `typesafe`) and builds the
+   client, but sends no request. Exit 0 means the Jev tools will answer. Exit 3 means every Jev step
+   will fall back to your own judgment: tell the user what they lose (cheaper test placement, review
+   triage, the Stop guard in unattended runs) and pass on the fix its one line names. With no key,
+   that is a command for them to run themselves, for example as
+   `! security add-generic-password -s typesafe -a "$USER" -w`; when the client could not start,
+   it is the key's format or the proxy setting it quotes. Never ask for the key
    in chat or write it anywhere. The key belongs to the machine, not the repo, so record nothing.
 
 10. **Switch off what compost replaces.** Run
