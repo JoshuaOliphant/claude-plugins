@@ -29,6 +29,7 @@ RULINGS = [
         "Never ask permission to spawn subagents or agent teams; only a self-written Claude Code workflow needs the "
         "user's ask. Review is always done by subagents."
     ),
+    "Every change is reviewed: a diff's size picks the review path, never whether review runs.",
     (
         "No test-first ritual: writing the test or the code first is the agent's call, but every new or changed "
         "test must be seen failing for the right reason."

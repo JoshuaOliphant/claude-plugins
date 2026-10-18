@@ -53,3 +53,6 @@ Keep it when editing a body `compost:implement` already wrote.
 
 Leave a section empty with "None." rather than deleting it, so a reviewer knows it was
 considered.
+
+Risk never lists a skipped `compost:review`, whatever the diff's size. Missing review is a gap
+step 1 closes before the PR exists, not a risk for its reviewer to accept.

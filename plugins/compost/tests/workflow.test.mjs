@@ -22,8 +22,10 @@ const MINOR = { file: 'app/export.py', line: 3, severity: 'minor', claim: 'name 
 
 async function run(args, answer) {
   const prompts = {}
+  const schemas = {}
   const agent = async (prompt, opts) => {
     prompts[opts.label] = prompt
+    schemas[opts.label] = opts.schema
     return answer(opts.label, prompt)
   }
   const parallel = thunks => Promise.all(thunks.map(thunk => thunk().catch(() => null)))
@@ -38,7 +40,7 @@ async function run(args, answer) {
       }
     }))
   const result = await script(args, agent, parallel, pipeline, () => {}, () => {})
-  return { result, prompts }
+  return { result, prompts, schemas }
 }
 
 function reviewers({ standards = { findings: [BLOCKER, MINOR] }, spec = { findings: [] }, light = { findings: [] }, skeptic = { refuted: false, reason: 'confirmed' }, scope = SCOPE } = {}) {
@@ -46,7 +48,7 @@ function reviewers({ standards = { findings: [BLOCKER, MINOR] }, spec = { findin
     if (label === 'scope') return scope
     if (label === 'Standards reviewer') return typeof standards === 'function' ? standards() : standards
     if (label === 'Spec reviewer') return spec
-    if (label === 'Light reviewer') return light
+    if (label === 'Light reviewer') return typeof light === 'function' ? light() : light
     return typeof skeptic === 'function' ? skeptic(label) : skeptic
   }
 }
@@ -176,67 +178,95 @@ test('a bare string is the base, and a head other than HEAD tells every agent to
   assert.match(pinned.prompts['Standards skeptic 1.1'], /git show h{40}:<path>/)
 })
 
-const SMALL = { ...SCOPE, changedLines: 50 }
+const NOT_STRUCTURAL = { ranked: true, structural: false, files: [{ file: 'app/export.py', score: 0.4, structural: false }] }
+const SMALL = { ...SCOPE, shortstat: ' 3 files changed, 40 insertions(+), 10 deletions(-)', risk: NOT_STRUCTURAL }
+const JEV = { jev: '/plugin/scripts/jev.py' }
+const CHECKED = { Standards: 'read every rule in CLAUDE.md against the diff', Spec: 'AC-1 met by test_export_csv' }
 const reviewerLabels = prompts => Object.keys(prompts).filter(label => label.endsWith('reviewer'))
 
-test('a diff of 50 changed lines or fewer gets one reviewer on both axes, split back by axis tag', async () => {
+test('a diff of 50 changed lines or fewer that Jev ranks not structural gets one reviewer on both axes, split by axis tag', async () => {
   const specBlocker = { ...BLOCKER, line: 30, claim: 'AC-1 has no test', axis: 'Spec' }
-  const light = { findings: [{ ...BLOCKER, axis: 'Standards' }, { ...MINOR, axis: 'Standards' }, specBlocker] }
-  const { result, prompts } = await run({ issue: 7 }, reviewers({ scope: SMALL, light }))
+  const light = { findings: [{ ...BLOCKER, axis: 'Standards' }, { ...MINOR, axis: 'Standards' }, specBlocker], checked: CHECKED }
+  const { result, prompts, schemas } = await run({ ...JEV, issue: 7 }, reviewers({ scope: SMALL, light }))
   assert.equal(result.path, 'light')
   assert.deepEqual(reviewerLabels(prompts), ['Light reviewer'])
+  assert.deepEqual(schemas['Light reviewer'].properties.findings.items.properties.axis.enum, ['Standards', 'Spec'])
   assert.match(prompts['Light reviewer'], /Standards axis/)
   assert.match(prompts['Light reviewer'], /Spec axis/)
   assert.ok(prompts['Light reviewer'].includes(SCOPE.spec.text))
   assert.match(prompts['Light reviewer'], /Grade only against the spec text in this prompt/)
   assert.deepEqual(result.standards.survivors.map(f => f.claim), ['CSV is not escaped', 'name drifts from CONTEXT.md'])
   assert.deepEqual(result.spec.survivors.map(f => f.claim), ['AC-1 has no test'])
+  assert.equal(result.spec.checked, CHECKED.Spec)
   assert.deepEqual(Object.keys(prompts).filter(label => label.includes('skeptic')).sort(), ['Spec skeptic 1.1', 'Standards skeptic 1.1'])
   assert.equal(result.complete, true)
   assert.match(result.summary, /Standards: reviewed \(light\): 2 findings raised, 1 left unverified/)
 })
 
-test('over 50 changed lines, a structural file, no line count, or full: true runs the two-reviewer path', async () => {
+test('the changed line count is insertions plus deletions parsed from the scope agent\'s shortstat line', async () => {
+  const cases = [
+    [' 3 files changed, 40 insertions(+), 10 deletions(-)', 'light'],
+    [' 3 files changed, 40 insertions(+), 11 deletions(-)', 'full'],
+    [' 1 file changed, 50 deletions(-)', 'light'],
+    [' 1 file changed, 51 insertions(+)', 'full'],
+    ['', 'full'],
+    [undefined, 'full'],
+  ]
+  for (const [shortstat, path] of cases) {
+    const { result } = await run(JEV, reviewers({ scope: { ...SMALL, shortstat }, light: { findings: [], checked: CHECKED } }))
+    assert.equal(result.path, path, JSON.stringify(shortstat))
+  }
+  const { prompts } = await run({}, reviewers())
+  assert.match(prompts.scope, /git diff --shortstat/)
+})
+
+test('a structural file, unranked structural risk, or a truthy full runs the two-reviewer path', async () => {
   const structural = { ranked: true, structural: true, files: [{ file: 'app/export.py', score: 3.1, structural: true }] }
   const cases = [
-    [{}, { ...SCOPE, changedLines: 51 }],
-    [{ jev: '/plugin/scripts/jev.py' }, { ...SMALL, risk: structural }],
-    [{}, SCOPE],
-    [{}, { ...SCOPE, changedLines: null }],
-    [{ full: true }, SMALL],
+    [JEV, { ...SMALL, risk: structural }],
+    [{}, SMALL],
+    [JEV, { ...SMALL, risk: { ranked: false, structural: false, files: [], problem: 'jev unavailable' } }],
+    [{ ...JEV, full: true }, SMALL],
+    [{ ...JEV, full: 'true' }, SMALL],
   ]
   for (const [args, scope] of cases) {
     const { result, prompts } = await run(args, reviewers({ scope }))
-    assert.equal(result.path, 'full', JSON.stringify(args) + JSON.stringify(scope.changedLines))
+    assert.equal(result.path, 'full', JSON.stringify(args) + JSON.stringify(scope.risk))
     assert.deepEqual(reviewerLabels(prompts), ['Standards reviewer', 'Spec reviewer'])
   }
 })
 
-test('a scope prompt asks for the changed line count from git diff --shortstat', async () => {
-  const { prompts } = await run({}, reviewers())
-  assert.match(prompts.scope, /--shortstat/)
-  assert.match(prompts.scope, /changedLines/)
+test('on the light path, a reviewer that returns nothing or throws fails every active axis', async () => {
+  for (const light of [null, () => { throw new Error('boom') }]) {
+    const { result } = await run({ ...JEV, issue: 7 }, reviewers({ scope: SMALL, light }))
+    assert.equal(result.standards.status, 'failed: the reviewer did not return')
+    assert.equal(result.spec.status, 'failed: the reviewer did not return')
+    assert.equal(result.complete, false)
+  }
 })
 
-test('on the light path, a reviewer that returns nothing fails every active axis', async () => {
-  const { result } = await run({ issue: 7 }, reviewers({ scope: SMALL, light: null }))
-  assert.equal(result.standards.status, 'failed: the reviewer did not return')
-  assert.equal(result.spec.status, 'failed: the reviewer did not return')
+test('on the light path, an axis the reviewer did not say it checked fails, however few its findings', async () => {
+  const light = { findings: [{ ...MINOR, axis: 'Standards' }], checked: { Standards: CHECKED.Standards, Spec: ' ' } }
+  const { result } = await run({ ...JEV, issue: 7 }, reviewers({ scope: SMALL, light }))
+  assert.equal(result.standards.complete, true)
+  assert.equal(result.spec.status, 'failed: the reviewer did not say what it checked on this axis')
   assert.equal(result.complete, false)
 })
 
-test('on the light path, an unfetchable issue fails the Spec axis and a missing spec skips it', async () => {
+test('on the light path, an unfetchable issue fails the Spec axis, a missing spec skips it, and only active axes can be tagged', async () => {
   const unfetched = { ...SMALL, spec: { found: false, source: '', number: null, text: '', problem: 'gh: not authenticated' } }
-  const failed = await run({ issue: 42 }, reviewers({ scope: unfetched, light: { findings: [{ ...MINOR, axis: 'Standards' }] } }))
+  const standardsOnly = { findings: [{ ...MINOR, axis: 'Standards' }], checked: { Standards: CHECKED.Standards } }
+  const failed = await run({ ...JEV, issue: 42 }, reviewers({ scope: unfetched, light: standardsOnly }))
   assert.equal(failed.result.spec.status, 'failed: issue #42 could not be fetched: gh: not authenticated')
   assert.equal(failed.result.standards.survivors.length, 1)
   assert.doesNotMatch(failed.prompts['Light reviewer'], /Spec axis/)
+  assert.deepEqual(failed.schemas['Light reviewer'].properties.findings.items.properties.axis.enum, ['Standards'])
+  assert.deepEqual(failed.schemas['Light reviewer'].properties.checked.required, ['Standards'])
   assert.equal(failed.result.complete, false)
 
   const missing = { ...SMALL, spec: { found: false, source: '', number: null, text: '' } }
-  const skipped = await run({}, reviewers({ scope: missing, light: { findings: [{ ...MINOR, axis: 'Spec' }] } }))
+  const skipped = await run(JEV, reviewers({ scope: missing, light: standardsOnly }))
   assert.equal(skipped.result.spec.status, 'skipped: no spec found')
-  assert.equal(skipped.result.standards.survivors.length, 1, 'a Spec-tagged finding with no spec axis is kept under Standards')
   assert.equal(skipped.result.complete, true)
 })
 
