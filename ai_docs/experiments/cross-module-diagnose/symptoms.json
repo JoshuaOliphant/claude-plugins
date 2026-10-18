@@ -1,0 +1,12 @@
+{
+ "c1": "/drift keeps reporting hits on a personal skill that I turned off in settings.json (skillOverrides: \"off\"). It should count as retired and be left out of the summary. The same thing shows in `pile.py replaced`: it still lists skills I have already set off as active.",
+ "c2": "/drift gets plugin skills backwards. After I disable a plugin, hits on its skills are still counted as open, and hits on skills of plugins that are still enabled are left out as retired.",
+ "c3": "A hit on a personal skill (a folder under ~/.claude/skills) is treated as retired by /drift and left out of the summary, so personal skills never show any drift. `pile.py replaced` also no longer sees my personal skills as active.",
+ "c4": "`pile.py replaced` never reports installs whose marketplace no longer lists them. The orphan section is missing from the report, and `--apply` does not offer to uninstall those installs.",
+ "c5": "`pile.py replaced` has enabled and disabled plugins swapped: plugins I have already disabled show up as still-active replaced plugins, and the enabled ones are missing, so `--apply` disables the wrong ones.",
+ "c6": "find-test on a suite larger than the choice cap drops tests it should offer. When one file has more tests than fit in a single choice, none of that file's tests are offered at all.",
+ "c7": "Every jev tool that reports a score reads 0.0 for every item. test-value proposes excluding every test because all of them fall below the threshold, review-risk ranks nothing as risky, and ac-quality rewrites every criterion.",
+ "c8": "In an unattended implement run, when the agent stops, the stop guard crashes with `KeyError: 'message'` instead of judging the stop. A question mid-run is not sent back with the ruling instruction, and an allowed stop is not let through.",
+ "c9": "The change classifier handles a change that feeds a hooks mechanism as if it were skill text: the mechanism's text is sent to Jev as a skill, and a confident ignore on it is recorded without anyone reading it. `pile.py status` also stops listing the hooks mechanisms under their own heading.",
+ "c10": "find-test on a suite with more tests than fit in one choice returns an empty shortlist: narrowing a large suite yields nothing, so no tests are offered."
+}

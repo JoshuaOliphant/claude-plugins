@@ -1,0 +1,122 @@
+[
+ {
+  "id": 118,
+  "operator": "core/ReplaceAndWithOr",
+  "line": 66,
+  "before": "if entry.get(\"type\") == \"user\" and block.get(\"type\") == \"text\" and command in block.get(\"text\", \"\"):",
+  "after": "if entry.get(\"type\") == \"user\" and block.get(\"type\") == \"text\" or command in block.get(\"text\", \"\"):",
+  "failed": "tests/test_stop_guard.py::test_finish_ends_the_run_so_a_stop_after_it_is_never_judged[finish typed after implement]",
+  "err": false,
+  "plausible": 0.62,
+  "mode": "wrong-logic",
+  "n": 1
+ },
+ {
+  "id": 222,
+  "operator": "core/ReplaceComparisonOperator_NotEq_Eq",
+  "line": 98,
+  "before": "if entry.get(\"type\") != \"assistant\" or entry.get(\"isSidechain\"):",
+  "after": "if entry.get(\"type\") == \"assistant\" or entry.get(\"isSidechain\"):",
+  "failed": "tests/test_stop_guard.py::test_a_question_mid_implement_is_sent_back_with_the_ruling_instruction[skill tool]",
+  "err": false,
+  "plausible": 0.62,
+  "mode": "wrong-logic",
+  "n": 2
+ },
+ {
+  "id": 83,
+  "operator": "core/ReplaceAndWithOr",
+  "line": 63,
+  "before": "if block.get(\"type\") == \"tool_use\" and block.get(\"name\") == \"Skill\" and named == skill:",
+  "after": "if block.get(\"type\") == \"tool_use\" and block.get(\"name\") == \"Skill\" or named == skill:",
+  "failed": "tests/test_stop_guard.py::test_finish_ends_the_run_so_a_stop_after_it_is_never_judged[finish loaded after implement]",
+  "err": false,
+  "plausible": 0.61,
+  "mode": "wrong-logic",
+  "n": 3
+ },
+ {
+  "id": 280,
+  "operator": "core/AddNot",
+  "line": 111,
+  "before": "if hook.get(\"stop_hook_active\"):",
+  "after": "if not hook.get(\"stop_hook_active\"):",
+  "failed": "tests/test_stop_guard.py::test_a_question_mid_implement_is_sent_back_with_the_ruling_instruction[skill tool]",
+  "err": false,
+  "plausible": 0.61,
+  "mode": "wrong-logic",
+  "n": 4
+ },
+ {
+  "id": 70,
+  "operator": "core/AddNot",
+  "line": 59,
+  "before": "if entry.get(\"isSidechain\"):",
+  "after": "if not entry.get(\"isSidechain\"):",
+  "failed": "tests/test_stop_guard.py::test_a_question_mid_implement_is_sent_back_with_the_ruling_instruction[skill tool]",
+  "err": false,
+  "plausible": 0.58,
+  "mode": "wrong-logic",
+  "n": 5
+ },
+ {
+  "id": 148,
+  "operator": "core/ReplaceComparisonOperator_NotEq_Eq",
+  "line": 73,
+  "before": "if entry.get(\"type\") != \"user\" or any(entry.get(flag) for flag in UNTYPED):",
+  "after": "if entry.get(\"type\") == \"user\" or any(entry.get(flag) for flag in UNTYPED):",
+  "failed": "tests/test_stop_guard.py::test_a_question_mid_implement_is_sent_back_with_the_ruling_instruction[skill tool]",
+  "err": false,
+  "plausible": 0.58,
+  "mode": "wrong-logic",
+  "n": 6
+ },
+ {
+  "id": 211,
+  "operator": "core/ReplaceUnaryOperator_Delete_Not",
+  "line": 92,
+  "before": "return not (prompts and typed(prompts[-1]))",
+  "after": "return  (prompts and typed(prompts[-1]))",
+  "failed": "tests/test_stop_guard.py::test_a_question_mid_implement_is_sent_back_with_the_ruling_instruction[skill tool]",
+  "err": false,
+  "plausible": 0.58,
+  "mode": "wrong-logic",
+  "n": 7
+ },
+ {
+  "id": 304,
+  "operator": "core/AddNot",
+  "line": 123,
+  "before": "return {\"decision\": \"block\", \"reason\": REASON} if judgment[\"block\"] else None",
+  "after": "return {\"decision\": \"block\", \"reason\": REASON} if not judgment[\"block\"] else None",
+  "failed": "tests/test_stop_guard.py::test_a_question_mid_implement_is_sent_back_with_the_ruling_instruction[skill tool]",
+  "err": false,
+  "plausible": 0.58,
+  "mode": "wrong-logic",
+  "n": 8
+ },
+ {
+  "id": 167,
+  "operator": "core/ReplaceComparisonOperator_Eq_NotEq",
+  "line": 75,
+  "before": "return [block.get(\"text\", \"\") for block in blocks(entry) if block.get(\"type\") == \"text\"]",
+  "after": "return [block.get(\"text\", \"\") for block in blocks(entry) if block.get(\"type\") != \"text\"]",
+  "failed": "tests/test_stop_guard.py::test_a_stop_answering_a_message_typed_during_the_run_is_allowed[plain string]",
+  "err": false,
+  "plausible": 0.57,
+  "mode": "wrong-logic",
+  "n": 9
+ },
+ {
+  "id": 175,
+  "operator": "thin/DropTerm",
+  "line": 80,
+  "before": "return any(COMMAND.search(text) or INJECTED.sub(\"\", text).strip() for text in texts)",
+  "after": "return any(((INJECTED.sub(\"\", text).strip())) for text in texts)",
+  "failed": "tests/test_stop_guard.py::test_a_stop_answering_a_message_typed_during_the_run_is_allowed[slash command typed mid-run]",
+  "err": false,
+  "plausible": 0.57,
+  "mode": "wrong-logic",
+  "n": 10
+ }
+]
