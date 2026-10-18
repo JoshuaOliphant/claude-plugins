@@ -4,7 +4,7 @@
 # dependencies = ["typesafe-sdk>=0.7.1"]
 # ///
 # ABOUTME: Command line for compost's Jev tools: `jev.py <tool>` reads JSON input and prints a JSON judgment.
-# ABOUTME: Exit 0 answered, 2 bad input, 3 Jev unavailable (no key or API failure: fall back to your own judgment).
+# ABOUTME: Exit 0 answered, 2 bad input, 3 Jev unavailable (no key, API failure, or no uv: fall back to your own judgment).
 import argparse
 import asyncio
 import json
@@ -13,12 +13,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import needs_uv  # first: re-execs under uv when typesafe-sdk is missing
 from jevtools import meta, review, spec, testing  # noqa: F401  (importing registers the tools)
 from jevtools.core import Cache, Unavailable, open_client, session
 from jevtools.registry import TOOLS, BadInput
 
 EXIT_BAD_INPUT = 2
-EXIT_UNAVAILABLE = 3
+EXIT_UNAVAILABLE = needs_uv.EXIT_UNAVAILABLE
 
 
 def read_input(source: str | None) -> dict:
