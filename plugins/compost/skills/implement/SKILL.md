@@ -69,7 +69,8 @@ the work so each step can be checked before the next builds on it
    `/compost:review-changes` workflow through subagents; you never wait to be asked. Scope it to
    the one issue: for an issue landed by a merge, pass `base` as `<merge>^1`, `head` as
    `<merge>^2`, and `issue` as its number; for one built in this session, pass `base` as the parent of
-   its first commit and `head` as its last. Take its findings through the reception protocol there: check each against the
+   its first commit and `head` as its last. No issue skips review for being small: the workflow
+   gives a small diff its light path, one reviewer on both axes, and that is the cheap option. Take its findings through the reception protocol there: check each against the
    code, fix what holds, and rule on what doesn't.
    - Fix findings where the work was done: resume the worker that built the issue with the findings
      verbatim, or fix them yourself when you built it. Each fix is seen failing before it passes, then
