@@ -1,0 +1,242 @@
+[
+ {
+  "task": "t1",
+  "sha": "c31435a4036b248cfcc5c6d6f0bf43635404ad7a",
+  "parent": "8c67d4df699632b65ad43132cfaf5b26a345449a",
+  "tests": [
+   "plugins/compost/tests/test_thin.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/thin.py"
+  ],
+  "symptom": "I ran thin's matrix mode on my project and it finished and printed its result. When I ran the same command again to get a fresh run, it refused to start: it says the journal file beside the contexts holds an earlier run's rows and tells me to resume or delete it. Nothing was killed, the first run completed. A journal that is still there should only mean a run that died, and the message should say the journal holds a killed run's rows.",
+  "preexisting_failures": [
+   "tests/test_jev_meta.py::test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head",
+   "tests/test_jev_meta.py::test_gather_route_takes_one_prompt_or_many_and_needs_skills",
+   "tests/test_plugin.py::test_every_compost_reference_names_a_skill_workflow_or_agent",
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file",
+   "tests/test_plugin.py::test_pile_feeds_only_existing_skills_the_canon_or_mechanisms_and_notice_is_current",
+   "tests/test_plugin.py::test_plugin_root_paths_exist_and_scripts_are_executable",
+   "tests/test_plugin.py::test_relative_links_resolve[README.md]",
+   "tests/test_plugin.py::test_relative_links_resolve[canon/prove-it-works.md]",
+   "tests/test_thin.py::test_main_matrix_exits_2_rather_than_lose_or_miss_a_journal[a",
+   "tests/test_thin.py::test_main_matrix_takes_node_ids_in_place_of_a_candidates_file",
+   "tests/test_thin.py::test_main_runs_each_stage_and_prints_json"
+  ]
+ },
+ {
+  "task": "t2",
+  "sha": "135412f8294e0922c3cdd5cc5ee4348981aecce4",
+  "parent": "144152abf6448c521d7d4248c77d7e57134ad5cf",
+  "tests": [
+   "plugins/compost/tests/test_skill_drift.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/skill_drift.py"
+  ],
+  "symptom": "/drift crashes with a traceback when the skill-drift log has certain bad lines. A line that is valid JSON and has all the fields, but with a wrong type in one of them (a probability given as a string, a prompt that is null, a timestamp that is a string or a boolean), takes the whole summary down. A line that is not even an object does too. Lines that are unreadable are meant to be counted and reported, not to crash anything.",
+  "preexisting_failures": [
+   "tests/test_jev_meta.py::test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head",
+   "tests/test_jev_meta.py::test_gather_route_takes_one_prompt_or_many_and_needs_skills",
+   "tests/test_plugin.py::test_every_compost_reference_names_a_skill_workflow_or_agent",
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file",
+   "tests/test_plugin.py::test_pile_feeds_only_existing_skills_the_canon_or_mechanisms_and_notice_is_current",
+   "tests/test_plugin.py::test_plugin_root_paths_exist_and_scripts_are_executable",
+   "tests/test_plugin.py::test_relative_links_resolve[README.md]",
+   "tests/test_plugin.py::test_relative_links_resolve[canon/prove-it-works.md]",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[at-a-bool]",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[at-a-string]",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[p-a-string]",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[prompt-null]"
+  ]
+ },
+ {
+  "task": "t3",
+  "sha": "4f3f54a67cfed64a9ff0ddae9c37c48101ec9c41",
+  "parent": "bee8d0452440a9af98f8dc716139b7f4a5f447b5",
+  "tests": [
+   "plugins/compost/tests/test_jev_meta.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/jevtools/meta.py"
+  ],
+  "symptom": "A change to something that feeds one of compost's hook mechanisms (a change whose targets include hooks/<name>) got recorded as ignorable without anyone reading it, because the classifier was confident it did not matter. The classifier never sees the mechanism's text, so its confidence says nothing about those changes. Changes that feed a mechanism should always be sent to be read.",
+  "preexisting_failures": [
+   "tests/test_jev_meta.py::test_classify_change_records_only_confident_ignores[a",
+   "tests/test_jev_meta.py::test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head",
+   "tests/test_jev_meta.py::test_gather_route_takes_one_prompt_or_many_and_needs_skills",
+   "tests/test_plugin.py::test_every_compost_reference_names_a_skill_workflow_or_agent",
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file",
+   "tests/test_plugin.py::test_pile_feeds_only_existing_skills_the_canon_or_mechanisms_and_notice_is_current",
+   "tests/test_plugin.py::test_plugin_root_paths_exist_and_scripts_are_executable",
+   "tests/test_plugin.py::test_relative_links_resolve[README.md]",
+   "tests/test_plugin.py::test_relative_links_resolve[canon/prove-it-works.md]"
+  ]
+ },
+ {
+  "task": "t4",
+  "sha": "461e8b256010a6ade5d65b176df646071d819f88",
+  "parent": "bee8d0452440a9af98f8dc716139b7f4a5f447b5",
+  "tests": [
+   "plugins/compost/tests/test_jev_core.py",
+   "plugins/compost/tests/test_jev_testing.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/jevtools/core.py"
+  ],
+  "symptom": "find-test returns a shortlist smaller than the number of tests I asked to keep. When the second most likely group of files is too big to add without passing the size cap, narrowing stops there, and the smaller groups ranked below it, which would fit, are never added.",
+  "preexisting_failures": [
+   "tests/test_jev_core.py::test_narrow_keeps_the_likeliest_groups_within_the_cap[skips",
+   "tests/test_jev_meta.py::test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head",
+   "tests/test_jev_meta.py::test_gather_route_takes_one_prompt_or_many_and_needs_skills",
+   "tests/test_jev_testing.py::test_a_suite_past_the_choice_limit_is_narrowed_by_file_first[a",
+   "tests/test_plugin.py::test_every_compost_reference_names_a_skill_workflow_or_agent",
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file",
+   "tests/test_plugin.py::test_pile_feeds_only_existing_skills_the_canon_or_mechanisms_and_notice_is_current",
+   "tests/test_plugin.py::test_plugin_root_paths_exist_and_scripts_are_executable",
+   "tests/test_plugin.py::test_relative_links_resolve[README.md]",
+   "tests/test_plugin.py::test_relative_links_resolve[canon/prove-it-works.md]"
+  ]
+ },
+ {
+  "task": "t5",
+  "sha": "6157907f97444c3d0b7a4cd08c8fceebf5bcfbab",
+  "parent": "352ea71680a6025f31b7ddadb73d71db555dd1c2",
+  "tests": [
+   "plugins/compost/tests/test_stop_guard.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/stop_guard.py"
+  ],
+  "symptom": "During an unattended implement run under agent teams, the stop guard stops guarding partway through. A message from a teammate arrives as a user entry that looks like <teammate-message teammate_id=\"w1\">...</teammate-message>, and the guard reads it as something I typed, so it lets the run stop and wait on a question for the rest of the run.",
+  "preexisting_failures": [
+   "tests/test_jev_meta.py::test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head",
+   "tests/test_jev_meta.py::test_gather_route_takes_one_prompt_or_many_and_needs_skills",
+   "tests/test_plugin.py::test_every_compost_reference_names_a_skill_workflow_or_agent",
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file",
+   "tests/test_plugin.py::test_pile_feeds_only_existing_skills_or_the_canon_and_notice_is_current",
+   "tests/test_plugin.py::test_plugin_root_paths_exist_and_scripts_are_executable",
+   "tests/test_plugin.py::test_relative_links_resolve[README.md]",
+   "tests/test_plugin.py::test_relative_links_resolve[canon/prove-it-works.md]",
+   "tests/test_stop_guard.py::test_user_entries_claude_code_writes_do_not_count_as_typed[teammate"
+  ]
+ },
+ {
+  "task": "t6",
+  "sha": "b5949769df624ad3019e5eece53cd4efb5d80ad8",
+  "parent": "5ef57ed5b84f356a2fb741b74f75f05e38268a52",
+  "tests": [
+   "plugins/compost/tests/test_stop_guard.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/stop_guard.py"
+  ],
+  "symptom": "The unattended-run stop guard counts things as typed by the user that nobody typed, and misses one that was. Wrongly counted as typed: a compaction summary Claude Code writes after the context fills, an entry that is only shown in the transcript, and a skill loaded inside a subagent (a sidechain), which also should not start or end a run. Wrongly not counted: a slash command the user types in the middle of the run. After finish, a task notification should not count as the user speaking either.",
+  "preexisting_failures": [
+   "tests/test_jev_meta.py::test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head",
+   "tests/test_jev_meta.py::test_gather_route_takes_one_prompt_or_many_and_needs_skills",
+   "tests/test_plugin.py::test_every_compost_reference_names_a_skill_workflow_or_agent",
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file",
+   "tests/test_plugin.py::test_pile_feeds_only_existing_skills_or_the_canon_and_notice_is_current",
+   "tests/test_plugin.py::test_plugin_root_paths_exist_and_scripts_are_executable",
+   "tests/test_plugin.py::test_relative_links_resolve[README.md]",
+   "tests/test_plugin.py::test_relative_links_resolve[canon/prove-it-works.md]",
+   "tests/test_stop_guard.py::test_a_stop_answering_a_message_typed_during_the_run_is_allowed[slash",
+   "tests/test_stop_guard.py::test_user_entries_claude_code_writes_do_not_count_as_typed[compaction",
+   "tests/test_stop_guard.py::test_user_entries_claude_code_writes_do_not_count_as_typed[sidechain",
+   "tests/test_stop_guard.py::test_user_entries_claude_code_writes_do_not_count_as_typed[transcript-only"
+  ]
+ },
+ {
+  "task": "t7",
+  "sha": "114d26835e619e9d74b56d3e312e27808ac58dab",
+  "parent": "fc8a01cba4ee501bdd3d2909c200350bea6ff77d",
+  "tests": [
+   "plugins/compost/tests/test_doc_refs.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/doc_refs.py"
+  ],
+  "symptom": "compost:prune's doc scan cannot exclude a whole directory. Passing an exclude like plugins/** matches nothing, because patterns only match from the right. Separately, an exclude can hide a core doc such as a plugin README, which should never be left out of the scan. A pattern ending in /** should match everything under that directory from the repo root, and core docs should win over an exclude.",
+  "preexisting_failures": [
+   "tests/test_doc_refs.py::test_scan_excludes_whole_directories_but_never_a_core_doc",
+   "tests/test_jev_meta.py::test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head",
+   "tests/test_jev_meta.py::test_gather_route_takes_one_prompt_or_many_and_needs_skills",
+   "tests/test_plugin.py::test_every_compost_reference_names_a_skill_workflow_or_agent",
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file",
+   "tests/test_plugin.py::test_pile_feeds_only_existing_skills_or_the_canon_and_notice_is_current",
+   "tests/test_plugin.py::test_plugin_root_paths_exist_and_scripts_are_executable"
+  ]
+ },
+ {
+  "task": "t8",
+  "sha": "bef8763dfc1615e388357f7693855fe340d24b1e",
+  "parent": "cde054a14b6166805bc5f44e47634020b2f83267",
+  "tests": [
+   "plugins/compost/tests/test_jev_core.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/jevtools/core.py"
+  ],
+  "symptom": "jev ask can still raise a KeyError for a question it asked. The cache can hold an answer saved before partial answers were refused, one that has only some of the questions asked now, and a cache hit returns it as is. The caller then reads a question that is missing from it.",
+  "preexisting_failures": [
+   "tests/test_jev_core.py::test_a_partial_answer_cached_before_is_asked_again",
+   "tests/test_jev_meta.py::test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head",
+   "tests/test_jev_meta.py::test_gather_route_takes_one_prompt_or_many_and_needs_skills",
+   "tests/test_plugin.py::test_every_compost_reference_names_a_skill_workflow_or_agent",
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file",
+   "tests/test_plugin.py::test_pile_feeds_only_existing_skills_or_the_canon_and_notice_is_current",
+   "tests/test_plugin.py::test_plugin_root_paths_exist_and_scripts_are_executable",
+   "tests/test_plugin.py::test_relative_links_resolve[README.md]",
+   "tests/test_plugin.py::test_relative_links_resolve[canon/prove-it-works.md]"
+  ]
+ },
+ {
+  "task": "t9",
+  "sha": "8c67d4df699632b65ad43132cfaf5b26a345449a",
+  "parent": "882ba98bf8ddab75a61260ddbe7accef52cc9e8b",
+  "tests": [
+   "plugins/compost/tests/test_jev_cli.py",
+   "plugins/compost/tests/test_jev_core.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/jev.py"
+  ],
+  "symptom": "jev.py status says 'jev ready' whenever a TypeSafe key is present, even when the client cannot start. With TYPESAFE_API_KEY set and an unusable HTTPS_PROXY (ftp://127.0.0.1:1), the first real tool call fails, but status claims everything is fine. status should exit with the same unavailable code and one-line 'jev unavailable: ...' message the other commands use when the client cannot start.",
+  "preexisting_failures": [
+   "tests/test_jev_cli.py::test_status_exits_3_when_the_client_cannot_start",
+   "tests/test_jev_meta.py::test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head",
+   "tests/test_jev_meta.py::test_gather_route_takes_one_prompt_or_many_and_needs_skills",
+   "tests/test_plugin.py::test_every_compost_reference_names_a_skill_workflow_or_agent",
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file",
+   "tests/test_plugin.py::test_pile_feeds_only_existing_skills_the_canon_or_mechanisms_and_notice_is_current",
+   "tests/test_plugin.py::test_plugin_root_paths_exist_and_scripts_are_executable",
+   "tests/test_plugin.py::test_relative_links_resolve[README.md]",
+   "tests/test_plugin.py::test_relative_links_resolve[canon/prove-it-works.md]"
+  ]
+ },
+ {
+  "task": "t10",
+  "sha": "619abf2d6b679035e93272646ec80cc120f4a97d",
+  "parent": "4210d72a5e8c406fcf0bca5c115cd6b3443d20f4",
+  "tests": [
+   "plugins/compost/tests/test_lint_run_eval.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/lint/jev_lint.py",
+   "plugins/compost/scripts/lint/run_eval.py"
+  ],
+  "symptom": "Rerunning the lint eval after a Jev model update reports the old model's precision and recall, and its timings measure cache reads, not the API. The eval shares lint's Jev cache, so a second run answers from it. Every eval run should ask the live API, and it must leave the shared cache untouched.",
+  "preexisting_failures": [
+   "tests/test_jev_meta.py::test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head",
+   "tests/test_jev_meta.py::test_gather_route_takes_one_prompt_or_many_and_needs_skills",
+   "tests/test_lint_run_eval.py::test_judge_pairs_each_case_with_its_judgment_and_every_run_asks_the_live_api",
+   "tests/test_plugin.py::test_every_compost_reference_names_a_skill_workflow_or_agent",
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file",
+   "tests/test_plugin.py::test_pile_feeds_only_existing_skills_or_the_canon_and_notice_is_current",
+   "tests/test_plugin.py::test_plugin_root_paths_exist_and_scripts_are_executable",
+   "tests/test_plugin.py::test_relative_links_resolve[README.md]",
+   "tests/test_plugin.py::test_relative_links_resolve[canon/prove-it-works.md]"
+  ]
+ }
+]
