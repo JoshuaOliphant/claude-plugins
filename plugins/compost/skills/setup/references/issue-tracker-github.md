@@ -2,8 +2,8 @@
 
 Specs, slices, and maps for this repo live as GitHub issues. Use `gh api` (GitHub's REST API) for
 every operation. Run inside a clone, it fills `{owner}/{repo}` from `git remote -v`. The porcelain
-commands (`gh issue view`, `list`, `create`, `comment`, `edit`, `close`, `gh pr view`) go through
-GraphQL, which Claude Code cloud sessions block with an HTTP 403; REST works there and locally.
+commands (`gh issue view`, `list`, `create`, `comment`, `edit`, `close`; `gh pr create`, `edit`,
+`view`, `ready`, `merge`, `close`; `gh repo view`) go through GraphQL, which Claude Code cloud sessions block with an HTTP 403; REST works there and locally.
 
 ## Commands
 
@@ -29,6 +29,22 @@ GraphQL, which Claude Code cloud sessions block with an HTTP 403; REST works the
 
 GitHub numbers issues and pull requests in one sequence, so a bare `#42` may be either:
 `gh api repos/{owner}/{repo}/issues/42 --jq '.pull_request != null'` prints `true` for a pull request.
+
+## Pull requests
+
+Used by `compost:finish`. `{owner}/{repo}` fills in as above; `<n>` is the pull request number.
+
+- **Default branch:** `gh api repos/{owner}/{repo} --jq .default_branch`.
+- **Create (draft):** `gh api repos/{owner}/{repo}/pulls -f title="..." -f head=<branch> -f base=<target> -F draft=true -F body=@- --jq '.number, .html_url'`
+  with the PR body as a heredoc on stdin.
+- **Edit body:** `gh api -X PATCH repos/{owner}/{repo}/pulls/<n> -F body=@-` with a heredoc body.
+- **Ready for review:** the forge refuses to merge a draft, and the public REST API has no
+  endpoint for leaving draft. Locally, `gh pr ready <n>` (GraphQL). In a Claude Code cloud session
+  that is blocked; use `gh api -X POST repos/{owner}/{repo}/pulls/<n>/ccr/ready_for_review`, an
+  endpoint specific to cloud sessions that the 403 message names.
+- **Merge (merge commit):** `gh api -X PUT repos/{owner}/{repo}/pulls/<n>/merge -f merge_method=merge`.
+  Never `squash` or `rebase` unless the user asks.
+- **Close without merging:** `gh api -X PATCH repos/{owner}/{repo}/pulls/<n> -f state=closed`.
 
 ## Labels
 
