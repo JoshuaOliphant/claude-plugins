@@ -497,6 +497,7 @@ capability_cases = [
 ]
 
 capability_dataset = Dataset(
+    name="capability",
     cases=capability_cases,
     evaluators=[
         ContainsHTMXAttributes(),  # All responses need HTMX
@@ -542,7 +543,7 @@ regression_cases = [
     ),
 ]
 
-regression_dataset = Dataset(cases=regression_cases)
+regression_dataset = Dataset(name="regression", cases=regression_cases)
 ```
 
 ---
