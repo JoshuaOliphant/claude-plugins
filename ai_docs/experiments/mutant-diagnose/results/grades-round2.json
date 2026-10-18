@@ -1,0 +1,262 @@
+[
+ {
+  "task": 1,
+  "arm": "skill",
+  "module": "scripts/claude_config.py",
+  "tests_ok": false,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "1 failed, 30 passed in 0.33s"
+ },
+ {
+  "task": 1,
+  "arm": "base",
+  "module": "scripts/claude_config.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "31 passed in 0.39s"
+ },
+ {
+  "task": 2,
+  "arm": "skill",
+  "module": "scripts/claude_config.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": true,
+  "other_changes": [],
+  "last": "31 passed in 0.35s"
+ },
+ {
+  "task": 2,
+  "arm": "base",
+  "module": "scripts/claude_config.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": true,
+  "other_changes": [],
+  "last": "31 passed in 0.34s"
+ },
+ {
+  "task": 3,
+  "arm": "skill",
+  "module": "scripts/claude_config.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": true,
+  "other_changes": [],
+  "last": "31 passed in 0.32s"
+ },
+ {
+  "task": 3,
+  "arm": "base",
+  "module": "scripts/claude_config.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": true,
+  "other_changes": [],
+  "last": "31 passed in 0.28s"
+ },
+ {
+  "task": 4,
+  "arm": "skill",
+  "module": "scripts/claude_config.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "31 passed in 0.29s"
+ },
+ {
+  "task": 4,
+  "arm": "base",
+  "module": "scripts/claude_config.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "31 passed in 0.34s"
+ },
+ {
+  "task": 5,
+  "arm": "skill",
+  "module": "scripts/claude_config.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "31 passed in 0.32s"
+ },
+ {
+  "task": 5,
+  "arm": "base",
+  "module": "scripts/claude_config.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "31 passed in 0.24s"
+ },
+ {
+  "task": 6,
+  "arm": "skill",
+  "module": "scripts/skill_drift.py",
+  "tests_ok": false,
+  "fixed": [
+   false,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "5 failed, 21 passed in 0.38s"
+ },
+ {
+  "task": 6,
+  "arm": "base",
+  "module": "scripts/skill_drift.py",
+  "tests_ok": false,
+  "fixed": [
+   false,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "5 failed, 21 passed in 0.46s"
+ },
+ {
+  "task": 7,
+  "arm": "skill",
+  "module": "scripts/skill_drift.py",
+  "tests_ok": false,
+  "fixed": [
+   false,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "1 failed, 25 passed in 0.34s"
+ },
+ {
+  "task": 7,
+  "arm": "base",
+  "module": "scripts/skill_drift.py",
+  "tests_ok": false,
+  "fixed": [
+   false,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "1 failed, 25 passed in 0.38s"
+ },
+ {
+  "task": 8,
+  "arm": "skill",
+  "module": "scripts/skill_drift.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "26 passed in 0.37s"
+ },
+ {
+  "task": 8,
+  "arm": "base",
+  "module": "scripts/skill_drift.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "26 passed in 0.53s"
+ },
+ {
+  "task": 9,
+  "arm": "skill",
+  "module": "scripts/skill_drift.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "26 passed in 0.45s"
+ },
+ {
+  "task": 9,
+  "arm": "base",
+  "module": "scripts/skill_drift.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "26 passed in 0.33s"
+ },
+ {
+  "task": 10,
+  "arm": "skill",
+  "module": "scripts/skill_drift.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "26 passed in 0.42s"
+ },
+ {
+  "task": 10,
+  "arm": "base",
+  "module": "scripts/skill_drift.py",
+  "tests_ok": true,
+  "fixed": [
+   true,
+   true
+  ],
+  "exact": false,
+  "other_changes": [],
+  "last": "26 passed in 0.59s"
+ }
+]

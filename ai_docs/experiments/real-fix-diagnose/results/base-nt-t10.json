@@ -1,0 +1,14 @@
+{
+ "task": "t10",
+ "green": false,
+ "hidden_failures": [
+  "tests/test_lint_run_eval.py::test_judge_pairs_each_case_with_its_judgment_and_every_run_asks_the_live_api"
+ ],
+ "regressions": [],
+ "changed": [
+  "Files /tmp/real-fix-diagnose/pristine/t10/plugins/compost/scripts/jevtools/core.py and /tmp/real-fix-diagnose/runs/base-nt/t10/plugins/compost/scripts/jevtools/core.py differ",
+  "Files /tmp/real-fix-diagnose/pristine/t10/plugins/compost/scripts/lint/jev_lint.py and /tmp/real-fix-diagnose/runs/base-nt/t10/plugins/compost/scripts/lint/jev_lint.py differ",
+  "Files /tmp/real-fix-diagnose/pristine/t10/plugins/compost/scripts/lint/run_eval.py and /tmp/real-fix-diagnose/runs/base-nt/t10/plugins/compost/scripts/lint/run_eval.py differ",
+  "Only in /tmp/real-fix-diagnose/pristine/t10/plugins/compost: tests"
+ ]
+}

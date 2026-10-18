@@ -1,0 +1,10 @@
+{
+ "task": "t9",
+ "green": true,
+ "hidden_failures": [],
+ "regressions": [],
+ "changed": [
+  "Files /tmp/real-fix-diagnose/pristine/t9/plugins/compost/scripts/jev.py and /tmp/real-fix-diagnose/runs/skill-nt/t9/plugins/compost/scripts/jev.py differ",
+  "Only in /tmp/real-fix-diagnose/pristine/t9/plugins/compost: tests"
+ ]
+}
