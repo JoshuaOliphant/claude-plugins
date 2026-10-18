@@ -3,6 +3,7 @@
 # ABOUTME: Usage: grade.py <task> <tree>; prints JSON with green (hidden tests pass), regressions, and files changed.
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -42,6 +43,9 @@ def main() -> None:
     name, tree = sys.argv[1], Path(sys.argv[2])
     task = next(t for t in json.loads((WORK / "tasks.json").read_text()) if t["task"] == name)
     changes = changed_sources(task, tree)  # before the hidden tests overwrite anything
+    suite = tree / PLUGIN / "tests"
+    if not suite.exists():  # the no-tests variant (#171): put the parent's suite back before laying the hidden tests on it
+        shutil.copytree(WORK / "tasks" / name / PLUGIN / "tests", suite)
     for test in task["tests"]:
         (tree / test).write_text((WORK / "hidden" / name / test).read_text())
     green, hidden_failures = run_tests(

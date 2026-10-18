@@ -46,3 +46,28 @@ python3 grade.py t8 /path/to/agent/tree # JSON: green flag, failures, files chan
 `results/candidates.json`). `symptoms.json` holds the ten hand-written bug reports. In `results/grades.json` the rows are
 `[task, arm, green, regressions, files changed]`. Failures that fail in every tree (git and link checks that need a
 checkout) are environmental and not counted.
+
+## No-tests variant (#171)
+
+Same ten tasks, with `tests/` removed from the agent's tree so there is nothing to run and the agent must build its own
+check (`build_notests.py`; `grade.py` puts the suite back before grading). `repro_before_edit.py` reads each run's
+transcript and counts commands that exercised the code before the first edit to `scripts/`.
+
+| | skill | no skill |
+|---|---|---|
+| hidden tests green | 9/10 | 9/10 |
+| ran something that exercised the bug before editing | 1/10 | 0/10 |
+| tool calls per task (mean) | 9.4 | 6.9 |
+| tokens per task (mean) | 75.2k | 69.6k |
+
+The red cell is t10 in both arms: each replaced lint's cache with one that stores nothing, and the hidden test counts
+API calls (see above). Outcome is at the ceiling again, with no tests to run.
+
+All ten skill-arm agents read `SKILL.md`, whose step 2 says to build a red-capable check before forming a theory. Nine
+edited the code first and checked afterwards (most said so in their report). The one exception, t9, ran `jev.py status`
+with a bad proxy, saw "jev ready", and then patched. The skill costs about 2.5 more tool calls and 5.6k tokens per task
+here, and for these bugs it did not change the order of work.
+
+Caveats: the symptoms name the failing behavior closely, so reading the code finds the cause without a repro; this is
+why the skipped step did no harm. The process measure is a heuristic over transcripts (a command that mutates and
+exercises in one call counts as an edit). Per-run grades are in `results/skill-nt-t*.json` and `results/base-nt-t*.json`.

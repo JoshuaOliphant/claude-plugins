@@ -1,0 +1,10 @@
+{
+ "task": "t1",
+ "green": true,
+ "hidden_failures": [],
+ "regressions": [],
+ "changed": [
+  "Files /tmp/real-fix-diagnose/pristine/t1/plugins/compost/scripts/thin.py and /tmp/real-fix-diagnose/runs/skill-nt/t1/plugins/compost/scripts/thin.py differ",
+  "Only in /tmp/real-fix-diagnose/pristine/t1/plugins/compost: tests"
+ ]
+}
