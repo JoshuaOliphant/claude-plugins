@@ -339,6 +339,10 @@ def test_the_verdict_keeps_the_boundary_and_flags_the_restatement_and_the_no_op(
     assert tests["test_age.py::test_runs_only"] == {"verdict": "kills-nothing", "kills": 0}
 
 
+GT_ROW = {"module": "age.py", "operator": "gt", "occurrence": 0, "line": 2, "mutated": "return age > 18",
+          "covering": TOY_TESTS}  # fmt: skip
+
+
 def one_mutant(monkeypatch, line: int = 2, mutated: str | None = "def adult(age):\n    return age > 18\n"):
     """Swap cosmic-ray's mutant list for a single `>=` to `>` on `line`, made as `mutated`."""
     mutant = {"module": "age.py", "operator": "gt", "args": {}, "occurrence": 0, "line": line}
@@ -352,13 +356,68 @@ def test_only_limits_mutation_to_the_selected_tests_lines(toy, monkeypatch):
     one_mutant(monkeypatch)
     assert thin.kill_matrix(toy, only, PYTEST, 60, 2, log=NO_LOG) == {
         "selected": only,
-        "mutants": [
-            {"module": "age.py", "operator": "gt", "occurrence": 0, "line": 2, "mutated": "return age > 18",
-             "covering": TOY_TESTS, "killers": ["test_age.py::test_boundary", "test_age.py::test_grown_up"]},
-        ],
-    }  # fmt: skip
+        "mutants": [GT_ROW | {"killers": ["test_age.py::test_boundary", "test_age.py::test_grown_up"]}],
+    }
     one_mutant(monkeypatch, line=1)
     assert thin.kill_matrix(toy, only, PYTEST, 60, 2, log=NO_LOG)["mutants"] == []
+
+
+class Died(Exception):
+    """A matrix run that stops partway, as one does when its container restarts."""
+
+
+def test_ac1_a_killed_matrix_resumes_with_only_the_remaining_mutants(toy, tmp_path, toy_matrix, monkeypatch):
+    journal = tmp_path / "matrix.jsonl"
+    finished = []
+
+    def dies_after_two(line: str) -> None:
+        if "killed by" in line:
+            finished.append(line)
+            if len(finished) == 2:
+                raise Died
+
+    with pytest.raises(Died):
+        thin.kill_matrix(toy, None, PYTEST, 60, 1, log=dies_after_two, journal=journal)
+    assert len(journal.read_text().splitlines()) == 2  # each row lands as its run ends, not when the matrix does
+    with journal.open("a") as torn:  # a death mid-write leaves half a row
+        torn.write('{"module": "age.py", "oper')
+    runs = []
+    fork_runs = thin.fork_runs
+    monkeypatch.setattr(thin, "fork_runs", lambda jobs, *args: runs.append(len(jobs)) or fork_runs(jobs, *args))
+    uninterrupted, logged = toy_matrix[1], []
+    rest = len(uninterrupted["mutants"]) - 2
+    resumed = thin.kill_matrix(toy, None, PYTEST, 60, 2, log=logged.append, journal=journal,
+                               resume=thin.read_journal(journal))  # fmt: skip
+    assert resumed == uninterrupted
+    assert runs == [1, rest]  # the baseline, then only the mutants not yet run
+    assert logged[0].startswith("2 of 2 journaled rows resumed")
+    assert [line for line in logged if "mutants run" in line] == [f"{rest}/{rest} mutants run"]
+    by_id = sorted(thin.read_journal(journal), key=thin.mutant_id)
+    assert by_id == sorted(uninterrupted["mutants"], key=thin.mutant_id)
+
+
+RAN = GT_ROW | {"killers": ["test_age.py::test_boundary", "test_age.py::test_grown_up"]}
+CRASHED = GT_ROW | {"killers": TOY_TESTS, "crashed": True}
+
+
+@pytest.mark.parametrize(
+    ("journaled", "kept"),
+    [
+        (GT_ROW | {"operator": "gone", "killers": []}, RAN),
+        (GT_ROW | {"mutated": "return age < 18", "killers": []}, RAN),
+        (GT_ROW | {"covering": TOY_TESTS[:1], "killers": []}, RAN),
+        (CRASHED, CRASHED),
+    ],
+    ids=["AC-2 id no longer listed", "same id, another mutant", "same mutant, other covering tests",
+         "a crash is trusted"],
+)  # fmt: skip
+def test_ac2_a_resumed_row_is_kept_only_while_the_source_still_makes_its_mutant(toy, tmp_path, monkeypatch,
+                                                                               journaled, kept):  # fmt: skip
+    one_mutant(monkeypatch)
+    journal = tmp_path / "matrix.jsonl"
+    matrix = thin.kill_matrix(toy, None, PYTEST, 60, 2, log=NO_LOG, journal=journal, resume=[journaled])
+    assert matrix["mutants"] == [kept]
+    assert thin.read_journal(journal) == [kept]
 
 
 def test_a_mutant_cosmic_ray_cannot_make_is_left_out(toy, monkeypatch):
@@ -477,14 +536,19 @@ def test_children_drop_compost_scripts_from_sys_path_so_its_modules_cannot_shado
     [
         lambda toy, args: thin.kill_matrix(toy, None, args, 60, 2, log=NO_LOG),
         lambda toy, args: thin.survivors(toy, {"age.py": {2}}, args, 60, 2, log=NO_LOG),
+        lambda toy, args: thin.kill_matrix(
+            toy, None, args, 60, 2, log=NO_LOG, journal=Path("matrix.jsonl"), resume=[GT_ROW | {"killers": []}]
+        ),
     ],
-    ids=["matrix", "survivors"],
+    ids=["matrix", "survivors", "matrix resumed"],
 )
 def test_mutation_refuses_to_run_on_a_baseline_that_is_not_green(toy, tmp_path, pytest_args, test_body, message, run):
     source = (tmp_path / "test_age.py").read_text().replace("assert adult(18)\n", f"{test_body}\n")
     (tmp_path / "test_age.py").write_text(source)
+    (tmp_path / "matrix.jsonl").write_text("the rows so far\n")
     with pytest.raises(thin.BaselineError, match=message):
         run(toy, pytest_args)
+    assert (tmp_path / "matrix.jsonl").read_text() == "the rows so far\n"  # kept for a resume once the code is fixed
 
 
 def test_main_runs_each_stage_and_prints_json(toy, tmp_path, capsys, monkeypatch):
@@ -494,10 +558,16 @@ def test_main_runs_each_stage_and_prints_json(toy, tmp_path, capsys, monkeypatch
     found = json.loads(capsys.readouterr().out)
     assert found["candidates"] == TOY_TESTS
     (tmp_path / "cands.json").write_text(json.dumps(found))
-    assert thin.main(["matrix", "ctx.json", "--only", "cands.json", "--pytest-args", " ".join(PYTEST)]) == 0
+    matrix = ["matrix", "ctx.json", "--only", "cands.json", "--pytest-args", " ".join(PYTEST)]
+    assert thin.main(matrix) == 0
     out = capsys.readouterr()
     assert "age.py:2 gt#0 killed by 2/3" in out.err
     assert "1/1 mutants run" in out.err
+    assert thin.read_journal(tmp_path / "matrix.jsonl") == json.loads(out.out)["mutants"]  # beside the contexts
+    assert thin.main([*matrix, "--resume", "matrix.jsonl"]) == 0
+    resumed = capsys.readouterr()
+    assert resumed.out == out.out
+    assert "1 of 1 journaled rows resumed" in resumed.err and "killed by" not in resumed.err
     (tmp_path / "matrix.json").write_text(out.out)
     assert thin.main(["verdict", "matrix.json"]) == 0
     assert json.loads(capsys.readouterr().out)["minimal"] == ["test_age.py::test_boundary"]
