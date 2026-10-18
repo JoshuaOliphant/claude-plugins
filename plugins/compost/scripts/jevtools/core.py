@@ -139,7 +139,11 @@ def open_client() -> AsyncTypeSafeClient:
     key = resolve_key()
     if key is None:
         raise Unavailable(MISSING_KEY)
-    return AsyncTypeSafeClient(api_key=key)
+    try:
+        return AsyncTypeSafeClient(api_key=key)
+    except (TypeSafeError, ValueError, ImportError) as error:
+        # A malformed key, or a proxy setting the HTTP client cannot use (unknown scheme, SOCKS without socksio).
+        raise Unavailable(f"TypeSafe client could not start: {error}") from error
 
 
 @asynccontextmanager

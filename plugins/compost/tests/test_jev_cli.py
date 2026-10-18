@@ -3,10 +3,12 @@
 import io
 import json
 
+import httpx2
 import jev
 import pytest
 from conftest import StubClient, choice, noul
-from typesafe_sdk import TypeSafeAPIConnectionError
+from jevtools import core
+from typesafe_sdk import AsyncTypeSafeClient, RetryPolicy, TypeSafeAPIConnectionError
 
 
 @pytest.fixture
@@ -72,14 +74,43 @@ def test_bad_input_exits_2(cache_dir, monkeypatch, capsys, text, message):
     assert message in capsys.readouterr().err
 
 
+def through(handler):
+    """A real TypeSafe client whose HTTP transport is `handler`, so the SDK's own error wrapping runs."""
+    transport = httpx2.MockTransport(handler)
+    return lambda: AsyncTypeSafeClient(api_key="k", transport=transport, retry=RetryPolicy(max_retries=0))
+
+
+def refuse(error):
+    def handler(request):
+        raise error
+
+    return handler
+
+
 @pytest.mark.parametrize(
-    "failing",
+    "factory",
     [
-        pytest.param(StubClient(error=TypeSafeAPIConnectionError("refused")), id="api-refused"),
-        pytest.param(StubClient(lambda state, questions: {}), id="answer-dropped"),
+        pytest.param(through(refuse(httpx2.ConnectError("All connection attempts failed"))), id="connection-refused"),
+        pytest.param(through(refuse(httpx2.ProxyError("403 Forbidden"))), id="proxy-tunnel-403"),
+        pytest.param(
+            through(lambda request: httpx2.Response(403, text="<html>\n<body>blocked by policy</body>\n</html>\n")),
+            id="proxy-403-page",
+        ),
+        pytest.param(core.open_client, id="proxy-setting-unusable"),
+        pytest.param(
+            lambda: StubClient(error=TypeSafeAPIConnectionError("Server disconnected without sending a response.")),
+            id="api-refused",
+        ),
+        pytest.param(lambda: StubClient(lambda state, questions: {}), id="answer-dropped"),
     ],
 )
-def test_unavailable_jev_exits_3_and_says_to_judge_yourself(cache_dir, repo, monkeypatch, capsys, failing):
+def test_unavailable_jev_exits_3_with_one_line_saying_to_judge_yourself(cache_dir, repo, monkeypatch, capsys, factory):
+    monkeypatch.setenv("TYPESAFE_API_KEY", "k")
+    for name in ("HTTPS_PROXY", "https_proxy"):
+        monkeypatch.setenv(name, "ftp://127.0.0.1:1")
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps({"repo": str(repo), "criterion": "c"})))
-    assert jev.main(["find-test"], client_factory=lambda: failing) == jev.EXIT_UNAVAILABLE
-    assert "Make this call yourself." in capsys.readouterr().err
+    assert jev.main(["find-test"], client_factory=factory) == jev.EXIT_UNAVAILABLE
+    [line] = capsys.readouterr().err.splitlines()
+    assert line.startswith("jev unavailable: ")
+    assert line.endswith("Make this call yourself.")
+    assert ".." not in line
