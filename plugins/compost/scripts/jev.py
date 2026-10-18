@@ -61,7 +61,9 @@ def main(argv: list[str] | None = None, client_factory=open_client) -> int:
         print(f"bad input: {error}", file=sys.stderr)
         return EXIT_BAD_INPUT
     except Unavailable as error:
-        print(f"jev unavailable: {error}. Make this call yourself.", file=sys.stderr)
+        # One line, even when the reason quotes a multi-line error page from a proxy.
+        reason = " ".join(str(error).split()).rstrip(".")
+        print(f"jev unavailable: {reason}. Make this call yourself.", file=sys.stderr)
         return EXIT_UNAVAILABLE
     print(json.dumps(result, indent=2))
     return 0
