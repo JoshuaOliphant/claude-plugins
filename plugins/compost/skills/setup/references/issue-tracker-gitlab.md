@@ -12,8 +12,13 @@ operation; it infers the project from `git remote -v` when run inside a clone.
 - **Comment:** `glab issue note <n> --message "..."`. GitLab calls comments notes.
 - **Labels:** `glab issue update <n> --label "..."` / `--unlabel "..."`.
 - **Close:** `glab issue close <n>`. It takes no closing comment, so post the note first.
-- **Merge requests:** GitLab's name for pull requests: `glab mr create`, `glab mr view`,
-  `glab mr note`.
+- **Merge requests:** GitLab's name for pull requests, used by `compost:finish`:
+  - **Default branch:** `glab repo view -F json`, field `default_branch`.
+  - **Create (draft):** `glab mr create --draft --target-branch <target> --title "..." --description "..."`.
+  - **Edit body:** `glab mr update <n> --description "..."`.
+  - **Ready for review:** `glab mr update <n> --ready`.
+  - **Merge (merge commit):** `glab mr merge <n>`. Never squash or rebase unless the user asks.
+  - **Comment:** `glab mr note <n> --message "..."`.
 - **Child issue:** put `Part of #<parent>` at the top of the child's description and add the child
   to a task list in the parent. On tiers with epics, an epic may hold the parent instead.
 - **Blocking:** post the `/blocked_by #<n>` quick action as a note
