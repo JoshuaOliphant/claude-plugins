@@ -7,7 +7,6 @@ import hashlib
 import json
 import os
 import re
-import shlex
 import shutil
 import subprocess
 import sys
@@ -83,8 +82,6 @@ def chunks(body: str) -> list[tuple[int, int]]:
     return spans
 
 
-GUARD = Path(__file__).with_name("sandbox_guard.py")
-GUARD_MARK = "SANDBOX_GUARD:"
 ESCAPE = re.compile(r"(?<![\w.~$}/-])/(root|home|opt|tmp|etc|usr|var)\b|find / ")
 NULL_RESPONSES = ["", "I don't know.", "Paris is the capital of France."]
 
@@ -145,6 +142,9 @@ def run(
         )
     except subprocess.TimeoutExpired as error:
         raise Infra(f"timeout after {timeout}s") from error
+    if done.returncode and not done.stdout.strip():
+        # e.g. "sandbox required but unavailable" when bubblewrap or socat is missing
+        raise Infra(f"exit {done.returncode}: {done.stderr.strip()[:300]}")
     return done.stdout
 
 
@@ -162,7 +162,45 @@ def sandbox(kb: Path | None, home_seed: Path | None, scripts: Path | None) -> tu
         shutil.copytree(home_seed, root / "home")
     else:
         (root / "home").mkdir()
+    (root / "tmp").mkdir()
     return root / "project", root / "home"
+
+
+# Where the subject's Bash may read outside its sandbox: the system dirs its commands run from.
+SYSTEM_DIRS = ["/usr", "/bin", "/sbin", "/lib", "/lib64", "/etc", "/dev", "/proc", "/nix"]
+SYSTEM_DIRS += ["/opt/homebrew", "/System", "/Library", "/private/etc"]  # macOS
+CLAUDE_TMP = "/tmp/claude"
+
+
+def lockdown(root: Path) -> dict:
+    """Settings that keep the subject inside root. The file tools may read only the working dirs (the
+    project, and root through --add-dir); Bash runs in Claude Code's OS sandbox (bubblewrap and socat on
+    Linux, Seatbelt on macOS), which hides every other path. failIfUnavailable turns a missing sandbox
+    into a failed run instead of an unguarded one."""
+    return {
+        "permissions": {"blockReadsOutsideWorkingDirectories": True},
+        "sandbox": {
+            "enabled": True,
+            "failIfUnavailable": True,
+            "allowUnsandboxedCommands": False,
+            # allowWrite too: without it bwrap can't place the read-only stubs it guards .claude/,
+            # .bashrc and the like with, and every Bash call fails before it starts.
+            "filesystem": {
+                "denyRead": ["/"],
+                "allowRead": [str(root), *SYSTEM_DIRS],
+                "allowWrite": [str(root)],
+            },
+        },
+    }
+
+
+def hide_claude_tmp(cmd: list[str]) -> list[str]:
+    """Claude Code's sandbox always lets Bash read /tmp/claude, and in a cloud session that holds the
+    session's memory. As root on Linux, run the subject in its own mount namespace with an empty one."""
+    if sys.platform != "linux" or os.geteuid() != 0 or not os.path.isdir(CLAUDE_TMP):
+        return cmd
+    mount = f'mount -t tmpfs tmpfs {CLAUDE_TMP} && exec "$@"'
+    return ["unshare", "--mount", "--propagation", "private", "sh", "-c", mount, "sh", *cmd]
 
 
 def subject(
@@ -175,13 +213,11 @@ def subject(
     scripts: Path | None = None,
 ) -> dict:
     project, home = sandbox(kb, home_seed, scripts)
-    # The guard denies any call naming a path outside the sandbox, so a leak can't happen rather than
-    # only being flagged; ESCAPE below then counts only the calls that ran.
-    command = shlex.join([sys.executable, str(GUARD), str(project.parent)])
-    guard = {"type": "command", "command": command}
-    settings = project.parent / "settings.json"
-    settings.write_text(json.dumps({"hooks": {"PreToolUse": [{"matcher": "*", "hooks": [guard]}]}}))
-    plugin_env = {"CLAUDE_PLUGIN_ROOT": str(project.parent / "plugin")} if scripts else None
+    root = project.parent.resolve()
+    # TMPDIR inside root, or Claude Code lets sandboxed Bash read the shared temp dir the trials write to.
+    env = {"TMPDIR": str(root / "tmp")}
+    if scripts:
+        env["CLAUDE_PLUGIN_ROOT"] = str(root / "plugin")
     agent_args = []
     if agents:
         agents_file = project.parent / "agents.json"
@@ -189,63 +225,67 @@ def subject(
         agent_args = ["--agents", str(agents_file)]
     try:
         out = run(
-            [
-                "claude",
-                "-p",
-                prompt,
-                "--append-system-prompt",
-                system,
-                "--model",
-                model,
-                "--setting-sources",
-                "",
-                "--strict-mcp-config",
-                "--no-session-persistence",
-                "--allowedTools",
-                "Read",
-                "Grep",
-                "Glob",
-                "Bash",
-                *(["Agent"] if agents else []),
-                "--disallowedTools",
-                "Skill",
-                *([] if agents else ["Agent", "Task"]),
-                "WebFetch",
-                "WebSearch",
-                "--settings",
-                str(settings),
-                "--output-format",
-                "stream-json",
-                "--verbose",
-                *agent_args,
-            ],
+            hide_claude_tmp(
+                [
+                    "claude",
+                    "-p",
+                    prompt,
+                    "--append-system-prompt",
+                    system,
+                    "--model",
+                    model,
+                    "--setting-sources",
+                    "",
+                    "--strict-mcp-config",
+                    "--no-session-persistence",
+                    "--allowedTools",
+                    "Read",
+                    "Grep",
+                    "Glob",
+                    "Bash",
+                    *(["Agent"] if agents else []),
+                    "--disallowedTools",
+                    "Skill",
+                    *([] if agents else ["Agent", "Task"]),
+                    "WebFetch",
+                    "WebSearch",
+                    "--settings",
+                    json.dumps(lockdown(root)),
+                    "--add-dir",
+                    str(root),
+                    "--output-format",
+                    "stream-json",
+                    "--verbose",
+                    *agent_args,
+                ]
+            ),
             project,
             600,
             home,
-            plugin_env,
+            env,
         )
     finally:
         shutil.rmtree(project.parent, ignore_errors=True)
-    calls, denied, result = {}, {}, None
+    trace, result = [], None
     for line in out.splitlines():
         try:
             event = json.loads(line)
         except json.JSONDecodeError:
             continue
-        content = event.get("message", {}).get("content", [])
         if event.get("type") == "assistant":
-            for block in content:
+            for block in event.get("message", {}).get("content", []):
                 if block.get("type") == "tool_use":
-                    calls[block["id"]] = f"{block['name']}({json.dumps(block['input'])[:300]})"
-        elif event.get("type") == "user" and isinstance(content, list):
-            # The guard's own denial reads "PreToolUse:<Tool> hook error: SANDBOX_GUARD: <path> ...".
-            denied |= {
-                b["tool_use_id"]: str(b["content"]).split(GUARD_MARK, 1)[1].strip()
-                for b in content
-                if b.get("type") == "tool_result"
-                and str(b.get("content")).startswith("PreToolUse:")
-                and GUARD_MARK in str(b.get("content"))
-            }
+                    # SANDBOX before the cut, so a sandbox path split by it can't read as an escape.
+                    call = json.dumps(block["input"]).replace(str(root), "SANDBOX")
+                    trace.append(
+                        f"{block['name']}({call.replace(str(project.parent), 'SANDBOX')[:300]})"
+                    )
+        elif event.get("type") == "user" and isinstance(event["message"].get("content"), list):
+            # A sandbox that can't start fails each Bash call with bwrap's error, and the subject
+            # carries on with the file tools: that run measured the harness, not the skill.
+            for block in event["message"]["content"]:
+                if block.get("type") == "tool_result" and "bwrap: " in str(block.get("content")):
+                    raise Infra(f"sandbox broke Bash: {str(block['content'])[:200]}")
         elif event.get("type") == "result":
             result = event
     if result is None:
@@ -255,16 +295,11 @@ def subject(
     served = sorted(result.get("modelUsage", {}))
     if not any(model in m for m in served):
         raise Infra(f"served model {served} is not {model}")
-    # A denied call stays in the trace, marked, so the judge sees it was attempted but read nothing.
-    sandboxed = [
-        ("DENIED " if i in denied else "") + t.replace(str(project.parent), "SANDBOX")
-        for i, t in calls.items()
-    ]
     return {
-        "trace": sandboxed,
+        "trace": trace,
         "response": result["result"],
-        "escaped": any(ESCAPE.search(t) for t in sandboxed if not t.startswith("DENIED ")),
-        "denied": [r.replace(str(project.parent), "SANDBOX") for r in denied.values()],
+        # Calls that name a path outside the sandbox. lockdown() lets them read nothing.
+        "escaped": any(ESCAPE.search(t) for t in trace),
         "served": served,
         "cost_usd": result.get("total_cost_usd"),
         "num_turns": result.get("num_turns"),
@@ -447,6 +482,8 @@ def main() -> None:
         "home_seed": tree_sha(args.home_seed),
         "kb": tree_sha(args.kb),
         "plugin_scripts": tree_sha(scripts),
+        # Rows from runs under a different sandbox are not comparable (results-116 ran with none).
+        "sandbox": lockdown(Path("SANDBOX")),
     }
     manifest_path = args.out / "manifest.json"
     if manifest_path.exists() and json.loads(manifest_path.read_text()) != manifest:

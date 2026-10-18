@@ -1,0 +1,40 @@
+scored runs 100, infra errors 0, escaped the sandbox 15
+subject cost $0.55 (judge cost not recorded)
+
+expectations live in the reference (baseline + ctrl-same-1 + ctrl-same-2): 24/24
+  case 1 e1: 1.00
+  case 1 e2: 1.00
+  case 1 e3: 1.00
+  case 1 e4: 0.93
+  case 1 e5: 1.00
+  case 2 e1: 1.00
+  case 2 e2: 1.00
+  case 2 e3: 1.00
+  case 2 e4: 1.00
+  case 2 e5: 1.00
+  case 3 e1: 1.00
+  case 3 e2: 1.00
+  case 3 e3: 1.00
+  case 3 e4: 1.00
+  case 3 e5: 1.00
+  case 4 e1: 1.00
+  case 4 e2: 1.00
+  case 4 e3: 1.00
+  case 4 e4: 1.00
+  case 4 e5: 1.00
+  case 5 e1: 1.00
+  case 5 e2: 1.00
+  case 5 e3: 1.00
+  case 5 e4: 1.00
+
+CONTROLS
+  ctrl-no-skill mean drop +0.23  killed by c4e4, c5e1, c5e2, c4e3 '(whole skill)'
+  ctrl-same-1   mean drop -0.00  killed by -                  '(nothing)'
+  ctrl-same-2   mean drop -0.00  killed by -                  '(nothing)'
+  false-kill rate (identical copies killed): 0/2
+
+mutation score: 0/0 = 0% (about 0.0 kills expected by chance if no deletion mattered)
+
+KILLED
+
+SURVIVED (eval gap, or the line changes nothing)

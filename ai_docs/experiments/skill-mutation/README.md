@@ -21,7 +21,9 @@ uv run --group dev python ai_docs/experiments/skill-mutation/mutate_skill.py ...
 uv run --group dev python ai_docs/experiments/skill-mutation/analyze.py <dir> [--exclude-escaped]
 ```
 
-The guard's tests run with `uv run --group dev pytest ai_docs/experiments/skill-mutation`.
+The harness's own tests run in the root `pytest` run (`uv run --group dev pytest ai_docs`).
+
+On Linux the sandbox needs `bubblewrap` and `socat` (`apt-get install bubblewrap socat`); without them every subject run fails with an infra error instead of running unguarded. macOS uses the built-in Seatbelt; only Linux has been run.
 
 `analyze.py` also reads the committed runs directly: `analyze.py ai_docs/experiments/skill-mutation/results`.
 
@@ -35,9 +37,11 @@ The guard's tests run with `uv run --group dev pytest ai_docs/experiments/skill-
 **Sandbox.**
 - Each trial gets a fresh project directory holding a copy of the KB (none for a `"kb": null` case).
 - Its `HOME` is empty, or a copy of `--home-seed` when one is given, for example a registry fixture.
-- `sandbox_guard.py` runs as a PreToolUse hook (passed with `--settings`) and denies any call that names a path outside the sandbox: absolute paths (`find /`, `cat /root/...`), `..` that climbs out, `~` and `$VAR` paths after expansion, and the path fields of Read, Grep and Glob. `/dev/null` and the other std streams stay allowed. The denied call stays in the trace, prefixed `DENIED `, so the judge sees an attempt and no read.
-- The guard reads the command text, so a program that computes a path at run time (`python -c` joining strings) can still get out. Haiku hasn't tried; `escaped` still flags any such read that shows a literal path. The other way round, a pattern that looks like an absolute path (`grep -v '/_archive/'`) is denied too; the subject retries without it.
-- `claude` runs without the env vars that hand a parent session's memory dir and extra working directories to a child (`*MEMORY*`, `*ADDITIONAL_DIRECTORIES*`). Before #140 the subject's prompt named this cloud session's memory dir, which is why runs grepped `/tmp/claude/memory`.
+- The subject can't read outside the sandbox (`lockdown()`, passed with `--settings`):
+  - Read, Grep and Glob may read only the working dirs (`permissions.blockReadsOutsideWorkingDirectories`); the sandbox root is one of them through `--add-dir`.
+  - Bash runs in Claude Code's OS sandbox with every path hidden except the sandbox and the system dirs commands run from. Outside paths read as missing, as in a container. `failIfUnavailable` and `allowUnsandboxedCommands: false` mean no command runs unsandboxed, and a run where bwrap fails a Bash call goes to `errors.jsonl`. The sandbox needs write access to the sandbox root to place its read-only stubs (`.claude/`, `.bashrc`, `.mcp.json` and the like), so the subject sees those empty files in its project dir.
+  - The sandbox always exposes Claude Code's temp dir and `/tmp/claude`. `TMPDIR` points into the sandbox, and as root on Linux the subject gets its own mount namespace with an empty `/tmp/claude`, where a cloud session keeps its memory.
+- `claude` runs without the env vars that hand a parent session its memory dir and extra working directories (`*MEMORY*`, `*ADDITIONAL_DIRECTORIES*`). Before #140 they put this cloud session's memory dir in the subject's prompt, which is why runs grepped `/tmp/claude/memory`.
 
 **Judge.** Sonnet grades each expectation from the tool trace and the final response. Only real JSON booleans count; anything else is retried.
 
@@ -55,7 +59,7 @@ The guard's tests run with `uv run --group dev pytest ai_docs/experiments/skill-
 **Bookkeeping.**
 - Mutant labels are SKILL.md line numbers.
 - Timeouts, errors, unparseable verdicts and a wrong served model go to `errors.jsonl`, never into scores.
-- Calls outside the sandbox are denied, and each row lists the paths it was refused in `denied`. A call that names an outside path and still ran sets `escaped`; with the guard that should be 0.
+- Calls that name a path outside the sandbox set `escaped` per row. Since #140 they read nothing; the flag counts attempts.
 - `manifest.json` refuses to resume into an `--out` whose inputs changed.
 
 ## Results: compound-retrieve, shipped evals (2026-10-17)
@@ -151,3 +155,24 @@ The evals now ship their own fixtures (`evals/fixtures/`): a KB holding every en
 - **Case 5 is masked by the leak.** Without the skill, haiku still reports the missing directory (0.8) and suggests setup (0.6). In 3 of those 5 runs it left the sandbox, found the installed compound-knowledge plugin (`/root/.claude/plugins/synced/...`, or this checkout under `/home/user`) and ran its resolver, whose stderr names `/compound-knowledge:setup`. In a container it should separate.
 - **Case 1 doesn't separate either.** `critical-patterns.md` sits beside the solutions, so a plain glob of the KB reads it.
 - **66 of 100 runs escaped**, all four arms alike. In this cloud container most are harmless: `~` guessed as `/home/user` (the path doesn't exist) and reads of the session's own memory dir under `/tmp/claude/memory`. The rest reach this repo or its installed plugin, which only helps the no-skill arm. The checkout does hold a copy of the registry fixture under `evals/fixtures/home`, but no run read it: the one no-skill run that grepped the checkout searched its `knowledge/` dir. So the kills above stand; the `--exclude-escaped` view keeps too few no-skill rows to say anything. A future run can pass c2e2 and c4e4 through that leak, so check traces for `evals/fixtures` before trusting a no-skill pass there.
+
+## Results: compound-retrieve, sandboxed for #140 (2026-10-18)
+
+`results-140/`: the same `--controls-only` run as `results-116/` (5 trials, no agents, `--plugin-root plugins/compound-knowledge`) under the sandbox described above. 100 runs, 0 infra errors, subject cost $0.55.
+
+- **Nothing outside the sandbox can be read.** 15 runs still name an outside path (`escaped`), against 66 before, and all are guesses at a HOME that doesn't exist (`/home/user/projects/skill-lab/...`, `/root/projects/...`). The file tools refuse them and Bash sees no such path. No run read the memory dir: the subject no longer learns its path from its prompt, and the mount hides it.
+- **Case 5 separates.** c5e1 (reports no knowledge dir) and c5e2 (suggests setup) go from 1.0 in all three reference arms to 0.0 without the skill. Before, the no-skill arm passed them at 0.8 and 0.6 by running the installed plugin's resolver.
+- **The leak was also propping up two kills.** c2e1 (read the registry) and c3e5 (checked critical-patterns.md) no longer kill the whole-skill deletion:
+
+  | Expectation | No skill, `results-116` | No skill, `results-140` |
+  |---|---|---|
+  | c2e1 read the cross-project registry | 0.0 | 1.0 |
+  | c2e2 names the registered skill-lab KB | 0.0 | 0.6 |
+  | c3e5 checked critical-patterns.md | 0.4 | 0.6 |
+  | c4e4 searched the registry on a miss | 0.0 | 0.0 |
+  | c4e3 reports critical-patterns.md checked, none apply | 0.2 | 0.4 |
+  | c5e1 reports no knowledge dir | 0.8 | 0.0 |
+  | c5e2 suggests setup | 0.6 | 0.0 |
+
+  In `results-116` the no-skill arm opened case 2 by reading this cloud session's memory files (`/tmp/claude/memory/team/silo/MEMORY.md`), whose path its prompt handed it, and never looked in HOME. Confined, it lists and greps the whole sandbox and finds the registry fixture beside the project. So the kills on c2e1 and c2e2 measured the leak, not the skill. Whole-skill deletion is now killed by 4 expectations (c4e3, c4e4, c5e1, c5e2); the identical copies by none.
+- **Next for the evals:** the fake HOME sits next to the project, one `ls ..` away, which a real HOME full of other things isn't. A registry case only separates if the fixture is harder to stumble on than the skill's instruction to read it.

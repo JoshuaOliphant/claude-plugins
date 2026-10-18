@@ -41,11 +41,8 @@ def main() -> None:
     if args.exclude_escaped:
         rows = [r for r in rows if not r.get("escaped")]
     cost = sum(r.get("cost_usd") or 0 for r in rows)
-    # Runs from before the guard (#140) have no "denied" field; they count as 0 tries blocked.
-    tried = sum(1 for r in rows if r.get("denied"))
     print(
-        f"scored runs {len(rows)}, infra errors {len(errors)}, escaped the sandbox {len(escaped)}, "
-        f"blocked trying to {tried}"
+        f"scored runs {len(rows)}, infra errors {len(errors)}, escaped the sandbox {len(escaped)}"
     )
     print(f"subject cost ${cost:.2f} (judge cost not recorded)")
 
