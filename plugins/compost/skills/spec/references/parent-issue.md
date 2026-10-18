@@ -19,6 +19,13 @@ Bounded work uses the sections marked **bounded**. Architectural work uses all o
 > <the original request, word for word>
 > * <one bullet per settled answer, from the refined prompt>
 
+## Deeper ask
+<!-- bounded, architectural; omitted for a spike -->
+- **A professional would also:** <a method or practice, not a persona>
+- **Rawest material:** <primary sources, and where they live>
+- **Methods and tools:** <what the practitioners use, and what this repo already has>
+- **Independent check:** <what other than the author or the agent shows the result right, or that none exists>
+
 ## Problem
 <!-- architectural -->
 <The problem the user faces, from their perspective. Two to four bullets.>

@@ -41,9 +41,11 @@ a quick lookup can answer.
    found mid-spec upgrades the class, and nothing downgrades. If the request holds several
    independent subsystems, say so now and spec the first one; the rest become their own specs.
 
-   For Bounded and Architectural requests, then deepen the ask: answer the four questions in
-   [deeper ask](references/deeper-ask.md) (what a professional would do, the rawest material, the
-   methods and tools, what independent check would show the result right) before the first round.
+   For Bounded and Architectural requests, then deepen the ask. Read
+   [deeper ask](references/deeper-ask.md) now, answer its four questions (what a professional would
+   do, the rawest material, the methods and tools, what independent check would show the result
+   right), and show the answers before the first round. They go into the parent issue under Deeper
+   ask. Do this yourself, in this session, even when the interview is skipped or unattended.
    Spikes skip it.
 
 3. **Spike: state the question and the probe, then run it.** Two or three sentences on what you
@@ -125,7 +127,7 @@ a quick lookup can answer.
    - Describe behavior and decisions, never file paths or code: both go stale within days. The
      exception is a prototype snippet that pins a decision more precisely than prose can (a state
      machine, a schema, a type shape), trimmed to the decision and marked as from the prototype.
-   - When the deeper ask ran, at least one AC-N names the independent check from its fourth answer.
+   - When the deeper ask ran, the Deeper ask section holds its four answers, and at least one AC-N names the independent check from the fourth.
    - Name the seams the tests will use: prefer existing ones, the highest one that works, and as
      few as possible ([seams](../../canon/seams.md)).
 
