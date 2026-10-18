@@ -411,7 +411,7 @@ HTMLValidityJudge = LLMJudge(
 from pydantic_evals import Case, Dataset
 from evals.task import AgentInput
 from evals.evaluators.tool_usage import ToolWasCalled, ToolCalledWithParams
-from evals.evaluators.state import StateContains, StateCountDelta
+from evals.evaluators.state import StateContains, StateCountDelta, StateUnchanged
 from evals.evaluators.ui import ContainsHTMXAttributes, UIAppropriatenessJudge
 
 capability_cases = [
@@ -440,6 +440,9 @@ capability_cases = [
         metadata={"category": "read"},
         evaluators=[
             ToolWasCalled(tool_name="list_books"),
+            # Seeds {"books": []}; an unseeded store reads back as {}, so this fails
+            # if initial_state never reached the task.
+            StateUnchanged(),
             ContainsHTMXAttributes(),
         ],
     ),
