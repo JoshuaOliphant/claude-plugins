@@ -94,6 +94,8 @@ test('without a jev path, or when review-risk fails, files keep scope order and 
   assert.equal(failed.result.risk.problem, 'jev unavailable: no key')
   const silent = await run({ jev: '/plugin/scripts/jev.py' }, reviewers({ scope: { ...SCOPE, risk: { ...failedRisk, problem: undefined } } }))
   assert.equal(silent.result.risk.problem, 'review-risk failed')
+  const unranked = await run({ jev: '/plugin/scripts/jev.py' }, reviewers())
+  assert.equal(unranked.result.risk.problem, 'the scoping agent returned no risk ranking')
 })
 
 test('a blocker whose every skeptic failed is unjudged, not refuted', async () => {
@@ -265,8 +267,10 @@ test('on the light path, an unfetchable issue fails the Spec axis, a missing spe
   assert.equal(failed.result.complete, false)
 
   const missing = { ...SMALL, spec: { found: false, source: '', number: null, text: '' } }
-  const skipped = await run(JEV, reviewers({ scope: missing, light: standardsOnly }))
+  const strayTag = { ...standardsOnly, findings: [{ ...MINOR, axis: 'Spec' }, { ...BLOCKER }] }
+  const skipped = await run(JEV, reviewers({ scope: missing, light: strayTag }))
   assert.equal(skipped.result.spec.status, 'skipped: no spec found')
+  assert.equal(skipped.result.standards.survivors.length, 2, 'findings tagged for no active axis stay under Standards')
   assert.equal(skipped.result.complete, true)
 })
 

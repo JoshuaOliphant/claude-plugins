@@ -1,5 +1,5 @@
 // ABOUTME: Compost's review workflow: Standards and Spec reviewers in parallel over a branch diff, or one reviewer on both for a small one.
-// ABOUTME: A small, non-structural diff gets one reviewer on both axes instead; skeptics try to refute each finding worth one either way.
+// ABOUTME: Skeptics try to refute each finding worth one (Jev's triage, else every blocker and major); survivors, refutations, and unjudged findings come back side by side.
 export const meta = {
   name: 'review-changes',
   description: 'Review a branch along two axes, Standards and Spec (one reviewer on both for a small, non-structural diff), then have skeptics try to refute every finding worth one (by Jev triage, else every blocker and major)',
@@ -185,7 +185,13 @@ const readAtHead = head === 'HEAD'
 
 const risk = jevScript && scope.risk && scope.risk.ranked
   ? { ranked: true, structural: scope.risk.structural, files: scope.risk.files }
-  : { ranked: false, structural: null, files: [], problem: jevScript && scope.risk ? scope.risk.problem || 'review-risk failed' : 'no jev path given' }
+  : { ranked: false, structural: null, files: [], problem: riskProblem() }
+
+function riskProblem() {
+  if (!jevScript) return 'no jev path given'
+  if (!scope.risk) return 'the scoping agent returned no risk ranking'
+  return scope.risk.problem || 'review-risk failed'
+}
 
 const fileList = risk.ranked
   ? `Changed files, riskiest first (structural risk 0-4 from Jev; read the top ones first):
@@ -312,9 +318,10 @@ function changedLines(shortstat) {
 
 // A light review has to prove the diff small and not structural; an unreadable line count, or structural risk
 // nobody ranked, runs it in full.
+const lineCount = changedLines(scope.shortstat)
 const light = !forceFull
-  && changedLines(scope.shortstat) !== null
-  && changedLines(scope.shortstat) <= LIGHT_MAX_CHANGED_LINES
+  && lineCount !== null
+  && lineCount <= LIGHT_MAX_CHANGED_LINES
   && risk.structural === false
 
 async function settleAxis(review, axis) {
@@ -358,15 +365,17 @@ function reviewOne(axis) {
 }
 
 async function reviewLight() {
-  const active = AXES.filter(axis => axis.active).map(axis => axis.name)
-  const [review] = await parallel([() => agent(lightPrompt(AXES.filter(axis => axis.active)), {
+  const active = AXES.filter(axis => axis.active)
+  const review = await agent(lightPrompt(active), {
     label: 'Light reviewer',
     phase: 'Standards',
-    schema: lightFindingsSchema(active),
+    schema: lightFindingsSchema(active.map(axis => axis.name)),
     agentType: 'compost:reviewer',
-  })])
+  }).catch(() => null)
+  // The schema allows only active axes; a finding that slips through untagged stays under Standards, never dropped.
+  const axisOf = finding => (active.some(axis => axis.name === finding.axis) ? finding.axis : 'Standards')
   const share = axis => review && {
-    findings: review.findings.filter(finding => finding.axis === axis.name),
+    findings: review.findings.filter(finding => axisOf(finding) === axis.name),
     checked: (review.checked || {})[axis.name],
   }
   return pipeline(AXES, axis => (axis.active ? share(axis) : { skipped: true, findings: [] }), settleAxis)
