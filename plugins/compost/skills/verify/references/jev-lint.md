@@ -13,7 +13,8 @@ uv run ${CLAUDE_PLUGIN_ROOT}/scripts/lint/jev_lint.py src --json            # ev
 ```
 
 It finds the TypeSafe key the same way `jev.py` does (`TYPESAFE_API_KEY`, then the Keychain item
-`typesafe`). Exit codes: 0 clean, 1 findings, 2 Jev failed for at least one unit, 3 no key found,
+`typesafe`). Exit codes: 0 clean, 1 findings, 2 Jev failed for at least one unit, 3 no key found (or, run with plain
+`python3`, no uv that can install typesafe-sdk),
 4 bad input (missing path, git diff failure, unreadable files, or nothing to lint). Codes 2 and 4
 mean the run was incomplete, not clean: say so rather than reporting the findings as the whole
 picture. Code 3 means do the pass by hand.

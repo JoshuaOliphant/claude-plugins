@@ -9,7 +9,7 @@
                          [--concurrency N] [--json]
 
 Exit codes: 0 no findings, 1 findings reported, 2 Jev failed for at least one unit,
-3 skipped because no TypeSafe key was found, 4 bad input (missing path, git diff
+3 skipped because no TypeSafe key was found (or no uv to install typesafe-sdk), 4 bad input (missing path, git diff
 failure, unreadable files, or nothing to lint).
 """
 
@@ -24,6 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import needs_uv  # noqa: F401  (re-execs under uv when typesafe-sdk is missing)
 from extract import Unit, extract_hunks, extract_source_units
 from jevtools.core import MISSING_KEY, Cache, Jev, Unavailable, open_client, resolve_key, session
 from rules import RULES, Rule
