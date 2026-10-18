@@ -30,7 +30,7 @@
       "name": "hexagonal-agents",
       "source": "./plugins/hexagonal-agents",
       "description": "Build web apps where an AI agent dynamically generates HTML UI using hexagonal architecture with HTMX",
-      "version": "1.6.0",
+      "version": "1.6.1",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -50,7 +50,7 @@
       "name": "compound-knowledge",
       "source": "./plugins/compound-knowledge",
       "description": "Capture solved problems, retrieve past solutions, and graduate accumulated knowledge into living context. Skills: compound-capture, compound-retrieve, compound-graduate.",
-      "version": "0.10.0",
+      "version": "0.10.1",
       "author": {
         "name": "Joshua Oliphant"
       },
