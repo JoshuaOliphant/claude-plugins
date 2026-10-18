@@ -2,14 +2,18 @@
 # ABOUTME: caching, token counting, and turning API failures into Unavailable.
 import ast
 import asyncio
+import importlib.util
+from importlib.metadata import version
 
 import pytest
+from packaging.version import Version
 from conftest import PLUGIN_ROOT, StubClient, StubJev, choice, noul, score
 from jevtools import core
 from jevtools.registry import BadInput
 from typesafe_sdk import Choice, Noul
 
 QUESTIONS = {"flag": Noul(instructions="Is `text` about tests?")}
+SDK = Version(version("typesafe-sdk"))
 SCRIPTS = PLUGIN_ROOT / "scripts"
 
 
@@ -37,6 +41,39 @@ def test_open_client_without_a_key_explains_how_to_store_one(monkeypatch):
     monkeypatch.delenv(core.ENV_VAR, raising=False)
     monkeypatch.setenv("PATH", "")
     with pytest.raises(core.Unavailable, match="security add-generic-password -s typesafe"):
+        core.open_client()
+
+
+@pytest.mark.parametrize(
+    ("key", "proxy", "reason"),
+    [
+        pytest.param(
+            "two words",
+            None,
+            "API key must contain only printable ASCII",
+            id="malformed-key",
+            marks=pytest.mark.skipif(
+                SDK < Version("0.7.1"), reason="typesafe-sdk validates keys from 0.7.1, jev.py's floor"
+            ),
+        ),
+        pytest.param("k", "ftp://127.0.0.1:1", "Unknown scheme for proxy URL", id="unknown-proxy-scheme"),
+        pytest.param(
+            "k",
+            "socks5://127.0.0.1:1",
+            "socksio",
+            id="socks-proxy-without-socksio",
+            marks=pytest.mark.skipif(importlib.util.find_spec("socksio") is not None, reason="socksio is installed"),
+        ),
+    ],
+)
+def test_a_client_that_cannot_start_is_unavailable(monkeypatch, key, proxy, reason):
+    monkeypatch.setenv(core.ENV_VAR, key)
+    for name in ("HTTPS_PROXY", "https_proxy"):
+        if proxy:
+            monkeypatch.setenv(name, proxy)
+        else:
+            monkeypatch.delenv(name, raising=False)
+    with pytest.raises(core.Unavailable, match=f"TypeSafe client could not start: .*{reason}"):
         core.open_client()
 
 

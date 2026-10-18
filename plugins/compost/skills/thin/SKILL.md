@@ -37,8 +37,8 @@ hand decides.
 
    ```bash
    T=${TMPDIR:-/tmp}/thin && mkdir -p "$T"
-   pytest --cov=<package> --cov-context=test --cov-report= -p no:cacheprovider
-   coverage json --show-contexts -o "$T/contexts.json"
+   pytest --cov=<package> --cov-context=test --cov-report= --cov-fail-under=0 -p no:cacheprovider
+   coverage json --show-contexts --fail-under 0 -o "$T/contexts.json"
    uv run ${CLAUDE_PLUGIN_ROOT}/scripts/thin.py candidates "$T/contexts.json" > "$T/candidates.json"
    ```
 
@@ -56,6 +56,11 @@ hand decides.
    ```
 
    `--operators stock` leaves out thin's own operators, to compare a run with stock cosmic-ray's.
+   Each mutant's row lands in `matrix.jsonl` beside the contexts file as its run ends; if the run
+   dies, rerun it with `--resume "$T/matrix.jsonl"` to run only the rest. Resume only when no code
+   or test changed since: a row is dropped when its mutant changed, not when a test did. A run
+   deletes the journal once it prints the matrix, so one left there means a run that died, and a
+   fresh run stops with exit 2 rather than empty it; delete it to start over.
    The matrix runs inside the project's environment, so its imports resolve as the tests' do. It
    first runs the covering tests unmutated and stops with exit 2 unless they all pass: under a
    broken setup, such as an interpreter without the project's packages, every run fails, every

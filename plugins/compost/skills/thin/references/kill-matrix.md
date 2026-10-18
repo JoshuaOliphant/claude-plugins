@@ -111,6 +111,8 @@ tests that cover each line is what keeps each mutant cheap.
   mutant can't run as the original's bytecode.
 - **Coverage gates.** `--no-cov` in `--pytest-args` saves each run the coverage work. The verdict
   reads the junit report, not the exit code, so a `fail_under` in `addopts` doesn't spoil it.
+  Collecting contexts is not a gate either: step 2's `--cov-fail-under=0` and `--fail-under 0`
+  keep one missed line from failing pytest (exit 1) and `coverage json` (exit 2).
 - **Tests that share a port or a fixed path.** Children run side by side, each with its own
   `--basetemp`, but anything else two tests both claim can fail one of them for no mutant's sake,
   which reads as a kill. Run such a suite with `--workers 1`.
