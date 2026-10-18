@@ -54,8 +54,9 @@ Skills call `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py <tool> --input <file.js
 names them all. Code gathers the candidates, Jev picks or checks, and thresholds in code decide.
 Results are cached by content hash in `~/.cache/compost/`. The key comes from `TYPESAFE_API_KEY`
 or the macOS Keychain item `typesafe`. Without one, a tool exits 3 and the skill makes the call
-itself, so Jev speeds compost up and never blocks it. `jev.py status` checks for a key without
-calling the API; `compost:setup` runs it and tells you how to store one.
+itself, so Jev speeds compost up and never blocks it. Run with plain `python3` instead of `uv run`,
+a Jev script re-runs itself under uv to get typesafe-sdk, and exits 3 saying so when uv is missing.
+`jev.py status` checks for a key without calling the API; `compost:setup` runs it and tells you how to store one.
 
 | Tool | Primitive | Used by | Live eval (cases) |
 | --- | --- | --- | --- |

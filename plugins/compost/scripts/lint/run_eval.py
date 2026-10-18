@@ -18,6 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import needs_uv  # noqa: F401  (re-execs under uv when typesafe-sdk is missing)
 from cases import CASES
 from extract import Unit, extract_hunks, extract_source_units
 from jev_lint import DEFAULT_CONCURRENCY, run
