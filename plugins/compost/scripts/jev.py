@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from jevtools import meta, review, spec, testing  # noqa: F401  (importing registers the tools)
-from jevtools.core import MISSING_KEY, Cache, Unavailable, open_client, resolve_key, session
+from jevtools.core import Cache, Unavailable, open_client, session
 from jevtools.registry import TOOLS, BadInput
 
 EXIT_BAD_INPUT = 2
@@ -49,13 +49,11 @@ def main(argv: list[str] | None = None, client_factory=open_client) -> int:
         for name, entry in sorted(TOOLS.items()):
             print(f"{name:16} {entry.summary}")
         return 0
-    if args.tool == "status":
-        if resolve_key() is None:
-            print(f"jev unavailable: {MISSING_KEY}", file=sys.stderr)
-            return EXIT_UNAVAILABLE
-        print(f"jev ready: a TypeSafe key was found; {len(TOOLS)} tools available")
-        return 0
     try:
+        if args.tool == "status":
+            client_factory()  # builds the client without a request, so a key or proxy it can't use shows here
+            print(f"jev ready: a TypeSafe key was found; {len(TOOLS)} tools available")
+            return 0
         result = asyncio.run(run(args.tool, read_input(args.input), client_factory))
     except BadInput as error:
         print(f"bad input: {error}", file=sys.stderr)

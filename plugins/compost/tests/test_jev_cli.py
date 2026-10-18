@@ -42,6 +42,15 @@ def test_status_without_a_key_exits_3_and_says_how_to_store_one(monkeypatch, cap
     assert "security add-generic-password -s typesafe" in capsys.readouterr().err
 
 
+def test_status_exits_3_when_the_client_cannot_start(monkeypatch, capsys):
+    monkeypatch.setenv("TYPESAFE_API_KEY", "k")
+    for name in ("HTTPS_PROXY", "https_proxy"):
+        monkeypatch.setenv(name, "ftp://127.0.0.1:1")
+    assert jev.main(["status"]) == jev.EXIT_UNAVAILABLE
+    [line] = capsys.readouterr().err.splitlines()
+    assert line.startswith("jev unavailable: TypeSafe client could not start")
+
+
 def test_list_names_every_tool(capsys):
     assert jev.main(["list"]) == 0
     assert "find-test" in capsys.readouterr().out

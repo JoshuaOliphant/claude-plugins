@@ -6,13 +6,14 @@ import importlib.util
 from importlib.metadata import version
 
 import pytest
+from packaging.version import Version
 from conftest import PLUGIN_ROOT, StubClient, StubJev, choice, noul, score
 from jevtools import core
 from jevtools.registry import BadInput
 from typesafe_sdk import Choice, Noul
 
 QUESTIONS = {"flag": Noul(instructions="Is `text` about tests?")}
-SDK = tuple(int(part) for part in version("typesafe-sdk").split(".")[:3])
+SDK = Version(version("typesafe-sdk"))
 SCRIPTS = PLUGIN_ROOT / "scripts"
 
 
@@ -51,7 +52,9 @@ def test_open_client_without_a_key_explains_how_to_store_one(monkeypatch):
             None,
             "API key must contain only printable ASCII",
             id="malformed-key",
-            marks=pytest.mark.skipif(SDK < (0, 7, 1), reason="typesafe-sdk validates keys from 0.7.1, jev.py's floor"),
+            marks=pytest.mark.skipif(
+                SDK < Version("0.7.1"), reason="typesafe-sdk validates keys from 0.7.1, jev.py's floor"
+            ),
         ),
         pytest.param("k", "ftp://127.0.0.1:1", "Unknown scheme for proxy URL", id="unknown-proxy-scheme"),
         pytest.param(
