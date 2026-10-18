@@ -98,6 +98,8 @@ def sentences(response: str) -> list[str]:
 def spread(items: list, count: int) -> list:
     if len(items) <= count:
         return items
+    if count == 1:
+        return items[:1]
     return [items[round(i * (len(items) - 1) / (count - 1))] for i in range(count)]
 
 
@@ -200,7 +202,7 @@ def claude(prompt: str, model: str = "sonnet") -> str:
 
 
 def cached(store: dict, key: str, make):
-    if key not in store:
+    if store.get(key) is None:
         store[key] = make()
     return store[key]
 
@@ -222,28 +224,15 @@ def build_items(originals: list[dict], kb: dict[str, str], store: dict) -> list[
     items = []
     for original in originals:
         for sentence in original["targets"]:
-            for name, make in CODE_OPERATORS.items():
-                if (mutant := make(sentence, kb)) and mutant != sentence:
-                    items.append(
-                        {
-                            "original": original["id"],
-                            "operator": name,
-                            "claim": sentence,
-                            "mutant": mutant,
-                        }
-                    )
+            made = [(name, make(sentence, kb)) for name, make in CODE_OPERATORS.items()]
             for name in LLM_OPERATORS:
                 key = hashlib.sha256(f"{name}|{sentence}".encode()).hexdigest()
-                mutant = cached(store, key, lambda: llm_mutant(sentence, name, kb))
-                if mutant:
-                    items.append(
-                        {
-                            "original": original["id"],
-                            "operator": name,
-                            "claim": sentence,
-                            "mutant": mutant,
-                        }
-                    )
+                made.append((name, cached(store, key, lambda: llm_mutant(sentence, name, kb))))
+            items += [
+                {"original": original["id"], "operator": name, "claim": sentence, "mutant": mutant}
+                for name, mutant in made
+                if mutant and mutant != sentence
+            ]
     return items
 
 
@@ -360,6 +349,7 @@ def main() -> None:
                 )
     for n, item in enumerate(items):
         o = by_id[item["original"]]
+        assert item["claim"] in o["response"], f"claim not in its answer: {item['claim'][:60]}"
         item["response"] = o["response"].replace(item["claim"], item["mutant"], 1)
         item["n"] = n
         for variant, open_check in (("closed", False), ("open", True)):
