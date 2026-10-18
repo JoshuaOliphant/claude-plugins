@@ -21,7 +21,7 @@ claude-plugins/
 │   ├── compost/                    # One SDLC workflow composted from several skill collections
 │   └── superfan/                   # Scheduled per-component telemetry watchers (headless Claude + launchd)
 ├── scripts/
-│   ├── cloud-setup.sh                 # Cloud environment setup script: installs compost + typesafe plugins
+│   ├── cloud-setup.sh                 # Cloud environment setup: installs bubblewrap + socat (Bash sandbox), compost + typesafe plugins
 │   ├── check_all.py                   # One-command repo health check (versions + sync + tests + lint + format)
 │   ├── check_marketplace_versions.py  # Asserts marketplace.json ⇄ plugin.json (versions + registration)
 │   ├── check_version_bumps.py         # CI on PRs into main: every changed plugin's version is above main's
