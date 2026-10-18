@@ -1,5 +1,5 @@
 # ABOUTME: Lets a script whose typesafe-sdk dependency lives only in its PEP 723 header run under plain python3.
-# ABOUTME: Importing it re-execs the running script with `uv run --script` when the SDK is missing, or exits 3 saying how.
+# ABOUTME: Importing it has uv install the SDK and re-execs the script under `uv run --script`, or exits 3 saying how.
 import importlib
 import os
 import shutil
@@ -14,8 +14,9 @@ EXIT_UNAVAILABLE = 3
 def ensure(
     module="typesafe_sdk", argv=None, environ=None, which=shutil.which, run=subprocess.run, execve=os.execve
 ) -> None:
-    """Returns when `module` imports. Otherwise replaces this process with the script in argv[0] under uv,
-    which installs what its inline metadata declares; exits 3 when uv is missing, fails, or already ran it."""
+    """Returns when `module` imports, dropping the re-exec marker so children start fresh. Otherwise has uv install
+    what argv[0]'s inline metadata declares and replaces this process with that script under uv; exits 3 when uv
+    is missing, its install fails, or it already ran the script."""
     environ = os.environ if environ is None else environ
     try:
         importlib.import_module(module)
