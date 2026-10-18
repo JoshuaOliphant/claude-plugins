@@ -32,7 +32,8 @@ two lines each, shown to the user.
 
 - Ask once whether to adopt the deeper version, as one lettered question in the first interview
   round with your recommendation ([questions](questions.md)). Unattended, take the recommendation
-  and mark it `(assumed)`.
+  and mark it `(assumed)`. So does a request that already lives in a settled issue or doc, where
+  there is no interview: take the recommendation as `(assumed)` and carry on.
 - Record the outcome as bullets in the refined prompt ([refine prompt](refine-prompt.md)). The
   original request stays word for word; the deeper rewrite is bullets under it, not a replacement.
 - Answers 1 to 3 become constraints and edge cases in the spec. Answer 4 becomes at least one AC-N
@@ -40,5 +41,3 @@ two lines each, shown to the user.
   none exists, list that under open questions.
 - Cut anything that makes the work bigger rather than deeper ([subtract before you add](../../../canon/subtract-before-you-add.md)),
   unless the user accepts it in the adoption question.
-- Skip a step the repo already answers: when the settled issue or doc names its independent check
-  and its sources, say so in one line instead of repeating them.
