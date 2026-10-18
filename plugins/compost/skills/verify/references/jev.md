@@ -16,7 +16,7 @@ decision so you can overrule it out loud.
 
 ## test-value (step 3)
 
-Input: the repo root and either the coverage report (`coverage json -o coverage.json`, or
+Input: the repo root and either the coverage report (`coverage json -o coverage.json --fail-under 0`, or
 `pytest --cov-report=json`) or explicit lines. Consecutive missing lines become one block, shown to
 Jev with four lines of context and the definition that holds them.
 
