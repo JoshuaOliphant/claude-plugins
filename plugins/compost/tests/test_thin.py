@@ -595,7 +595,11 @@ def test_main_runs_each_stage_and_prints_json(toy, tmp_path, capsys, monkeypatch
     out = capsys.readouterr()
     assert "age.py:2 gt#0 killed by 2/3" in out.err
     assert "1/1 mutants run" in out.err
-    assert thin.read_journal(tmp_path / "matrix.jsonl") == json.loads(out.out)["mutants"]  # beside the contexts
+    assert not (tmp_path / "matrix.jsonl").exists()  # a finished run's rows are in its output; only a killed one's stay
+    killed = "".join(json.dumps(row) + "\n" for row in json.loads(out.out)["mutants"])
+    (tmp_path / "matrix.jsonl").write_text(killed)
+    assert thin.main(matrix) == 2  # a fresh run would empty the journal beside the contexts
+    assert "holds a killed run's rows" in capsys.readouterr().err
     assert thin.main([*matrix, "--resume", "matrix.jsonl"]) == 0
     resumed = capsys.readouterr()
     assert resumed.out == out.out
@@ -614,7 +618,6 @@ def test_main_matrix_takes_node_ids_in_place_of_a_candidates_file(toy, tmp_path,
     args = ["matrix", "ctx.json", "--tests", "test_age.py::test_runs_only", "--workers", "1"]
     assert thin.main([*args, "--pytest-args", " ".join(PYTEST)]) == 0
     assert json.loads(capsys.readouterr().out)["selected"] == ["test_age.py::test_runs_only"]
-    (tmp_path / "matrix.jsonl").unlink()
     assert thin.main([*args, "--pytest-args", " ".join(PYTEST), "--operators", "stock"]) == 0
     assert asked == [True, False]
 
@@ -622,7 +625,7 @@ def test_main_matrix_takes_node_ids_in_place_of_a_candidates_file(toy, tmp_path,
 @pytest.mark.parametrize(
     ("journal", "resume", "message"),
     [
-        ("the rows so far\n", [], "holds an earlier run's rows: rerun with --resume"),
+        ("the rows so far\n", [], "holds a killed run's rows: rerun with --resume"),
         (None, ["--resume", "gone.jsonl"], "no journal at gone.jsonl to resume"),
     ],
     ids=["a fresh run over a killed run's journal", "a resume file that is not there"],

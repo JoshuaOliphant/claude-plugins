@@ -730,7 +730,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"thin: no journal at {journal} to resume", file=sys.stderr)
             return 2
         if not args.resume and journal.exists() and journal.stat().st_size:  # a fresh run would empty it
-            print(f"thin: {journal} holds an earlier run's rows: rerun with --resume {journal} to keep them, "
+            print(f"thin: {journal} holds a killed run's rows: rerun with --resume {journal} to keep them, "
                   "or delete it to start over", file=sys.stderr)  # fmt: skip
             return 2
         try:
@@ -748,6 +748,9 @@ def main(argv: list[str] | None = None) -> int:
         except BaselineError as error:
             print(f"thin: baseline failed: {error}", file=sys.stderr)
             return 2
+        print(json.dumps(result, indent=1))
+        journal.unlink()  # the run finished and its rows are out, so a journal left here means a run that died
+        return 0
     else:
         result = verdict(json.loads(Path(args.matrix).read_text()))
     print(json.dumps(result, indent=1))
