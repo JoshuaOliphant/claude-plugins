@@ -87,20 +87,29 @@ def test_setup_can_edit_an_existing_config_in_place():
     assert "Edit" in front_matter
 
 
-CORPUS_SEARCH = re.compile(r'path="\{(?:write|read)_path\}')
+CORPUS_PATH = re.compile(r"\{(?:write|read)_path\}|\bread_paths\b")
+SEARCH_VERB = re.compile(r"\b(?:Grep|Glob|grep|search|scan|semantic)", re.IGNORECASE)
 KNOWN_CORPUS_READERS = {
     "skills/compound-capture/SKILL.md",
     "skills/compound-capture/references/registry-format.md",
     "skills/compound-retrieve/SKILL.md",
+    "skills/compound-graduate/SKILL.md",
+    "skills/compound-graduate/references/garden-workflow.md",
+    "skills/compound-graduate/references/promote-workflow.md",
     "agents/knowledge-researcher.md",
 }
 
 
 def corpus_readers() -> list[Path]:
-    """Instruction docs that Grep or Glob over {write_path} or {read_path}."""
-    return [
-        doc for doc in INSTRUCTION_DOCS if CORPUS_SEARCH.search(doc.read_text(encoding="utf-8"))
-    ]
+    """Instruction docs that name the corpus paths and search them; setup only writes the config."""
+    readers = []
+    for doc in INSTRUCTION_DOCS:
+        if doc == PLUGIN_ROOT / "commands" / "setup.md":
+            continue
+        text = doc.read_text(encoding="utf-8")
+        if CORPUS_PATH.search(text) and SEARCH_VERB.search(text):
+            readers.append(doc)
+    return readers
 
 
 def test_corpus_search_detector_finds_the_known_readers():
