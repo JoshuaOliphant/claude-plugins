@@ -7,8 +7,10 @@ import hashlib
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -81,6 +83,8 @@ def chunks(body: str) -> list[tuple[int, int]]:
     return spans
 
 
+GUARD = Path(__file__).with_name("sandbox_guard.py")
+GUARD_MARK = "SANDBOX_GUARD:"
 ESCAPE = re.compile(r"(?<![\w.~$}/-])/(root|home|opt|tmp|etc|usr|var)\b|find / ")
 NULL_RESPONSES = ["", "I don't know.", "Paris is the capital of France."]
 
@@ -121,10 +125,20 @@ class Infra(Exception):
     """A run that produced nothing scorable: goes to errors.jsonl, never scored as a model failure."""
 
 
+# Env vars through which a parent Claude Code session hands its memory dir and extra working
+# directories to a child `claude`: inherited, they put the parent's paths in the subject's prompt.
+INHERITED_CONTEXT = re.compile(r"MEMORY|ADDITIONAL_DIRECTORIES")
+
+
+def child_env(home: Path | None = None, extra: dict | None = None) -> dict:
+    env = {k: v for k, v in os.environ.items() if not INHERITED_CONTEXT.search(k)}
+    return {**env, **({"HOME": str(home)} if home else {}), **(extra or {})}
+
+
 def run(
     cmd: list[str], cwd: Path, timeout: int, home: Path | None = None, env: dict | None = None
 ) -> str:
-    env = {**os.environ, "HOME": str(home), **(env or {})} if home else None
+    env = child_env(home, env)
     try:
         done = subprocess.run(
             cmd, cwd=cwd, env=env, capture_output=True, text=True, timeout=timeout, check=False
@@ -161,6 +175,12 @@ def subject(
     scripts: Path | None = None,
 ) -> dict:
     project, home = sandbox(kb, home_seed, scripts)
+    # The guard denies any call naming a path outside the sandbox, so a leak can't happen rather than
+    # only being flagged; ESCAPE below then counts only the calls that ran.
+    command = shlex.join([sys.executable, str(GUARD), str(project.parent)])
+    guard = {"type": "command", "command": command}
+    settings = project.parent / "settings.json"
+    settings.write_text(json.dumps({"hooks": {"PreToolUse": [{"matcher": "*", "hooks": [guard]}]}}))
     plugin_env = {"CLAUDE_PLUGIN_ROOT": str(project.parent / "plugin")} if scripts else None
     agent_args = []
     if agents:
@@ -192,6 +212,8 @@ def subject(
                 *([] if agents else ["Agent", "Task"]),
                 "WebFetch",
                 "WebSearch",
+                "--settings",
+                str(settings),
                 "--output-format",
                 "stream-json",
                 "--verbose",
@@ -204,16 +226,26 @@ def subject(
         )
     finally:
         shutil.rmtree(project.parent, ignore_errors=True)
-    trace, result = [], None
+    calls, denied, result = {}, {}, None
     for line in out.splitlines():
         try:
             event = json.loads(line)
         except json.JSONDecodeError:
             continue
+        content = event.get("message", {}).get("content", [])
         if event.get("type") == "assistant":
-            for block in event.get("message", {}).get("content", []):
+            for block in content:
                 if block.get("type") == "tool_use":
-                    trace.append(f"{block['name']}({json.dumps(block['input'])[:300]})")
+                    calls[block["id"]] = f"{block['name']}({json.dumps(block['input'])[:300]})"
+        elif event.get("type") == "user" and isinstance(content, list):
+            # The guard's own denial reads "PreToolUse:<Tool> hook error: SANDBOX_GUARD: <path> ...".
+            denied |= {
+                b["tool_use_id"]: str(b["content"]).split(GUARD_MARK, 1)[1].strip()
+                for b in content
+                if b.get("type") == "tool_result"
+                and str(b.get("content")).startswith("PreToolUse:")
+                and GUARD_MARK in str(b.get("content"))
+            }
         elif event.get("type") == "result":
             result = event
     if result is None:
@@ -223,11 +255,16 @@ def subject(
     served = sorted(result.get("modelUsage", {}))
     if not any(model in m for m in served):
         raise Infra(f"served model {served} is not {model}")
-    sandboxed = [t.replace(str(project.parent), "SANDBOX") for t in trace]
+    # A denied call stays in the trace, marked, so the judge sees it was attempted but read nothing.
+    sandboxed = [
+        ("DENIED " if i in denied else "") + t.replace(str(project.parent), "SANDBOX")
+        for i, t in calls.items()
+    ]
     return {
         "trace": sandboxed,
         "response": result["result"],
-        "escaped": any(ESCAPE.search(t) for t in sandboxed),
+        "escaped": any(ESCAPE.search(t) for t in sandboxed if not t.startswith("DENIED ")),
+        "denied": [r.replace(str(project.parent), "SANDBOX") for r in denied.values()],
         "served": served,
         "cost_usd": result.get("total_cost_usd"),
         "num_turns": result.get("num_turns"),

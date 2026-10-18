@@ -21,6 +21,8 @@ uv run --group dev python ai_docs/experiments/skill-mutation/mutate_skill.py ...
 uv run --group dev python ai_docs/experiments/skill-mutation/analyze.py <dir> [--exclude-escaped]
 ```
 
+The guard's tests run with `uv run --group dev pytest ai_docs/experiments/skill-mutation`.
+
 `analyze.py` also reads the committed runs directly: `analyze.py ai_docs/experiments/skill-mutation/results`.
 
 `--controls-only` runs the baseline and the controls without mutants, which is enough to check that the evals measure the skill at all. `--kb` and `--home-seed` default to the `fixtures` block in `evals.json` (paths relative to it). A case with `"kb": null` runs with no knowledge directory. `--plugin-root` copies the plugin's `scripts/` into the sandbox and points `CLAUDE_PLUGIN_ROOT` at the copy, so the skill's resolver and feedback calls run as they would installed. `--agents-dir` offers the plugin's agents; leave it off when an agent carries the skill's own procedure (compound-knowledge's `knowledge-researcher` does), or the no-skill control delegates to it and stops being skill-free.
@@ -33,6 +35,9 @@ uv run --group dev python ai_docs/experiments/skill-mutation/analyze.py <dir> [-
 **Sandbox.**
 - Each trial gets a fresh project directory holding a copy of the KB (none for a `"kb": null` case).
 - Its `HOME` is empty, or a copy of `--home-seed` when one is given, for example a registry fixture.
+- `sandbox_guard.py` runs as a PreToolUse hook (passed with `--settings`) and denies any call that names a path outside the sandbox: absolute paths (`find /`, `cat /root/...`), `..` that climbs out, `~` and `$VAR` paths after expansion, and the path fields of Read, Grep and Glob. `/dev/null` and the other std streams stay allowed. The denied call stays in the trace, prefixed `DENIED `, so the judge sees an attempt and no read.
+- The guard reads the command text, so a program that computes a path at run time (`python -c` joining strings) can still get out. Haiku hasn't tried; `escaped` still flags any such read that shows a literal path. The other way round, a pattern that looks like an absolute path (`grep -v '/_archive/'`) is denied too; the subject retries without it.
+- `claude` runs without the env vars that hand a parent session's memory dir and extra working directories to a child (`*MEMORY*`, `*ADDITIONAL_DIRECTORIES*`). Before #140 the subject's prompt named this cloud session's memory dir, which is why runs grepped `/tmp/claude/memory`.
 
 **Judge.** Sonnet grades each expectation from the tool trace and the final response. Only real JSON booleans count; anything else is retried.
 
@@ -50,7 +55,7 @@ uv run --group dev python ai_docs/experiments/skill-mutation/analyze.py <dir> [-
 **Bookkeeping.**
 - Mutant labels are SKILL.md line numbers.
 - Timeouts, errors, unparseable verdicts and a wrong served model go to `errors.jsonl`, never into scores.
-- Reads outside the sandbox are flagged per row.
+- Calls outside the sandbox are denied, and each row lists the paths it was refused in `denied`. A call that names an outside path and still ran sets `escaped`; with the guard that should be 0.
 - `manifest.json` refuses to resume into an `--out` whose inputs changed.
 
 ## Results: compound-retrieve, shipped evals (2026-10-17)
