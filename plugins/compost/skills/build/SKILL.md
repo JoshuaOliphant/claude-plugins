@@ -149,7 +149,9 @@ no test counts until you have seen it fail for the right reason.
     it to `compost:diagnose`. Commit with a
     conventional message that names the issue, such as
     `feat(auth): expire tokens at their expiry instant (#42)`. The issue closes when its PR
-    merges, not at commit. Tick this issue's own AC boxes; the parent's checklist is not yours to
+    merges, not at commit, and it is not ready for a PR until `compost:verify` and then
+    `compost:review` have run on it, whatever its size; review gives a small diff a light path,
+    never a skip. Tick this issue's own AC boxes; the parent's checklist is not yours to
     tick. Post any ruling you made on the way as an issue comment: what, why, and the cost if
     wrong.
 

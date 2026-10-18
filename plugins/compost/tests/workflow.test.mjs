@@ -41,11 +41,12 @@ async function run(args, answer) {
   return { result, prompts }
 }
 
-function reviewers({ standards = { findings: [BLOCKER, MINOR] }, spec = { findings: [] }, skeptic = { refuted: false, reason: 'confirmed' }, scope = SCOPE } = {}) {
+function reviewers({ standards = { findings: [BLOCKER, MINOR] }, spec = { findings: [] }, light = { findings: [] }, skeptic = { refuted: false, reason: 'confirmed' }, scope = SCOPE } = {}) {
   return label => {
     if (label === 'scope') return scope
     if (label === 'Standards reviewer') return typeof standards === 'function' ? standards() : standards
     if (label === 'Spec reviewer') return spec
+    if (label === 'Light reviewer') return light
     return typeof skeptic === 'function' ? skeptic(label) : skeptic
   }
 }
@@ -173,6 +174,69 @@ test('a bare string is the base, and a head other than HEAD tells every agent to
   const pinned = await run({ base: 'abc^1', head: 'abc^2' }, reviewers())
   assert.match(pinned.prompts['Standards reviewer'], /git show h{40}:<path>/)
   assert.match(pinned.prompts['Standards skeptic 1.1'], /git show h{40}:<path>/)
+})
+
+const SMALL = { ...SCOPE, changedLines: 50 }
+const reviewerLabels = prompts => Object.keys(prompts).filter(label => label.endsWith('reviewer'))
+
+test('a diff of 50 changed lines or fewer gets one reviewer on both axes, split back by axis tag', async () => {
+  const specBlocker = { ...BLOCKER, line: 30, claim: 'AC-1 has no test', axis: 'Spec' }
+  const light = { findings: [{ ...BLOCKER, axis: 'Standards' }, { ...MINOR, axis: 'Standards' }, specBlocker] }
+  const { result, prompts } = await run({ issue: 7 }, reviewers({ scope: SMALL, light }))
+  assert.equal(result.path, 'light')
+  assert.deepEqual(reviewerLabels(prompts), ['Light reviewer'])
+  assert.match(prompts['Light reviewer'], /Standards axis/)
+  assert.match(prompts['Light reviewer'], /Spec axis/)
+  assert.ok(prompts['Light reviewer'].includes(SCOPE.spec.text))
+  assert.match(prompts['Light reviewer'], /Grade only against the spec text in this prompt/)
+  assert.deepEqual(result.standards.survivors.map(f => f.claim), ['CSV is not escaped', 'name drifts from CONTEXT.md'])
+  assert.deepEqual(result.spec.survivors.map(f => f.claim), ['AC-1 has no test'])
+  assert.deepEqual(Object.keys(prompts).filter(label => label.includes('skeptic')).sort(), ['Spec skeptic 1.1', 'Standards skeptic 1.1'])
+  assert.equal(result.complete, true)
+  assert.match(result.summary, /Standards: reviewed \(light\): 2 findings raised, 1 left unverified/)
+})
+
+test('over 50 changed lines, a structural file, no line count, or full: true runs the two-reviewer path', async () => {
+  const structural = { ranked: true, structural: true, files: [{ file: 'app/export.py', score: 3.1, structural: true }] }
+  const cases = [
+    [{}, { ...SCOPE, changedLines: 51 }],
+    [{ jev: '/plugin/scripts/jev.py' }, { ...SMALL, risk: structural }],
+    [{}, SCOPE],
+    [{ full: true }, SMALL],
+  ]
+  for (const [args, scope] of cases) {
+    const { result, prompts } = await run(args, reviewers({ scope }))
+    assert.equal(result.path, 'full', JSON.stringify(args) + JSON.stringify(scope.changedLines))
+    assert.deepEqual(reviewerLabels(prompts), ['Standards reviewer', 'Spec reviewer'])
+  }
+})
+
+test('a scope prompt asks for the changed line count from git diff --shortstat', async () => {
+  const { prompts } = await run({}, reviewers())
+  assert.match(prompts.scope, /--shortstat/)
+  assert.match(prompts.scope, /changedLines/)
+})
+
+test('on the light path, a reviewer that returns nothing fails every active axis', async () => {
+  const { result } = await run({ issue: 7 }, reviewers({ scope: SMALL, light: null }))
+  assert.equal(result.standards.status, 'failed: the reviewer did not return')
+  assert.equal(result.spec.status, 'failed: the reviewer did not return')
+  assert.equal(result.complete, false)
+})
+
+test('on the light path, an unfetchable issue fails the Spec axis and a missing spec skips it', async () => {
+  const unfetched = { ...SMALL, spec: { found: false, source: '', number: null, text: '', problem: 'gh: not authenticated' } }
+  const failed = await run({ issue: 42 }, reviewers({ scope: unfetched, light: { findings: [{ ...MINOR, axis: 'Standards' }] } }))
+  assert.equal(failed.result.spec.status, 'failed: issue #42 could not be fetched: gh: not authenticated')
+  assert.equal(failed.result.standards.survivors.length, 1)
+  assert.doesNotMatch(failed.prompts['Light reviewer'], /Spec axis/)
+  assert.equal(failed.result.complete, false)
+
+  const missing = { ...SMALL, spec: { found: false, source: '', number: null, text: '' } }
+  const skipped = await run({}, reviewers({ scope: missing, light: { findings: [{ ...MINOR, axis: 'Spec' }] } }))
+  assert.equal(skipped.result.spec.status, 'skipped: no spec found')
+  assert.equal(skipped.result.standards.survivors.length, 1, 'a Spec-tagged finding with no spec axis is kept under Standards')
+  assert.equal(skipped.result.complete, true)
 })
 
 test('meta is a pure literal naming every phase the script uses', () => {
