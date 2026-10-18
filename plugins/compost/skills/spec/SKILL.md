@@ -45,7 +45,9 @@ a quick lookup can answer.
    [deeper ask](references/deeper-ask.md) now, answer its four questions (what a professional would
    do, the rawest material, the methods and tools, what independent check would show the result
    right), and show the answers before the first round. They go into the parent issue under Deeper
-   ask. Do this yourself, in this session, even when the interview is skipped or unattended.
+   ask. Do this yourself, in this session, even when the interview is skipped or unattended, and
+   a subagent that writes the spec gets the four answers in its prompt. Your closing message to the
+   user lists the four answers again, one line each.
    Spikes skip it.
 
 3. **Spike: state the question and the probe, then run it.** Two or three sentences on what you
