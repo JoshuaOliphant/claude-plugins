@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# ABOUTME: Setup script for Claude Code cloud environments: installs the plugins sessions here use.
-# ABOUTME: The environment's own setup script runs this; every step is idempotent and only warns on failure.
+# ABOUTME: Setup script for Claude Code cloud environments: installs the plugins sessions here use and the
+# ABOUTME: packages Claude Code's Bash sandbox needs. Every step is idempotent and only warns on failure.
 #
 # Usage, as the environment's setup script (works in any project, since it needs no clone):
 #   curl -fsSL https://raw.githubusercontent.com/JoshuaOliphant/claude-plugins/main/scripts/cloud-setup.sh | bash
@@ -24,6 +24,20 @@ ensure_plugin() {
     || claude plugin install "$plugin@$marketplace" \
     || warn "could not install $plugin@$marketplace"
 }
+
+# bubblewrap and socat back Claude Code's Bash sandbox on Linux. The skill-mutation harness
+# (ai_docs/experiments/skill-mutation) won't run its subject without that sandbox.
+ensure_sandbox_deps() {
+  command -v bwrap >/dev/null 2>&1 && command -v socat >/dev/null 2>&1 && return 0
+  command -v apt-get >/dev/null 2>&1 || { warn "no apt-get; install bubblewrap and socat by hand"; return 0; }
+  local sudo=""
+  [ "$(id -u)" -eq 0 ] || sudo="sudo"
+  # The image's package lists are stale; without the update apt can't find either package.
+  { $sudo apt-get update -qq && $sudo apt-get install -y -qq bubblewrap socat; } \
+    || warn "could not install bubblewrap and socat"
+}
+
+ensure_sandbox_deps
 
 if ! command -v claude >/dev/null 2>&1; then
   warn "claude CLI not found; skipping plugin installs"
