@@ -1,0 +1,443 @@
+[
+ {
+  "sha": "c31435a4036b248cfcc5c6d6f0bf43635404ad7a",
+  "parent": "8c67d4df699632b65ad43132cfaf5b26a345449a",
+  "subject": "fix(compost): a finished matrix run deletes its journal, so only a killed run's blocks a fresh one (#143)",
+  "tests": [
+   "plugins/compost/tests/test_thin.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/thin.py"
+  ],
+  "issue": [
+   "143"
+  ],
+  "stat": "1 file changed, 4 insertions(+), 1 deletion(-)",
+  "parent_output": "........................................................................ [ 78%]\n.F\n=================================== FAILURES ===================================\nE   AssertionError: assert not True\n     +  where True = exists()\n     +    where exists = (PosixPath('/tmp/pytest-of-root/pytest-1000/test_main_runs_each_stage_and_0') / 'matrix.jsonl').exists\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_thin.py:598: AssertionError: assert not True\n=========================== short test summary info ============================\nFAILED tests/test_thin.py::test_main_runs_each_stage_and_prints_json - Assert...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 73 passed in 18.06s\n"
+ },
+ {
+  "sha": "8c67d4df699632b65ad43132cfaf5b26a345449a",
+  "parent": "882ba98bf8ddab75a61260ddbe7accef52cc9e8b",
+  "subject": "fix(compost): jev.py status builds the client, so a key or proxy it can't use exits 3 (#145)",
+  "tests": [
+   "plugins/compost/tests/test_jev_cli.py",
+   "plugins/compost/tests/test_jev_core.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/jev.py"
+  ],
+  "issue": [
+   "145"
+  ],
+  "stat": "1 file changed, 5 insertions(+), 7 deletions(-)",
+  "parent_output": "..F\n=================================== FAILURES ===================================\nE   AssertionError: assert 0 == 3\n     +  where 0 = <function main at 0x7fcacdf7b880>(['status'])\n     +    where <function main at 0x7fcacdf7b880> = jev.main\n     +  and   3 = jev.EXIT_UNAVAILABLE\n----------------------------- Captured stdout call -----------------------------\njev ready: a TypeSafe key was found; 17 tools available\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_jev_cli.py:49: AssertionError: assert 0 == 3\n=========================== short test summary info ============================\nFAILED tests/test_jev_cli.py::test_status_exits_3_when_the_client_cannot_start\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 2 passed in 0.16s\n"
+ },
+ {
+  "sha": "882ba98bf8ddab75a61260ddbe7accef52cc9e8b",
+  "parent": "fa22893bf2bfb85679ab82bafb428e6f7916dfcf",
+  "subject": "fix(compost): keep a killed matrix run's journal and children safe (#143)",
+  "tests": [
+   "plugins/compost/tests/test_thin.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/thin.py"
+  ],
+  "issue": [
+   "143"
+  ],
+  "stat": "1 file changed, 43 insertions(+), 28 deletions(-)",
+  "parent_output": "......................................................F\n=================================== FAILURES ===================================\nE   Failed: DID NOT RAISE ChildProcessError\n----------------------------- Captured stdout call -----------------------------\n.                                                                        [100%]\n1 passed in 0.01s\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_thin.py:478: Failed: DID NOT RAISE ChildProcessError\n=========================== short test summary info ============================\nFAILED tests/test_thin.py::test_a_caller_that_fails_mid_run_leaves_no_run_behind\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 54 passed in 8.94s\n"
+ },
+ {
+  "sha": "92cd86619d8c11fd2f6906511dacd1896395365e",
+  "parent": "59aea0cb22c8a356524ea95465be0a41805f7663",
+  "subject": "fix(compost): rename the resume journal into place so a kill mid-rewrite keeps its rows (#143)",
+  "tests": [
+   "plugins/compost/tests/test_thin.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/thin.py"
+  ],
+  "issue": [
+   "143"
+  ],
+  "stat": "1 file changed, 9 insertions(+), 7 deletions(-)",
+  "parent_output": "................................................F\n=================================== FAILURES ===================================\nE   Failed: DID NOT RAISE KeyboardInterrupt\n----------------------------- Captured stdout call -----------------------------\n...                                                                      [100%]\n3 passed in 0.01s\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_thin.py:433: Failed: DID NOT RAISE KeyboardInterrupt\n=========================== short test summary info ============================\nFAILED tests/test_thin.py::test_a_resume_killed_while_its_journal_is_rewritten_keeps_the_rows\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 48 passed in 6.89s\n"
+ },
+ {
+  "sha": "ba953d8de95b9094985f798acee199bf439041ed",
+  "parent": "d35d6ebdfe62ae690d471e7a1f77306a5197bb05",
+  "subject": "fix(compost): jev.py says Jev is unavailable in one line when TypeSafe is unreachable (#145)",
+  "tests": [
+   "plugins/compost/tests/test_jev_cli.py",
+   "plugins/compost/tests/test_jev_core.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/jev.py",
+   "plugins/compost/scripts/jevtools/core.py"
+  ],
+  "issue": [
+   "145"
+  ],
+  "stat": "2 files changed, 8 insertions(+), 2 deletions(-)",
+  "parent_output": ".........F\n=================================== FAILURES ===================================\nE   ValueError: too many values to unpack (expected 1)\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_jev_cli.py:113: ValueError: too many values to unpack (expected 1)\n=========================== short test summary info ============================\nFAILED tests/test_jev_cli.py::test_unavailable_jev_exits_3_with_one_line_saying_to_judge_yourself[proxy-403-page]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 9 passed in 0.28s\n"
+ },
+ {
+  "sha": "26a1cc7aa2e54c1fa39a978ef67b07323127d692",
+  "parent": "9c9693c8e08026db33cde5f2933bfdabf0f3b120",
+  "subject": "fix(compost): skip unreadable catalogs and uninstall rather than disable orphans (#85)",
+  "tests": [
+   "plugins/compost/tests/test_claude_config.py",
+   "plugins/compost/tests/test_replaced.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/claude_config.py",
+   "plugins/compost/scripts/pile.py"
+  ],
+  "issue": [
+   "85"
+  ],
+  "stat": "2 files changed, 22 insertions(+), 10 deletions(-)",
+  "parent_output": "....................F\n=================================== FAILURES ===================================\nE   KeyError: 'name'\n/tmp/real-fix-diagnose/parent/plugins/compost/scripts/claude_config.py:54: KeyError: 'name'\n=========================== short test summary info ============================\nFAILED tests/test_claude_config.py::test_orphans_come_only_from_marketplaces_whose_clone_has_a_catalog\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 20 passed in 0.28s\n"
+ },
+ {
+  "sha": "9c9693c8e08026db33cde5f2933bfdabf0f3b120",
+  "parent": "46cc1b1e5041aa7c95551a4ba686ecc6d79a33bb",
+  "subject": "fix(compost): validate marketplace catalogs and name orphans one way (#85)",
+  "tests": [
+   "plugins/compost/tests/test_claude_config.py",
+   "plugins/compost/tests/test_replaced.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/claude_config.py",
+   "plugins/compost/scripts/pile.py"
+  ],
+  "issue": [
+   "85"
+  ],
+  "stat": "2 files changed, 21 insertions(+), 10 deletions(-)",
+  "parent_output": ".....................F\n=================================== FAILURES ===================================\nE   AssertionError: Regex pattern did not match.\n      Expected regex: 'cannot read .*broken.*marketplace.json: Expecting property name'\n      Actual message: '/tmp/pytest-of-root/pytest-1012/test_an_unreadable_marketplace0/.claude/plugins/marketplaces/broken/.claude-plugin/marketplace.json is not valid JSON: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)'\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_claude_config.py:175: AssertionError: Regex pattern did not match.\n=========================== short test summary info ============================\nFAILED tests/test_claude_config.py::test_an_unreadable_marketplace_catalog_is_reported[not-json]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 21 passed in 0.27s\n"
+ },
+ {
+  "sha": "135412f8294e0922c3cdd5cc5ee4348981aecce4",
+  "parent": "144152abf6448c521d7d4248c77d7e57134ad5cf",
+  "subject": "fix(compost): count a wrong-typed skill-drift log line as unreadable (#97)",
+  "tests": [
+   "plugins/compost/tests/test_skill_drift.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/skill_drift.py"
+  ],
+  "issue": [
+   "97"
+  ],
+  "stat": "1 file changed, 12 insertions(+), 2 deletions(-)",
+  "parent_output": ".................F\n=================================== FAILURES ===================================\nE   assert (1, 1) == (1, 2)\n      \n      At index 1 diff: 1 != 2\n      Use -v to get more diff\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_skill_drift.py:202: assert (1, 1) == (1, 2)\n=========================== short test summary info ============================\nFAILED tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[p-a-string]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 17 passed in 0.40s\n"
+ },
+ {
+  "sha": "144152abf6448c521d7d4248c77d7e57134ad5cf",
+  "parent": "fb417b8b68a43c438e5d59d7efa52b419810be8a",
+  "subject": "fix(compost): /drift shows the open hits skill_drift.py counts, and survives a bad log line (#97)",
+  "tests": [
+   "plugins/compost/tests/test_skill_drift.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/skill_drift.py"
+  ],
+  "issue": [
+   "97"
+  ],
+  "stat": "1 file changed, 43 insertions(+), 2 deletions(-)",
+  "parent_output": "\n==================================== ERRORS ====================================\n__________________ ERROR collecting tests/test_skill_drift.py __________________\nImportError while importing test module '/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_skill_drift.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/usr/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_skill_drift.py:9: in <module>\n    from conftest import skill_drift_hit\nE   ImportError: cannot import name 'skill_drift_hit' from 'conftest' (/tmp/real-fix-diagnose/parent/plugins/compost/tests/conftest.py)\n=========================== short test summary info ============================\nERROR tests/test_skill_drift.py\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.11s\n"
+ },
+ {
+  "sha": "1b0c8fe3fb54579ff851259b6495b6b230337fc8",
+  "parent": "4f3f54a67cfed64a9ff0ddae9c37c48101ec9c41",
+  "subject": "fix(compost): list plugins lazily, from the same claude dir, keeping local installs local (#104)",
+  "tests": [
+   "plugins/compost/tests/test_claude_config.py",
+   "plugins/compost/tests/test_replaced.py",
+   "plugins/compost/tests/test_skill_drift.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/claude_config.py",
+   "plugins/compost/scripts/pile.py"
+  ],
+  "issue": [
+   "104"
+  ],
+  "stat": "2 files changed, 39 insertions(+), 16 deletions(-)",
+  "parent_output": "\n==================================== ERRORS ====================================\n_________________ ERROR collecting tests/test_claude_config.py _________________\nE   TypeError: Config.__init__() got an unexpected keyword argument 'list_plugins'\n=========================== short test summary info ============================\nERROR tests/test_claude_config.py - TypeError: Config.__init__() got an unexp...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 error in 0.03s\n"
+ },
+ {
+  "sha": "4f3f54a67cfed64a9ff0ddae9c37c48101ec9c41",
+  "parent": "bee8d0452440a9af98f8dc716139b7f4a5f447b5",
+  "subject": "fix(compost): classify-change always sends a change feeding a mechanism to be read (#70)",
+  "tests": [
+   "plugins/compost/tests/test_jev_meta.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/jevtools/meta.py"
+  ],
+  "issue": [
+   "70"
+  ],
+  "stat": "1 file changed, 4 insertions(+), 1 deletion(-)",
+  "parent_output": "............F\n=================================== FAILURES ===================================\nE   AssertionError: assert ('ignore', False) == ('ignore', True)\n      \n      At index 1 diff: False != True\n      Use -v to get more diff\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_jev_meta.py:119: AssertionError: assert ('ignore', False) == ('ignore', True)\n=========================== short test summary info ============================\nFAILED tests/test_jev_meta.py::test_classify_change_records_only_confident_ignores[a change feeding a mechanism is always read]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 12 passed in 0.91s\n"
+ },
+ {
+  "sha": "461e8b256010a6ade5d65b176df646071d819f88",
+  "parent": "bee8d0452440a9af98f8dc716139b7f4a5f447b5",
+  "subject": "fix(compost): narrow skips a group that would pass the cap and keeps smaller likely ones (#105)",
+  "tests": [
+   "plugins/compost/tests/test_jev_core.py",
+   "plugins/compost/tests/test_jev_testing.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/jevtools/core.py"
+  ],
+  "issue": [
+   "105"
+  ],
+  "stat": "1 file changed, 1 insertion(+), 1 deletion(-)",
+  "parent_output": "................................F\n=================================== FAILURES ===================================\nE   AssertionError: assert ['1', '2'] == ['1', '2', '5']\n      \n      Right contains one more item: '5'\n      Use -v to get more diff\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_jev_core.py:214: AssertionError: assert ['1', '2'] == ['1', '2', '5']\n=========================== short test summary info ============================\nFAILED tests/test_jev_core.py::test_narrow_keeps_the_likeliest_groups_within_the_cap[skips a group past the cap for a smaller likely one]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 32 passed in 0.48s\n"
+ },
+ {
+  "sha": "da766437229042c28799e7a3e7142697d7c7e290",
+  "parent": "7e59dee94ed83fb453d6b2e57551577714f6655a",
+  "subject": "fix(compost): thin reaps what a run's escaped sessions leave behind (#128)",
+  "tests": [
+   "plugins/compost/tests/test_thin.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/thin.py"
+  ],
+  "issue": [
+   "128"
+  ],
+  "stat": "1 file changed, 46 insertions(+)",
+  "parent_output": "..................................................F\n=================================== FAILURES ===================================\nE   assert False\n     +  where False = gone(25166)\n----------------------------- Captured stdout call -----------------------------\n.                                                                        [100%]\n1 passed in 0.01s\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_thin.py:426: assert False\n=========================== short test summary info ============================\nFAILED tests/test_thin.py::test_what_a_test_starts_dies_with_its_run[in a session of its own-exits]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 50 passed in 13.15s\n"
+ },
+ {
+  "sha": "75691d77447fdb4ceddcb70aee81b03e83c6ba4c",
+  "parent": "05814418281f520205bdd82b7f3f19a8418f9c25",
+  "subject": "fix(compost): thin's operators after the Standards review; docs; compost 0.19.0 (#124)",
+  "tests": [
+   "plugins/compost/tests/test_thin.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/thin.py"
+  ],
+  "issue": [
+   "124"
+  ],
+  "stat": "1 file changed, 26 insertions(+), 22 deletions(-)",
+  "parent_output": "........F\n=================================== FAILURES ===================================\nE   AttributeError: module 'thin' has no attribute 'own_mutants'\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_thin.py:208: AttributeError: module 'thin' has no attribute 'own_mutants'\n=========================== short test summary info ============================\nFAILED tests/test_thin.py::test_thin_operators_make_the_breaks_cosmic_ray_cannot[guard]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 8 passed in 0.43s\n"
+ },
+ {
+  "sha": "05814418281f520205bdd82b7f3f19a8418f9c25",
+  "parent": "2e16129ae076ced8365bc229419b359552f4b6b2",
+  "subject": "fix(compost): thin's operators after review (#124)",
+  "tests": [
+   "plugins/compost/tests/test_thin.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/thin.py"
+  ],
+  "issue": [
+   "124"
+  ],
+  "stat": "1 file changed, 52 insertions(+), 19 deletions(-)",
+  "parent_output": ".............F\n=================================== FAILURES ===================================\nE   assert ['def f(x) ->...urn (None)\\n'] == ['def f(x) ->...urn (True)\\n']\n      \n      At index 0 diff: \"def f(x) -> Optional['bool']:\\n    return (None)\\n\" != \"def f(x) -> Optional['bool']:\\n    return (False)\\n\"\n      Right contains 2 more items, first extra item: \"def f(x) -> Optional['bool']:\\n    return (None)\\n\"\n      Use -v to get more diff\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_thin.py:205: assert ['def f(x) ->...urn (None)\\n'] == ['def f(x) ->...urn (True)\\n']\n=========================== short test summary info ============================\nFAILED tests/test_thin.py::test_thin_operators_make_the_breaks_cosmic_ray_cannot[optional forward reference]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 13 passed in 0.48s\n"
+ },
+ {
+  "sha": "6157907f97444c3d0b7a4cd08c8fceebf5bcfbab",
+  "parent": "352ea71680a6025f31b7ddadb73d71db555dd1c2",
+  "subject": "fix(compost): stop guard strips injected tags that carry attributes (#78)",
+  "tests": [
+   "plugins/compost/tests/test_stop_guard.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/stop_guard.py"
+  ],
+  "issue": [
+   "78"
+  ],
+  "stat": "1 file changed, 2 insertions(+), 2 deletions(-)",
+  "parent_output": ".............................F\n=================================== FAILURES ===================================\nE   TypeError: 'NoneType' object is not subscriptable\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_stop_guard.py:238: TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ============================\nFAILED tests/test_stop_guard.py::test_user_entries_claude_code_writes_do_not_count_as_typed[teammate message]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 29 passed in 0.21s\n"
+ },
+ {
+  "sha": "3cdb33d6a3f5913e1eb1ec9f9d7e3d01b2566279",
+  "parent": "8ddce94d9a11e033e409df4173d1f926a924e821",
+  "subject": "fix(compost): thin stops whatever a timed-out test run started",
+  "tests": [
+   "plugins/compost/tests/test_thin.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/thin.py"
+  ],
+  "issue": [],
+  "stat": "1 file changed, 30 insertions(+), 9 deletions(-)",
+  "parent_output": "................F\n=================================== FAILURES ===================================\nE   assert False\n     +  where False = gone(26012)\n----------------------------- Captured stdout call -----------------------------\n.                                                                        [100%]\n1 passed in 0.01s\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_thin.py:242: assert False\n=========================== short test summary info ============================\nFAILED tests/test_thin.py::test_what_a_test_starts_dies_with_its_run[exits]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 16 passed in 8.76s\n"
+ },
+ {
+  "sha": "b5949769df624ad3019e5eece53cd4efb5d80ad8",
+  "parent": "5ef57ed5b84f356a2fb741b74f75f05e38268a52",
+  "subject": "fix(compost): stop-guard skips compaction summaries and counts typed slash commands (#78)",
+  "tests": [
+   "plugins/compost/tests/test_stop_guard.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/stop_guard.py"
+  ],
+  "issue": [
+   "78"
+  ],
+  "stat": "1 file changed, 10 insertions(+), 4 deletions(-)",
+  "parent_output": "....................F\n=================================== FAILURES ===================================\nE   jevtools.core.Unavailable: Jev returned no answer for waits, allowed\n/tmp/real-fix-diagnose/parent/plugins/compost/scripts/jevtools/core.py:91: jevtools.core.Unavailable: Jev returned no answer for waits, allowed\n=========================== short test summary info ============================\nFAILED tests/test_stop_guard.py::test_a_stop_answering_a_message_typed_during_the_run_is_allowed[slash command typed mid-run]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 20 passed in 0.12s\n"
+ },
+ {
+  "sha": "5ef57ed5b84f356a2fb741b74f75f05e38268a52",
+  "parent": "8ddce94d9a11e033e409df4173d1f926a924e821",
+  "subject": "fix(compost): stop-guard lets the run end at finish and steps aside for typed messages (#78)",
+  "tests": [
+   "plugins/compost/tests/test_stop_guard.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/stop_guard.py"
+  ],
+  "issue": [
+   "78"
+  ],
+  "stat": "1 file changed, 35 insertions(+), 6 deletions(-)",
+  "parent_output": ".............F\n=================================== FAILURES ===================================\nE   jevtools.core.Unavailable: Jev returned no answer for waits, allowed\n/tmp/real-fix-diagnose/parent/plugins/compost/scripts/jevtools/core.py:91: jevtools.core.Unavailable: Jev returned no answer for waits, allowed\n=========================== short test summary info ============================\nFAILED tests/test_stop_guard.py::test_finish_ends_the_run_so_a_stop_after_it_is_never_judged[finish loaded after implement]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 13 passed in 0.11s\n"
+ },
+ {
+  "sha": "cb0b2ef9484c11784147840b929c84a1b9bcd236",
+  "parent": "e4a15020f114b3449b48a26fd108dac35b1caafd",
+  "subject": "fix(compost): thin's baseline can't pass a run it can't read",
+  "tests": [
+   "plugins/compost/tests/test_thin.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/thin.py"
+  ],
+  "issue": [],
+  "stat": "1 file changed, 49 insertions(+), 23 deletions(-)",
+  "parent_output": "....F\n=================================== FAILURES ===================================\nE   AssertionError: assert ('t.test_route[a', 'b]') == ('t', 'test_route[a::b]')\n      \n      At index 0 diff: 't.test_route[a' != 't'\n      Use -v to get more diff\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_thin.py:99: AssertionError: assert ('t.test_route[a', 'b]') == ('t', 'test_route[a::b]')\n=========================== short test summary info ============================\nFAILED tests/test_thin.py::test_junit_key_matches_what_pytest_writes[parameter holding ::]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 4 passed in 0.08s\n"
+ },
+ {
+  "sha": "8d525a1fd48274217f6b1e65c008c4a229b7e1a7",
+  "parent": "d1f6ed6085ee66b8422cd38235c5701ebcfcee53",
+  "subject": "fix(compost): thin runs mutants in forked children, behind a green baseline",
+  "tests": [
+   "plugins/compost/tests/test_thin.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/thin.py"
+  ],
+  "issue": [],
+  "stat": "1 file changed, 153 insertions(+), 73 deletions(-)",
+  "parent_output": "....F\n=================================== FAILURES ===================================\nE   AttributeError: module 'thin' has no attribute 'read_report'\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_thin.py:108: AttributeError: module 'thin' has no attribute 'read_report'\n=========================== short test summary info ============================\nFAILED tests/test_thin.py::test_read_report_names_the_failed_and_errored_tests_it_was_asked_about\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 4 passed in 0.07s\n"
+ },
+ {
+  "sha": "619abf2d6b679035e93272646ec80cc120f4a97d",
+  "parent": "4210d72a5e8c406fcf0bca5c115cd6b3443d20f4",
+  "subject": "fix(compost): run_eval asks the live Jev API every run (#90)",
+  "tests": [
+   "plugins/compost/tests/test_lint_run_eval.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/lint/jev_lint.py",
+   "plugins/compost/scripts/lint/run_eval.py"
+  ],
+  "issue": [
+   "90"
+  ],
+  "stat": "2 files changed, 18 insertions(+), 13 deletions(-)",
+  "parent_output": "..F\n=================================== FAILURES ===================================\nE   assert 1 == 2\n     +  where 1 = len([({'handler': 'except: pass'}, {'silent-failure': Noul(type='noul', instructions='Does the except clause `handler` of ...repository', or when the exception is itself the expected answer, such as FileNotFoundError for an optional file.\"})})])\n     +    where [({'handler': 'except: pass'}, {'silent-failure': Noul(type='noul', instructions='Does the except clause `handler` of ...repository', or when the exception is itself the expected answer, such as FileNotFoundError for an optional file.\"})})] = <conftest.StubClient object at 0x7fd990889a90>.calls\n     +      where <conftest.StubClient object at 0x7fd990889a90> = <function answering.<locals>.<lambda> at 0x7fd9907371a0>()\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_lint_run_eval.py:82: assert 1 == 2\n=========================== short test summary info ============================\nFAILED tests/test_lint_run_eval.py::test_judge_pairs_each_case_with_its_judgment_and_every_run_asks_the_live_api\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 4 passed in 0.06s\n"
+ },
+ {
+  "sha": "bef8763dfc1615e388357f7693855fe340d24b1e",
+  "parent": "cde054a14b6166805bc5f44e47634020b2f83267",
+  "subject": "fix(compost): treat a partial cached Jev answer as a miss (#90)",
+  "tests": [
+   "plugins/compost/tests/test_jev_core.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/jevtools/core.py"
+  ],
+  "issue": [
+   "90"
+  ],
+  "stat": "1 file changed, 1 insertion(+), 1 deletion(-)",
+  "parent_output": ".............F\n=================================== FAILURES ===================================\nE   AssertionError: assert {'flag': {'ty... 'noul': 0.7}} == {'flag': {'ty... 'noul': 0.1}}\n      \n      Omitting 1 identical items, use -vv to show\n      Right contains 1 more item:\n      {'other': {'noul': 0.1, 'type': 'noul'}}\n      Use -v to get more diff\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_jev_core.py:109: AssertionError: assert {'flag': {'ty... 'noul': 0.7}} == {'flag': {'ty... 'noul': 0.1}}\n=========================== short test summary info ============================\nFAILED tests/test_jev_core.py::test_a_partial_answer_cached_before_is_asked_again\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 13 passed in 0.13s\n"
+ },
+ {
+  "sha": "660fb92440554f78fb2cd6f26f1e0f2a53c1e0e9",
+  "parent": "857f56c5b129950623c27924e9a23e81149bf600",
+  "subject": "fix(compost): send lint through Jev.ask and refuse partial Jev answers (#90)",
+  "tests": [
+   "plugins/compost/tests/test_jev_cli.py",
+   "plugins/compost/tests/test_jev_core.py",
+   "plugins/compost/tests/test_jev_lint.py",
+   "plugins/compost/tests/test_lint_rules.py",
+   "plugins/compost/tests/test_lint_run_eval.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/jevtools/core.py",
+   "plugins/compost/scripts/lint/jev_lint.py",
+   "plugins/compost/scripts/lint/rules.py",
+   "plugins/compost/scripts/lint/run_eval.py"
+  ],
+  "issue": [
+   "90"
+  ],
+  "stat": "4 files changed, 30 insertions(+), 35 deletions(-)",
+  "parent_output": ".........F\n=================================== FAILURES ===================================\nE   KeyError: 'neighbour'\n/tmp/real-fix-diagnose/parent/plugins/compost/scripts/jevtools/testing.py:99: KeyError: 'neighbour'\n=========================== short test summary info ============================\nFAILED tests/test_jev_cli.py::test_unavailable_jev_exits_3_and_says_to_judge_yourself[answer-dropped]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 9 passed in 0.18s\n"
+ },
+ {
+  "sha": "75dc0beeb57f3108a942309c82d20d2015d0d435",
+  "parent": "caba12cbb5efed4a7885f6a6d5033ec21eff67f9",
+  "subject": "fix(compost): require a per-run token and loopback Host on the review server (#69)",
+  "tests": [
+   "plugins/compost/tests/test_review_diff_serve.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/review_diff/serve.py"
+  ],
+  "issue": [
+   "69"
+  ],
+  "stat": "1 file changed, 30 insertions(+), 8 deletions(-)",
+  "parent_output": "F\n=================================== FAILURES ===================================\nE   TypeError: render_html() got an unexpected keyword argument 'review_token'\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_review_diff_serve.py:17: TypeError: render_html() got an unexpected keyword argument 'review_token'\n=========================== short test summary info ============================\nFAILED tests/test_review_diff_serve.py::test_render_html_embeds_data - TypeEr...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.05s\n"
+ },
+ {
+  "sha": "114d26835e619e9d74b56d3e312e27808ac58dab",
+  "parent": "fc8a01cba4ee501bdd3d2909c200350bea6ff77d",
+  "subject": "fix(compost): let doc_refs exclude whole directories, never core docs",
+  "tests": [
+   "plugins/compost/tests/test_doc_refs.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/doc_refs.py"
+  ],
+  "issue": [],
+  "stat": "1 file changed, 12 insertions(+), 4 deletions(-)",
+  "parent_output": ".........F\n=================================== FAILURES ===================================\nE   AssertionError: assert [('plugins/a/...ME.md', True)] == [('docs/plugi...ME.md', True)]\n      \n      At index 0 diff: ('plugins/a/skills/x/notes.md', False) != ('docs/plugins/plan.md', False)\n      Use -v to get more diff\n/tmp/real-fix-diagnose/parent/plugins/compost/tests/test_doc_refs.py:95: AssertionError: assert [('plugins/a/...ME.md', True)] == [('docs/plugi...ME.md', True)]\n=========================== short test summary info ============================\nFAILED tests/test_doc_refs.py::test_scan_excludes_whole_directories_but_never_a_core_doc\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 9 passed in 1.02s\n"
+ },
+ {
+  "sha": "594484385fe77abb23ce6d4719d9ac1014ecaaf3",
+  "parent": "5c18ab0adca7a7b1075607cbccb347f3db3843f2",
+  "subject": "fix(compost): make pile.py report renames, odd paths, and bad pins",
+  "tests": [
+   "plugins/compost/tests/test_pile.py"
+  ],
+  "sources": [
+   "plugins/compost/scripts/pile.py"
+  ],
+  "issue": [],
+  "stat": "1 file changed, 55 insertions(+), 22 deletions(-)",
+  "parent_output": "..F\n=================================== FAILURES ===================================\nE   TypeError: Source.__init__() missing 1 required positional argument: 'pin'\n/tmp/real-fix-diagnose/parent/plugins/compost/scripts/pile.py:42: TypeError: Source.__init__() missing 1 required positional argument: 'pin'\n=========================== short test summary info ============================\nFAILED tests/test_pile.py::test_load_names_what_is_wrong_with_the_file[missing field]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 2 passed in 0.19s\n"
+ }
+]

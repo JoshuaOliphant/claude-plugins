@@ -43,7 +43,9 @@ uv run --with cosmic-ray python ${CLAUDE_PLUGIN_ROOT}/scripts/thin.py survivors 
 ```
 
 It prints JSON: `survivors` (each with `module`, `line`, `operator`, and the `mutated` line) and the
-counts of `changed_lines`, `mutants`, `killed`, `survived`, `timeouts` and `crashed`. It exits 0 when
+counts of `changed_lines`, `mutants`, `killed`, `survived`, `timeouts` and `crashed`, and `score`: the
+share of tried mutants that were killed, with survivors, string survivors and timeouts as misses and crashes left
+out, or null when none were tried. An eval that grades tests by mutation score reads that field. It exits 0 when
 every mutant is killed, 1 when any survive or time out, 2 when the baseline or git fails, and 3 when
 changed lines made no mutant: comments only, or `--paths` misses the changed code. A timeout is a
 mutant that made the tests hang, such as a loop that never ends; sort it like a survivor. A crash
