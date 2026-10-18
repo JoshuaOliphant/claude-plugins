@@ -533,10 +533,14 @@ def read_journal(path: Path) -> list[dict]:
 
 
 def journaled(made: dict, earlier: dict[str, dict]) -> dict | None:
-    """The journaled row for a mutant this run makes, or None when it is missing or describes another mutant."""
+    """The journaled row for a mutant this run makes, or None when it is missing or describes another mutant.
+
+    An id alone can outlive its mutant, since occurrences renumber once the source changes, so the mutated line and
+    the covering tests must match too.
+    """
     row = earlier.get(mutant_id(made))
     if row is None or {k: v for k, v in row.items() if k not in ("killers", "crashed")} != made:
-        return None  # an id can outlive its mutant: occurrences renumber once the source changes
+        return None
     return row
 
 

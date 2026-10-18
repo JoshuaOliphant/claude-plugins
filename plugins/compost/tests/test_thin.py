@@ -384,26 +384,40 @@ def test_ac1_a_killed_matrix_resumes_with_only_the_remaining_mutants(toy, tmp_pa
     runs = []
     fork_runs = thin.fork_runs
     monkeypatch.setattr(thin, "fork_runs", lambda jobs, *args: runs.append(len(jobs)) or fork_runs(jobs, *args))
-    uninterrupted = toy_matrix[1]
-    resumed = thin.kill_matrix(toy, None, PYTEST, 60, 2, log=NO_LOG, journal=journal, resume=thin.read_journal(journal))
+    uninterrupted, logged = toy_matrix[1], []
+    rest = len(uninterrupted["mutants"]) - 2
+    resumed = thin.kill_matrix(toy, None, PYTEST, 60, 2, log=logged.append, journal=journal,
+                               resume=thin.read_journal(journal))  # fmt: skip
     assert resumed == uninterrupted
-    assert runs == [1, len(uninterrupted["mutants"]) - 2]  # the baseline, then only the mutants not yet run
+    assert runs == [1, rest]  # the baseline, then only the mutants not yet run
+    assert logged[0].startswith("2 of 2 journaled rows resumed")
+    assert [line for line in logged if "mutants run" in line] == [f"{rest}/{rest} mutants run"]
     by_id = sorted(thin.read_journal(journal), key=thin.mutant_id)
     assert by_id == sorted(uninterrupted["mutants"], key=thin.mutant_id)
 
 
+RAN = GT_ROW | {"killers": ["test_age.py::test_boundary", "test_age.py::test_grown_up"]}
+CRASHED = GT_ROW | {"killers": TOY_TESTS, "crashed": True}
+
+
 @pytest.mark.parametrize(
-    "stale",
-    [GT_ROW | {"operator": "gone"}, GT_ROW | {"mutated": "return age < 18"}, GT_ROW | {"covering": TOY_TESTS[:1]}],
-    ids=["AC-2 id no longer listed", "same id, another mutant", "same mutant, other covering tests"],
-)
-def test_ac2_a_resumed_row_the_source_no_longer_makes_is_dropped_and_rerun(toy, tmp_path, monkeypatch, stale):
+    ("journaled", "kept"),
+    [
+        (GT_ROW | {"operator": "gone", "killers": []}, RAN),
+        (GT_ROW | {"mutated": "return age < 18", "killers": []}, RAN),
+        (GT_ROW | {"covering": TOY_TESTS[:1], "killers": []}, RAN),
+        (CRASHED, CRASHED),
+    ],
+    ids=["AC-2 id no longer listed", "same id, another mutant", "same mutant, other covering tests",
+         "a crash is trusted"],
+)  # fmt: skip
+def test_ac2_a_resumed_row_is_kept_only_while_the_source_still_makes_its_mutant(toy, tmp_path, monkeypatch,
+                                                                               journaled, kept):  # fmt: skip
     one_mutant(monkeypatch)
     journal = tmp_path / "matrix.jsonl"
-    matrix = thin.kill_matrix(toy, None, PYTEST, 60, 2, log=NO_LOG, journal=journal, resume=[stale | {"killers": []}])
-    ran = GT_ROW | {"killers": ["test_age.py::test_boundary", "test_age.py::test_grown_up"]}
-    assert matrix["mutants"] == [ran]
-    assert thin.read_journal(journal) == [ran]
+    matrix = thin.kill_matrix(toy, None, PYTEST, 60, 2, log=NO_LOG, journal=journal, resume=[journaled])
+    assert matrix["mutants"] == [kept]
+    assert thin.read_journal(journal) == [kept]
 
 
 def test_a_mutant_cosmic_ray_cannot_make_is_left_out(toy, monkeypatch):
