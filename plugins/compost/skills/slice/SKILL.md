@@ -1,6 +1,6 @@
 ---
 name: slice
-description: Breaks an agreed spec into tracer-bullet issues in the repo's tracker, each with its acceptance criteria, files, interfaces, and blocking edges. Use when the user says "slice this", "break this into issues", "make tickets", "create the issues", "make a plan", "write the implementation plan", "plan the implementation", "save the rest as issues", "what order should we build this in", or a parent spec issue is ready to build.
+description: Breaks an agreed spec into tracer-bullet issues in the repo's tracker, each with its acceptance criteria, files, interfaces, and blocking edges. Use when the user says "slice this", "break this into issues", "make tickets", "create the issues", "make a plan", "write the implementation plan", "plan the implementation", "save the rest as issues", "what order should we build this in", "make a plan for moving it forward", or a parent spec issue is ready to build, or the design is already settled in the conversation and the user now asks for a plan.
 ---
 
 # Slice
