@@ -56,6 +56,8 @@ hand decides.
    ```
 
    `--operators stock` leaves out thin's own operators, to compare a run with stock cosmic-ray's.
+   Each mutant's row lands in `matrix.jsonl` beside the contexts file as its run ends; if the run
+   dies, rerun it with `--resume "$T/matrix.jsonl"` to run only the rest.
    The matrix runs inside the project's environment, so its imports resolve as the tests' do. It
    first runs the covering tests unmutated and stops with exit 2 unless they all pass: under a
    broken setup, such as an interpreter without the project's packages, every run fails, every
