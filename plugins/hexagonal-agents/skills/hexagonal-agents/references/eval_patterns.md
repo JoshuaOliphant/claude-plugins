@@ -61,6 +61,7 @@ your-app/
 │   ├── datasets/
 │   │   ├── capability.py     # What can agent do?
 │   │   └── regression.py     # Does it still work?
+│   ├── task.py               # run_agent_task + AgentInput
 │   ├── evaluators/
 │   │   ├── __init__.py
 │   │   ├── tool_usage.py
@@ -77,11 +78,11 @@ your-app/
 The task function wraps your agent for evaluation:
 
 ```python
-# evals/test_agent.py
+# evals/task.py
 import asyncio
 import json
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from claude_agent_sdk import (
@@ -106,6 +107,18 @@ _store_lock = asyncio.Lock()
 
 
 @dataclass
+class AgentInput:
+    """A case's inputs: the message plus the state to seed before the run.
+
+    pydantic-evals hands the task only `case.inputs`, never `case.metadata`, so the
+    seed has to travel here. Evaluators read it back from `ctx.inputs`, which keeps
+    one copy of it for both the run and the assertions.
+    """
+    message: str
+    initial_state: dict = field(default_factory=dict)
+
+
+@dataclass
 class EvalResult:
     """Structured result from agent interaction."""
     html_output: str
@@ -115,11 +128,7 @@ class EvalResult:
     total_tokens: int
 
 
-async def run_agent_task(
-    user_message: str,
-    *,
-    initial_state: dict | None = None,
-) -> EvalResult:
+async def run_agent_task(inputs: AgentInput) -> EvalResult:
     """
     Task function that runs the agent and returns structured results.
     """
@@ -128,10 +137,10 @@ async def run_agent_task(
         with tempfile.TemporaryDirectory() as tmp:
             # Isolate state: point the tools' JSON store at a seeded temp file
             data_file = Path(tmp) / "data.json"
-            data_file.write_text(json.dumps(initial_state or {}))
+            data_file.write_text(json.dumps(inputs.initial_state))
             app.tools.DATA_FILE = data_file
             try:
-                html_parts, tool_calls, result = await _converse(user_message)
+                html_parts, tool_calls, result = await _converse(inputs.message)
             finally:
                 app.tools.DATA_FILE = original_data_file
             final_state = json.loads(data_file.read_text())
@@ -274,7 +283,7 @@ class StateCountDelta(Evaluator):
     delta: int
 
     def evaluate(self, ctx: EvaluatorContext) -> float:
-        initial_count = ctx.metadata.get('initial_count', {}).get(self.collection, 0)
+        initial_count = len(ctx.inputs.initial_state.get(self.collection, []))
         final_count = len(ctx.output.final_state.get(self.collection, []))
         actual_delta = final_count - initial_count
         return 1.0 if actual_delta == self.delta else 0.0
@@ -285,7 +294,7 @@ class StateUnchanged(Evaluator):
     """Assert state was NOT modified."""
 
     def evaluate(self, ctx: EvaluatorContext) -> float:
-        initial = ctx.metadata.get('initial_state', {})
+        initial = ctx.inputs.initial_state
         final = ctx.output.final_state
         return 1.0 if initial == final else 0.0
 
@@ -400,16 +409,20 @@ HTMLValidityJudge = LLMJudge(
 ```python
 # evals/datasets/capability.py
 from pydantic_evals import Case, Dataset
+from evals.task import AgentInput
 from evals.evaluators.tool_usage import ToolWasCalled, ToolCalledWithParams
-from evals.evaluators.state import StateContains, StateCountDelta
+from evals.evaluators.state import StateContains, StateCountDelta, StateUnchanged
 from evals.evaluators.ui import ContainsHTMXAttributes, UIAppropriatenessJudge
 
 capability_cases = [
     # CREATE operations
     Case(
         name="create_natural_language",
-        inputs="Add a book called The Hobbit by Tolkien",
-        metadata={"category": "create", "initial_state": {"books": []}},
+        inputs=AgentInput(
+            "Add a book called The Hobbit by Tolkien",
+            initial_state={"books": []},
+        ),
+        metadata={"category": "create"},
         evaluators=[
             ToolWasCalled(tool_name="create_book"),
             ToolCalledWithParams(
@@ -423,29 +436,29 @@ capability_cases = [
     # READ operations
     Case(
         name="list_empty_state",
-        inputs="Show me my books",
-        metadata={
-            "category": "read",
-            "initial_state": {"books": []},
-        },
+        inputs=AgentInput("Show me my books", initial_state={"books": []}),
+        metadata={"category": "read"},
         evaluators=[
             ToolWasCalled(tool_name="list_books"),
+            # Seeds {"books": []}; an unseeded store reads back as {}, so this fails
+            # if initial_state never reached the task.
+            StateUnchanged(),
             ContainsHTMXAttributes(),
         ],
     ),
 
     Case(
         name="list_with_items",
-        inputs="What books do I have?",
-        metadata={
-            "category": "read",
-            "initial_state": {
+        inputs=AgentInput(
+            "What books do I have?",
+            initial_state={
                 "books": [
                     {"id": "1", "name": "Dune", "author": "Frank Herbert"},
                     {"id": "2", "name": "Foundation", "author": "Isaac Asimov"},
                 ]
             },
-        },
+        ),
+        metadata={"category": "read"},
         evaluators=[
             ToolWasCalled(tool_name="list_books"),
             UIAppropriatenessJudge,
@@ -455,13 +468,13 @@ capability_cases = [
     # UPDATE operations
     Case(
         name="update_item",
-        inputs="Change the status of book 1 to completed",
-        metadata={
-            "category": "update",
-            "initial_state": {
+        inputs=AgentInput(
+            "Change the status of book 1 to completed",
+            initial_state={
                 "books": [{"id": "1", "name": "Dune", "status": "reading"}]
             },
-        },
+        ),
+        metadata={"category": "update"},
         evaluators=[
             ToolWasCalled(tool_name="update_book"),
             StateContains(collection="books", match={"id": "1", "status": "completed"}),
@@ -471,13 +484,11 @@ capability_cases = [
     # DELETE operations
     Case(
         name="delete_item",
-        inputs="Delete book 1",
-        metadata={
-            "category": "delete",
-            "initial_state": {
-                "books": [{"id": "1", "name": "Dune"}]
-            },
-        },
+        inputs=AgentInput(
+            "Delete book 1",
+            initial_state={"books": [{"id": "1", "name": "Dune"}]},
+        ),
+        metadata={"category": "delete"},
         evaluators=[
             ToolWasCalled(tool_name="delete_book"),
             StateCountDelta(collection="books", delta=-1),
@@ -498,12 +509,13 @@ capability_dataset = Dataset(
 ```python
 # evals/datasets/regression.py
 from pydantic_evals import Case, Dataset
+from evals.task import AgentInput
 from evals.evaluators.ui import NoMarkdownFences, UIAppropriatenessJudge
 
 regression_cases = [
     Case(
         name="basic_greeting",
-        inputs="Hello",
+        inputs=AgentInput("Hello"),
         metadata={"category": "conversation"},
         evaluators=[
             NoMarkdownFences(),
@@ -512,7 +524,7 @@ regression_cases = [
 
     Case(
         name="handles_gibberish",
-        inputs="asdf jkl; qwerty",
+        inputs=AgentInput("asdf jkl; qwerty"),
         metadata={"category": "error_handling"},
         evaluators=[
             NoMarkdownFences(),
@@ -522,7 +534,7 @@ regression_cases = [
 
     Case(
         name="empty_message_handling",
-        inputs="",
+        inputs=AgentInput(""),
         metadata={"category": "error_handling"},
         evaluators=[
             NoMarkdownFences(),
@@ -542,6 +554,7 @@ regression_dataset = Dataset(cases=regression_cases)
 ```python
 # evals/test_agent.py
 import asyncio
+from evals.task import run_agent_task
 from evals.datasets.capability import capability_dataset
 from evals.datasets.regression import regression_dataset
 
@@ -667,7 +680,7 @@ Convert bugs into test cases immediately:
 # Bug #123: Agent creates duplicate items
 Case(
     name="bug_123_no_duplicates",
-    inputs="Add Dune. Add Dune again.",
+    inputs=AgentInput("Add Dune. Add Dune again.", initial_state={"books": []}),
     evaluators=[
         StateCountDelta(collection="books", delta=1),  # Should only add once
     ],
@@ -678,10 +691,10 @@ Case(
 
 ```python
 # Positive: agent SHOULD search
-Case(name="should_search", inputs="Find books about dragons", ...)
+Case(name="should_search", inputs=AgentInput("Find books about dragons"), ...)
 
 # Negative: agent should NOT search
-Case(name="should_not_search", inputs="Thanks!", ...)
+Case(name="should_not_search", inputs=AgentInput("Thanks!"), ...)
 ```
 
 ### 3. Graduate Passing Tests
