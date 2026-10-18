@@ -501,16 +501,18 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
     if resume:
         log(f"{len(rows) - rows.count(None)} of {len(resume)} journaled rows resumed; the rest name no mutant made now")
     if journal is not None:  # rewritten only past the baseline, so a resume that fails it keeps its rows
-        journal.write_text("".join(json.dumps(row) + "\n" for row in rows if row is not None))
+        fresh = journal.with_name(journal.name + ".tmp")  # renamed over it, so a kill mid-write loses nothing
+        fresh.write_text("".join(json.dumps(row) + "\n" for row in rows if row is not None))
+        os.replace(fresh, journal)
     todo = [index for index, row in enumerate(rows) if row is None]
 
-    def finished(job: int, report: Report | TimedOut | None) -> None:
-        row = made[todo[job]]
+    def finished(index: int, report: Report | TimedOut | None) -> None:
+        row = made[todo[index]]
         crashed = not isinstance(report, Report) or bool(report.strays)  # a broken run kills every covering test
         row["killers"] = row["covering"] if crashed else sorted(report.failed)
         if crashed:
             row["crashed"] = True
-        rows[todo[job]] = row
+        rows[todo[index]] = row
         if journal is not None:
             with journal.open("a") as out:
                 out.write(json.dumps(row) + "\n")
@@ -532,14 +534,14 @@ def read_journal(path: Path) -> list[dict]:
     return rows
 
 
-def journaled(made: dict, earlier: dict[str, dict]) -> dict | None:
+def journaled(mutant: dict, earlier: dict[str, dict]) -> dict | None:
     """The journaled row for a mutant this run makes, or None when it is missing or describes another mutant.
 
     An id alone can outlive its mutant, since occurrences renumber once the source changes, so the mutated line and
     the covering tests must match too.
     """
-    row = earlier.get(mutant_id(made))
-    if row is None or {k: v for k, v in row.items() if k not in ("killers", "crashed")} != made:
+    row = earlier.get(mutant_id(mutant))
+    if row is None or {k: v for k, v in row.items() if k not in ("killers", "crashed")} != mutant:
         return None
     return row
 

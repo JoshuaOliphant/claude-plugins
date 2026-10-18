@@ -420,6 +420,21 @@ def test_ac2_a_resumed_row_is_kept_only_while_the_source_still_makes_its_mutant(
     assert thin.read_journal(journal) == [kept]
 
 
+def test_a_resume_killed_while_its_journal_is_rewritten_keeps_the_rows(toy, tmp_path, monkeypatch):
+    one_mutant(monkeypatch)
+    journal = tmp_path / "matrix.jsonl"
+    journal.write_text(json.dumps(CRASHED) + "\n" + json.dumps(GT_ROW | {"operator": "gone"}) + "\n")
+    before = journal.read_text()
+
+    def killed(*args):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(thin.os, "replace", killed)
+    with pytest.raises(KeyboardInterrupt):
+        thin.kill_matrix(toy, None, PYTEST, 60, 2, log=NO_LOG, journal=journal, resume=thin.read_journal(journal))
+    assert journal.read_text() == before
+
+
 def test_a_mutant_cosmic_ray_cannot_make_is_left_out(toy, monkeypatch):
     one_mutant(monkeypatch, mutated=None)
     assert thin.kill_matrix(toy, None, PYTEST, 60, 2, log=NO_LOG)["mutants"] == []
