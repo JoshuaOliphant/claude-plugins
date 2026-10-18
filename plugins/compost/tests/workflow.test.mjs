@@ -222,12 +222,13 @@ test('the changed line count is insertions plus deletions parsed from the scope 
   assert.match(prompts.scope, /git diff --shortstat/)
 })
 
-test('a structural file, unranked structural risk, or a truthy full runs the two-reviewer path', async () => {
+test('a structural file, Jev unavailable or never run, or a truthy full runs the two-reviewer path', async () => {
   const structural = { ranked: true, structural: true, files: [{ file: 'app/export.py', score: 3.1, structural: true }] }
   const cases = [
     [JEV, { ...SMALL, risk: structural }],
     [{}, SMALL],
     [JEV, { ...SMALL, risk: { ranked: false, structural: false, files: [], problem: 'jev unavailable' } }],
+    [JEV, { ...SMALL, risk: undefined }],
     [{ ...JEV, full: true }, SMALL],
     [{ ...JEV, full: 'true' }, SMALL],
   ]
