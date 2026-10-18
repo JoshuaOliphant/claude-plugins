@@ -77,7 +77,8 @@ yours to do without asking.
 
 7. **Merge with a merge commit, then clean up.** When told to merge:
    - With an open PR, mark it ready (the forge refuses to merge a draft), then merge through the
-     forge with a merge commit, using the tracker doc's **Ready for review** and **Merge** commands.
+     forge with a merge commit, using the tracker doc's **Ready for review** and **Merge** commands (in a cloud session, the
+     cloud variant of ready).
      That is the forge's `--no-ff`. Never squash or rebase unless the user asks for it.
    - Without a PR, build the merge commit in this worktree on a detached HEAD, so the main
      checkout is never touched and no `git -C` is needed:
@@ -110,14 +111,14 @@ yours to do without asking.
    because of uncommitted files, list them (`git status --porcelain -uall` inside the worktree)
    and ask the user whether to commit, move, or delete them. Never add `--force` on your own.
    Then delete the branch with `git branch -D "$branch"` (the ancestry check already proved it
-   merged, which `-d` can't see when the local target is stale) and delete the remote branch.
+   merged, which `-d` can't see when the local target is stale) and delete the remote branch (`git push origin --delete "$branch"`).
 
 8. **Discard only on request, and only after the user types "discard".** When the user asks to
    throw the work away, show what will be lost: the branch, the commits
    (`git log --oneline <target>..$branch`), the worktree path, and any open PR. Ask them to type
    `discard`. A paraphrase such as "yeah, get rid of it" is not the confirmation. Once the word
-   arrives, close the PR, remove the worktree as in step 7, delete the branch with
-   `git branch -D "$branch"`, and delete the remote branch.
+   arrives, close the PR (the tracker doc's **Close without merging**), remove the worktree as in step 7, delete the branch with
+   `git branch -D "$branch"`, and delete the remote branch (`git push origin --delete "$branch"`).
 
 9. **Capture what was learned.** If the work turned up a gotcha, a non-obvious root cause, or a
    verdict reached from measurement, and the compound-knowledge plugin is installed, use

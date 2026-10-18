@@ -18,6 +18,7 @@ operation; it infers the project from `git remote -v` when run inside a clone.
   - **Edit body:** `glab mr update <n> --description "..."`.
   - **Ready for review:** `glab mr update <n> --ready`.
   - **Merge (merge commit):** `glab mr merge <n>`. Never squash or rebase unless the user asks.
+  - **Close without merging:** `glab mr close <n>`.
   - **Comment:** `glab mr note <n> --message "..."`.
 - **Child issue:** put `Part of #<parent>` at the top of the child's description and add the child
   to a task list in the parent. On tiers with epics, an epic may hold the parent instead.
