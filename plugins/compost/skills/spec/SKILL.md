@@ -41,14 +41,13 @@ a quick lookup can answer.
    found mid-spec upgrades the class, and nothing downgrades. If the request holds several
    independent subsystems, say so now and spec the first one; the rest become their own specs.
 
-   For Bounded and Architectural requests, then deepen the ask. Read
-   [deeper ask](references/deeper-ask.md) now, answer its four questions (what a professional would
+   For Bounded and Architectural requests, then deepen the ask. Load `compost:deeper-ask`
+   ([deeper ask](../deeper-ask/SKILL.md)) now, answer its four questions (what a professional would
    do, the rawest material, the methods and tools, what independent check would show the result
    right), and show the answers before the first round. They go into the parent issue under Deeper
-   ask. Do this yourself, in this session, even when the interview is skipped or unattended, and
-   a subagent that writes the spec gets the four answers in its prompt. Your closing message to the
-   user lists the four answers again, one line each.
-   Spikes skip it.
+   ask. Do this yourself, in this session, even when the interview is skipped or unattended, and a
+   subagent that writes the spec gets the four answers in its prompt. Your closing message to the
+   user lists the four answers again, one line each. Spikes skip it.
 
 3. **Spike: state the question and the probe, then run it.** Two or three sentences on what you
    will try, then find out as cheaply as correctness allows, usually with a throwaway prototype
@@ -171,6 +170,7 @@ a quick lookup can answer.
 
 ## Next moves
 
+- `compost:deeper-ask` on its own when you want a request made deeper, not bigger, before any spec.
 - `compost:slice` when the parent issue is posted (and approved, for architectural work) and the
   work spans more than one tracer bullet.
 - `compost:build` when bounded work fits in one issue: the parent issue carries its own criteria.

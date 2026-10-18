@@ -1,9 +1,14 @@
+---
+name: deeper-ask
+description: Makes a request deeper, not bigger, by asking what a top practitioner would do, the rawest material, the methods and tools, and what independent check would show the result right, then rewriting the request to ask for exactly that. Use when the user says "deeper ask", "make this deeper, not bigger", "what would an expert do here", "what would show this is right", or "level this up"; compost:spec runs it on its own for Bounded and Architectural requests.
+---
+
 # Deeper ask
 
-Run this after classifying, for Bounded and Architectural requests. A Spike skips it: a feasibility
-question would turn into a research project. It makes the request deeper, never bigger: the same
-goal, reached with what a field-leading practitioner would use. Source: Felix Rieseberg, "How to be
-more ambitious" (felixrieseberg.com, 13 October 2026), the Depth technique.
+Run this on a request before work starts. It makes the request deeper, never bigger: the same
+goal, reached with what a field-leading practitioner would use. A Spike skips it: a feasibility
+question would turn into a research project. Source: Felix Rieseberg, "How to be more ambitious"
+(felixrieseberg.com, 13 October 2026), the Depth technique.
 
 ## The prompt
 
@@ -12,7 +17,7 @@ more ambitious" (felixrieseberg.com, 13 October 2026), the Depth technique.
 ## Answer it yourself
 
 The four answers are facts, so find them rather than asking: the code, the logs, the running
-system, upstream docs ([read the running system](../../../canon/read-the-running-system.md)). One or
+system, upstream docs ([read the running system](../../canon/read-the-running-system.md)). One or
 two lines each, shown to the user.
 
 1. **What a professional would do that the request omits.** A method or practice, never a persona:
@@ -31,13 +36,26 @@ two lines each, shown to the user.
 ## Use the answers
 
 - Ask once whether to adopt the deeper version, as one lettered question in the first interview
-  round with your recommendation ([questions](questions.md)). Unattended, take the recommendation
+  round with your recommendation ([questions](../spec/references/questions.md)). Unattended, take the recommendation
   and mark it `(assumed)`. So does a request that already lives in a settled issue or doc, where
   there is no interview: take the recommendation as `(assumed)` and carry on.
-- Record the outcome as bullets in the refined prompt ([refine prompt](refine-prompt.md)). The
+- Record the outcome as bullets in the refined prompt ([refine prompt](../spec/references/refine-prompt.md)). The
   original request stays word for word; the deeper rewrite is bullets under it, not a replacement.
 - Answers 1 to 3 become constraints and edge cases in the spec. Answer 4 becomes at least one AC-N
   that names the independent check, in terms `compost:verify` can map to something runnable. If
   none exists, list that under open questions.
-- Cut anything that makes the work bigger rather than deeper ([subtract before you add](../../../canon/subtract-before-you-add.md)),
+- Cut anything that makes the work bigger rather than deeper ([subtract before you add](../../canon/subtract-before-you-add.md)),
   unless the user accepts it in the adoption question.
+
+## Called directly
+
+When the user invokes this on a task of their own, not on a spec, show the four answers, then the
+rewritten request, and keep the original word for word above it. Ask which parts to adopt in one
+lettered question with your recommendation; with nobody to answer, adopt your recommendation and
+mark it `(assumed)`. Do not start the work: hand back the rewritten request.
+
+## Called from compost:spec
+
+[Spec](../spec/SKILL.md) runs this after it classifies a request. The answers go under Deeper ask in
+the parent issue ([parent issue](../spec/references/parent-issue.md)), the adoption question joins
+the first interview round, and the independent check becomes an AC-N.
