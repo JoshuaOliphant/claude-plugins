@@ -25,7 +25,7 @@ Pause only when asked or when the session has to end. "Keep going", "going to be
    pause: no new PR, no merge, no comment on anything but the issues in this run.
 
 3. **Write the status comment on the parent issue.** Use the tracker from
-   `docs/agents/issue-tracker.md` (`gh issue comment` when it is absent). Reference artifacts by link
+   `docs/agents/issue-tracker.md` (`gh api repos/{owner}/{repo}/issues/<n>/comments -F body=@-` when it is absent). Reference artifacts by link
    or path rather than restating them; the spec, the issues, the rulings, and the commits already say
    what they say.
 
