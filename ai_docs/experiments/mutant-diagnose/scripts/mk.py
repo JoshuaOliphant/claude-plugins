@@ -1,3 +1,4 @@
+# ruff: noqa  (one-off experiment script, kept as run)
 # ABOUTME: Experiment script for mutant-diagnose (#114); see ../README.md. Paths come from MUTANT_WORK and COMPOST.
 import os
 from pathlib import Path
