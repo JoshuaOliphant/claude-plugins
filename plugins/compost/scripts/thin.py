@@ -386,12 +386,12 @@ def kill_orphans(running: dict) -> int:
 
 
 def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers: int,
-              progress=None) -> list[Report | TimedOut | None]:  # fmt: skip
+              finished=None) -> list[Report | TimedOut | None]:  # fmt: skip
     """Run each (module, source, tests) job in a child forked from this already-warm process, `workers` at a time.
 
     Forking skips the interpreter start and pytest import that dominate a short test run, and serving the mutant
-    from memory leaves the tree untouched, so the children can run side by side. `progress(done, total)` is
-    called as each job finishes.
+    from memory leaves the tree untouched, so the children can run side by side. `finished(index, result)` is
+    called as each job finishes, so a caller can keep what a run that later dies has already found.
     """
     import pytest  # noqa: F401 - imported before forking so that no child pays for it
 
@@ -399,32 +399,37 @@ def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers
     adopted = adopt_orphans(True)
     with tempfile.TemporaryDirectory() as tmp:
         pending, running = list(enumerate(jobs)), {}
-        while pending or running:
-            while pending and len(running) < workers:
-                index, (module, source, tests) = pending.pop(0)
-                report = Path(tmp) / f"{index}.xml"
-                pid = os.fork()
-                if pid == 0:
-                    run_child(pytest_args, tests, report, module, source)
-                running[pid] = (index, tests, report, time.monotonic() + timeout)
-            for pid, (index, tests, report, deadline) in list(running.items()):
-                done, _ = os.waitpid(pid, os.WNOHANG)
-                if not done and time.monotonic() < deadline:
-                    continue
+        try:
+            while pending or running:
+                while pending and len(running) < workers:
+                    index, (module, source, tests) = pending.pop(0)
+                    report = Path(tmp) / f"{index}.xml"
+                    pid = os.fork()
+                    if pid == 0:
+                        run_child(pytest_args, tests, report, module, source)
+                    running[pid] = (index, tests, report, time.monotonic() + timeout)
+                for pid, (index, tests, report, deadline) in list(running.items()):
+                    done, _ = os.waitpid(pid, os.WNOHANG)
+                    if not done and time.monotonic() < deadline:
+                        continue
+                    stop_group(pid)
+                    if not done:
+                        os.waitpid(pid, 0)
+                    results[index] = read_report(report, tests) if done else TIMED_OUT
+                    del running[pid]
+                    if adopted:
+                        kill_orphans(running)
+                    if finished:
+                        finished(index, results[index])
+                time.sleep(0.005)
+        finally:  # a `finished` that raised leaves runs going: stop them before their reports' folder goes
+            for pid in running:
                 stop_group(pid)
-                if not done:
-                    os.waitpid(pid, 0)
-                results[index] = read_report(report, tests) if done else TIMED_OUT
-                del running[pid]
-                if adopted:
-                    kill_orphans(running)
-                if progress:
-                    progress(len(results), len(jobs))
-            time.sleep(0.005)
-    if adopted:
-        while kill_orphans({}):  # an orphan's own children come back once it is killed
-            pass
-        adopt_orphans(False)
+                os.waitpid(pid, 0)
+            if adopted:
+                while kill_orphans({}):  # an orphan's own children come back once it is killed
+                    pass
+                adopt_orphans(False)
     return [results[index] for index in range(len(jobs))]
 
 
@@ -449,14 +454,22 @@ def check_baseline(tests: list[str], pytest_args: list[str], timeout: float | No
     return timeout or max(30.0, 10 * (time.monotonic() - started))
 
 
+JOURNAL = "matrix.jsonl"  # where `matrix` journals its rows, beside the contexts file it reads
+
+
 def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], timeout: float | None,
-                workers: int, log=print, own: bool = True) -> dict:  # fmt: skip
+                workers: int, log=print, own: bool = True, journal: Path | None = None,
+                resume: list[dict] = ()) -> dict:  # fmt: skip
     """Run each mutant on a line the selected tests cover against every test covering that line; record each killer.
 
     Only the selected tests are mutated over every line they run, so only they can be judged from the result. The
     tests must pass unmutated first: under a broken setup every run fails, every test kills every mutant, and the
     verdict would call all but one of them redundant. With no `timeout`, a mutant's run gets ten times the
     baseline's wall time, at least 30 seconds: a mutant that hangs costs that, not a fixed five minutes.
+
+    Each row is appended to `journal` as its run ends. Rows in `resume`, a killed run's journal, are kept for the
+    mutants they still describe and those mutants aren't run again; the baseline runs regardless, since the code
+    may have changed since.
     """
     lines = covered_lines(contexts)
     imported = {(path, int(line)) for path, info in contexts["files"].items()
@@ -488,21 +501,56 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
             jobs.append((module, mutated, covering))
             made.append({k: v for k, v in mutant.items() if k != "args"}
                         | {"mutated": first_difference(source, mutated), "covering": covering})  # fmt: skip
-    rows = []
+    earlier = {mutant_id(row): row for row in resume}
+    rows = [journaled(row, earlier) for row in made]
+    if resume:
+        log(f"{len(rows) - rows.count(None)} of {len(resume)} journaled rows resumed; the rest name no mutant made now")
+    if journal is not None:  # rewritten only past the baseline, so a resume that fails it keeps its rows
+        fresh = journal.with_name(journal.name + ".tmp")  # renamed over it, so a kill mid-write loses nothing
+        fresh.write_text("".join(json.dumps(row) + "\n" for row in rows if row is not None))
+        os.replace(fresh, journal)
+    todo = [index for index, row in enumerate(rows) if row is None]
+    done = 0
 
-    def progress(done: int, total: int) -> None:
-        if done % 100 == 0 or done == total:
-            log(f"{done}/{total} mutants run")
-
-    for row, report in zip(made, fork_runs(jobs, pytest_args, timeout, workers, progress)):
+    def finished(index: int, report: Report | TimedOut | None) -> None:
+        nonlocal done
+        row = made[todo[index]]
         crashed = not isinstance(report, Report) or bool(report.strays)  # a broken run kills every covering test
         row["killers"] = row["covering"] if crashed else sorted(report.failed)
         if crashed:
             row["crashed"] = True
-        rows.append(row)
-        log(f"{row['module']}:{row['line']} {row['operator']}#{row['occurrence']} "
-            f"killed by {len(row['killers'])}/{len(row['covering'])}")  # fmt: skip
+        rows[todo[index]] = row
+        if journal is not None:
+            with journal.open("a") as out:
+                out.write(json.dumps(row) + "\n")
+        log(f"{mutant_id(row)} killed by {len(row['killers'])}/{len(row['covering'])}")
+        done += 1
+        if done % 100 == 0 or done == len(todo):
+            log(f"{done}/{len(todo)} mutants run")
+
+    fork_runs([jobs[index] for index in todo], pytest_args, timeout, workers, finished)
     return {"selected": sorted(selected & set(lines)), "mutants": rows}
+
+
+def read_journal(path: Path) -> list[dict]:
+    """The rows a matrix run journaled, one JSON object a line; a run killed mid-write leaves a last line torn."""
+    rows = []
+    for line in path.read_text().splitlines():
+        with contextlib.suppress(json.JSONDecodeError):
+            rows.append(json.loads(line))
+    return rows
+
+
+def journaled(mutant: dict, earlier: dict[str, dict]) -> dict | None:
+    """The journaled row for a mutant this run makes, or None when it is missing or describes another mutant.
+
+    An id alone can outlive its mutant, since occurrences renumber once the source changes, so the mutated line and
+    the covering tests must match too.
+    """
+    row = earlier.get(mutant_id(mutant))
+    if row is None or {k: v for k, v in row.items() if k not in ("killers", "crashed")} != mutant:
+        return None
+    return row
 
 
 def git(*args: str) -> str:
@@ -632,6 +680,8 @@ def main(argv: list[str] | None = None) -> int:
     run.add_argument("--workers", type=int, default=os.cpu_count(), help="mutants run side by side")
     run.add_argument("--operators", choices=["all", "stock"], default="all",
                      help="stock: cosmic-ray's only, without thin's own (thin/...), to compare with a stock run")  # fmt: skip
+    run.add_argument("--resume", metavar="JSONL",
+                     help=f"a killed run's {JOURNAL}: skip the mutants it holds, rerun any no longer listed")  # fmt: skip
     judge = sub.add_parser("verdict", help="keep, redundant, or kills-nothing for every test in a matrix")
     judge.add_argument("matrix")
     diff = sub.add_parser(
@@ -675,6 +725,14 @@ def main(argv: list[str] | None = None) -> int:
         return 1 if result["survived"] or result["timeouts"] else 0
     elif args.command == "matrix":
         only = json.loads(Path(args.only).read_text())["candidates"] if args.only else args.tests
+        journal = Path(args.resume) if args.resume else Path(args.contexts).with_name(JOURNAL)
+        if args.resume and not journal.exists():
+            print(f"thin: no journal at {journal} to resume", file=sys.stderr)
+            return 2
+        if not args.resume and journal.exists() and journal.stat().st_size:  # a fresh run would empty it
+            print(f"thin: {journal} holds a killed run's rows: rerun with --resume {journal} to keep them, "
+                  "or delete it to start over", file=sys.stderr)  # fmt: skip
+            return 2
         try:
             result = kill_matrix(
                 json.loads(Path(args.contexts).read_text()),
@@ -684,10 +742,15 @@ def main(argv: list[str] | None = None) -> int:
                 args.workers,
                 log=lambda line: print(line, file=sys.stderr, flush=True),
                 own=args.operators == "all",
+                journal=journal,
+                resume=read_journal(journal) if args.resume else [],
             )
         except BaselineError as error:
             print(f"thin: baseline failed: {error}", file=sys.stderr)
             return 2
+        print(json.dumps(result, indent=1))
+        journal.unlink()  # the run finished and its rows are out, so a journal left here means a run that died
+        return 0
     else:
         result = verdict(json.loads(Path(args.matrix).read_text()))
     print(json.dumps(result, indent=1))

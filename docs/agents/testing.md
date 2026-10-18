@@ -11,6 +11,8 @@ pytest, adopted from the existing suites.
 - The repo-level scripts under `scripts/` keep theirs in `scripts/tests/`, collected by the root
   `pytest` run; each test file inserts the directory of the module it tests (`scripts/`, or
   `scripts/shared/` for the canonical shared copies) into `sys.path`.
+- Experiment harnesses under `ai_docs/experiments/` keep a `test_*.py` beside the harness,
+  also collected by the root run.
 - Plugins with their own `pyproject.toml` (compost) run their suite from
   their directory with their own dev group and coverage gate.
 - Each acceptance criterion AC-N maps to a test node id or parametrize id, recorded in the
@@ -23,7 +25,7 @@ pytest, adopted from the existing suites.
 
 | Gate | Command | Status |
 |---|---|---|
-| Repo checks | `uv run --group dev python scripts/check_all.py` (marketplace versions, shared-artifact sync, every plugin's tests and `scripts/tests`, lint, format) | passing |
+| Repo checks | `uv run --group dev python scripts/check_all.py` (marketplace versions, shared-artifact sync, every plugin's tests, `scripts/tests` and `ai_docs/experiments`, lint, format) | passing |
 | compost coverage | `cd plugins/compost && uv run --group dev pytest` | passing |
 | Lint | `uv run --group dev ruff check .` (run by `check_all.py`) | passing |
 | Format | `uv run --group dev ruff format --check .` (run by `check_all.py`) | passing |
@@ -57,7 +59,7 @@ behavior, equivalent, or excluded. The exclusions above apply to mutants too.
 Run: the Python steps in compost's mutation reference
 (`plugins/compost/skills/verify/references/mutation.md`) from `plugins/compost`, with
 `--paths scripts` and the plain `pytest` collecting contexts for every module `addopts` covers
-(`uv run --group dev python -m pytest -q -p no:cacheprovider --cov-context=test --cov-report=`).
+(`uv run --group dev python -m pytest -q -p no:cacheprovider --cov-context=test --cov-report= --cov-fail-under=0`).
 Covers compost's `scripts/` only; the other plugins, and compost's TypeScript hooks and workflows,
 get only `compost:build`'s walk by hand.
 

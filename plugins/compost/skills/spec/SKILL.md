@@ -148,8 +148,8 @@ a quick lookup can answer.
    [questions](references/questions.md). Answers go back into the spec and the refined prompt. No
    open questions is a fine result; say so.
 
-10. **Post the parent issue** with the tracker from `docs/agents/issue-tracker.md` (by default
-    `gh issue create` with the `spec` label; a local tracker writes `.scratch/<slug>/spec.md`).
+10. **Post the parent issue** with the tracker from `docs/agents/issue-tracker.md` (for GitHub,
+    its REST create command with the `spec` label; a local tracker writes `.scratch/<slug>/spec.md`).
     Commit `CONTEXT.md` and ADR changes, with any Gherkin feature files from step 8, as their own
     `docs:` commit. Bounded work proceeds from here. Architectural work stops: link the issue, ask
     for approval, and record the approval as an issue comment. An explicit instruction in the

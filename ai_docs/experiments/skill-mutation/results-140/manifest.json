@@ -1,0 +1,44 @@
+{
+ "skill_sha": "ced24699eabcb08c88af3fd34435d3d66518e8b6",
+ "evals_sha": "b566126f3d43ab8a78547b8fb2b05032d71a7026",
+ "model": "haiku",
+ "judge_model": "sonnet",
+ "agents": [],
+ "home_seed": "54e4b9e66f17be83ba5f0dcca1633933f0ca0df9",
+ "kb": "4ee0902add2f4252580b5e65f7d0aa5c18f09bc7",
+ "plugin_scripts": "f49a98141b1b6f9db0e65917c322bb0350733efc",
+ "sandbox": {
+  "permissions": {
+   "blockReadsOutsideWorkingDirectories": true
+  },
+  "sandbox": {
+   "enabled": true,
+   "failIfUnavailable": true,
+   "allowUnsandboxedCommands": false,
+   "filesystem": {
+    "denyRead": [
+     "/"
+    ],
+    "allowRead": [
+     "SANDBOX",
+     "/usr",
+     "/bin",
+     "/sbin",
+     "/lib",
+     "/lib64",
+     "/etc",
+     "/dev",
+     "/proc",
+     "/nix",
+     "/opt/homebrew",
+     "/System",
+     "/Library",
+     "/private/etc"
+    ],
+    "allowWrite": [
+     "SANDBOX"
+    ]
+   }
+  }
+ }
+}
