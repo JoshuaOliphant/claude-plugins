@@ -132,7 +132,9 @@ When changing a plugin:
 
 On an integration branch that merges several issues (a `compost:implement` run), lanes leave
 versions alone, since per-lane bumps conflict on every merge. One commit on that branch bumps
-every plugin the branch changed before it merges to `main`. A lane commit without a bump is not a
+every plugin the branch changed, and it goes in right after the first lane lands, before the draft
+PR opens, so every push to the PR runs CI green instead of failing the bump check until the end. A
+plugin first changed by a later lane gets its bump in the commit that lands that lane. A lane commit without a bump is not a
 finding; a branch reaching `main` with a changed plugin still at its old version is. CI enforces
 this on pull requests into `main` with `python scripts/check_version_bumps.py` (base
 `origin/main`; a plugin's `tests/` doesn't count as shipped content). The changed plugin's

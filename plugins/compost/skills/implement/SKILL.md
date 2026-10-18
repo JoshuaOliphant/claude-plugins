@@ -59,9 +59,11 @@ the work so each step can be checked before the next builds on it
 5. **Land each finished issue.** A completion is an event to handle, not a review to do inline.
    Read the worker's short report; if it says `DONE_WITH_CONCERNS`, read the concerns first. Merge
    its branch into the feature branch with `--no-ff`, then run the suite on the feature branch; a
-   merge is a change like any other. A red suite after a merge goes to `compost:diagnose`. After the
-   first landing, push the branch and, when step 3 calls for a PR, open a draft PR whose body
-   closes the parent and every sub-issue ("Closes #12, closes #13").
+   merge is a change like any other. A red suite after a merge goes to `compost:diagnose`. When the
+   repo's instructions want a version bump for a changed package, commit it right after the first
+   landing, before the first push, so the PR's checks are green from its first run; lanes still
+   leave versions alone. After the first landing, push the branch and, when step 3 calls for a PR,
+   open a draft PR whose body closes the parent and every sub-issue ("Closes #12, closes #13").
 
 6. **Review every issue.** Load `compost:review` for the issue's commits. It runs the
    `/compost:review-changes` workflow through subagents; you never wait to be asked. Scope it to
