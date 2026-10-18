@@ -19,7 +19,7 @@ jobs:
         run: uv run --group dev python scripts/check_all.py
 
   version-bumps:
-    name: Changed plugins have bumped versions
+    name: Changed plugins have versions above main
     if: github.event_name == 'pull_request' && github.base_ref == 'main'
     runs-on: ubuntu-latest
     steps:

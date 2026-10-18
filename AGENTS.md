@@ -24,7 +24,7 @@ claude-plugins/
 │   ├── cloud-setup.sh                 # Cloud environment setup script: installs compost + typesafe plugins
 │   ├── check_all.py                   # One-command repo health check (versions + sync + tests + lint + format)
 │   ├── check_marketplace_versions.py  # Asserts marketplace.json ⇄ plugin.json (versions + registration)
-│   ├── check_version_bumps.py         # CI on PRs into main: every changed plugin has a bumped version
+│   ├── check_version_bumps.py         # CI on PRs into main: every changed plugin's version is above main's
 │   ├── sync_shared.py                 # Asserts/regenerates per-plugin copies of shared artifacts
 │   └── shared/                        # Canonical sources for artifacts duplicated across plugins
 ├── knowledge/                      # Captured solutions (compound-knowledge output for this repo)
@@ -135,7 +135,11 @@ versions alone, since per-lane bumps conflict on every merge. One commit on that
 every plugin the branch changed before it merges to `main`. A lane commit without a bump is not a
 finding; a branch reaching `main` with a changed plugin still at its old version is. CI enforces
 this on pull requests into `main` with `python scripts/check_version_bumps.py` (base
-`origin/main`; a plugin's `tests/` doesn't count as shipped content).
+`origin/main`; a plugin's `tests/` doesn't count as shipped content). The changed plugin's
+version must be strictly greater than the one on current `main`, not the fork point: two branches
+that both bump 0.8.1 to 0.9.0 pass alone, but the second fails once the first has merged, because
+an install that recorded 0.9.0 never re-fetches it. When the check fails that way, bump past
+`main`'s version.
 
 ## Testing and Development
 
