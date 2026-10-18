@@ -33,7 +33,8 @@ yours to do without asking.
 
 3. **Name the merge target.** It is the branch this work forked from. Take it from the issue: a
    parent issue may name an integration branch for its sub-issues. Otherwise it is the default
-   branch (`gh repo view --json defaultBranchRef -q .defaultBranchRef.name`). State it in the PR.
+   branch (the tracker doc's **Default branch** command; with none, `git symbolic-ref --short
+   refs/remotes/origin/HEAD` minus its `origin/`). State it in the PR.
 
 4. **Run the suite on the actual merge result.** A green branch proves only the branch. Start
    with the cheap check:
@@ -67,9 +68,10 @@ yours to do without asking.
    from coverage. End the body with a `Closes` line for the issue, or for
    the parent and every sub-issue (`Closes #12, closes #13, closes #14`), keeping any the PR
    already has. Use the
-   [PR body template](references/pr-body.md) and the tracker's own CLI (`gh pr create --draft`,
-   `gh pr edit`, `glab mr create --draft`). With a local tracker, post the same body on the
-   issue file instead.
+   [PR body template](references/pr-body.md) and the **Pull requests** commands in
+   `docs/agents/issue-tracker.md` (create as a draft, edit the body). Use those, not the forge CLI's
+   porcelain: `gh pr create` goes through GraphQL, which Claude Code cloud sessions block. With a
+   local tracker, post the same body on the issue file instead.
 
 6. **Stop for the merge decision when the target is the default branch.** Report the PR link,
    the merge-result run, and three options: merge, keep the branch open for more feedback, or
@@ -77,9 +79,10 @@ yours to do without asking.
    branch does not need to wait; go on to step 7.
 
 7. **Merge with a merge commit, then clean up.** When told to merge:
-   - With an open PR, mark it ready with `gh pr ready <n>` (the forge refuses to merge a draft),
-     then merge through the forge with a merge commit: `gh pr merge <n> --merge`. That is the
-     forge's `--no-ff`. Never squash or rebase unless the user asks for it.
+   - With an open PR, mark it ready (the forge refuses to merge a draft), then merge through the
+     forge with a merge commit, using the tracker doc's **Ready for review** and **Merge** commands (in a cloud session, the
+     cloud variant of ready).
+     That is the forge's `--no-ff`. Never squash or rebase unless the user asks for it.
    - Without a PR, build the merge commit in this worktree on a detached HEAD, so the main
      checkout is never touched and no `git -C` is needed:
 
@@ -111,14 +114,14 @@ yours to do without asking.
    because of uncommitted files, list them (`git status --porcelain -uall` inside the worktree)
    and ask the user whether to commit, move, or delete them. Never add `--force` on your own.
    Then delete the branch with `git branch -D "$branch"` (the ancestry check already proved it
-   merged, which `-d` can't see when the local target is stale) and delete the remote branch.
+   merged, which `-d` can't see when the local target is stale) and delete the remote branch (`git push origin --delete "$branch"`).
 
 8. **Discard only on request, and only after the user types "discard".** When the user asks to
    throw the work away, show what will be lost: the branch, the commits
    (`git log --oneline <target>..$branch`), the worktree path, and any open PR. Ask them to type
    `discard`. A paraphrase such as "yeah, get rid of it" is not the confirmation. Once the word
-   arrives, close the PR, remove the worktree as in step 7, delete the branch with
-   `git branch -D "$branch"`, and delete the remote branch.
+   arrives, close the PR (the tracker doc's **Close without merging**), remove the worktree as in step 7, delete the branch with
+   `git branch -D "$branch"`, and delete the remote branch (`git push origin --delete "$branch"`).
 
 9. **Capture what was learned.** If the work turned up a gotcha, a non-obvious root cause, or a
    verdict reached from measurement, and the compound-knowledge plugin is installed, use

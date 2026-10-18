@@ -97,6 +97,14 @@ OPERATORS = {
 }
 
 
+PART_SPLIT = re.compile(r"\s+and\s+|;\s+|\s+with\s+|,\s+(?=coverage|\d)")
+
+
+def parts(claim: str) -> list[str]:
+    """Code splits a claim into the pieces it asserts. Written after the first run, on cues seen in these cases, so it is tuned to them."""
+    return [part.strip(" .") for part in PART_SPLIT.split(claim) if part.strip(" .")] or [claim]
+
+
 def numbers_missing(claim: str, output: str) -> bool:
     """The deterministic stage: a number the claim states that the output never shows."""
     return any(n not in output for n in re.findall(r"\d+(?:\.\d+)?", claim))
@@ -159,6 +167,41 @@ async def judge_all(items: list[dict], out: Path) -> None:
             item["confidence"] = round(answers.confidence("relation"), 3)
             item["strict_relation"] = answers.choice("strict")
             item["strict_confidence"] = round(answers.confidence("strict"), 3)
+            pieces = parts(item["claim"])
+            item["parts"] = len(pieces)
+            if (
+                len(pieces) == 1
+            ):  # one piece is the whole claim, so the split judge's answer is the whole-claim answer
+                item["split_noul"] = item["noul"]
+                item["split_relation"] = item["strict_relation"]
+                item["split_confidence"] = item["strict_confidence"]
+                return
+            each = await asyncio.gather(
+                *(
+                    jev.ask(
+                        "judge-mutation-part",
+                        {"claim": piece, "output": testing.clip(item["output"])},
+                        QUESTIONS,
+                    )
+                    for piece in pieces
+                )
+            )
+            item["split_noul"] = round(min(a.noul("backed") for a in each), 3)
+            doubtful = [
+                (a.choice("strict"), a.confidence("strict"))
+                for a in each
+                if a.choice("strict") != "supports"
+            ]
+            if doubtful:
+                item["split_relation"], item["split_confidence"] = max(
+                    doubtful, key=lambda pair: pair[1]
+                )
+            else:
+                item["split_relation"], item["split_confidence"] = (
+                    "supports",
+                    min(a.confidence("strict") for a in each),
+                )
+            item["split_confidence"] = round(item["split_confidence"], 3)
 
         await asyncio.gather(*(one(i) for i in items))
         print(f"input tokens {jev.input_tokens}, cached asks {jev.cached}", file=sys.stderr)
@@ -179,10 +222,11 @@ def report(items: list[dict]) -> str:
         by_op[item["operator"]].append(item)
     lines = [
         f"Verdicts on claims that should be unbacked, per operator. Noul cut {NOUL_CUT}. Choice: auto means confidence >= {AUTO},",
-        "routed means below it (a person confirms), so caught + routed + missed = n. strict is the Choice with the every-part criteria.",
+        "routed means below it (a person confirms), so caught + routed + missed = n. strict is the Choice with the every-part criteria;",
+        "split cuts the claim into parts in code and judges each part (strict Choice; split noul = lowest part).",
         "det = claims stating a number the output never shows (the deterministic stage, no model). noul = claims judged unbacked.",
         "",
-        f"{'operator':<19}{'n':>3} {'det':>4} {'noul':>6} | {'choice c/r/m':>13} | {'strict c/r/m':>13}",
+        f"{'operator':<19}{'n':>3} {'det':>4} {'noul':>6} | {'choice c/r/m':>13} | {'strict c/r/m':>13} | {'split c/r/m':>12} {'split noul':>10}",
     ]
     for op, rows in by_op.items():
         n = len(rows)
@@ -191,8 +235,9 @@ def report(items: list[dict]) -> str:
         noul = sum(
             r["noul"] < NOUL_CUT for r in rows
         )  # unbacked verdicts: caught, or false flags on kept rows
+        split_noul = sum(r["split_noul"] < NOUL_CUT for r in rows)
         cells = []
-        for prefix in ("", "strict_"):
+        for prefix in ("", "strict_", "split_"):
             o = defaultdict(int)
             for r in rows:
                 o[outcome(r, prefix)] += 1
@@ -200,12 +245,12 @@ def report(items: list[dict]) -> str:
                 f"{o['flagged' if keep else 'caught']}/{o['routed']}/{o['kept' if keep else 'missed']}"
             )
         lines.append(
-            f"{op:<19}{n:>3} {det:>4} {noul:>3}/{n:<2} | {cells[0]:>13} | {cells[1]:>13}"
+            f"{op:<19}{n:>3} {det:>4} {noul:>3}/{n:<2} | {cells[0]:>13} | {cells[1]:>13} | {cells[2]:>12} {split_noul:>7}/{n:<2}"
             + ("   (kept rows: flagged/routed/kept)" if keep else "")
         )
-    lines += ["", "Not caught or wrongly flagged, Choice (first) and strict:"]
+    lines += ["", "Not caught or wrongly flagged (choice, strict, split):"]
     for r in items:
-        for prefix, label in (("", "choice"), ("strict_", "strict")):
+        for prefix, label in (("", "choice"), ("strict_", "strict"), ("split_", "split")):
             o = outcome(r, prefix)
             if o in ("missed", "flagged"):
                 lines.append(
