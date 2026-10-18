@@ -1,0 +1,17 @@
+Mutated sentences per operator. det = names a .md file that is in no KB path (no model). jev c/r/m = Jev strict-style Choice
+caught/routed/missed (gate 0.8). jev+det counts det as caught. sonnet = per-sentence Sonnet verdict not 'supports'.
+closed = Sonnet eval checklist on the whole mutated answer (any expectation that held on the original now fails); open = same plus
+the open 'every claim is supported by the KB' expectation. hybrid = jev+det caught or closed flagged. Blank flags (judge error) are skipped.
+
+operator                n  det  jev c/r/m  jev+det  sonnet  closed   open  hybrid
+path-swap              14   14 0/14/0        14/14   14/14    4/14   5/14   14/14
+fabricated-source      14   14 0/13/1        14/14   14/14    5/14  10/14   14/14
+wrong-fact             35    6 7/25/3        13/35   31/35    3/35  14/35   14/35
+wrong-conclusion       36    0 21/13/2        21/36   36/36    2/36  18/36   21/36
+unsupported-addition   36    1 9/21/6        10/36   30/36    0/36  11/36   10/36
+number-swap             2    0 1/1/0          1/2     2/2     0/2    2/2     1/2
+all mutants           137   35 38/87/12      73/137 127/137  14/137 60/137  74/137
+
+Originals (true sentences from answers that passed every expectation): 90 sentences in 12 answers.
+  jev: 2 caught (false flags), 26 routed, 62 kept; det false flags 0; sonnet claim false flags 15
+  checklist re-judged on the same answer: closed flips 0/12, open flips 2/12 (judge noise)
