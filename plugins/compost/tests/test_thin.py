@@ -745,6 +745,7 @@ def test_survivors_counts_timeouts_and_crashes_apart_from_kills(toy, monkeypatch
     one_mutant(monkeypatch, mutated=mutated)
     result = thin.survivors(toy, {"age.py": {2}}, PYTEST, timeout, 1, log=NO_LOG)
     assert result[outcome] == 1 and result["killed"] == result["survived"] == 0
+    assert result["score"] == (0.0 if outcome == "timeouts" else None)  # a crash is nobody's miss
 
 
 def test_main_survivors_lists_an_untested_change_and_exits_1(toy_repo, tmp_path, capsys):
@@ -757,6 +758,7 @@ def test_main_survivors_lists_an_untested_change_and_exits_1(toy_repo, tmp_path,
     result = json.loads(out.out)
     assert result["changed_lines"] == 2 and result["mutants"] == result["survived"] > 0
     assert {row["line"] for row in result["survivors"]} == {4}
+    assert result["score"] == 0.0
     assert all(row.keys() == {"module", "line", "operator", "occurrence", "mutated"} for row in result["survivors"])
     assert not any(row["operator"].startswith(thin.OWN) for row in result["survivors"])  # stock unless asked
     texts = {row["mutated"] for row in result["survivors"]}
@@ -771,7 +773,7 @@ def test_main_survivors_exits_0_when_every_mutant_is_killed(toy_repo, tmp_path, 
     args = ["survivors", "ctx.json", "--base", base, "--paths", "age.py", "--pytest-args", " ".join(PYTEST)]
     assert thin.main(args) == 0
     result = json.loads(capsys.readouterr().out)
-    assert result["mutants"] == result["killed"] > 0
+    assert result["mutants"] == result["killed"] > 0 and result["score"] == 1.0
 
 
 def test_main_survivors_lists_string_survivors_apart_with_thins_operators(toy_repo, tmp_path, capsys):

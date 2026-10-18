@@ -1,0 +1,13 @@
+{
+ "task": "t3",
+ "green": false,
+ "hidden_failures": [
+  "tests/test_jev_meta.py::test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head",
+  "tests/test_jev_meta.py::test_gather_route_takes_one_prompt_or_many_and_needs_skills"
+ ],
+ "regressions": [],
+ "changed": [
+  "Files /tmp/real-fix-diagnose/pristine/t3/plugins/compost/scripts/jevtools/meta.py and /tmp/real-fix-diagnose/runs/skill-nt/t3/plugins/compost/scripts/jevtools/meta.py differ",
+  "Only in /tmp/real-fix-diagnose/pristine/t3/plugins/compost: tests"
+ ]
+}
