@@ -85,3 +85,33 @@ def test_setup_can_edit_an_existing_config_in_place():
         (PLUGIN_ROOT / "commands" / "setup.md").read_text(encoding="utf-8").split("---")[1]
     )
     assert "Edit" in front_matter
+
+
+CORPUS_SEARCH = re.compile(r'path="\{(?:write|read)_path\}')
+KNOWN_CORPUS_READERS = {
+    "skills/compound-capture/SKILL.md",
+    "skills/compound-capture/references/registry-format.md",
+    "skills/compound-retrieve/SKILL.md",
+    "agents/knowledge-researcher.md",
+}
+
+
+def corpus_readers() -> list[Path]:
+    """Instruction docs that Grep or Glob over {write_path} or {read_path}."""
+    return [
+        doc for doc in INSTRUCTION_DOCS if CORPUS_SEARCH.search(doc.read_text(encoding="utf-8"))
+    ]
+
+
+def test_corpus_search_detector_finds_the_known_readers():
+    """Guards the guard: a detector that matches nothing would pass the archive check vacuously."""
+    found = {doc.relative_to(PLUGIN_ROOT).as_posix() for doc in corpus_readers()}
+    assert KNOWN_CORPUS_READERS <= found
+
+
+@pytest.mark.parametrize(
+    "doc", corpus_readers(), ids=lambda p: p.relative_to(PLUGIN_ROOT).as_posix()
+)
+def test_every_corpus_reader_skips_the_archive(doc):
+    """Garden moves retired solutions to {write_path}/_archive/, which only works if every reader skips it."""
+    assert "_archive/" in doc.read_text(encoding="utf-8")
