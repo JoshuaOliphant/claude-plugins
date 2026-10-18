@@ -1,0 +1,212 @@
+[
+ {
+  "n": 1,
+  "module": "scripts/claude_config.py",
+  "test": "tests/test_claude_config.py",
+  "mutants": [
+   {
+    "id": 276,
+    "operator": "thin/DeleteStatement",
+    "line": 144,
+    "before": "if marketplace in listings and name not in listings[marketplace] and scope in UNINSTALLABLE_SCOPES:",
+    "after": "pass"
+   },
+   {
+    "id": 205,
+    "operator": "core/AddNot",
+    "line": 90,
+    "before": "return json.loads(path.read_text()) if path.exists() else {}",
+    "after": "return json.loads(path.read_text()) if not path.exists() else {}"
+   }
+  ]
+ },
+ {
+  "n": 2,
+  "module": "scripts/claude_config.py",
+  "test": "tests/test_claude_config.py",
+  "mutants": [
+   {
+    "id": 53,
+    "operator": "core/ReplaceTrueWithFalse",
+    "line": 28,
+    "before": "result = subprocess.run([\"claude\", *args], capture_output=True, text=True, check=False, env=env)",
+    "after": "result = subprocess.run([\"claude\", *args], capture_output=True, text=False, check=False, env=env)"
+   },
+   {
+    "id": 155,
+    "operator": "core/ReplaceContinueWithBreak",
+    "line": 59,
+    "before": "continue",
+    "after": "break"
+   }
+  ]
+ },
+ {
+  "n": 3,
+  "module": "scripts/claude_config.py",
+  "test": "tests/test_claude_config.py",
+  "mutants": [
+   {
+    "id": 256,
+    "operator": "thin/DeleteStatement",
+    "line": 131,
+    "before": "scopes.setdefault(plugin[\"id\"], set()).add(plugin.get(\"scope\"))",
+    "after": "pass"
+   },
+   {
+    "id": 60,
+    "operator": "core/ReplaceComparisonOperator_NotEq_Eq",
+    "line": 31,
+    "before": "if result.returncode != 0:",
+    "after": "if result.returncode == 0:"
+   }
+  ]
+ },
+ {
+  "n": 4,
+  "module": "scripts/claude_config.py",
+  "test": "tests/test_claude_config.py",
+  "mutants": [
+   {
+    "id": 103,
+    "operator": "thin/ReturnConstant",
+    "line": 45,
+    "before": "return _claude_json(\"plugin\", \"list\", claude_dir=claude_dir)",
+    "after": "return ([])"
+   },
+   {
+    "id": 265,
+    "operator": "core/ReplaceComparisonOperator_Eq_NotEq",
+    "line": 132,
+    "before": "return frozenset(plugin_id for plugin_id, found in scopes.items() if found == {\"synced\"})",
+    "after": "return frozenset(plugin_id for plugin_id, found in scopes.items() if found != {\"synced\"})"
+   }
+  ]
+ },
+ {
+  "n": 5,
+  "module": "scripts/claude_config.py",
+  "test": "tests/test_claude_config.py",
+  "mutants": [
+   {
+    "id": 300,
+    "operator": "thin/DeleteStatement",
+    "line": 159,
+    "before": "if \":\" not in name:",
+    "after": "pass"
+   },
+   {
+    "id": 191,
+    "operator": "core/AddNot",
+    "line": 84,
+    "before": "return {entry.name for entry in skills.iterdir()} if skills.is_dir() else set()",
+    "after": "return {entry.name for entry in skills.iterdir()} if not skills.is_dir() else set()"
+   }
+  ]
+ },
+ {
+  "n": 6,
+  "module": "scripts/skill_drift.py",
+  "test": "tests/test_skill_drift.py",
+  "mutants": [
+   {
+    "id": 386,
+    "operator": "thin/DeleteStatement",
+    "line": 193,
+    "before": "if not lines:",
+    "after": "pass"
+   },
+   {
+    "id": 254,
+    "operator": "core/AddNot",
+    "line": 105,
+    "before": "return str(found[0]) if found else None",
+    "after": "return str(found[0]) if not found else None"
+   }
+  ]
+ },
+ {
+  "n": 7,
+  "module": "scripts/skill_drift.py",
+  "test": "tests/test_skill_drift.py",
+  "mutants": [
+   {
+    "id": 289,
+    "operator": "thin/DropCall",
+    "line": 138,
+    "before": "for (skill, kind), grouped in sorted(current.items())",
+    "after": "for (skill, kind), grouped in (current.items())"
+   },
+   {
+    "id": 425,
+    "operator": "thin/DeleteStatement",
+    "line": 209,
+    "before": "commands.add_parser(\"summary\", help=\"print every open hit by skill, as the mod's /drift shows it\")",
+    "after": "pass"
+   }
+  ]
+ },
+ {
+  "n": 8,
+  "module": "scripts/skill_drift.py",
+  "test": "tests/test_skill_drift.py",
+  "mutants": [
+   {
+    "id": 276,
+    "operator": "thin/DeleteStatement",
+    "line": 128,
+    "before": "if hit.skill not in latest:",
+    "after": "pass"
+   },
+   {
+    "id": 42,
+    "operator": "core/AddNot",
+    "line": 77,
+    "before": "if isinstance(value, bool) or not isinstance(value, (int, float) if spec.type is float else spec.type):",
+    "after": "if isinstance(value, bool) or not isinstance(value, (int, float) if not spec.type is float else spec.type):"
+   }
+  ]
+ },
+ {
+  "n": 9,
+  "module": "scripts/skill_drift.py",
+  "test": "tests/test_skill_drift.py",
+  "mutants": [
+   {
+    "id": 430,
+    "operator": "thin/DeleteStatement",
+    "line": 211,
+    "before": "marking.add_argument(\"ids\", nargs=\"+\")",
+    "after": "pass"
+   },
+   {
+    "id": 261,
+    "operator": "core/AddNot",
+    "line": 120,
+    "before": "if hit.skill not in active:",
+    "after": "if not hit.skill not in active:"
+   }
+  ]
+ },
+ {
+  "n": 10,
+  "module": "scripts/skill_drift.py",
+  "test": "tests/test_skill_drift.py",
+  "mutants": [
+   {
+    "id": 298,
+    "operator": "thin/ReturnConstant",
+    "line": 150,
+    "before": "return log, groups, retired",
+    "after": "return (())"
+   },
+   {
+    "id": 108,
+    "operator": "thin/DeleteStatement",
+    "line": 91,
+    "before": "path.write_text(json.dumps(sorted(done), indent=2) + \"\\n\")",
+    "after": "pass"
+   }
+  ]
+ }
+]

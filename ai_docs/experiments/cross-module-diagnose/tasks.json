@@ -1,0 +1,12 @@
+[
+ {"task": "c1", "helper": "scripts/claude_config.py", "id": 295, "caller": "tests/test_skill_drift.py"},
+ {"task": "c2", "helper": "scripts/claude_config.py", "id": 319, "caller": "tests/test_skill_drift.py"},
+ {"task": "c3", "helper": "scripts/claude_config.py", "id": 192, "caller": "tests/test_skill_drift.py"},
+ {"task": "c4", "helper": "scripts/claude_config.py", "id": 280, "caller": "tests/test_replaced.py"},
+ {"task": "c5", "helper": "scripts/claude_config.py", "id": 253, "caller": "tests/test_replaced.py"},
+ {"task": "c6", "helper": "scripts/jevtools/core.py", "id": 268, "caller": "tests/test_jev_testing.py"},
+ {"task": "c7", "helper": "scripts/jevtools/core.py", "id": 124, "caller": "tests/test_jev_testing.py"},
+ {"task": "c8", "helper": "scripts/jevtools/meta.py", "id": 729, "caller": "tests/test_stop_guard.py"},
+ {"task": "c9", "helper": "scripts/pile.py", "id": 286, "caller": "tests/test_jev_meta.py"},
+ {"task": "c10", "helper": "scripts/jevtools/core.py", "id": 257, "caller": "tests/test_jev_testing.py"}
+]
