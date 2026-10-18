@@ -462,6 +462,23 @@ def test_a_run_past_its_timeout_is_killed_and_reported_as_timed_out_not_crashed(
     assert thin.fork_runs([(None, None, ["test_slow.py::test_slow"])], PYTEST, 1, 1) == [thin.TIMED_OUT]
 
 
+def test_a_caller_that_fails_mid_run_leaves_no_run_behind(toy, tmp_path):
+    # The callback journals and logs; a full disk or a closed pipe must not leave the other runs going.
+    (tmp_path / "test_quick.py").write_text("def test_quick():\n    pass\n")
+    (tmp_path / "test_slow.py").write_text("import time\ndef test_slow():\n    time.sleep(30)\n")
+    jobs = [(None, None, ["test_quick.py::test_quick"]), (None, None, ["test_slow.py::test_slow"])]
+
+    def finished(index, report):
+        raise BrokenPipeError
+
+    started = time.monotonic()
+    with pytest.raises(BrokenPipeError):
+        thin.fork_runs(jobs, PYTEST, 60, 2, finished)
+    assert time.monotonic() - started < 20
+    with pytest.raises(ChildProcessError):
+        os.waitpid(-1, os.WNOHANG)
+
+
 def gone(pid: int) -> bool:
     """True once a process has exited: absent, or a zombie waiting for a reaper this container may not run."""
     try:
@@ -597,8 +614,27 @@ def test_main_matrix_takes_node_ids_in_place_of_a_candidates_file(toy, tmp_path,
     args = ["matrix", "ctx.json", "--tests", "test_age.py::test_runs_only", "--workers", "1"]
     assert thin.main([*args, "--pytest-args", " ".join(PYTEST)]) == 0
     assert json.loads(capsys.readouterr().out)["selected"] == ["test_age.py::test_runs_only"]
+    (tmp_path / "matrix.jsonl").unlink()
     assert thin.main([*args, "--pytest-args", " ".join(PYTEST), "--operators", "stock"]) == 0
     assert asked == [True, False]
+
+
+@pytest.mark.parametrize(
+    ("journal", "resume", "message"),
+    [
+        ("the rows so far\n", [], "holds an earlier run's rows: rerun with --resume"),
+        (None, ["--resume", "gone.jsonl"], "no journal at gone.jsonl to resume"),
+    ],
+    ids=["a fresh run over a killed run's journal", "a resume file that is not there"],
+)
+def test_main_matrix_exits_2_rather_than_lose_or_miss_a_journal(toy, tmp_path, capsys, journal, resume, message):
+    (tmp_path / "ctx.json").write_text(json.dumps(toy))
+    if journal is not None:
+        (tmp_path / "matrix.jsonl").write_text(journal)
+    assert thin.main(["matrix", "ctx.json", *resume]) == 2
+    assert message in capsys.readouterr().err
+    if journal is not None:
+        assert (tmp_path / "matrix.jsonl").read_text() == journal
 
 
 def test_main_exits_2_and_says_why_when_the_baseline_fails(toy, tmp_path, capsys):

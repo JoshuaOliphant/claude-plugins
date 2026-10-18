@@ -399,32 +399,37 @@ def fork_runs(jobs: list[tuple], pytest_args: list[str], timeout: float, workers
     adopted = adopt_orphans(True)
     with tempfile.TemporaryDirectory() as tmp:
         pending, running = list(enumerate(jobs)), {}
-        while pending or running:
-            while pending and len(running) < workers:
-                index, (module, source, tests) = pending.pop(0)
-                report = Path(tmp) / f"{index}.xml"
-                pid = os.fork()
-                if pid == 0:
-                    run_child(pytest_args, tests, report, module, source)
-                running[pid] = (index, tests, report, time.monotonic() + timeout)
-            for pid, (index, tests, report, deadline) in list(running.items()):
-                done, _ = os.waitpid(pid, os.WNOHANG)
-                if not done and time.monotonic() < deadline:
-                    continue
+        try:
+            while pending or running:
+                while pending and len(running) < workers:
+                    index, (module, source, tests) = pending.pop(0)
+                    report = Path(tmp) / f"{index}.xml"
+                    pid = os.fork()
+                    if pid == 0:
+                        run_child(pytest_args, tests, report, module, source)
+                    running[pid] = (index, tests, report, time.monotonic() + timeout)
+                for pid, (index, tests, report, deadline) in list(running.items()):
+                    done, _ = os.waitpid(pid, os.WNOHANG)
+                    if not done and time.monotonic() < deadline:
+                        continue
+                    stop_group(pid)
+                    if not done:
+                        os.waitpid(pid, 0)
+                    results[index] = read_report(report, tests) if done else TIMED_OUT
+                    del running[pid]
+                    if adopted:
+                        kill_orphans(running)
+                    if finished:
+                        finished(index, results[index])
+                time.sleep(0.005)
+        finally:  # a `finished` that raised leaves runs going: stop them before their reports' folder goes
+            for pid in running:
                 stop_group(pid)
-                if not done:
-                    os.waitpid(pid, 0)
-                results[index] = read_report(report, tests) if done else TIMED_OUT
-                del running[pid]
-                if adopted:
-                    kill_orphans(running)
-                if finished:
-                    finished(index, results[index])
-            time.sleep(0.005)
-    if adopted:
-        while kill_orphans({}):  # an orphan's own children come back once it is killed
-            pass
-        adopt_orphans(False)
+                os.waitpid(pid, 0)
+            if adopted:
+                while kill_orphans({}):  # an orphan's own children come back once it is killed
+                    pass
+                adopt_orphans(False)
     return [results[index] for index in range(len(jobs))]
 
 
@@ -505,8 +510,10 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
         fresh.write_text("".join(json.dumps(row) + "\n" for row in rows if row is not None))
         os.replace(fresh, journal)
     todo = [index for index, row in enumerate(rows) if row is None]
+    done = 0
 
     def finished(index: int, report: Report | TimedOut | None) -> None:
+        nonlocal done
         row = made[todo[index]]
         crashed = not isinstance(report, Report) or bool(report.strays)  # a broken run kills every covering test
         row["killers"] = row["covering"] if crashed else sorted(report.failed)
@@ -517,7 +524,7 @@ def kill_matrix(contexts: dict, only: list[str] | None, pytest_args: list[str], 
             with journal.open("a") as out:
                 out.write(json.dumps(row) + "\n")
         log(f"{mutant_id(row)} killed by {len(row['killers'])}/{len(row['covering'])}")
-        done = len(todo) - rows.count(None)
+        done += 1
         if done % 100 == 0 or done == len(todo):
             log(f"{done}/{len(todo)} mutants run")
 
@@ -718,6 +725,14 @@ def main(argv: list[str] | None = None) -> int:
         return 1 if result["survived"] or result["timeouts"] else 0
     elif args.command == "matrix":
         only = json.loads(Path(args.only).read_text())["candidates"] if args.only else args.tests
+        journal = Path(args.resume) if args.resume else Path(args.contexts).with_name(JOURNAL)
+        if args.resume and not journal.exists():
+            print(f"thin: no journal at {journal} to resume", file=sys.stderr)
+            return 2
+        if not args.resume and journal.exists() and journal.stat().st_size:  # a fresh run would empty it
+            print(f"thin: {journal} holds an earlier run's rows: rerun with --resume {journal} to keep them, "
+                  "or delete it to start over", file=sys.stderr)  # fmt: skip
+            return 2
         try:
             result = kill_matrix(
                 json.loads(Path(args.contexts).read_text()),
@@ -727,8 +742,8 @@ def main(argv: list[str] | None = None) -> int:
                 args.workers,
                 log=lambda line: print(line, file=sys.stderr, flush=True),
                 own=args.operators == "all",
-                journal=Path(args.resume) if args.resume else Path(args.contexts).with_name(JOURNAL),
-                resume=read_journal(Path(args.resume)) if args.resume else [],
+                journal=journal,
+                resume=read_journal(journal) if args.resume else [],
             )
         except BaselineError as error:
             print(f"thin: baseline failed: {error}", file=sys.stderr)
