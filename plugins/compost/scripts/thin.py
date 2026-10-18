@@ -613,9 +613,11 @@ def survivors(contexts: dict, changed: dict[str, set[int]], pytest_args: list[st
             outcome = "killed" if report.failed else "survived_strings" if is_string(row) else "survived"
         outcomes[outcome].append(row)
         log(f"{mutant_id(row)} {outcome}")
+    tried = len(outcomes["killed"]) + sum(len(outcomes[kind]) for kind in ("survived", "survived_strings", "timeouts"))
     return (
         counts
         | {kind: len(outcomes[kind]) for kind in ("killed", "survived", "timeouts", "crashed")}
+        | {"score": len(outcomes["killed"]) / tried if tried else None}  # a crash is no test's miss, so it isn't tried
         | {"survivors": outcomes["survived"], "survived_strings": outcomes["survived_strings"]}
     )
 
