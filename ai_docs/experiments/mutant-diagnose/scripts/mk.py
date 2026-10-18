@@ -4,8 +4,9 @@ from pathlib import Path
 
 WORK = os.environ.get("MUTANT_WORK", "/tmp/mutant-diagnose")
 SRC_ROOT = os.environ.get("COMPOST", "plugins/compost")
-import json, shutil, sys
-from pathlib import Path
+import json
+import shutil
+import sys
 
 sys.path.insert(0, "scripts")
 import thin

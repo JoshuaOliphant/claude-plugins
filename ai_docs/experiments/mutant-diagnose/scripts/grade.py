@@ -4,8 +4,8 @@ from pathlib import Path
 
 WORK = os.environ.get("MUTANT_WORK", "/tmp/mutant-diagnose")
 SRC_ROOT = os.environ.get("COMPOST", "plugins/compost")
-import json, subprocess, difflib
-from pathlib import Path
+import json
+import subprocess
 
 O = Path(SRC_ROOT).resolve()
 orig = (O / "scripts/stop_guard.py").read_text().splitlines()

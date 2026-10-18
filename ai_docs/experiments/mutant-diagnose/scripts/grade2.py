@@ -4,8 +4,9 @@ from pathlib import Path
 
 WORK = os.environ.get("MUTANT_WORK", "/tmp/mutant-diagnose")
 SRC_ROOT = os.environ.get("COMPOST", "plugins/compost")
-import json, shutil, subprocess
-from pathlib import Path
+import json
+import shutil
+import subprocess
 
 SRC = Path(SRC_ROOT).resolve()
 PY = str(SRC / ".venv/bin/python")
