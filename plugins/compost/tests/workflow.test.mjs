@@ -202,6 +202,7 @@ test('over 50 changed lines, a structural file, no line count, or full: true run
     [{}, { ...SCOPE, changedLines: 51 }],
     [{ jev: '/plugin/scripts/jev.py' }, { ...SMALL, risk: structural }],
     [{}, SCOPE],
+    [{}, { ...SCOPE, changedLines: null }],
     [{ full: true }, SMALL],
   ]
   for (const [args, scope] of cases) {
