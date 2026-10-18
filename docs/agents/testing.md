@@ -59,7 +59,7 @@ behavior, equivalent, or excluded. The exclusions above apply to mutants too.
 Run: the Python steps in compost's mutation reference
 (`plugins/compost/skills/verify/references/mutation.md`) from `plugins/compost`, with
 `--paths scripts` and the plain `pytest` collecting contexts for every module `addopts` covers
-(`uv run --group dev python -m pytest -q -p no:cacheprovider --cov-context=test --cov-report=`).
+(`uv run --group dev python -m pytest -q -p no:cacheprovider --cov-context=test --cov-report= --cov-fail-under=0`).
 Covers compost's `scripts/` only; the other plugins, and compost's TypeScript hooks and workflows,
 get only `compost:build`'s walk by hand.
 

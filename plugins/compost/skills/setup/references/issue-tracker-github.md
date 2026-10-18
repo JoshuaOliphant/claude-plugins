@@ -1,26 +1,34 @@
 # Issue tracker: GitHub
 
-Specs, slices, and maps for this repo live as GitHub issues. Use the `gh` CLI for every operation;
-it infers the repo from `git remote -v` when run inside a clone.
+Specs, slices, and maps for this repo live as GitHub issues. Use `gh api` (GitHub's REST API) for
+every operation. Run inside a clone, it fills `{owner}/{repo}` from `git remote -v`. The porcelain
+commands (`gh issue view`, `list`, `create`, `comment`, `edit`, `close`, `gh pr view`) go through
+GraphQL, which Claude Code cloud sessions block with an HTTP 403; REST works there and locally.
 
 ## Commands
 
-- **Create:** `gh issue create --title "..." --label "..." --body-file -` with a heredoc body.
-- **Read:** `gh issue view <n> --comments`.
-- **List:** `gh issue list --state open --label <label> --json number,title,labels,assignees`.
-- **Comment:** `gh issue comment <n> --body "..."`.
-- **Labels:** `gh issue edit <n> --add-label "..."` / `--remove-label "..."`.
-- **Close:** `gh issue close <n> --comment "..."`.
-- **Sub-issue:** `gh api --method POST repos/<owner>/<repo>/issues/<parent>/sub_issues -F sub_issue_id=<child-db-id>`.
+- **Create:** `gh api repos/{owner}/{repo}/issues -f title="..." -f "labels[]=..." -F body=@-` with
+  a heredoc body on stdin. It prints the new issue's JSON; `--jq .number` keeps just the number.
+- **Read:** `gh api repos/{owner}/{repo}/issues/<n> --jq '.title, .state, .body'`, then
+  `gh api repos/{owner}/{repo}/issues/<n>/comments --paginate --jq '.[] | .user.login, .body'`.
+- **List:** `gh api "repos/{owner}/{repo}/issues?state=open&labels=<label>" --paginate --jq '.[] | select(.pull_request | not) | {number, title, labels: [.labels[].name], assignees: [.assignees[].login]}'`.
+  The issues endpoint returns pull requests too; the `select` drops them.
+- **Comment:** `gh api repos/{owner}/{repo}/issues/<n>/comments -F body=@-` with a heredoc body.
+- **Labels:** `gh api repos/{owner}/{repo}/issues/<n>/labels -f "labels[]=..."` to add,
+  `gh api -X DELETE repos/{owner}/{repo}/issues/<n>/labels/<label>` to remove.
+- **Close:** comment first, then
+  `gh api -X PATCH repos/{owner}/{repo}/issues/<n> -f state=closed -f state_reason=completed`
+  (`not_planned` for a won't-do).
+- **Sub-issue:** `gh api --method POST repos/{owner}/{repo}/issues/<parent>/sub_issues -F sub_issue_id=<child-db-id>`.
   Where sub-issues aren't enabled, add the child to a task list in the parent body and put
   `Part of #<parent>` at the top of the child.
-- **Blocking:** `gh api --method POST repos/<owner>/<repo>/issues/<n>/dependencies/blocked_by -F issue_id=<blocker-db-id>`.
+- **Blocking:** `gh api --method POST repos/{owner}/{repo}/issues/<n>/dependencies/blocked_by -F issue_id=<blocker-db-id>`.
   Always also write a `Blocked by #<n>` line in the body, so the edge is readable everywhere.
 - **Database id** (needed by the two calls above, not the `#number`):
-  `gh api repos/<owner>/<repo>/issues/<n> --jq .id`.
+  `gh api repos/{owner}/{repo}/issues/<n> --jq .id`.
 
-GitHub numbers issues and pull requests in one sequence, so a bare `#42` may be either: try
-`gh pr view 42` and fall back to `gh issue view 42`.
+GitHub numbers issues and pull requests in one sequence, so a bare `#42` may be either:
+`gh api repos/{owner}/{repo}/issues/42 --jq '.pull_request != null'` prints `true` for a pull request.
 
 ## Labels
 
@@ -33,7 +41,8 @@ GitHub numbers issues and pull requests in one sequence, so a bare `#42` may be 
 | Decision | `decision` | A decision sub-issue of a map |
 
 Edit the middle column if the repo already uses other names for these roles. `compost:setup`
-creates every label in the middle column that the repo lacks with `gh label create <name>`.
+creates every label in the middle column that the repo lacks with
+`gh api repos/{owner}/{repo}/labels -f name=<name>`.
 
 ## Records
 
@@ -50,6 +59,7 @@ Used by `compost:slice` for map issues.
 - **Frontier:** the map's open sub-issues with no open blocker
   (`issue_dependencies_summary.blocked_by` is 0, or every issue on the `Blocked by` line is
   closed) and no assignee; first in map order wins.
-- **Claim:** `gh issue edit <n> --add-assignee @me`, before any other work.
-- **Resolve:** `gh issue comment <n> --body "<answer>"`, `gh issue close <n>`, then add the gist
-  and link to the map's Decisions so far.
+- **Claim:** `gh api repos/{owner}/{repo}/issues/<n>/assignees -f "assignees[]=$(gh api user --jq .login)"`,
+  before any other work.
+- **Resolve:** comment the answer and close the issue (Commands above), then add the gist and link
+  to the map's Decisions so far.
