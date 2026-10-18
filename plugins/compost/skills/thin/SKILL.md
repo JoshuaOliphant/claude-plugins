@@ -37,8 +37,8 @@ hand decides.
 
    ```bash
    T=${TMPDIR:-/tmp}/thin && mkdir -p "$T"
-   pytest --cov=<package> --cov-context=test --cov-report= -p no:cacheprovider
-   coverage json --show-contexts -o "$T/contexts.json"
+   pytest --cov=<package> --cov-context=test --cov-report= --cov-fail-under=0 -p no:cacheprovider
+   coverage json --show-contexts --fail-under 0 -o "$T/contexts.json"
    uv run ${CLAUDE_PLUGIN_ROOT}/scripts/thin.py candidates "$T/contexts.json" > "$T/candidates.json"
    ```
 

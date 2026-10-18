@@ -36,8 +36,8 @@ from kills. From the directory pytest runs in:
 
 ```bash
 T=${TMPDIR:-/tmp}/mutation && mkdir -p "$T"
-pytest --cov=<package> --cov-context=test --cov-report= -p no:cacheprovider
-coverage json --show-contexts -o "$T/contexts.json"
+pytest --cov=<package> --cov-context=test --cov-report= --cov-fail-under=0 -p no:cacheprovider
+coverage json --show-contexts --fail-under 0 -o "$T/contexts.json"
 uv run --with cosmic-ray python ${CLAUDE_PLUGIN_ROOT}/scripts/thin.py survivors "$T/contexts.json" \
   --base "$base" --paths <source dirs> --pytest-args "-q -p no:cacheprovider --no-cov" > "$T/survivors.json"
 ```
@@ -49,7 +49,8 @@ changed lines made no mutant: comments only, or `--paths` misses the changed cod
 mutant that made the tests hang, such as a loop that never ends; sort it like a survivor. A crash
 broke the run outright, such as an annotation that no longer evaluates, and no test had to notice.
 `--paths` names source, never tests. `--no-cov` keeps a coverage gate in `addopts` from failing
-every run.
+every run, and the two `fail-under` 0 flags keep it from failing the collection: contexts are an
+input to mutation, not a gate, and one missed line would otherwise stop both steps.
 
 It runs cosmic-ray's operators only. `--operators all` adds thin's own, the breaks cosmic-ray never
 makes: a deleted statement or guard, a constant return, a dropped boolean term, a changed string, a
