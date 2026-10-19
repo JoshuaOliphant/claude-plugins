@@ -34,6 +34,12 @@ with review done by subagents every time, and records its rulings on the issue.
 | `retro` | After a run: file the environment changes that would have made the session go better |
 | `skill-drift` | Daily: turn repeated skill drift, judged by the `skill-drift` mod, into proposed skill fixes |
 
+compost targets Opus. Skill descriptions are tuned and measured on Opus 5.5, where `spec` picks up
+a bare feature request ("let users upload a photo with a caption") on its own. Sonnet 5.5 fires a
+skill when the ask names its job ("spec this out", "turn this into acceptance criteria", "prune
+the docs"), but takes a bare feature request as a request to write code, whatever the description
+says. On Sonnet, ask for the spec or run `/compost:spec`.
+
 `canon/` holds short essays on the ideas the skills lean on: tracer bullets, ubiquitous
 language, deep modules, seams, expand-contract, proving it works, core docs, and more. Skills link to the
 ones they use.
