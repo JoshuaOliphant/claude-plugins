@@ -1,0 +1,16 @@
+{
+ "task": "c7",
+ "green": false,
+ "new_failures": [
+  "tests/test_jev_meta.py::test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head",
+  "tests/test_jev_meta.py::test_gather_route_takes_one_prompt_or_many_and_needs_skills",
+  "tests/test_plugin.py::test_every_compost_reference_names_a_skill_workflow_or_agent",
+  "tests/test_plugin.py::test_pile_feeds_only_existing_skills_the_canon_or_mechanisms_and_notice_is_current",
+  "tests/test_plugin.py::test_plugin_root_paths_exist_and_scripts_are_executable",
+  "tests/test_plugin.py::test_relative_links_resolve[README.md]",
+  "tests/test_plugin.py::test_relative_links_resolve[canon/prove-it-works.md]"
+ ],
+ "changed": [
+  "Files /tmp/cross-module/tasks/c7/plugins/compost/scripts/jevtools/core.py and /tmp/cross-module/runs/enforced/c7/plugins/compost/scripts/jevtools/core.py differ"
+ ]
+}

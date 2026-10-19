@@ -1,0 +1,28 @@
+{
+ "task": "c3",
+ "green": false,
+ "new_failures": [
+  "tests/test_claude_config.py::test_a_malformed_marketplace_catalog_is_skipped_with_a_warning[entry-not-object]",
+  "tests/test_claude_config.py::test_a_malformed_marketplace_catalog_is_skipped_with_a_warning[entry-without-name]",
+  "tests/test_claude_config.py::test_a_malformed_marketplace_catalog_is_skipped_with_a_warning[no-plugins]",
+  "tests/test_claude_config.py::test_a_malformed_marketplace_catalog_is_skipped_with_a_warning[not-json]",
+  "tests/test_claude_config.py::test_a_malformed_marketplace_catalog_is_skipped_with_a_warning[not-utf8]",
+  "tests/test_claude_config.py::test_a_malformed_marketplace_catalog_is_skipped_with_a_warning[plugins-not-list]",
+  "tests/test_claude_config.py::test_a_malformed_marketplace_catalog_is_skipped_with_a_warning[top-level-list]",
+  "tests/test_claude_config.py::test_plugins_are_listed_only_when_a_plugin_is_asked_about",
+  "tests/test_claude_config.py::test_read_takes_enabled_and_synced_plugins_from_the_cli_and_skills_from_claude_dir",
+  "tests/test_jev_meta.py::test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head",
+  "tests/test_jev_meta.py::test_gather_route_takes_one_prompt_or_many_and_needs_skills",
+  "tests/test_plugin.py::test_every_compost_reference_names_a_skill_workflow_or_agent",
+  "tests/test_plugin.py::test_pile_feeds_only_existing_skills_the_canon_or_mechanisms_and_notice_is_current",
+  "tests/test_plugin.py::test_plugin_root_paths_exist_and_scripts_are_executable",
+  "tests/test_plugin.py::test_relative_links_resolve[README.md]",
+  "tests/test_plugin.py::test_relative_links_resolve[canon/prove-it-works.md]",
+  "tests/test_replaced.py::test_apply_creates_settings_and_skips_the_hand_note_when_nothing_is_synced",
+  "tests/test_replaced.py::test_apply_disables_plugins_merges_overrides_into_settings_and_uninstalls_orphans",
+  "tests/test_replaced.py::test_report_without_apply_changes_nothing"
+ ],
+ "changed": [
+  "Files /tmp/cross-module/tasks/c3/plugins/compost/scripts/claude_config.py and /tmp/cross-module/runs/enforced/c3/plugins/compost/scripts/claude_config.py differ"
+ ]
+}
