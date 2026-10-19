@@ -25,7 +25,7 @@ a quick lookup can answer.
    request's topic; each lesson that applies enters the spec as a constraint, an edge case, or a
    settled decision. Without the plugin, skip this step and say nothing about it.
    If the request already lives in an issue, thread, or doc that settles the decisions, synthesize
-   the spec from it without an interview: classify it (step 2), then skip to step 6.
+   the spec from it without an interview: classify it and deepen the ask (step 2), then skip to step 6.
 
 2. **Classify in one line, out loud,** so the user can override it. Ask Jev first: run `spec-class`
    with the request and what the survey found ([jev](references/jev.md)), state its `class` and its
@@ -41,6 +41,14 @@ a quick lookup can answer.
    found mid-spec upgrades the class, and nothing downgrades. If the request holds several
    independent subsystems, say so now and spec the first one; the rest become their own specs.
 
+   For Bounded and Architectural requests, then deepen the ask. Load `compost:deeper-ask`
+   ([deeper ask](../deeper-ask/SKILL.md)) now, answer its four questions (what a professional would
+   do, the rawest material, the methods and tools, what independent check would show the result
+   right), and show the answers before the first round. They go into the parent issue under Deeper
+   ask. Do this yourself, in this session, even when the interview is skipped or unattended, and a
+   subagent that writes the spec gets the four answers in its prompt. Your closing message to the
+   user lists the four answers again, one line each. Spikes skip it.
+
 3. **Spike: state the question and the probe, then run it.** Two or three sentences on what you
    will try, then find out as cheaply as correctness allows, usually with a throwaway prototype
    ([prototype](references/prototype.md)). Report the answer as a recommendation. Anything you
@@ -55,6 +63,9 @@ a quick lookup can answer.
    ranks them by how much the answer changes what gets built and returns the `round` to ask and the
    ones to `assume` ([jev](references/jev.md)). Exit 3: cut by the rules in
    [questions](references/questions.md).
+
+   When the deeper ask ran, its adoption question joins the first round and its outcome becomes a
+   bullet in the refined prompt.
 
    Gaps too small to be worth a question become assumptions: pick the conservative reading, list
    it, and keep going. The user corrects assumptions by reading the spec.
@@ -117,6 +128,7 @@ a quick lookup can answer.
    - Describe behavior and decisions, never file paths or code: both go stale within days. The
      exception is a prototype snippet that pins a decision more precisely than prose can (a state
      machine, a schema, a type shape), trimmed to the decision and marked as from the prototype.
+   - When the deeper ask ran, the Deeper ask section holds its four answers, and at least one AC-N names the independent check from the fourth.
    - Name the seams the tests will use: prefer existing ones, the highest one that works, and as
      few as possible ([seams](../../canon/seams.md)).
 
@@ -158,6 +170,7 @@ a quick lookup can answer.
 
 ## Next moves
 
+- `compost:deeper-ask` on its own when you want a request made deeper, not bigger, before any spec.
 - `compost:slice` when the parent issue is posted (and approved, for architectural work) and the
   work spans more than one tracer bullet.
 - `compost:build` when bounded work fits in one issue: the parent issue carries its own criteria.

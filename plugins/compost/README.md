@@ -23,6 +23,7 @@ with review done by subagents every time, and records its rulings on the issue.
 | `review` | After verify, always: `/compost:review-changes` plus the harness's built-in code review, then weigh the findings |
 | `finish` | Integrate: re-run on the merge target, PR recap, clean up |
 | `diagnose` | Any bug or failing test, before a fix |
+| `deeper-ask` | A request made deeper, not bigger: what an expert would do, the rawest material, the tools, the independent check (spec runs it; you can too) |
 | `deepen` | Module and interface design, refactoring for testability |
 | `prune` | Docs that drifted from the code: move what's worth keeping into the code, keep only the core docs |
 | `thin` | Tests no mutant needs: find them with a kill matrix, confirm each by hand, fold or delete |
