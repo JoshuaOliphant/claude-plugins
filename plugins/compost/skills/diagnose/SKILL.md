@@ -37,6 +37,14 @@ comes first, the theory second, and the fix last, at the root. The why is in
    bisection, differential, human-driven script), then tighten it: faster, sharper assertion, more deterministic. If you catch
    yourself forming a theory before this command exists, stop and go back to building it.
 
+   **Show the red before the first edit.** Run the command and put its failing output where the user
+   will see it (your reply, the issue, the PR, or the run transcript) before you edit any file the check does not itself
+   own. The output must show the user's symptom, not a neighbouring failure. A check you have only
+   read, reasoned about, or run against something else, such as inspecting an SDK's fields or a
+   function's signature, is not a red check. With no test suite in the tree, write the check as a
+   throwaway script or a new test; the check is the one file you may add before this proof exists.
+   No red output on record, no edit.
+
    If you truly cannot build one, say so, list what you tried, and ask for one of: access to an
    environment that reproduces it, a captured artifact (log dump, HAR, core dump, timestamped screen
    recording), or permission to add temporary instrumentation in production. Do not hypothesise
@@ -112,6 +120,7 @@ comes first, the theory second, and the fix last, at the root. The why is in
    approved spec, bring it to the user; that is an architectural approval.
 
 9. **Clean up and record.** Before calling it done:
+   - The red output from step 2 is on record, and the same command now passes.
    - The original loop no longer reproduces the bug.
    - The regression test passes, or the missing seam is written down.
    - `grep` for your debug prefix returns nothing; throwaway harnesses are deleted.
