@@ -38,7 +38,7 @@ comes first, the theory second, and the fix last, at the root. The why is in
    yourself forming a theory before this command exists, stop and go back to building it.
 
    **Show the red before the first edit.** Run the command and put its failing output where the user
-   will see it (your reply, the issue, or the PR) before you edit any file the check does not itself
+   will see it (your reply, the issue, the PR, or the run transcript) before you edit any file the check does not itself
    own. The output must show the user's symptom, not a neighbouring failure. A check you have only
    read, reasoned about, or run against something else, such as inspecting an SDK's fields or a
    function's signature, is not a red check. With no test suite in the tree, write the check as a
