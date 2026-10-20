@@ -1,5 +1,6 @@
 # ABOUTME: Checks the plugin as shipped: frontmatter, links, compost:<name> and ${CLAUDE_PLUGIN_ROOT} references,
 # ABOUTME: pile.toml feeds and NOTICE, and that git tracks every shipped file. Runs on the real files.
+import itertools
 import os
 import re
 import subprocess
@@ -121,7 +122,9 @@ AGENT_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
 
 def test_lane_routing_table_names_only_models_and_efforts_the_agent_tool_takes():
     table = (PLUGIN_ROOT / "skills" / "implement" / "references" / "lane-routing.md").read_text()
-    lines = [line.strip() for line in table.splitlines() if line.startswith("|")]
-    rows = [[cell.strip() for cell in line.strip("|").split("|")] for line in lines[2:]]
-    assert rows, "no routing rows found; the table moved or lost its rows"
-    assert [row for row in rows if row[-2] not in AGENT_MODELS or row[-1] not in AGENT_EFFORTS] == []
+    cells = [[cell.strip() for cell in line.strip().strip("|").split("|")] for line in table.splitlines()]
+    start = next(i for i, row in enumerate(cells) if "Model" in row and "Effort" in row)
+    model, effort = cells[start].index("Model"), cells[start].index("Effort")
+    rows = list(itertools.takewhile(lambda row: len(row) > 1, cells[start + 2 :]))
+    assert rows, "the routing table has no rows"
+    assert [row for row in rows if row[model] not in AGENT_MODELS or row[effort] not in AGENT_EFFORTS] == []

@@ -13,23 +13,21 @@ The table becomes the default only once an A/B on a real implement run shows tie
 without drawing more review findings
 ([#138](https://github.com/JoshuaOliphant/claude-plugins/issues/138)).
 
-## Starting the run
+## Spawning
 
-Post the mode on the parent issue before the first spawn ("Lane routing: tiered" or "Lane routing:
-control"). A run resumed after `compost:pause` reads it there, since the original ask does not
-carry over to a new session. In either mode, spawn every lane as a plain subagent, a lone lane
-included, instead of building it in this session, so every lane has a worker and a token count and
-the two runs split the work the same way.
+In either mode, spawn every lane as a plain subagent, a lone lane included, and never as a
+teammate. Every lane then has a worker and a token count, and the two runs split the work the same
+way.
 
 ## Table
 
-Tier 1 is the cheapest. A lane takes the tier of its hardest issue; how many issues the lane holds
-does not raise it.
+Tier 1 is the cheapest. Tier 2 is every issue that no other tier describes. A lane takes the tier
+of its hardest issue; how many issues it holds does not raise it.
 
 | Tier | Issue | Model | Effort |
 |---|---|---|---|
 | 1 | Mechanical: doc text, copied files, labels, a config value; no new behavior and no test to design | haiku | low |
-| 2 | Given/When/Then criteria and an Interfaces block, inside one module | sonnet | medium |
+| 2 | Criteria that settle every design call, including a bug whose cause is known | sonnet | medium |
 | 3 | Criteria that leave a design call, or a bug with an unknown cause | opus | high |
 | 4 | Crosses bounded contexts, or changes an interface other lanes consume | opus | xhigh |
 
@@ -43,25 +41,24 @@ costs a review round and a respawn.
 - **Review.** `/compost:review-changes` and its reviewers and skeptics keep their own settings.
   Review findings are what the A/B measures tiering against, so review must not differ between
   the two runs.
+- **A resumed worker.** Fixing review findings resumes the same worker, on its tier.
 
 ## Escalation
 
-Fixing review findings resumes the same worker, on its tier. A lane moves to the next tier number,
-respawned from its own branch with the brief and any open findings verbatim, when:
-
-- it reports BLOCKED; that is the "more capable model" option in
-  [handling the report](task-brief.md#handling-the-report). NEEDS_CONTEXT gets context, not a
-  bigger model.
-- a second review round on tier 1 or 2 still finds blockers.
-
-Post each escalation as a ruling on the issue, naming the tier it left and the tier it moved to. A
-tier 4 lane has no tier above it: take the other options in handling the report (more context, a
-smaller issue, a ruling).
+A lane that reports BLOCKED respawns one tier up, as the "more capable model" option in
+[handling the report](task-brief.md#handling-the-report); post that as a ruling naming both tiers.
+Tier 3 to 4 keeps the model and raises only effort, so pair it with more context or a ruling, as
+that section requires. A tier 4 lane has no tier above it: take the other options there.
+NEEDS_CONTEXT gets context, not a higher tier.
 
 ## Record for the A/B
 
-When an issue passes review, add its lane's line to the step 7 comment: the tier it ran on (or
-"inherited" in a control run), any escalation, the lane's total tokens, and the blocker and major
-review findings it drew. The total sums every worker invocation for the lane as the harness
-reported it: the first spawn, any respawn, and every resume for review fixes. The close-out recap's
-Validation section lists those lines, so a tiered run and its control compare line by line.
+When a lane's last issue passes review, post one line for the lane on the parent issue: its
+issues, the tier it ran on (or "inherited" in a control run), any escalation, its total tokens, and
+the blocker and major review findings it drew. The total sums every worker invocation for the lane
+as the harness reported it: the first spawn, any respawn, and every resume for review fixes.
+
+When the run pauses, the `compost:pause` status comment names the mode and each unfinished lane's
+tier and tokens so far; the resumed run carries both on and adds to the totals. The close-out
+recap's Validation section lists every lane's line, so a tiered run and its control compare line
+by line.
