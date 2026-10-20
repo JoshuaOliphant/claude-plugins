@@ -40,8 +40,8 @@ the work so each step can be checked before the next builds on it
    pushing this branch, and opening the draft PR need no one's OK; merging it does.
 
 4. **Work the frontier.**
-   - **One issue, or one lane, outside a lane-routing run:** do it yourself in this session. Load `compost:build`, then
-     `compost:verify`. A subagent for a single issue only adds a handoff.
+   - **One issue, or one lane, outside a lane-routing run:** do it yourself in this session. Load
+     `compost:build`, then `compost:verify`. A subagent for a single issue only adds a handoff.
    - **Several independent issues or lanes:** spawn one subagent per lane in a single message, so
      the lanes run in parallel, each with `isolation: "worktree"` and in the background, without
      asking. A lane of one issue is just that issue; a worker with a longer lane works its issues
@@ -55,9 +55,10 @@ the work so each step can be checked before the next builds on it
      rulings that touch it. Size the brief to the issue; a one-file change gets a paragraph.
    - Leave `model` and `effort` unset on every spawn, so each lane inherits yours. A lane-routing
      run is the exception: this run's ask is to tier the lanes by model or to run the untiered
-     control a tiered run is compared against, or the `compost:pause` comment it resumes from
-     names one of those modes. Then [references/lane-routing.md](references/lane-routing.md)
-     decides how every lane spawns, a lone lane included.
+     control a tiered run is compared against, or the parent's latest "Lane routing:" comment
+     names one of those modes rather than "ended". Then
+     [references/lane-routing.md](references/lane-routing.md) decides how every lane spawns, a
+     lone lane included.
    - Keep a rolling window, not batches: when one worker finishes, spawn whatever its landing
      unblocked right away instead of waiting for the slowest sibling.
 
