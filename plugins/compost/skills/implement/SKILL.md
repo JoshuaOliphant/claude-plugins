@@ -53,6 +53,9 @@ the work so each step can be checked before the next builds on it
    - Write each brief from [references/task-brief.md](references/task-brief.md): the issue, its
      acceptance criteria, its Interfaces block, the `CONTEXT.md` terms it uses, and pointers to any
      rulings that touch it. Size the brief to the issue; a one-file change gets a paragraph.
+   - Leave `model` and `effort` unset on every spawn, so each lane inherits yours. Only when the
+     user's ask for this run says to tier the lanes by model, or to run the untiered control that a
+     tiered run is compared against, follow [references/lane-routing.md](references/lane-routing.md).
    - Keep a rolling window, not batches: when one worker finishes, spawn whatever its landing
      unblocked right away instead of waiting for the slowest sibling.
 
@@ -128,9 +131,10 @@ the work so each step can be checked before the next builds on it
 10. **Close out.** When the frontier is empty and every sub-issue is ticked, run `compost:verify` on
     the whole feature branch, push, and hand off through `compost:finish`, whose recap is Goal,
     Decisions, Changes, Validation, Risk. The Decisions section lists every ruling comment, each with
-    its cost if wrong. Without a PR, report the feature branch by name, since no PR link points to
-    it, and leave the parent open: `compost:finish` closes it once the branch merges. Clean up
-    worker worktrees whose branches are merged into the feature branch.
+    its cost if wrong. A tiered or control run adds its per-lane record to Validation. Without a
+    PR, report the feature branch by name, since no PR link points to it, and leave the parent
+    open: `compost:finish` closes it once the branch merges. Clean up worker worktrees whose
+    branches are merged into the feature branch.
 
 For a run that outlives the session, `compost:pause` writes the checkpoint and resuming starts at
 step 1.
