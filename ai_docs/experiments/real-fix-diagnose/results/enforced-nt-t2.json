@@ -1,0 +1,10 @@
+{
+ "task": "t2",
+ "green": true,
+ "hidden_failures": [],
+ "regressions": [],
+ "changed": [
+  "Files /tmp/real-fix-diagnose/pristine/t2/plugins/compost/scripts/skill_drift.py and /tmp/real-fix-diagnose/runs/enforced-nt/t2/plugins/compost/scripts/skill_drift.py differ",
+  "Only in /tmp/real-fix-diagnose/pristine/t2/plugins/compost: tests"
+ ]
+}

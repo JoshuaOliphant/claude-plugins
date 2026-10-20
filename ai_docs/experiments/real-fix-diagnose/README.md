@@ -71,3 +71,36 @@ here, and for these bugs it did not change the order of work.
 Caveats: the symptoms name the failing behavior closely, so reading the code finds the cause without a repro; this is
 why the skipped step did no harm. The process measure is a heuristic over transcripts (a command that mutates and
 exercises in one call counts as an edit). Per-run grades are in `results/skill-nt-t*.json` and `results/base-nt-t*.json`.
+
+## No-tests variant with the current skill text (#171, rerun 2026-10-20)
+
+The table above ran against the skill before step 2 gained "Show the red before the first edit" (`7848916`,
+validated on seeded bugs in `../diagnose-enforce-red-check`). Rerun: the same ten no-tests tasks, a fresh Sonnet 5.5
+subagent per task, briefs unchanged (`ARMS=enforced build_notests.py`), the skill as it is on main. Old-text and
+no-skill rows are from the table above.
+
+| | skill (old text) | no skill | skill (current text) |
+|---|---|---|---|
+| hidden tests green | 9/10 | 9/10 | 9/10 |
+| failing check run on the reported symptom before the first edit | 1/10 | 0/10 | 9/10 |
+| tool calls per task (mean) | 9.4 | 6.9 | 10.1 |
+| tokens per task (mean) | 75.2k | 69.6k | 66.7k |
+
+- Red-before-edit is read by hand from the transcripts. `repro_before_edit.py` reports 5/10 because it misses checks
+  written as a heredoc script; the by-hand reading finds red output on the symptom before the first edit in t1, t2, t3,
+  t4, t5, t7, t8, t9, t10. The exception is t6: it edited `stop_guard.py` at its fourth call and wrote its check
+  afterwards, and its report says the "show the red first" step was skipped. It was green anyway.
+- t9's red is the status command itself printing "jev ready" with a key and a bad proxy, which is the report's symptom.
+  In the other eight the red is the agent's own throwaway script.
+- The one red cell is t10 again, in all three arms: the fix swaps the shared cache for one that stores nothing, and the
+  hidden test wants a fresh per-run cache. That agent did build a red check first (a second run answered from cache);
+  the check was right about the bug and silent about the design. The same two `test_jev_meta` ids fail in t3 in every
+  arm; they need a git checkout and are environmental.
+- Cost: about 3 more tool calls per task than no skill. Token counts are the harness's per-subagent totals and are not
+  comparable to within a few thousand; the skill arm was not more expensive in tokens this time.
+
+Caveats: n=10 and one run per cell. The briefs name the skill file, so this measures compliance when the skill is read,
+not whether it fires. The symptoms are specific enough that reading finds the cause, so outcome stays at the ceiling in
+every arm and cannot separate them. t1, t7 and t8 picked the same scratch directory and ran in parallel, so one removed
+another's files; their trees were unaffected, but their intermediate outputs are not independent. Per-run grades are in
+`results/enforced-nt-t*.json`.
