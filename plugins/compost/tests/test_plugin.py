@@ -114,14 +114,14 @@ def test_git_ignores_no_shipped_file():
     assert [path for path in ignored if path and not LOCAL_ONLY & set(path.split("/"))] == []
 
 
-# The values the Agent tool takes for `model` and `effort`; a lane spawn with any other value fails.
+# The Agent tool's `model` and `effort` enums; a lane spawn with any other value is rejected.
 AGENT_MODELS = {"haiku", "sonnet", "opus", "fable"}
 AGENT_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
-ROUTING_ROW = re.compile(r"^\|(?!---)[^|]+\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|$", re.MULTILINE)
 
 
 def test_lane_routing_table_names_only_models_and_efforts_the_agent_tool_takes():
     table = (PLUGIN_ROOT / "skills" / "implement" / "references" / "lane-routing.md").read_text()
-    rows = [row for row in ROUTING_ROW.findall(table) if row != ("Model", "Effort")]
-    assert rows, "no routing rows found; ROUTING_ROW no longer matches the table"
-    assert [row for row in rows if row[0] not in AGENT_MODELS or row[1] not in AGENT_EFFORTS] == []
+    lines = [line.strip() for line in table.splitlines() if line.startswith("|")]
+    rows = [[cell.strip() for cell in line.strip("|").split("|")] for line in lines[2:]]
+    assert rows, "no routing rows found; the table moved or lost its rows"
+    assert [row for row in rows if row[-2] not in AGENT_MODELS or row[-1] not in AGENT_EFFORTS] == []
