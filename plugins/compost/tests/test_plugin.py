@@ -115,7 +115,8 @@ def test_git_ignores_no_shipped_file():
     assert [path for path in ignored if path and not LOCAL_ONLY & set(path.split("/"))] == []
 
 
-# The Agent tool's `model` and `effort` enums; a lane spawn with any other value is rejected.
+# The Agent tool's `model` and `effort` enums, copied from Claude Code's Agent tool schema on 2026-10-20
+# (AGENTS.md lists the same model aliases); a lane spawn with any other value is rejected.
 AGENT_MODELS = {"haiku", "sonnet", "opus", "fable"}
 AGENT_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
 
@@ -128,4 +129,6 @@ def test_lane_routing_table_names_only_models_and_efforts_the_agent_tool_takes()
     model, effort = cells[start].index("Model"), cells[start].index("Effort")
     rows = list(itertools.takewhile(lambda row: len(row) > 1, cells[start + 2 :]))
     assert rows, "the routing table has no rows"
+    short = [row for row in rows if len(row) <= max(model, effort)]
+    assert short == [], "routing rows with fewer cells than the header"
     assert [row for row in rows if row[model] not in AGENT_MODELS or row[effort] not in AGENT_EFFORTS] == []

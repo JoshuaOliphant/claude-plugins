@@ -15,9 +15,14 @@ without drawing more review findings
 
 ## Starting and ending the run
 
-Before the first spawn, post "Lane routing: tiered" or "Lane routing: control" on the parent issue,
-so a run picked up in a new session, paused or not, keeps the mode. At close-out, post "Lane
-routing: ended", so a later run on the same parent goes back to the default.
+Before the first spawn, post "Lane routing: tiered on `<feature branch>`" (or "control on") on the
+parent issue, so a run picked up in a new session, paused or not, keeps the mode. At close-out,
+post "Lane routing: ended".
+
+A run whose own ask names no mode but finds a live marker (the parent's latest "Lane routing:"
+comment, not "ended") keeps the mode only when it continues that marker's feature branch and the
+branch is unmerged. Otherwise the marker is left over from a run that never reached close-out:
+post "Lane routing: ended" and run with the default.
 
 In either mode, spawn every lane as a plain subagent the way step 4 spawns parallel lanes
 (`isolation: "worktree"`, in the background), a lone lane included, and never as a teammate. Every
@@ -64,8 +69,9 @@ tier.
 When a lane finishes, whether its issues passed review or step 6 parked findings, post one line for
 it on the parent issue: its issues, the tier it ran on (or "inherited" in a control run), any
 escalation, its total tokens, and the blocker and major review findings it drew. The total sums
-every worker invocation for the lane as the harness reported it: the first spawn, any respawn, and
-every resume for review fixes. A lane whose worker was stopped by a pause or a lost session has no
+every worker invocation for the lane: the first spawn, any respawn, and every resume for review
+fixes, each read from the token usage in that worker's completion notice, so both runs count the
+same number. A lane whose worker was stopped by a pause or a lost session has no
 reported count for that worker: mark its total "incomplete", and leave it out of the token
 comparison.
 

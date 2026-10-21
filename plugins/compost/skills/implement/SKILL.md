@@ -53,12 +53,12 @@ the work so each step can be checked before the next builds on it
    - Write each brief from [references/task-brief.md](references/task-brief.md): the issue, its
      acceptance criteria, its Interfaces block, the `CONTEXT.md` terms it uses, and pointers to any
      rulings that touch it. Size the brief to the issue; a one-file change gets a paragraph.
-   - Leave `model` and `effort` unset on every spawn, so each lane inherits yours. A lane-routing
-     run is the exception: this run's ask is to tier the lanes by model or to run the untiered
-     control a tiered run is compared against, or the parent's latest "Lane routing:" comment
-     names one of those modes rather than "ended". Then
+   - Leave `model` and `effort` unset on every spawn, so each lane inherits yours, except in a
+     lane-routing run. A run is one when its ask is to tier the lanes by model or to run the
+     untiered control a tiered run is compared against, or when the parent's latest "Lane
+     routing:" comment is not "ended". In a lane-routing run,
      [references/lane-routing.md](references/lane-routing.md) decides how every lane spawns, a
-     lone lane included.
+     lone lane included, and whether a leftover marker still applies.
    - Keep a rolling window, not batches: when one worker finishes, spawn whatever its landing
      unblocked right away instead of waiting for the slowest sibling.
 
