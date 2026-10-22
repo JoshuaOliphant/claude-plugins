@@ -55,7 +55,7 @@ transcript and counts commands that exercised the code before the first edit to 
 
 | | skill | no skill |
 |---|---|---|
-| hidden tests green | 9/10 | 9/10 |
+| hidden tests green (8/10 raw; see below) | 9/10 | 9/10 |
 | ran something that exercised the bug before editing | 1/10 | 0/10 |
 | tool calls per task (mean) | 9.4 | 6.9 |
 | tokens per task (mean) | 75.2k | 69.6k |
@@ -81,18 +81,21 @@ no-skill rows are from the table above.
 
 | | skill (old text) | no skill | skill (current text) |
 |---|---|---|---|
-| hidden tests green | 9/10 | 9/10 | 9/10 |
+| hidden tests green (8/10 raw; see below) | 9/10 | 9/10 | 9/10 |
 | failing check run on the reported symptom before the first edit | 1/10 | 0/10 | 9/10 |
 | tool calls per task (mean) | 9.4 | 6.9 | 10.1 |
 | tokens per task (mean) | 75.2k | 69.6k | 66.7k |
 
-- Red-before-edit is read by hand from the transcripts. `repro_before_edit.py` reports 5/10 because it misses checks
-  written as a heredoc script; the by-hand reading finds red output on the symptom before the first edit in t1, t2, t3,
+- Green counts: the raw `green` flag in `results/*-nt-t*.json` is true for 8/10 in every arm, false for t3 and t10. The
+  9/10 headline treats t3 as a pass because its two failing ids (below) fail identically in all three arms and need a git
+  checkout the task trees lack; t10 is the only real miss.
+- Red-before-edit is read by hand from the transcripts (9/10); the script `repro_before_edit.py` reports 5/10 because it
+  misses checks written as a heredoc script. The by-hand reading finds red output on the symptom before the first edit in t1, t2, t3,
   t4, t5, t7, t8, t9, t10. The exception is t6: it edited `stop_guard.py` at its fourth call and wrote its check
   afterwards, and its report says the "show the red first" step was skipped. It was green anyway.
 - t9's red is the status command itself printing "jev ready" with a key and a bad proxy, which is the report's symptom.
   In the other eight the red is the agent's own throwaway script.
-- The one red cell is t10 again, in all three arms: the fix swaps the shared cache for one that stores nothing, and the
+- The one real miss is t10 again, in all three arms: the fix swaps the shared cache for one that stores nothing, and the
   hidden test wants a fresh per-run cache. That agent did build a red check first (a second run answered from cache);
   the check was right about the bug and silent about the design. The same two `test_jev_meta` ids fail in t3 in every
   arm; they need a git checkout and are environmental.
