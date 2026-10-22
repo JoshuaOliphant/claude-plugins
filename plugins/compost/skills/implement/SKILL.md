@@ -40,8 +40,8 @@ the work so each step can be checked before the next builds on it
    pushing this branch, and opening the draft PR need no one's OK; merging it does.
 
 4. **Work the frontier.**
-   - **One issue, or one lane:** do it yourself in this session. Load `compost:build`, then
-     `compost:verify`. A subagent for a single issue only adds a handoff.
+   - **One issue, or one lane, outside a lane-routing run:** do it yourself in this session. Load
+     `compost:build`, then `compost:verify`. A subagent for a single issue only adds a handoff.
    - **Several independent issues or lanes:** spawn one subagent per lane in a single message, so
      the lanes run in parallel, each with `isolation: "worktree"` and in the background, without
      asking. A lane of one issue is just that issue; a worker with a longer lane works its issues
@@ -53,6 +53,12 @@ the work so each step can be checked before the next builds on it
    - Write each brief from [references/task-brief.md](references/task-brief.md): the issue, its
      acceptance criteria, its Interfaces block, the `CONTEXT.md` terms it uses, and pointers to any
      rulings that touch it. Size the brief to the issue; a one-file change gets a paragraph.
+   - Leave `model` and `effort` unset on every spawn, so each lane inherits yours, except in a
+     lane-routing run. A run is one when its ask is to tier the lanes by model or to run the
+     untiered control a tiered run is compared against, or when the parent's latest "Lane
+     routing:" comment is not "ended". In a lane-routing run,
+     [references/lane-routing.md](references/lane-routing.md) decides how every lane spawns, a
+     lone lane included, and whether a leftover marker still applies.
    - Keep a rolling window, not batches: when one worker finishes, spawn whatever its landing
      unblocked right away instead of waiting for the slowest sibling.
 
@@ -128,9 +134,10 @@ the work so each step can be checked before the next builds on it
 10. **Close out.** When the frontier is empty and every sub-issue is ticked, run `compost:verify` on
     the whole feature branch, push, and hand off through `compost:finish`, whose recap is Goal,
     Decisions, Changes, Validation, Risk. The Decisions section lists every ruling comment, each with
-    its cost if wrong. Without a PR, report the feature branch by name, since no PR link points to
-    it, and leave the parent open: `compost:finish` closes it once the branch merges. Clean up
-    worker worktrees whose branches are merged into the feature branch.
+    its cost if wrong. A lane-routing run lists its per-lane records in Validation. Without a
+    PR, report the feature branch by name, since no PR link points to it, and leave the parent
+    open: `compost:finish` closes it once the branch merges. Clean up worker worktrees whose
+    branches are merged into the feature branch.
 
 For a run that outlives the session, `compost:pause` writes the checkpoint and resuming starts at
 step 1.
