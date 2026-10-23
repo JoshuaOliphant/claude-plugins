@@ -1,0 +1,10 @@
+{
+ "task": "t6",
+ "green": true,
+ "hidden_failures": [],
+ "regressions": [],
+ "changed": [
+  "Files /tmp/real-fix-diagnose/pristine/t6/plugins/compost/scripts/stop_guard.py and /tmp/real-fix-diagnose/runs/enforced-nt/t6/plugins/compost/scripts/stop_guard.py differ",
+  "Only in /tmp/real-fix-diagnose/pristine/t6/plugins/compost: tests"
+ ]
+}
