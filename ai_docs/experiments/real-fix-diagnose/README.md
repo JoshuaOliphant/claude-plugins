@@ -90,8 +90,8 @@ no-skill rows are from the table above.
   9/10 headline treats t3 as a pass because its two failing ids (below) fail identically in all three arms and need a git
   checkout the task trees lack; t10 is the only real miss.
 - Red-before-edit is read by hand from the transcripts (9/10); the script `repro_before_edit.py` reports 5/10 because it
-  misses checks written as a heredoc script. The by-hand reading finds red output on the symptom before the first edit in t1, t2, t3,
-  t4, t5, t7, t8, t9, t10. The exception is t6: it edited `stop_guard.py` at its fourth call and wrote its check
+  misses checks written as a heredoc script. The by-hand reading finds red output on the symptom before the first edit
+  in t1, t2, t3, t4, t5, t7, t8, t9, t10. The exception is t6: it edited `stop_guard.py` at its fourth call and wrote its check
   afterwards, and its report says the "show the red first" step was skipped. It was green anyway.
 - t9's red is the status command itself printing "jev ready" with a key and a bad proxy, which is the report's symptom.
   In the other eight the red is the agent's own throwaway script.
