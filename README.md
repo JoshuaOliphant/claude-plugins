@@ -15,7 +15,7 @@ workflows.
 
 ## Available Plugins
 
-Six plugins, grouped by focus. Current versions live in
+Eight plugins, grouped by focus. Current versions live in
 [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) and each plugin's
 `plugin.json` (the source of truth) — they are intentionally not duplicated here so this
 list can't drift.
@@ -50,6 +50,14 @@ Process information for *real* understanding — an antidote to the illusion of 
 `explain-back` skill makes you explain from memory, grades you against the real source,
 teaches struggle-then-teach per gap, and outputs Mochi cards plus a resumable session
 record.
+
+#### learn-harness
+
+Turn a Claude project or a folder into a learning harness for one subject, adapted from
+[learnharness](https://github.com/amosblomqvist/learnharness). Lesson sessions probe your edge,
+plan a minimal path, and teach one checked reasoning step at a time; Practice sessions train
+retrieval with a hint ladder; Field sessions grade an artifact you produce against a rubric
+committed before you start. See [plugins/learn-harness](plugins/learn-harness/README.md).
 
 ### Software development
 
