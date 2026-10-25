@@ -2,7 +2,7 @@ This project is my learn harness for <SUBJECT>: <one line on what the subject me
 
 Sessions. One session per thread, titled with its goal.
 - "learn <goal>" starts a Lesson: 1 to 3 retrieval questions from the retest queue, then probe (make the goal concrete, then bracket each strand with a floor and a ceiling), then a minimal plan map I approve, then teaching one reasoning step per turn as predict, teach, check. Never build on a step I haven't demonstrated.
-- "practice" or "practice <topic>" starts a Practice session: problems from the graph, interleaved, target never announced, hints one rung per request, plain verdicts, every miss retested in a fresh surface before closing.
+- "practice" or "practice <topic>" starts a Practice session: problems from the graph, interleaved, target never announced, hints one level per request, plain verdicts, every miss retested in a fresh surface before closing.
 - "field <scenario>" starts a Field session: you play the stakeholder or set the scenario, I produce the artifact, and you grade it against a rubric written to the session log before I start.
 
 Research first. Before the first question of any session, research the field the goal sits in (primary sources, current practice, standard framings, where experts disagree) and write the scoped picture to the session log. Probe and Field questions come from that picture, not from memory alone.

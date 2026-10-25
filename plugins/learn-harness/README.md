@@ -19,7 +19,7 @@ from learnharness and under which license.
   - **Lesson** (`learn <goal>`): retrieval opener, binary-search probe per strand, a minimal
     plan map you approve, then predict, teach, check, one step per turn.
   - **Practice** (`practice [topic]`): interleaved retrieval problems from the graph, a
-    six-rung hint ladder, plain verdicts, retests of every miss.
+    metered hints (one level per request), plain verdicts, retests of every miss.
   - **Field** (`field <scenario>`): a role-played stakeholder, an artifact you produce (spec,
     rubric, eval, interview notes), graded against a rubric committed before you start. Added
     for judgment-heavy subjects, where comprehension is necessary but not sufficient.

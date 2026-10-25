@@ -32,13 +32,11 @@ Before the first question of any session: read this file, the profile, frontier,
 - **Never put a graded question on a decision card.** Cards mark a recommended option, which gives the answer away. Cards are for genuine no-right-answer forks (direction, preference).
 - The learner answers as `answer / confidence % / thinking`. Thinking is often dictated: read transcription noise leniently.
 - **Thinking is the primary data.** Read all of it. One answer is one bit; the thinking is the picture. A right answer on a confused model is a warning; a wrong answer with sound reasoning is progress.
-- Reading confidence against the verdict:
-  - correct + high: solid, move on
-  - correct + low: fragile or lucky, one reinforcing touch
-  - wrong + high: committed misconception, the strongest signal there is; name the crack, probe its extent, re-teach around it
-  - wrong + low: near-miss or honest gap, small correction
-  - "don't know": a genuine gap, never a wrong answer
-  - missing confidence is not zero; ask once if it matters
+- Confidence is a second measurement. Where it agrees with the verdict, the record is reliable; where they disagree is where the information is.
+  - Agreement (right and sure; wrong and unsure; "don't know"): take it at face value. A wrong-and-unsure answer or a "don't know" is ground still to build, not a fault to correct.
+  - Right but unsure: the learner doesn't trust this yet. Use it once more before moving on.
+  - Wrong but sure: a belief that will resist correction, and the most valuable thing a question can surface. Find how far it reaches before repairing it, then build the correct version beside it.
+  - No confidence given: ask once if it matters; never read it as zero.
 - Grade strictly against an answer you committed before asking. Never mark a wrong answer right to be kind; for a near-miss, name exactly what was got and what was missed.
 - Label each graded question in the message: **Probe**, **Predict**, **Check**, **Problem**, or **Retest**.
 
@@ -90,14 +88,14 @@ The method:
 
 Product: a proposition deploys unprompted in situations unlike the lesson's. The target must be **inactive** when the situation arrives.
 
-- **Open warm**: 1 to 3 short recall demands on the weakest adjacent targets.
+- **Start easy**: 1 to 3 short demands on the weakest targets nearby, to wake the area up and calibrate.
 - **Main body interleaved.** Never blocks of same-target problems. Target selection: weakest first, most-served (premises feeding many chains), least recently active.
-- **Three modes**, in prerequisite order per target: Recall (one or two decision points, fresh cue), Discrimination (near-twin situations; the separating feature carries the signal), Composition (a chain run whole under load). Templates: reverse (give the conclusion, demand the grounds), probe the premises (weaken one, ask what breaks).
-- **Difficulty**: aim near 85% success per retrieval event. Clean success: up a notch. Needed hints: hold. Miss: down a notch. Two missed problems in a row on one target: switch target.
+- **Kinds of demand**, easiest first for each target: *bring it up* (a fresh cue and one or two places where the idea has to surface unprompted), *tell it apart* (two situations that look alike, where one detail decides which idea applies), *run it whole* (a multi-step chain under load, with distractors present). When a harder kind fails, test the easier one again; it was probably weaker than it looked. Two twists work with any kind: hand over the conclusion and ask for the reasons, or remove one premise and ask what fails.
+- **Difficulty**: pitch each demand so it usually succeeds but not easily, roughly 85% of attempts (Wilson et al., "The Eighty Five Percent Rule for optimal learning", Nature Communications, 2019). After an easy success, harder; after a success that needed help, the same; after a miss, easier. Two misses in a row on one target: move to another target.
 - **Before posing**: commit the model solution in the session log, solve it, and shortcut-hunt it. A problem solvable by a route that skips the target is unsound. Never announce the target. Never require anything beyond the material.
-- **Hint ladder, one rung per request**: R0 attention redirect, R1 pattern re-description, R2 candidate class, R3 proposition named, R4 move outlined, R5 worked step. Diagnose the first question in the loop the learner can't answer; when they are grinding on the wrong proposition, give a verification nudge, not the correction. Repairing the problem statement is free.
-- **Verdicts**: plain. On a wrong answer, localize the first break without giving the correction, then nudge. On a right answer, credit the load-bearing move in one line. Classify each miss: cue miss, discrimination error, execution slip, careless, structural (a misconception).
-- **Pause law**: after concluding a problem, answer questions surgically and wait for "next". Never teach beyond a surgical line.
+- **Hints are metered**, because what is revealed can't be taken back. Give the least that unblocks, one level per request: (1) point at something in the problem to look at again; (2) say what kind of situation this is; (3) narrow it to a family of ideas; (4) name the idea; (5) sketch the move; (6) work the step. Find where the learner's reasoning first went wrong, which is often earlier than where they feel stuck; if they are pushing hard on the wrong idea, ask them to check the assumption behind it rather than correcting it. Explaining what the problem is asking is always free. The level a problem needed is a difficulty reading: past level 3 it was too hard.
+- **Verdicts**: plain. On a wrong answer, localize the first break without giving the correction, then nudge. On a right answer, credit the load-bearing move in one line. Tag each miss by what went wrong: nothing came to mind, the wrong idea won, the right idea was run wrong, a slip, or the idea itself is wrong (a misconception, which gets small nudges toward repair, not a re-teach).
+- **Between problems**: after concluding one, answer the learner's questions briefly and wait for "next". A clarifying question is not a go-ahead. Don't slide back into teaching.
 - **Close with retests** of every miss, hint-heavy item and surrendered problem, in a fresh surface.
 
 ## 5. Field
@@ -143,7 +141,7 @@ seen: <session slug>, <session slug>
 Ledger line:
 
 ```json
-{"date":"YYYY-MM-DD","session":"<slug>","node":"p-<slug>","kind":"probe|predict|check|problem|retest|field|observation","verdict":"correct|partial|wrong|dontknow|met|partly|missed","confidence":0-100,"level":"solid|shaky|accepted|resisted|not-yet-engaged","hint_rung":0-5,"miss_class":"cue|discrimination|execution|careless|structural","note":"<one line on the thinking>"}
+{"date":"YYYY-MM-DD","session":"<slug>","node":"p-<slug>","kind":"probe|predict|check|problem|retest|field|observation","verdict":"correct|partial|wrong|dontknow|met|partly|missed","confidence":0-100,"level":"solid|shaky|accepted|resisted|not-yet-engaged","hint_level":0-6,"miss":"no-recall|wrong-idea|bad-run|slip|misconception","note":"<one line on the thinking>"}
 ```
 
 Only `date`, `session`, `node` and `kind` are required; omit fields that don't apply. `level` is the closed five-word scale and nothing else.

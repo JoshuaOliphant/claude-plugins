@@ -7,9 +7,8 @@ and the teacher, prober and practice prompts in src/agent/prompts/ (the
 probe as binary search, the minimal tree, predict / teach / check, the
 practice doctrine's modes, difficulty band and hint ladder, and the
 graph-versus-ledger split). skills/learn-session/references/doctrine.md
-restates these ideas in new, compressed wording. No learnharness code is
-included. Some lists (the hint ladder rungs, the confidence-reading cases,
-the three practice modes) keep the source's structure and labels.
+restates these ideas in this plugin's own wording, structure and labels.
+No learnharness code or prompt text is included.
 
 The Field session type, the record templates and the setup skill are new
 to this plugin.
