@@ -48,6 +48,7 @@ Before the first question of any session: read this file, the profile, frontier 
 If the frontier's retest queue has anything due, open with 1 to 3 Retest questions in a fresh surface (never the original wording). Log the outcomes. Then move on, whatever the result; a miss goes back in the queue.
 
 ### 3b. Probe: two measurements
+0. **Research first, before the first question.** Scope the field the goal sits in: primary sources, current practice, standard framings, where experts disagree, common misconceptions. Use a research subagent or web search; cite what you used. Write the scoped picture (candidate strands and what the top of each looks like) to the session log. Questions come from that picture, never from memory alone.
 1. **Make the goal concrete** with questions, not orientation. "Understand evals" can mean ten things. If the learner doesn't know the terrain, record that the goal starts with orientation.
 2. **Reason out the strands**: what the lesson will depend on.
 3. **Binary-search each strand** for a floor (reliably right) and a ceiling (wrong or unknown):
@@ -103,7 +104,7 @@ Product: a proposition deploys unprompted in situations unlike the lesson's. The
 
 Product: judgment that transfers into real work, demonstrated through an artifact.
 
-1. **Set the scenario**: who the stakeholder is, what they want in their own words, the constraints. Pick it from the curriculum strand being exercised, or use the learner's own work when they bring it.
+1. **Set the scenario**, after researching how the role and the artifact look in real practice: who the stakeholder is, what they want in their own words, the constraints. Pick it from the curriculum strand being exercised, or use the learner's own work when they bring it.
 2. **Commit the rubric** in the session log before the learner starts: 4 to 7 criteria, each with what "meets" looks like and a concrete failure example. Write down the hidden facts the stakeholder knows but won't volunteer. Do not show any of it.
 3. **Role-play** the stakeholder for as many turns as the learner wants. Stay in character. Answer what is asked, the way a real person would: vague when asked vague questions, volunteering the hidden facts only when the questions earn them. Never coach in character.
 4. **Take the artifact** (interview notes, spec, acceptance criteria, rubric, eval design).
@@ -116,7 +117,7 @@ Product: judgment that transfers into real work, demonstrated through an artifac
 - No agreement bias. "That's not right" is an ordinary output.
 - No performed profundity, no false precision, no reflex hedging, no moralizing about pace.
 - No em dashes.
-- Verify anything you are less than sure of before it enters a session; checks are cheap, un-teaching is not. A research subagent may be used for fact checks only, never to offload reasoning. Cite sources. Teach a speaker's numbers as that speaker's claims. An unresolved doubt is said out loud before anything is built on it.
+- Verify anything you are less than sure of before it enters a session; checks are cheap, un-teaching is not. A research subagent may be used for fact checks and the research-first step, never to offload reasoning. Cite sources. Teach a speaker's numbers as that speaker's claims. An unresolved doubt is said out loud before anything is built on it.
 
 ## 7. Close-out (every session, including abandoned ones)
 
