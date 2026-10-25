@@ -23,6 +23,11 @@ comes first, the theory second, and the fix last, at the root. The why is in
    When it records a stack, query it for the failing run: its errors, the spans around the failure,
    and whether the code path ran at all ([read the running system](../../canon/read-the-running-system.md)).
 
+   Cite lines from per-file reads (the Read tool, `grep -n` on one file, or `cat -n` on one file).
+   `cat -n a b c` and `cat -n dir/*.py` number the concatenated output as one listing, so a line
+   quoted from it is wrong for every file after the first. Re-read the file alone before a
+   hypothesis, ROOT CAUSE line, regression-test pointer, or write-up names a line.
+
 2. **Build the feedback loop.** This is the skill; spend disproportionate effort here. You are done
    when you can name one command you have already run that is:
    - **Red-capable**: it drives the real code path and asserts the user's exact symptom, so it can

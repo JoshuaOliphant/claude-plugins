@@ -75,7 +75,7 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    it, then push it as far down this ladder as is cheap:
    1. Asserted: you said so. Worth nothing on its own.
    2. Cited: you pointed at the `file:line`, in this repo or in the library's source at the pinned
-      version.
+      version, with the line read from that file alone (`cat -n a b c` numbers across files).
    3. Walked: you traced the bad case step by step and showed it cannot happen.
    4. Ran: a script or test calls the real code and fails loudly if the fact is false.
    5. Reproduced live: the running app shows it. Use the bundled `/run` to start and drive it.
