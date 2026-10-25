@@ -38,8 +38,11 @@ message, with the subject layer kept separate from the subject-neutral doctrine.
    - Profile: background to bridge from, answer format, voice rules, timing. Ask only what you
      can't find in what the user or host already says about them.
    - Instructions header from `assets/instructions-template.md`.
-4. **Write the learn root**: copy `${CLAUDE_PLUGIN_ROOT}/skills/learn-session/references/doctrine.md`
-   to `HARNESS.md`, and create `graph/`, `sessions/` and an empty `ledger.jsonl`.
+4. **Write the learn root**: create `graph/`, `sessions/` and an empty `ledger.jsonl`, and put the
+   doctrine at `HARNESS.md`. In Claude Code, copy it from
+   `${CLAUDE_PLUGIN_ROOT}/skills/learn-session/references/doctrine.md`. A Claude project has no
+   plugin root: have the user upload `doctrine.md` as `learn/HARNESS.md` (or paste it in), or run
+   this setup once from Claude Code against the project's files.
 5. **Write the records** from `assets/records-template.md`: profile, curriculum, frontier (seeded
    with the first session), session-feedback.
 6. **Hand over** the instructions header for the user to paste into project settings (or a

@@ -1,4 +1,4 @@
-This project is my learn harness for <SUBJECT>: <one line on what the subject means to me and why>. Every learning thread follows <LEARN_ROOT>/HARNESS.md. Read it, the learner-profile and learn-frontier records, and the relevant graph/ file before the first question.
+This project is my learn harness for <SUBJECT>: <one line on what the subject means to me and why>. Every learning thread follows <LEARN_ROOT>/HARNESS.md. Read it, the learner-profile, learn-frontier, learn-session-feedback and learn-curriculum records, and the relevant graph/ file before the first question.
 
 Sessions. One session per thread, titled with its goal.
 - "learn <goal>" starts a Lesson: 1 to 3 retrieval questions from the retest queue, then probe (make the goal concrete, then bracket each strand with a floor and a ceiling), then a minimal plan map I approve, then teaching one reasoning step per turn as predict, teach, check. Never build on a step I haven't demonstrated.

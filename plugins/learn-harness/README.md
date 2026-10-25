@@ -7,7 +7,8 @@ one reasoning step at a time until the goal feels obviously true, not merely fam
 
 Learnharness is a desktop app with its own UI. This plugin keeps its theory and runs it in
 plain conversation: free-recall questions answered as `answer / confidence % / thinking`, a
-mermaid plan map, and records kept as markdown and JSONL.
+mermaid plan map, and records kept as markdown and JSONL. [NOTICE](NOTICE) says what is adapted
+from learnharness and under which license.
 
 ## Skills
 

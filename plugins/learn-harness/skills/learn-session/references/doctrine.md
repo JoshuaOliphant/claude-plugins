@@ -23,7 +23,7 @@ One session per thread or conversation, titled with its goal.
 | Practice | "practice" / "practice <topic>" | Availability: held propositions come to mind unprompted |
 | Field | "field <scenario>" | Judgment: an artifact that meets a rubric |
 
-Before the first question of any session: read this file, the profile, frontier and session-feedback records, and the `graph/` files relevant to the goal. Create `sessions/<YYYY-MM-DD>-<slug>.md` from the session log template and keep it current as you go.
+Before the first question of any session: read this file, the profile, frontier, session-feedback and curriculum records, and the `graph/` files relevant to the goal. Create `sessions/<YYYY-MM-DD>-<slug>.md` from the session log template and keep it current as you go.
 
 ## 2. Questions and answers (all session types)
 

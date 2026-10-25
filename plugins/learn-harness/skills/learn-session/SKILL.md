@@ -31,8 +31,8 @@ updated so the next session starts where this one ended.
    the working directory. No learn root: offer `learn-harness:learn-setup` and stop.
 2. **Read the doctrine.** Prefer the project's `HARNESS.md` (it may carry local edits); fall back
    to `references/doctrine.md`. Read all of it.
-3. **Read the records**: profile, frontier, session-feedback, curriculum (memory or files, per the
-   doctrine's Records paragraph), plus the `graph/` files relevant to the goal.
+3. **Read the records**: profile, frontier, session-feedback and curriculum (memory or files, per
+   the doctrine's Records paragraph), plus the `graph/` files relevant to the goal.
 4. **Pick the session type** from the request: Lesson, Practice or Field (doctrine section 1).
    Ambiguous: start a Lesson and say so.
 5. **Open the session log** from `assets/session-log-template.md` at

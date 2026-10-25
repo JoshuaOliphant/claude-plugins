@@ -1,0 +1,15 @@
+learn-harness adapts the learning method of learnharness
+(https://github.com/amosblomqvist/learnharness), copyright its authors,
+licensed under the GNU Affero General Public License v3.0.
+
+What is adapted: the theory in learnharness's docs/teaching-methodology.md
+and the teacher, prober and practice prompts in src/agent/prompts/ (the
+probe as binary search, the minimal tree, predict / teach / check, the
+practice doctrine's modes, difficulty band and hint ladder, and the
+graph-versus-ledger split). skills/learn-session/references/doctrine.md
+restates these ideas in new, compressed wording. No learnharness code is
+included. Some lists (the hint ladder rungs, the confidence-reading cases,
+the three practice modes) keep the source's structure and labels.
+
+The Field session type, the record templates and the setup skill are new
+to this plugin.
