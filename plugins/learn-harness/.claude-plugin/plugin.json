@@ -1,0 +1,19 @@
+{
+  "name": "learn-harness",
+  "version": "0.1.0",
+  "description": "Turn a Claude project or a folder into a learning harness for one subject. Lesson sessions probe your edge, plan a minimal dependency tree, and teach one checked reasoning step at a time; Practice sessions train retrieval with a hint ladder; Field sessions grade an artifact you produce against a pre-committed rubric. A knowledge graph, an append-only ledger and a frontier record carry it across sessions. Adapted from learnharness.",
+  "license": "MIT",
+  "author": {
+    "name": "Joshua Oliphant"
+  },
+  "homepage": "https://github.com/joshuaoliphant/claude-plugins",
+  "repository": "https://github.com/joshuaoliphant/claude-plugins",
+  "keywords": [
+    "learning",
+    "teaching",
+    "deliberate-practice",
+    "retrieval-practice",
+    "knowledge-graph",
+    "claude-projects"
+  ]
+}
