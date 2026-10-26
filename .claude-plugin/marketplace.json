@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Claude Code plugins by Joshua Oliphant for productivity and learning workflows",
-    "version": "1.2.0"
+    "version": "1.3.0"
   },
   "plugins": [
     {
@@ -142,6 +142,25 @@
         "mcp"
       ],
       "category": "development",
+      "license": "MIT"
+    },
+    {
+      "name": "learn-harness",
+      "source": "./plugins/learn-harness",
+      "description": "Turn a Claude project or a folder into a learning harness for one subject. Lesson sessions probe your edge, plan a minimal dependency tree, and teach one checked reasoning step at a time; Practice sessions train retrieval with a hint ladder; Field sessions grade an artifact you produce against a pre-committed rubric. A knowledge graph, an append-only ledger and a frontier record carry it across sessions. Adapted from learnharness.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Joshua Oliphant"
+      },
+      "keywords": [
+        "learning",
+        "teaching",
+        "deliberate-practice",
+        "retrieval-practice",
+        "knowledge-graph",
+        "claude-projects"
+      ],
+      "category": "productivity",
       "license": "MIT"
     }
   ]

@@ -12,6 +12,7 @@ own vocabulary; the marketplace itself (catalog, versions, shared artifacts, CI)
 | mochi-creator | `plugins/mochi-creator/CONTEXT.md` | flashcards, decks, and prompt quality |
 | observability-harness | `plugins/observability-harness/CONTEXT.md` | local OTLP telemetry: traces, metrics, logs |
 | understand | `plugins/understand/CONTEXT.md` | explain-back sessions and graded recall |
+| learn-harness | `plugins/learn-harness/CONTEXT.md` | Lesson, Practice and Field sessions; the graph, ledger and frontier |
 | superfan | `plugins/superfan/CONTEXT.md` | scheduled per-component watchers, findings, and verdicts |
 
 A glossary listed here but missing on disk has no settled terms yet; `compost:spec` creates it
@@ -26,3 +27,5 @@ when the first one settles.
   hands back to `compost:setup`.
 - mochi-creator and understand share `prompt_design_principles.md`; compound-knowledge and
   understand share `config_loader.py`. The canonical copies live in `scripts/shared/`.
+- understand and learn-harness both teach: explain-back grades one explanation of one source;
+  learn-harness runs a subject across many sessions with a persistent graph and ledger.
