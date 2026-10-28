@@ -370,12 +370,13 @@ MESSAGE_WAITS = Noul(
 MESSAGE_ALLOWED = Noul(
     instructions=(
         "Is what `message` waits on one of `allowed_stops`? Answer yes when it waits on the user's go-ahead for "
-        "an action of that kind the agent is about to take itself (merging, deploying or releasing, sending or "
-        "posting something a person will read), even when that ask closes a long report. Answer no when it "
+        "an action of that kind the agent is about to take itself (merging, deploying or releasing, sending an "
+        "email or chat post, or commenting on someone else's issue or pull request), even when that ask closes a "
+        "long report. Answer no when it "
         "waits on nothing, or on anything else: a design or library choice (including how the code it builds "
         "should deploy or send messages), a policy, "
-        "which option or approach to take, permission to commit, push a feature branch, file an issue in the "
-        "run's own tracker, or keep going."
+        "which option or approach to take, permission to commit, push a feature branch, file an issue or comment "
+        "on the run's own issues or pull request, or keep going."
     )
 )
 

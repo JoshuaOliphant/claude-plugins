@@ -161,6 +161,21 @@ test('a dotted beads id or a cross-project GitLab issue is fetched and graded as
     assert.match(prompts['Spec reviewer'], new RegExp(`Spec source: ${id.replace(/[.#/]/g, '\\$&')}\\n`))
     assert.deepEqual(result.spec.survivors.map(f => f.claim), [BLOCKER.claim])
   }
+
+  const sibling = { ...SCOPE, spec: { ...SCOPE.spec, source: 'bd-a1b2.4', id: 'bd-a1b2.4' } }
+  const refused = await run({ issue: 'bd-a1b2.3' }, reviewers({ scope: sibling }))
+  assert.equal(refused.result.spec.status, 'failed: issue bd-a1b2.3 could not be fetched: the scoping agent fetched bd-a1b2.4 instead')
+  assert.equal(refused.prompts['Spec reviewer'], undefined)
+})
+
+test('an issue given as a "#42" string matches a fetched 42 and refuses a fetched 43', async () => {
+  const fetched = id => ({ ...SCOPE, spec: { ...SCOPE.spec, source: `#${id}`, id } })
+  const matched = await run({ issue: '#42' }, reviewers({ scope: fetched('42') }))
+  assert.equal(matched.result.specSource, '#42')
+  assert.ok(matched.prompts['Spec reviewer'], 'the Spec reviewer runs')
+
+  const swapped = await run({ issue: '#42' }, reviewers({ scope: fetched('43') }))
+  assert.equal(swapped.result.spec.status, 'failed: issue #42 could not be fetched: the scoping agent fetched #43 instead')
 })
 
 test('without an issue, the spec source is what scope found, and a missing spec skips the Spec axis', async () => {
