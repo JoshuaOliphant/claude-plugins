@@ -124,6 +124,7 @@ no test counts until you have seen it fail for the right reason.
 
 10. **Mutate the code in your head.** For each realistic mutation, name the test that fails:
     - a wrong constant, argument, or comparison (`>` for `>=`)
+    - wiring: an argument dropped or swapped, a stdout/stderr hookup, the wrong signal sent
     - the wrong branch taken
     - a missing state change or side effect
     - an empty or default return
