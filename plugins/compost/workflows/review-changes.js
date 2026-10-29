@@ -350,8 +350,9 @@ const light = !forceFull
   && lineCount <= LIGHT_MAX_CHANGED_LINES
   && risk.structural === false
 
-const FILE_LINE = /[\w./-]+:\d+/
-const specAcIds = [...new Set(String(scope.spec.text || '').match(/\bAC-\d+\b/g) || [])]
+const FILE_LINE = /[\w./-]+(:|#L)\d+/
+const specAcs = [...new Set(String(scope.spec.text || '').match(/\bAC-\d+\b/g) || [])]
+  .map(id => ({ id, named: new RegExp(`\\b${id}\\b`) }))
 
 // Returns why the reviewer's record of what it checked falls short, or '' when it holds.
 function uncheckedReason(axis, review) {
@@ -362,7 +363,9 @@ function uncheckedReason(axis, review) {
   const cited = entries.filter(entry => entry && FILE_LINE.test(String(entry.at || '')))
   if (cited.length === 0) return 'the reviewer cited no file:line for anything it checked'
   if (axis.name !== 'Spec') return ''
-  const unmapped = specAcIds.filter(id => !cited.some(entry => new RegExp(`\\b${id}\\b`).test(String(entry.item || ''))))
+  // An AC-N with no code behind it, or one a later comment dropped, has no line to cite; naming it is enough.
+  const named = [...entries.map(entry => entry && entry.item), ...review.findings.map(f => `${f.claim} ${f.evidence}`)].map(String)
+  const unmapped = specAcs.filter(ac => !named.some(text => ac.named.test(text))).map(ac => ac.id)
   return unmapped.length ? `the reviewer did not map ${unmapped.join(', ')} to the code` : ''
 }
 
@@ -372,8 +375,8 @@ async function settleAxis(review, axis) {
     return { axis: axis.name, status: 'skipped: no spec found', complete: true, survivors: [], refuted: [], unjudged: [] }
   }
   if (!review) return failedAxis(axis.name, 'the reviewer did not return')
+  // A failed record fails the axis but keeps its findings: losing a real blocker is worse than a skimpy review.
   const unchecked = uncheckedReason(axis, review)
-  if (unchecked) return failedAxis(axis.name, unchecked)
   const serious = review.findings.filter(worthSkeptic)
   const unverified = review.findings
     .filter(finding => !worthSkeptic(finding))
@@ -385,8 +388,10 @@ async function settleAxis(review, axis) {
   if (unjudged.length > 0) log(`${axis.name}: ${unjudged.length} findings have no skeptic verdict`)
   return {
     axis: axis.name,
-    status: `${light ? 'reviewed (light)' : 'reviewed'}: ${review.findings.length} findings raised, ${unverified.length} left unverified`,
-    complete: true,
+    status: unchecked
+      ? `failed: ${unchecked}`
+      : `${light ? 'reviewed (light)' : 'reviewed'}: ${review.findings.length} findings raised, ${unverified.length} left unverified`,
+    complete: !unchecked,
     checked: review.checked,
     survivors: [
       ...withVerdict('survived').map(j => ({ ...j.finding, upheldBecause: j.reasons, failedVotes: j.failed })),

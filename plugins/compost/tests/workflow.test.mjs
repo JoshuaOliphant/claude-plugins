@@ -313,12 +313,16 @@ test('a reviewer that returns no findings and no record of what it checked fails
     assert.equal(result.problem, 'Spec failed: the reviewer returned no findings and no record of what it checked')
     assert.match(result.summary, /Spec: failed: the reviewer returned no findings and no record/)
   }
-  const { result } = await run({ issue: 7 }, reviewers({ standards: { findings: [MINOR] } }))
+  const { result, prompts } = await run({ issue: 7 }, reviewers({ standards: { findings: [BLOCKER, MINOR] } }))
   assert.equal(result.standards.status, 'failed: the reviewer did not say what it checked')
   assert.equal(result.complete, false)
+  assert.deepEqual(result.standards.survivors.map(f => f.claim), [BLOCKER.claim, MINOR.claim], 'findings from an unchecked review are kept')
+  assert.ok(prompts['Standards skeptic 1.1'], 'and still go to a skeptic')
 })
 
 test('a record of what was checked counts only where it cites a file:line', async () => {
+  const anchored = await run({ issue: 7 }, reviewers({ standards: { findings: [], checked: [{ item: 'CLAUDE.md rules', at: 'CLAUDE.md#L4' }] } }))
+  assert.equal(anchored.result.standards.complete, true, 'a file#L anchor is a file:line')
   const uncited = [{ item: 'read CLAUDE.md', at: 'CLAUDE.md' }, { item: 'ran the greps', at: '' }]
   const { result } = await run({ issue: 7 }, reviewers({ standards: { findings: [], checked: uncited } }))
   assert.equal(result.standards.status, 'failed: the reviewer cited no file:line for anything it checked')
@@ -351,10 +355,14 @@ test('a clean Spec review maps every AC-N in the spec, and one that leaves an AC
   assert.deepEqual(mapped.result.spec.checked.map(entry => entry.item.split(' ')[0]), ['AC-1', 'AC-2', 'AC-10'])
   assert.match(mapped.prompts['Spec reviewer'], /one entry per AC-N/)
 
-  const uncitedAc2 = { item: 'AC-2 looks fine', at: 'tests' }
-  const gaps = await run({ issue: 7 }, reviewers({ scope, spec: { findings: [], checked: [all[0], uncitedAc2] } }))
+  const gaps = await run({ issue: 7 }, reviewers({ scope, spec: { findings: [], checked: [all[0]] } }))
   assert.equal(gaps.result.spec.status, 'failed: the reviewer did not map AC-2, AC-10 to the code')
   assert.equal(gaps.result.complete, false)
+
+  const missingAc2 = { file: 'app/export.py', line: null, severity: 'blocker', claim: 'AC-2 has no code or test', evidence: 'AC-2 at #7' }
+  const dropped = { item: 'AC-10 dropped in a later comment on #7', at: '' }
+  const named = await run({ issue: 7 }, reviewers({ scope, spec: { findings: [missingAc2], checked: [all[0], dropped] } }))
+  assert.equal(named.result.spec.complete, true, 'an AC-N named by a finding or an uncited entry is mapped')
 
   const prefixOnly = await run({ issue: 7 }, reviewers({ scope, spec: { findings: [], checked: all.slice(1) } }))
   assert.equal(prefixOnly.result.spec.status, 'failed: the reviewer did not map AC-1 to the code', 'AC-10 does not map AC-1')
