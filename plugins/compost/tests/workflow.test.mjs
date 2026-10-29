@@ -364,6 +364,10 @@ test('a clean Spec review maps every AC-N in the spec, and one that leaves an AC
   const named = await run({ issue: 7 }, reviewers({ scope, spec: { findings: [missingAc2], checked: [all[0], all[2]] } }))
   assert.equal(named.result.spec.complete, true, 'an AC-N with no line to cite is mapped by the finding that names it')
 
+  const inPassing = { ...BLOCKER, claim: 'CSV is not escaped', evidence: 'AC-2 at #7; app/export.py:12' }
+  const incidental = await run({ issue: 7 }, reviewers({ scope, spec: { findings: [inPassing], checked: [all[0], all[2]] } }))
+  assert.equal(incidental.result.spec.status, 'failed: the reviewer did not map AC-2 to the code', 'an AC-N quoted only in evidence is not mapped')
+
   const prefixOnly = await run({ issue: 7 }, reviewers({ scope, spec: { findings: [], checked: all.slice(1) } }))
   assert.equal(prefixOnly.result.spec.status, 'failed: the reviewer did not map AC-1 to the code', 'AC-10 does not map AC-1')
 })
