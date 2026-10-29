@@ -760,7 +760,7 @@ def test_main_survivors_lists_an_untested_change_and_exits_1(toy_repo, tmp_path,
     assert {row["line"] for row in result["survivors"]} == {4}
     assert result["score"] == 0.0
     assert all(row.keys() == {"module", "line", "operator", "occurrence", "mutated"} for row in result["survivors"])
-    assert not any(row["operator"].startswith(thin.OWN) for row in result["survivors"])  # stock unless asked
+    assert any(row["operator"].startswith(thin.OWN) for row in result["survivors"])  # thin's own unless stock
     texts = {row["mutated"] for row in result["survivors"]}
     assert {"return age > 13", "return age < 14", "return age < 12"} <= texts and "return age < 13" not in texts
     assert "age.py:4" in out.err
@@ -781,9 +781,9 @@ def test_main_survivors_lists_string_survivors_apart_with_thins_operators(toy_re
     (tmp_path / "age.py").write_text("def adult(age):\n    return age >= 18\nLABEL = 'adult'\n")
     (tmp_path / "ctx.json").write_text(json.dumps(toy))
     args = ["survivors", "ctx.json", "--base", base, "--paths", "age.py", "--pytest-args", " ".join(PYTEST)]
-    assert thin.main(args) == 3
+    assert thin.main([*args, "--operators", "stock"]) == 3
     capsys.readouterr()
-    assert thin.main([*args, "--operators", "all"]) == 0
+    assert thin.main(args) == 0
     result = json.loads(capsys.readouterr().out)
     assert result["survived"] == 0 and result["survivors"] == []
     assert [row["mutated"] for row in result["survived_strings"]] == ["LABEL = ('XX')"]
