@@ -17,7 +17,7 @@ IGNORE = shutil.ignore_patterns(
 )
 
 sys.path.insert(0, str(SRC / "scripts"))
-import thin
+import thin  # noqa: E402
 
 
 def failing(tree: Path, *paths: str) -> list[str]:

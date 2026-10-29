@@ -16,7 +16,7 @@ KEEP = re.compile(
 )
 
 sys.path.insert(0, str(SRC / "scripts"))
-import thin
+import thin  # noqa: E402
 
 helper, caller = sys.argv[1], sys.argv[2]
 name = f"{Path(helper).stem}__{Path(caller).stem}"
