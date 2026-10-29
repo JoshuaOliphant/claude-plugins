@@ -1,0 +1,29 @@
+You are building one task for a debugging benchmark. Work only inside /tmp/author/L9/ . Python 3.13, stdlib only (the interpreter /home/user/pt-venv/bin/python also has pytest). No network.
+
+GOAL
+Write a realistic Python application with ONE seeded bug whose cause is NOT found by reading the code near the symptom. A strong coding agent will be given only the app tree (no tests) and a user-visible symptom, and must find and fix the root cause. We want to measure whether a "build a failing repro first" discipline helps, so the bug must be one where skimming files does not point at the cause, while a repro that observes the real runtime state, data, or environment does.
+
+YOUR BUG CLASS: aliasing through shared mutable state across a serialization boundary
+
+REQUIRED STRUCTURE (under /tmp/author/L9/)
+- tree/       the app the agent will receive. At least 15 Python modules and at least 1500 lines of Python in total, organised like a real app (domain models, services, adapters, utils, a small CLI or entry module, sample data files where natural). It must run with the stdlib alone. Entry points named in the symptom must exist and work.
+- hidden/tests/   pytest tests that grade the fix. Run from the tree root as: cd tree && cp -r ../hidden/tests tests && /home/user/pt-venv/bin/python -m pytest tests -q. They must be red on the buggy tree and green after the reference fix, deterministic (no wall-clock timing; use counters, barriers, subprocesses with env set, fixed dates), fast (under 20 s), and fix-agnostic: they assert the user-visible behaviour, never a specific implementation, file or function the fix must touch.
+- symptom.txt   what a user reported: 1 to 3 sentences, observable effect only. It may name a public entry point or give an example input and wrong output. It must NOT name the faulty module, function, or mechanism and must not say what kind of bug it is.
+- reference_fix.py   a script `python reference_fix.py <tree_dir>` that edits the tree in place to apply one correct fix (use exact-string replacement with an assertion that the old text is present).
+- NOTES.md   one paragraph: where the cause lives, why a reader of the symptom's code path would not see it, and the decoys you planted.
+
+REALISM AND DECOYS
+- Do not mark the bug: no comments, names, docstrings, or commit-style hints that point at it. Write the cause the way a well-meaning engineer would have.
+- Plant at least four DECOYS: other places in the tree that use the same idiom or look equally suspicious (other caches, other globals, other set iterations, other timezone-naive calls, ...) but are correct or irrelevant to the symptom. A grep for the idiom must return several hits, only one of which is the cause.
+- The cause must sit at least two call hops (or in a data file, config file, database file, or import-time side effect) away from the function the symptom names.
+- The tree must be self-consistent: all modules import cleanly, the CLI/entry points run, and the non-buggy behaviour is correct. Do not leave stub modules; every module should do real work and most should be reachable from the entry points.
+- Do not create .git, and do not put the tests or any fix hint inside tree/. Delete __pycache__ dirs and scratch files before you finish.
+
+VALIDATION YOU MUST DO BEFORE FINISHING
+1. Copy tree to a temp dir, add hidden/tests as tests/, run pytest: it must FAIL (state the failing test names).
+2. Copy tree again, run reference_fix.py on it, add tests, run pytest: it must PASS.
+3. wc -l the Python files and confirm the size requirement.
+Report in your final message: line count, module count, the failing test names before the fix, and that the fix made them pass. If validation fails, fix your task until it passes.
+
+BUG-CLASS DETAILS
+Objects built from defaults share a mutable (a class attribute list/dict, a shallow copy of nested defaults, a dataclass default_factory that returns a module-level object, a 'reset' that rebinds instead of clearing) so state from one request/job leaks into later ones, but only for inputs that exercise the nested part. Symptom: 'a customer saw another customer's items on their summary', appearing only after certain earlier requests. Tests replay a request sequence in one process and assert isolation.

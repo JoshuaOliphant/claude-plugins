@@ -1,0 +1,5 @@
+origin,destination,zone
+DE,DE,domestic
+DE,AT,EU1
+DE,NL,EU1
+DE,FR,EU2

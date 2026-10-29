@@ -1,0 +1,29 @@
+{
+ "items": [
+  {
+   "id": "NOVA-0021",
+   "posted": "2026-10-13",
+   "amount": "-39.18",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "CITY TRANSIT"
+  },
+  {
+   "id": "NOVA-0022",
+   "posted": "2026-10-15",
+   "amount": "-9.83",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "PHONE BILL"
+  },
+  {
+   "id": "NOVA-0023",
+   "posted": "2026-10-17",
+   "amount": "-83.40",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "RESTAURANT LUNA"
+  }
+ ],
+ "next": null
+}

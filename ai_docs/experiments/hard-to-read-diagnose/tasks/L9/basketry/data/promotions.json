@@ -1,0 +1,12 @@
+{
+  "coupons": [
+    {"code": "WELCOME10", "kind": "percent", "value": 1000, "min_subtotal_cents": 0, "categories": []},
+    {"code": "TEATIME", "kind": "percent", "value": 1500, "min_subtotal_cents": 2000, "categories": ["pantry", "kitchen"]},
+    {"code": "WARMUP", "kind": "fixed", "value": 1000, "min_subtotal_cents": 6000, "categories": ["apparel"]},
+    {"code": "WRITE5", "kind": "fixed", "value": 500, "min_subtotal_cents": 3000, "categories": ["stationery"]}
+  ],
+  "bulk": [
+    {"category": "pantry", "min_quantity": 4, "discount_bps": 1000},
+    {"category": "games", "min_quantity": 3, "discount_bps": 500}
+  ]
+}

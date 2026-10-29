@@ -1,0 +1,53 @@
+{
+ "items": [
+  {
+   "id": "ACME-0121",
+   "posted": "2026-10-18",
+   "amount": "-301.15",
+   "currency": "EUR",
+   "account": "acme:4411",
+   "memo": "TAXI SERVICE"
+  },
+  {
+   "id": "ACME-0122",
+   "posted": "2026-10-18",
+   "amount": "409.20",
+   "currency": "CHF",
+   "account": "acme:4411",
+   "memo": "PAYROLL TRANSFER"
+  },
+  {
+   "id": "ACME-0123",
+   "posted": "2026-10-19",
+   "amount": "-165.02",
+   "currency": "USD",
+   "account": "acme:4411",
+   "memo": "SOFTWARE SUBSCRIPTION"
+  },
+  {
+   "id": "ACME-0124",
+   "posted": "2026-10-19",
+   "amount": "242.74",
+   "currency": "CHF",
+   "account": "acme:4419",
+   "memo": "PARKING GARAGE"
+  },
+  {
+   "id": "ACME-0125",
+   "posted": "2026-10-20",
+   "amount": "-350.39",
+   "currency": "EUR",
+   "account": "acme:4411",
+   "memo": "CITY TRANSIT"
+  },
+  {
+   "id": "ACME-0126",
+   "posted": "2026-10-20",
+   "amount": "-442.71",
+   "currency": "EUR",
+   "account": "acme:4411",
+   "memo": "AIRLINE TICKET"
+  }
+ ],
+ "next": null
+}

@@ -1,0 +1,10 @@
+# Batch export from the storefront queue, 2026-03-02
+{"order_id": "W-1001", "customer_id": "C-1001", "channel": "web", "placed_on": "2026-03-02", "lines": [{"sku": "SCARF-MER", "quantity": 1, "gift": true}, {"sku": "TEA-ASSAM", "quantity": 2}], "coupons": ["WARMUP"], "fulfillment": {"gift_note": "Happy birthday, Mum!"}}
+{"order_id": "W-1002", "customer_id": "C-1002", "channel": "web", "placed_on": "2026-03-02", "lines": [{"sku": "MUG-STONE", "quantity": 2}, {"sku": "HONEY-RAW", "quantity": 1}]}
+{"order_id": "A-2001", "customer_id": "C-1003", "channel": "app", "placed_on": "2026-03-02", "lines": [{"sku": "JOURNAL-LTH", "quantity": 1}, {"sku": "PEN-FTN", "quantity": 1}, {"sku": "INK-BLUE", "quantity": 2}], "coupons": ["write5"], "fulfillment": {"inserts": [{"kind": "flyer", "label": "Spring stationery catalogue"}]}}
+{"order_id": "P-3001", "customer_id": "C-1004", "channel": "phone", "placed_on": "2026-03-02", "lines": [{"sku": "THROW-LIN", "quantity": 1, "gift": true}], "fulfillment": {"speed": "standard"}}
+{"order_id": "S-4001", "customer_id": "C-1005", "channel": "store", "placed_on": "2026-03-02", "lines": [{"sku": "PUZZLE-1000", "quantity": 3}, {"sku": "CARDS-PLAY", "quantity": 1}]}
+{"order_id": "W-1003", "customer_id": "C-1006", "channel": "web", "placed_on": "2026-03-02", "lines": [{"sku": "TEA-ASSAM", "quantity": 4}, {"sku": "HONEY-RAW", "quantity": 2}], "coupons": ["TEATIME"], "contact": {"email_opt_in": true}}
+{"order_id": "W-1004", "customer_id": "C-1007", "channel": "web", "placed_on": "2026-03-02", "lines": [{"sku": "KETTLE-GOOSE", "quantity": 1}, {"sku": "MUG-STONE", "quantity": 4}], "fulfillment": {"speed": "express"}}
+{"order_id": "A-2002", "customer_id": "C-1008", "channel": "app", "placed_on": "2026-03-02", "lines": [{"sku": "CANDLE-CED", "quantity": 2, "gift": true}, {"sku": "SALTS-EUC", "quantity": 1}], "coupons": ["WELCOME10", "NOPE"]}
+{"order_id": "W-1005", "customer_id": "C-1002", "channel": "web", "placed_on": "2026-03-02", "lines": [{"sku": "SOCK-HIKE", "quantity": 1}], "fulfillment": {"inserts": []}}

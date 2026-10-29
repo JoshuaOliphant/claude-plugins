@@ -1,0 +1,324 @@
+{
+  "version": 3,
+  "skus": [
+    {
+      "code": "FAS-101",
+      "description": "Hex bolt M8x40",
+      "category": "FASTENERS",
+      "base_uom": "EA",
+      "reorder_point": 80,
+      "case_size": 100,
+      "barcodes": [
+        "054577250672"
+      ]
+    },
+    {
+      "code": "FAS-102",
+      "description": "Wood screw 4x50",
+      "category": "FASTENERS",
+      "base_uom": "EA",
+      "reorder_point": 40,
+      "case_size": 100,
+      "barcodes": [
+        "033489911363"
+      ]
+    },
+    {
+      "code": "FAS-103",
+      "description": "Wall anchor 6mm",
+      "category": "FASTENERS",
+      "base_uom": "EA",
+      "reorder_point": 20,
+      "case_size": 100,
+      "barcodes": [
+        "010514967150"
+      ]
+    },
+    {
+      "code": "FAS-104",
+      "description": "Washer M10",
+      "category": "FASTENERS",
+      "base_uom": "EA",
+      "reorder_point": 20,
+      "case_size": 24,
+      "barcodes": [
+        "024331853880"
+      ]
+    },
+    {
+      "code": "FAS-105",
+      "description": "Lag bolt 3/8",
+      "category": "FASTENERS",
+      "base_uom": "EA",
+      "reorder_point": 20,
+      "barcodes": [
+        "042767275646"
+      ]
+    },
+    {
+      "code": "ELE-106",
+      "description": "Wire nut yellow",
+      "category": "ELECTRICAL",
+      "base_uom": "EA",
+      "reorder_point": 80,
+      "case_size": 50,
+      "barcodes": [
+        "011445078890"
+      ]
+    },
+    {
+      "code": "ELE-107",
+      "description": "Cable tie 200mm",
+      "category": "ELECTRICAL",
+      "base_uom": "EA",
+      "reorder_point": 40,
+      "barcodes": [
+        "055169061076"
+      ]
+    },
+    {
+      "code": "ELE-108",
+      "description": "Outlet box 1-gang",
+      "category": "ELECTRICAL",
+      "base_uom": "EA",
+      "reorder_point": 40,
+      "barcodes": [
+        "054683256140"
+      ],
+      "active": false
+    },
+    {
+      "code": "ELE-109",
+      "description": "Extension cord 25ft",
+      "category": "ELECTRICAL",
+      "base_uom": "EA",
+      "reorder_point": 40,
+      "barcodes": [
+        "093083406730"
+      ]
+    },
+    {
+      "code": "ELE-110",
+      "description": "LED bulb A19",
+      "category": "ELECTRICAL",
+      "base_uom": "EA",
+      "reorder_point": 80,
+      "case_size": 12,
+      "barcodes": [
+        "046413734899"
+      ]
+    },
+    {
+      "code": "PLU-111",
+      "description": "PEX elbow 1/2",
+      "category": "PLUMBING",
+      "base_uom": "EA",
+      "reorder_point": 20,
+      "barcodes": [
+        "075634163379"
+      ]
+    },
+    {
+      "code": "PLU-112",
+      "description": "Teflon tape",
+      "category": "PLUMBING",
+      "base_uom": "EA",
+      "reorder_point": 40,
+      "barcodes": [
+        "026677669638"
+      ]
+    },
+    {
+      "code": "PLU-113",
+      "description": "Ball valve 3/4",
+      "category": "PLUMBING",
+      "base_uom": "EA",
+      "reorder_point": 80,
+      "barcodes": [
+        "076427785885"
+      ]
+    },
+    {
+      "code": "PLU-114",
+      "description": "P-trap 1-1/2",
+      "category": "PLUMBING",
+      "base_uom": "EA",
+      "reorder_point": 20,
+      "case_size": 12,
+      "barcodes": [
+        "072794995444"
+      ]
+    },
+    {
+      "code": "PLU-115",
+      "description": "Hose clamp #12",
+      "category": "PLUMBING",
+      "base_uom": "EA",
+      "reorder_point": 80,
+      "case_size": 100,
+      "barcodes": [
+        "058310518762"
+      ]
+    },
+    {
+      "code": "SAF-116",
+      "description": "Nitrile gloves L",
+      "category": "SAFETY",
+      "base_uom": "EA",
+      "reorder_point": 20,
+      "case_size": 12,
+      "barcodes": [
+        "052562499664"
+      ]
+    },
+    {
+      "code": "SAF-117",
+      "description": "Safety glasses clear",
+      "category": "SAFETY",
+      "base_uom": "EA",
+      "reorder_point": 10,
+      "case_size": 12,
+      "barcodes": [
+        "011818809504"
+      ]
+    },
+    {
+      "code": "SAF-118",
+      "description": "Ear plugs foam",
+      "category": "SAFETY",
+      "base_uom": "EA",
+      "reorder_point": 10,
+      "barcodes": [
+        "093447373435"
+      ]
+    },
+    {
+      "code": "SAF-119",
+      "description": "Hi-vis vest",
+      "category": "SAFETY",
+      "base_uom": "EA",
+      "reorder_point": 20,
+      "barcodes": [
+        "069341723017"
+      ]
+    },
+    {
+      "code": "SAF-120",
+      "description": "Dust mask N95",
+      "category": "SAFETY",
+      "base_uom": "EA",
+      "reorder_point": 80,
+      "barcodes": [
+        "069808556411"
+      ]
+    },
+    {
+      "code": "TOO-121",
+      "description": "Utility knife",
+      "category": "TOOLS",
+      "base_uom": "EA",
+      "reorder_point": 40,
+      "case_size": 100,
+      "barcodes": [
+        "082168044504"
+      ]
+    },
+    {
+      "code": "TOO-122",
+      "description": "Tape measure 25ft",
+      "category": "TOOLS",
+      "base_uom": "EA",
+      "reorder_point": 10,
+      "case_size": 100,
+      "barcodes": [
+        "025623520104"
+      ]
+    },
+    {
+      "code": "TOO-123",
+      "description": "Claw hammer 16oz",
+      "category": "TOOLS",
+      "base_uom": "EA",
+      "reorder_point": 80,
+      "barcodes": [
+        "042693845968"
+      ]
+    },
+    {
+      "code": "TOO-124",
+      "description": "Screwdriver set",
+      "category": "TOOLS",
+      "base_uom": "EA",
+      "reorder_point": 80,
+      "case_size": 50,
+      "barcodes": [
+        "083486322523"
+      ]
+    },
+    {
+      "code": "TOO-125",
+      "description": "Level 24in",
+      "category": "TOOLS",
+      "base_uom": "EA",
+      "reorder_point": 20,
+      "barcodes": [
+        "035153311503"
+      ]
+    },
+    {
+      "code": "PAI-126",
+      "description": "Roller cover 9in",
+      "category": "PAINT",
+      "base_uom": "EA",
+      "reorder_point": 10,
+      "case_size": 24,
+      "barcodes": [
+        "040956523645"
+      ]
+    },
+    {
+      "code": "PAI-127",
+      "description": "Painter tape 1.5in",
+      "category": "PAINT",
+      "base_uom": "EA",
+      "reorder_point": 40,
+      "case_size": 24,
+      "barcodes": [
+        "024235915754"
+      ]
+    },
+    {
+      "code": "PAI-128",
+      "description": "Brush 2in angled",
+      "category": "PAINT",
+      "base_uom": "EA",
+      "reorder_point": 20,
+      "case_size": 12,
+      "barcodes": [
+        "052533375994"
+      ]
+    },
+    {
+      "code": "PAI-129",
+      "description": "Drop cloth 9x12",
+      "category": "PAINT",
+      "base_uom": "EA",
+      "reorder_point": 40,
+      "case_size": 50,
+      "barcodes": [
+        "034345071683"
+      ]
+    },
+    {
+      "code": "PAI-130",
+      "description": "Primer quart",
+      "category": "PAINT",
+      "base_uom": "EA",
+      "reorder_point": 20,
+      "case_size": 12,
+      "barcodes": [
+        "019250544230"
+      ]
+    }
+  ]
+}

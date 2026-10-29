@@ -1,0 +1,165 @@
+{
+ "items": [
+  {
+   "id": "ACME-0061",
+   "posted": "2026-09-23",
+   "amount": "20.65",
+   "currency": "GBP",
+   "account": "acme:4419",
+   "memo": "RESTAURANT LUNA"
+  },
+  {
+   "id": "ACME-0062",
+   "posted": "2026-09-23",
+   "amount": "-55.76",
+   "currency": "USD",
+   "account": "acme:4419",
+   "memo": "HOTEL ZURICH"
+  },
+  {
+   "id": "ACME-0063",
+   "posted": "2026-09-24",
+   "amount": "-292.84",
+   "currency": "EUR",
+   "account": "acme:4419",
+   "memo": "CITY TRANSIT"
+  },
+  {
+   "id": "ACME-0064",
+   "posted": "2026-09-24",
+   "amount": "-309.23",
+   "currency": "GBP",
+   "account": "acme:4411",
+   "memo": "GREENGROCER"
+  },
+  {
+   "id": "ACME-0065",
+   "posted": "2026-09-25",
+   "amount": "-468.07",
+   "currency": "GBP",
+   "account": "acme:4411",
+   "memo": "COFFEE ROASTERS"
+  },
+  {
+   "id": "ACME-0066",
+   "posted": "2026-09-25",
+   "amount": "-277.64",
+   "currency": "GBP",
+   "account": "acme:4411",
+   "memo": "COFFEE ROASTERS"
+  },
+  {
+   "id": "ACME-0067",
+   "posted": "2026-09-26",
+   "amount": "-11.90",
+   "currency": "EUR",
+   "account": "acme:4411",
+   "memo": "CLOUD HOSTING INV"
+  },
+  {
+   "id": "ACME-0068",
+   "posted": "2026-09-26",
+   "amount": "-92.58",
+   "currency": "CHF",
+   "account": "acme:4419",
+   "memo": "PAYROLL TRANSFER"
+  },
+  {
+   "id": "ACME-0069",
+   "posted": "2026-09-26",
+   "amount": "-311.76",
+   "currency": "CHF",
+   "account": "acme:4419",
+   "memo": "AIRLINE TICKET"
+  },
+  {
+   "id": "ACME-0070",
+   "posted": "2026-09-27",
+   "amount": "-129.32",
+   "currency": "GBP",
+   "account": "acme:4419",
+   "memo": "HOTEL ZURICH"
+  },
+  {
+   "id": "ACME-0071",
+   "posted": "2026-09-27",
+   "amount": "-155.58",
+   "currency": "USD",
+   "account": "acme:4411",
+   "memo": "GREENGROCER"
+  },
+  {
+   "id": "ACME-0072",
+   "posted": "2026-09-28",
+   "amount": "-284.25",
+   "currency": "USD",
+   "account": "acme:4411",
+   "memo": "AIRLINE TICKET"
+  },
+  {
+   "id": "ACME-0073",
+   "posted": "2026-09-28",
+   "amount": "-439.50",
+   "currency": "EUR",
+   "account": "acme:4411",
+   "memo": "GREENGROCER"
+  },
+  {
+   "id": "ACME-0074",
+   "posted": "2026-09-28",
+   "amount": "-225.58",
+   "currency": "USD",
+   "account": "acme:4419",
+   "memo": "HOTEL ZURICH"
+  },
+  {
+   "id": "ACME-0075",
+   "posted": "2026-09-29",
+   "amount": "-171.10",
+   "currency": "USD",
+   "account": "acme:4419",
+   "memo": "PAYROLL TRANSFER"
+  },
+  {
+   "id": "ACME-0076",
+   "posted": "2026-09-29",
+   "amount": "-435.66",
+   "currency": "CHF",
+   "account": "acme:4419",
+   "memo": "TAXI SERVICE"
+  },
+  {
+   "id": "ACME-0077",
+   "posted": "2026-09-30",
+   "amount": "-217.84",
+   "currency": "EUR",
+   "account": "acme:4419",
+   "memo": "BOOKSHOP"
+  },
+  {
+   "id": "ACME-0078",
+   "posted": "2026-09-30",
+   "amount": "-289.48",
+   "currency": "CHF",
+   "account": "acme:4419",
+   "memo": "PAYROLL TRANSFER"
+  },
+  {
+   "id": "ACME-0079",
+   "posted": "2026-10-01",
+   "amount": "3.82",
+   "currency": "EUR",
+   "account": "acme:4419",
+   "memo": "CITY TRANSIT"
+  },
+  {
+   "id": "ACME-0080",
+   "posted": "2026-10-01",
+   "amount": "-406.00",
+   "currency": "USD",
+   "account": "acme:4419",
+   "memo": "CITY TRANSIT"
+  }
+ ],
+ "next": "p005"
+}

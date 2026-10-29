@@ -1,0 +1,7 @@
+{
+  "feed": "acme",
+  "title": "ACME Corporate Card (partner feed)",
+  "first": "p001",
+  "page_size": 20,
+  "owner": "partner-integrations"
+}

@@ -1,0 +1,21 @@
+# Nightly import of the ACME partner card feed.
+[ledger]
+base_currency = "USD"
+output = "../out/partner-ledger.jsonl"
+
+[feeds]
+root = "../feeds"
+
+[retry]
+attempts = 3
+backoff_seconds = 0.5
+
+[validation]
+enabled = false
+sample_size = 25
+
+[[sources]]
+name = "acme-feed"
+kind = "feed"
+feed = "acme"
+since = "2026-09-01"
