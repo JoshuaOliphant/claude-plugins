@@ -32,16 +32,20 @@ command can: judge whether it ran what changed, and prove the fact the change is
    - fails when a gate collects, lints, or measures nothing;
    - fails on a skipped or xfailed test that an AC table names;
    - checks every issue's AC table (AC-N to test node id) against this run, closed issues
-     included: each named test must exist, run, and pass. It reads the tables where the tracker in
-     `docs/agents/issue-tracker.md` keeps them, through the tracker's CLI for a remote one.
+     included: each named test must exist, run, and pass. A row whose test cell reads
+     `superseded by #N` is retired: the command skips it and prints it, so the report names it.
+   - reads the tables in bulk, not one tracker call per issue: from the local tracker's files, or
+     for a remote tracker one listing call scoped to issues that carry a table, or a committed
+     cache of the tables that verify refreshes whenever it posts one. With hundreds of issues, a
+     call per issue is slow and runs into rate limits.
 
    Record it in `testing.md` as the gate and commit both, so the next session finds it.
 
 2. **Run the verify command, and any gate it leaves out, fresh.** Run them in this worktree now,
    not earlier and not somewhere else. Read each exit code and the whole output. Stop at the first
    failure and read its log before touching anything else: the first failing log carries the
-   information, and later failures are often its echoes. A failing test outside the change gets run on the
-   base SHA first. Red there, it is pre-existing: file an issue, fix it in its own `fix:` commit
+   information, and later failures are often its echoes. A failing test outside the change gets
+   run on the base SHA first. Red there, it is pre-existing: file an issue, fix it in its own `fix:` commit
    only if it blocks a gate, and post a ruling. Green there, the change broke it: fix it if the
    cause is plain; otherwise hand it to `compost:diagnose`. A warning the gate prints is a finding too: fix it, or say why it stays.
    When a subagent did the work, read `git diff` yourself rather than trusting its report.
@@ -89,6 +93,12 @@ command can: judge whether it ran what changed, and prove the fact the change is
    A green command proves only what it checks. When no line of its output covers an AC-N, extend
    the repo before claiming anything: a test first (load `compost:build` to fit it in), and a new
    check in the command only for what a test can't say. Then run the command again.
+
+   When this issue replaces an earlier issue's behaviour on purpose and removes or rewrites the
+   test its AC table names, retire that row instead of weakening the command: set its test cell to
+   `superseded by #N`, with N this issue, and post a ruling on this issue naming the retired row.
+   The row edit and the ruling are the record; a row that just disappears, or a check that stops
+   reading closed issues, is not.
 
 6. **Prove the one fact the change is safe because of.** Most changes that look risky are safe
    because of one fact, such as "this call only evicts entries that are already expired". Name
