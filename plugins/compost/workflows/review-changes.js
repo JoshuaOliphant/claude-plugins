@@ -32,11 +32,11 @@ const SCOPE_SCHEMA = {
     standardsSources: { type: 'array', items: { type: 'string' } },
     spec: {
       type: 'object',
-      required: ['found', 'source', 'number', 'text'],
+      required: ['found', 'source', 'id', 'text'],
       properties: {
         found: { type: 'boolean' },
-        source: { type: 'string', description: 'Issue URL, issue number, or file path; empty when not found' },
-        number: { type: ['integer', 'null'], description: 'The number of the issue fetched; null for a spec file or when not found' },
+        source: { type: 'string', description: 'Issue URL, issue id, or file path; empty when not found' },
+        id: { type: 'string', description: 'The id of the issue fetched, exactly as the tracker writes it (42, bd-a1b2.3, group/project#12); empty for a spec file or when not found' },
         text: { type: 'string', description: 'User stories, AC-N, and interfaces verbatim; empty when not found' },
         problem: { type: 'string', description: 'Why a given issue could not be fetched; empty otherwise' },
       },
@@ -138,8 +138,15 @@ const baseHint = input.base
   ? `The fixed point is \`${input.base}\`.`
   : `No fixed point was given: use the merge-base of \`${head}\` with the default branch (\`git merge-base ${head} origin/HEAD\`, falling back to \`main\` then \`master\`).`
 
+// Tracker ids are strings: a bare number reads as #42, while bd-a1b2.3 or group/project#12 stand as written.
+function issueRef(id) {
+  const bare = String(id).replace(/^#/, '')
+  return /^\d+$/.test(bare) ? `#${bare}` : bare
+}
+const issueId = input.issue ? String(input.issue).replace(/^#/, '') : ''
+
 const issueHint = input.issue
-  ? `The originating issue is #${input.issue} and no other: fetch it even if the conversation names a different one.`
+  ? `The originating issue is \`${issueId}\` and no other: fetch it even if the conversation names a different one.`
   : 'No issue was given: look for issue references in the commit messages (#123, Closes #45) and in the branch name, then for a spec file under docs/, specs/, or .scratch/ matching the branch.'
 
 const riskStep = jevScript
@@ -151,10 +158,10 @@ const scope = await agent(
 
 ${baseHint} The head under review is \`${head}\`.
 1. Resolve the fixed point and the head with \`git rev-parse\`. Record diffCommand as \`git diff <base-sha>...<head-sha>\` (three dots, against the merge-base), shortstat as the line \`git diff --shortstat <base-sha>...<head-sha>\` prints, verbatim, the commits from \`git log --oneline <base-sha>..<head-sha>\`, and the changed files from \`git diff --name-only <base-sha>...<head-sha>\`.
-2. ${issueHint} Fetch the issue the way docs/agents/issue-tracker.md says; if that file is missing, use \`gh api repos/{owner}/{repo}/issues/<n>\` and \`gh api repos/{owner}/{repo}/issues/<n>/comments --paginate\` (REST; \`gh issue view\` goes through GraphQL, which cloud sessions block). Copy its user stories, every AC-N, and any interfaces verbatim into spec.text. If an issue number was given and fetching it fails, set spec to \`{found: false, source: "", number: null, text: "", problem: "<the error you got>"}\` and carry on with the rest. Set spec.number to the number of the issue you fetched, or null for a spec file.
+2. ${issueHint} Fetch it, with its comments, using the read command docs/agents/issue-tracker.md gives for this repo's tracker, and pass the id to it exactly as written: it may be dotted (bd-a1b2.3) or name another project (group/project#12), so never turn it into a number or drop its project. Only if that file is missing, use \`gh api repos/{owner}/{repo}/issues/<n>\` and \`gh api repos/{owner}/{repo}/issues/<n>/comments --paginate\`. Wherever the read goes through \`gh\`, use \`gh api\` (REST): \`gh issue view\` goes through GraphQL, which cloud sessions block. Copy its user stories, every AC-N, and any interfaces verbatim into spec.text. If an issue was given and fetching it fails, set spec to \`{found: false, source: "", id: "", text: "", problem: "<the error you got>"}\` and carry on with the rest. Set spec.id to the id of the issue you fetched, as the tracker writes it, or "" for a spec file.
 3. List the standards sources that exist: CLAUDE.md and AGENTS.md at the root and in directories the diff touches, CONTEXT.md or CONTEXT-MAP.md, docs/adr/*.md, CODING_STANDARDS.md, CONTRIBUTING.md, and linter or formatter configs (so reviewers know what tooling already enforces).${riskStep}
 
-If the fixed point does not resolve or the diff is empty, say so in problem and return every other field empty: base, head, diffCommand, and shortstat as "", commits, files, and standardsSources as [], and spec as \`{found: false, source: "", number: null, text: ""}\`.`,
+If the fixed point does not resolve or the diff is empty, say so in problem and return every other field empty: base, head, diffCommand, and shortstat as "", commits, files, and standardsSources as [], and spec as \`{found: false, source: "", id: "", text: ""}\`.`,
   { label: 'scope', phase: 'Scope', schema: SCOPE_SCHEMA, effort: 'low' },
 )
 
@@ -164,17 +171,17 @@ if (!scope || scope.problem || scope.files.length === 0) {
   return { complete: false, problem }
 }
 
-const specSource = input.issue ? `#${input.issue}` : scope.spec.source
+const specSource = input.issue ? issueRef(issueId) : scope.spec.source
 
 function issueFetchProblem() {
   if (!input.issue) return ''
   if (!scope.spec.found) return scope.spec.problem || 'the scoping agent returned no spec'
-  if (scope.spec.number !== Number(input.issue)) return `the scoping agent fetched #${scope.spec.number} instead`
+  if (issueRef(scope.spec.id) !== specSource) return `the scoping agent fetched ${issueRef(scope.spec.id)} instead`
   return ''
 }
 
 const fetchProblem = issueFetchProblem()
-const specProblem = fetchProblem ? `issue #${input.issue} could not be fetched: ${fetchProblem}` : ''
+const specProblem = fetchProblem ? `issue ${specSource} could not be fetched: ${fetchProblem}` : ''
 if (specProblem) log(specProblem)
 
 log(`Reviewing ${scope.files.length} files across ${scope.commits.length} commits since ${scope.base.slice(0, 8)}`)

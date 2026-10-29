@@ -15,7 +15,7 @@ const SCOPE = {
   commits: ['abc1234 add export'],
   files: ['app/export.py'],
   standardsSources: ['CLAUDE.md'],
-  spec: { found: true, source: '#7', number: 7, text: 'AC-1: Given a list, When exported, Then a CSV downloads' },
+  spec: { found: true, source: '#7', id: '7', text: 'AC-1: Given a list, When exported, Then a CSV downloads' },
 }
 const BLOCKER = { file: 'app/export.py', line: 12, severity: 'blocker', claim: 'CSV is not escaped', evidence: 'AC-1 at #7; app/export.py:12' }
 const MINOR = { file: 'app/export.py', line: 3, severity: 'minor', claim: 'name drifts from CONTEXT.md', evidence: 'CONTEXT.md: Reading list' }
@@ -125,7 +125,7 @@ test('a reviewer that returns nothing or throws marks its axis and the review in
 })
 
 test('an issue that cannot be fetched fails the Spec axis instead of skipping it', async () => {
-  const scope = { ...SCOPE, spec: { found: false, source: '', number: null, text: '', problem: 'gh: not authenticated' } }
+  const scope = { ...SCOPE, spec: { found: false, source: '', id: '', text: '', problem: 'gh: not authenticated' } }
   const { result, prompts } = await run({ issue: 42 }, reviewers({ scope }))
   assert.equal(result.spec.status, 'failed: issue #42 could not be fetched: gh: not authenticated')
   assert.equal(result.complete, false)
@@ -143,7 +143,7 @@ test('a given issue is the only spec source, whatever issue the scoping agent pi
     assert.match(prompt, /Grade only against the spec text in this prompt\. Do not fetch any issue or spec file yourself/)
   }
 
-  const swapped = { ...SCOPE, spec: { found: true, source: '#53', number: 53, text: 'AC-1: Given issue 53' } }
+  const swapped = { ...SCOPE, spec: { found: true, source: '#53', id: '53', text: 'AC-1: Given issue 53' } }
   const refused = await run({ issue: 7 }, reviewers({ scope: swapped }))
   assert.equal(refused.result.specSource, '#7')
   assert.equal(refused.result.spec.status, 'failed: issue #7 could not be fetched: the scoping agent fetched #53 instead')
@@ -151,13 +151,40 @@ test('a given issue is the only spec source, whatever issue the scoping agent pi
   assert.equal(refused.prompts['Spec reviewer'], undefined)
 })
 
+test('a dotted beads id or a cross-project GitLab issue is fetched and graded as written', async () => {
+  for (const id of ['bd-a1b2.3', 'group/project#12']) {
+    const fetched = { ...SCOPE, spec: { ...SCOPE.spec, source: id, id } }
+    const { result, prompts } = await run({ issue: id }, reviewers({ scope: fetched, spec: { findings: [BLOCKER] } }))
+    assert.equal(result.specSource, id)
+    assert.ok(prompts.scope.includes(`The originating issue is \`${id}\``), `${id} reaches the scoping agent verbatim`)
+    assert.match(prompts.scope, /read command docs\/agents\/issue-tracker\.md gives/)
+    assert.match(prompts['Spec reviewer'], new RegExp(`Spec source: ${id.replace(/[.#/]/g, '\\$&')}\\n`))
+    assert.deepEqual(result.spec.survivors.map(f => f.claim), [BLOCKER.claim])
+  }
+
+  const sibling = { ...SCOPE, spec: { ...SCOPE.spec, source: 'bd-a1b2.4', id: 'bd-a1b2.4' } }
+  const refused = await run({ issue: 'bd-a1b2.3' }, reviewers({ scope: sibling }))
+  assert.equal(refused.result.spec.status, 'failed: issue bd-a1b2.3 could not be fetched: the scoping agent fetched bd-a1b2.4 instead')
+  assert.equal(refused.prompts['Spec reviewer'], undefined)
+})
+
+test('an issue given as a "#42" string matches a fetched 42 and refuses a fetched 43', async () => {
+  const fetched = id => ({ ...SCOPE, spec: { ...SCOPE.spec, source: `#${id}`, id } })
+  const matched = await run({ issue: '#42' }, reviewers({ scope: fetched('42') }))
+  assert.equal(matched.result.specSource, '#42')
+  assert.ok(matched.prompts['Spec reviewer'], 'the Spec reviewer runs')
+
+  const swapped = await run({ issue: '#42' }, reviewers({ scope: fetched('43') }))
+  assert.equal(swapped.result.spec.status, 'failed: issue #42 could not be fetched: the scoping agent fetched #43 instead')
+})
+
 test('without an issue, the spec source is what scope found, and a missing spec skips the Spec axis', async () => {
-  const specFile = { ...SCOPE, spec: { found: true, source: 'docs/specs/export.md', number: null, text: 'AC-1: Given a list' } }
+  const specFile = { ...SCOPE, spec: { found: true, source: 'docs/specs/export.md', id: '', text: 'AC-1: Given a list' } }
   const found = await run({}, reviewers({ scope: specFile }))
   assert.equal(found.result.specSource, 'docs/specs/export.md')
   assert.match(found.prompts['Spec reviewer'], /Spec source: docs\/specs\/export\.md\n/)
 
-  const scope = { ...SCOPE, spec: { found: false, source: '', number: null, text: '' } }
+  const scope = { ...SCOPE, spec: { found: false, source: '', id: '', text: '' } }
   const { result } = await run({}, reviewers({ scope }))
   assert.equal(result.spec.status, 'skipped: no spec found')
   assert.equal(result.specSource, '')
@@ -257,7 +284,7 @@ test('on the light path, an axis the reviewer did not say it checked fails, howe
 })
 
 test('on the light path, an unfetchable issue fails the Spec axis, a missing spec skips it, and only active axes can be tagged', async () => {
-  const unfetched = { ...SMALL, spec: { found: false, source: '', number: null, text: '', problem: 'gh: not authenticated' } }
+  const unfetched = { ...SMALL, spec: { found: false, source: '', id: '', text: '', problem: 'gh: not authenticated' } }
   const standardsOnly = { findings: [{ ...MINOR, axis: 'Standards' }], checked: { Standards: CHECKED.Standards } }
   const failed = await run({ ...JEV, issue: 42 }, reviewers({ scope: unfetched, light: standardsOnly }))
   assert.equal(failed.result.spec.status, 'failed: issue #42 could not be fetched: gh: not authenticated')
@@ -267,7 +294,7 @@ test('on the light path, an unfetchable issue fails the Spec axis, a missing spe
   assert.deepEqual(failed.schemas['Light reviewer'].properties.checked.required, ['Standards'])
   assert.equal(failed.result.complete, false)
 
-  const missing = { ...SMALL, spec: { found: false, source: '', number: null, text: '' } }
+  const missing = { ...SMALL, spec: { found: false, source: '', id: '', text: '' } }
   const strayTag = { ...standardsOnly, findings: [{ ...MINOR, axis: 'Spec' }, { ...BLOCKER }] }
   const skipped = await run(JEV, reviewers({ scope: missing, light: strayTag }))
   assert.equal(skipped.result.spec.status, 'skipped: no spec found')
