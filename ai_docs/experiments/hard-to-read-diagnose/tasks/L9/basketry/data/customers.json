@@ -1,0 +1,12 @@
+{
+  "customers": [
+    {"customer_id": "C-1001", "name": "Ada Lovelace", "email": "ada@example.org", "tier": "gold", "region": "WA", "tags": ["newsletter", "early-access"]},
+    {"customer_id": "C-1002", "name": "Grace Hopper", "email": "grace@example.org", "tier": "standard", "region": "OR", "tags": []},
+    {"customer_id": "C-1003", "name": "Alan Turing", "email": "alan@example.org", "tier": "silver", "region": "CA", "tags": ["wholesale-inquiry"]},
+    {"customer_id": "C-1004", "name": "Katherine Johnson", "email": "katherine@example.org", "tier": "gold", "region": "WA", "tags": ["newsletter"]},
+    {"customer_id": "C-1005", "name": "Edsger Dijkstra", "email": "edsger@example.org", "tier": "standard", "region": "NY", "tags": []},
+    {"customer_id": "C-1006", "name": "Barbara Liskov", "email": "barbara@example.org", "tier": "silver", "region": "OR", "tags": ["newsletter"]},
+    {"customer_id": "C-1007", "name": "Donald Knuth", "email": "don@example.org", "tier": "standard", "region": "CA", "tags": ["checks-by-mail"]},
+    {"customer_id": "C-1008", "name": "Frances Allen", "email": "fran@example.org", "tier": "gold", "region": "NY", "tags": []}
+  ]
+}

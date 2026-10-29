@@ -34,3 +34,10 @@ markers = ["jev: live evals against the TypeSafe API (uv run --group dev pytest 
 
 [tool.ruff]
 line-length = 100
+# Seeded buggy trees and their hidden tests: the bugs are the point, so they are not linted or formatted.
+extend-exclude = [
+    "ai_docs/experiments/hard-to-read-diagnose/tasks",
+    "ai_docs/experiments/hard-to-read-diagnose/hidden",
+    "ai_docs/experiments/hard-to-read-diagnose/reference",
+    "ai_docs/experiments/hard-to-read-diagnose/author",
+]

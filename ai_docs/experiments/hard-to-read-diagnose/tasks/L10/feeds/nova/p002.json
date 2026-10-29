@@ -1,0 +1,85 @@
+{
+ "items": [
+  {
+   "id": "NOVA-0011",
+   "posted": "2026-09-23",
+   "amount": "-79.31",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "COFFEE ROASTERS"
+  },
+  {
+   "id": "NOVA-0012",
+   "posted": "2026-09-25",
+   "amount": "-58.57",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "SOFTWARE SUBSCRIPTION"
+  },
+  {
+   "id": "NOVA-0013",
+   "posted": "2026-09-27",
+   "amount": "-86.26",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "RESTAURANT LUNA"
+  },
+  {
+   "id": "NOVA-0014",
+   "posted": "2026-09-29",
+   "amount": "-86.69",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "AIRLINE TICKET"
+  },
+  {
+   "id": "NOVA-0015",
+   "posted": "2026-10-01",
+   "amount": "-8.30",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "GREENGROCER"
+  },
+  {
+   "id": "NOVA-0016",
+   "posted": "2026-10-03",
+   "amount": "-68.57",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "PAYROLL TRANSFER"
+  },
+  {
+   "id": "NOVA-0017",
+   "posted": "2026-10-05",
+   "amount": "-47.67",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "AIRLINE TICKET"
+  },
+  {
+   "id": "NOVA-0018",
+   "posted": "2026-10-07",
+   "amount": "-13.46",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "COFFEE ROASTERS"
+  },
+  {
+   "id": "NOVA-0019",
+   "posted": "2026-10-09",
+   "amount": "-83.09",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "COFFEE ROASTERS"
+  },
+  {
+   "id": "NOVA-0020",
+   "posted": "2026-10-11",
+   "amount": "-83.19",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "RESTAURANT LUNA"
+  }
+ ],
+ "next": "p003"
+}

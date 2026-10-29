@@ -1,0 +1,28 @@
+{
+  "currency": "USD",
+  "shipping": {
+    "free_over_cents": 15000,
+    "rates": {
+      "standard": {"base_cents": 599, "per_kg_cents": 150},
+      "express": {"base_cents": 1499, "per_kg_cents": 300}
+    }
+  },
+  "packing": {
+    "box_capacity_grams": 2500,
+    "box_tare_grams": 220,
+    "sample_threshold_cents": 8000,
+    "sample_sku": "SOAP-LAV"
+  },
+  "gift_wrap": {"fee_cents": 400},
+  "tiers": {
+    "gold": {"discount_bps": 500},
+    "silver": {"discount_bps": 250},
+    "standard": {"discount_bps": 0}
+  },
+  "tax": {
+    "WA": {"general": 1025, "clothing": 1025, "food": 0},
+    "OR": {"general": 0, "clothing": 0, "food": 0},
+    "CA": {"general": 875, "clothing": 875, "food": 0},
+    "NY": {"general": 888, "clothing": 0, "food": 0}
+  }
+}

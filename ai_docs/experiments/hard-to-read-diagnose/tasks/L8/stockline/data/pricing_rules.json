@@ -1,0 +1,15 @@
+{
+  "default": {"markup": "0.35", "min_margin": "0.20"},
+  "ending": "0.99",
+  "rules": [
+    {"category": "hardware", "markup": "0.45", "min_margin": "0.30"},
+    {"category": "hardware.fasteners", "markup": "0.60"},
+    {"category": "hardware.tools", "markup": "0.40", "min_margin": "0.25"},
+    {"category": "safety", "markup": "0.50", "min_margin": "0.30"},
+    {"category": "safety.ppe.gloves", "markup": "0.55"},
+    {"category": "janitorial", "markup": "0.30"},
+    {"category": "janitorial.breakroom", "markup": "0.25", "min_margin": "0.15"},
+    {"category": "office", "markup": "0.40"},
+    {"category": "office.paper", "markup": "0.22", "min_margin": "0.15", "ending": ""}
+  ]
+}

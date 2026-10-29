@@ -1,0 +1,100 @@
+{
+  "customers": [
+    {
+      "id": "C001",
+      "name": "Northwind Traders",
+      "region": "US-WA",
+      "currency": "USD",
+      "email": "ap@northwind.example",
+      "active": true
+    },
+    {
+      "id": "C002",
+      "name": "Bluefin Logistics",
+      "region": "US-OR",
+      "currency": "USD",
+      "email": "ap@bluefin.example",
+      "active": true
+    },
+    {
+      "id": "C003",
+      "name": "Cascade Health Partners",
+      "region": "US-WA",
+      "currency": "USD",
+      "email": "ap@cascade.example",
+      "active": true
+    },
+    {
+      "id": "C004",
+      "name": "Golden Gate Analytics",
+      "region": "US-CA",
+      "currency": "USD",
+      "email": "ap@golden.example",
+      "active": true
+    },
+    {
+      "id": "C005",
+      "name": "Hudson Retail Group",
+      "region": "US-NY",
+      "currency": "USD",
+      "email": "ap@hudson.example",
+      "active": true
+    },
+    {
+      "id": "C006",
+      "name": "Rheinwerk Maschinenbau GmbH",
+      "region": "DE",
+      "currency": "EUR",
+      "email": "ap@rheinwerk.example",
+      "active": true
+    },
+    {
+      "id": "C007",
+      "name": "Evergreen Schools District",
+      "region": "EXEMPT",
+      "currency": "USD",
+      "email": "ap@evergreen.example",
+      "active": true
+    },
+    {
+      "id": "C008",
+      "name": "Pioneer Credit Union",
+      "region": "US-OR",
+      "currency": "USD",
+      "email": "ap@pioneer.example",
+      "active": true
+    },
+    {
+      "id": "C009",
+      "name": "Summit Outdoor Co.",
+      "region": "US-WA",
+      "currency": "USD",
+      "email": "ap@summit.example",
+      "active": true
+    },
+    {
+      "id": "C010",
+      "name": "Bayview Dental Clinics",
+      "region": "US-CA",
+      "currency": "USD",
+      "email": "ap@bayview.example",
+      "active": true
+    },
+    {
+      "id": "C011",
+      "name": "Kesselring Software AG",
+      "region": "DE",
+      "currency": "EUR",
+      "email": "ap@kesselring.example",
+      "active": true
+    },
+    {
+      "id": "C012",
+      "name": "Old Mill Bakery",
+      "region": "US-OR",
+      "currency": "USD",
+      "email": "ap@old.example",
+      "active": false
+    }
+  ]
+}

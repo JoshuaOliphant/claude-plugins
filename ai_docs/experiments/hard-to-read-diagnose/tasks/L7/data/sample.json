@@ -1,0 +1,8 @@
+{
+  "currency": "USD",
+  "transactions": [
+    {"date": "2026-05-01", "payee": "Acme Corp Payroll", "account": "checking", "category": "income:salary", "amount": "4250.00"},
+    {"date": "2026-05-03", "payee": "Maple Street Rentals", "account": "checking", "category": "housing:rent", "amount": "-1650.00", "tags": ["fixed"]},
+    {"date": "2026-05-09", "payee": "Garden Centre", "account": "card", "category": "leisure:garden", "amount": -62.3, "memo": "tomato seedlings"}
+  ]
+}

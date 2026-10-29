@@ -1,0 +1,16 @@
+{"txn": "CRD-001", "ts": "2026-09-02T12:00:00Z", "value": {"amount": "-10.52", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "CITY TRANSIT"}
+{"txn": "CRD-002", "ts": "2026-09-03T12:01:00Z", "value": {"amount": "-10.57", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "CLOUD HOSTING INV"}
+{"txn": "CRD-003", "ts": "2026-09-04T12:02:00Z", "value": {"amount": "-77.23", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "OFFICE SUPPLY CO"}
+{"txn": "CRD-004", "ts": "2026-09-05T12:03:00Z", "value": {"amount": "-7.90", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "PARKING GARAGE"}
+{"txn": "CRD-005", "ts": "2026-09-06T12:04:00Z", "value": {"amount": "-24.48", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "OFFICE SUPPLY CO"}
+{"txn": "CRD-006", "ts": "2026-09-07T12:05:00Z", "value": {"amount": "-78.91", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "CLOUD HOSTING INV"}
+{"txn": "CRD-007", "ts": "2026-09-08T12:06:00Z", "value": {"amount": "-14.19", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "TAXI SERVICE"}
+{"txn": "CRD-008", "ts": "2026-09-09T12:07:00Z", "value": {"amount": "-9.52", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "PHONE BILL"}
+
+{"txn": "CRD-009", "ts": "2026-09-10T12:08:00Z", "value": {"amount": "-76.02", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "PAYROLL TRANSFER"}
+{"txn": "CRD-010", "ts": "2026-09-11T12:09:00Z", "value": {"amount": "-45.70", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "PARKING GARAGE"}
+{"txn": "CRD-011", "ts": "2026-09-12T12:10:00Z", "value": {"amount": "-68.34", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "PARKING GARAGE"}
+{"txn": "CRD-012", "ts": "2026-09-13T12:11:00Z", "value": {"amount": "-21.73", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "TAXI SERVICE"}
+{"txn": "CRD-013", "ts": "2026-09-14T12:12:00Z", "value": {"amount": "-81.40", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "OFFICE SUPPLY CO"}
+{"txn": "CRD-014", "ts": "2026-09-15T12:13:00Z", "value": {"amount": "-30.56", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "CLOUD HOSTING INV"}
+{"txn": "CRD-015", "ts": "2026-09-16T12:14:00Z", "value": {"amount": "-80.44", "ccy": "EUR"}, "card": "card:visa-22", "merchant": "CLOUD HOSTING INV"}
