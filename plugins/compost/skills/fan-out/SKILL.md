@@ -57,8 +57,8 @@ Spawn the attempts without asking. The cost is tokens; the payoff is not buildin
    that wrote them when the call is judgment-heavy. While it works, read every attempt end to end
    yourself and score each criterion separately, not on overall feel. Then compare with the judge.
    Agreement confirms the pick; disagreement means one of you is biased or the rubric is ambiguous,
-   so reread both rationales before deciding. When the attempts converge on one shape, a judge would
-   only confirm it: score them yourself and skip it.
+   so reread both rationales before deciding. When the attempts converge on one shape and you framed
+   no favourite, a judge would only confirm it: score them yourself and skip it.
 
 5. **Pick the base.**
    - For a design: the attempt a future maintainer can extend most easily without breaking its
