@@ -1,0 +1,12 @@
+{
+ "c1": "/drift counts every hit on a plugin's skills as retired, even for plugins that are enabled, so those hits never show in the summary. Hits on personal skills are fine.",
+ "c2": "/drift drops hits on skills of my enabled plugins from the summary as retired. It is not all of them: a plugin installed from a marketplace with the same name as the plugin still shows up.",
+ "c3": "`pile.py replaced` reports every plugin from a marketplace that still lists it as an orphan to uninstall, and it dies with a KeyError on installs whose marketplace has no listing at all.",
+ "c4": "find-test on a suite larger than the choice cap never offers the first test of each batch of tests. In a 600-test suite the tests at positions 0, 250 and 500 are never shown, and each batch is one test short.",
+ "c5": "A suite with exactly as many tests as one choice can hold (250) is not offered whole. find-test splits it into groups and asks which group to look in, as if it were bigger than the cap.",
+ "c6": "When find-test keeps several groups from a big suite, the shortlist can come out longer than one choice can hold, and the next question built from it is rejected for having too many options.",
+ "c7": "The stop guard blocks every stop in an unattended implement run, including a plain report of finished work. Its output shows block: true with a score of 0.0.",
+ "c8": "The stop guard blocks the agent when it stops to ask for the go-ahead to merge, which is an allowed stop. The more clearly the message asks for something allowed, the higher the block score climbs.",
+ "c9": "`pile.py status` lists every changed upstream file as unmapped. No file attaches to any skill or mechanism it feeds, even though the feeds table names a directory for it.",
+ "c10": "find-test on a big suite asks about groups labelled \"part 1 of 1\", and a group of 251 to 500 tests is offered whole as one oversized choice instead of being cut into parts."
+}

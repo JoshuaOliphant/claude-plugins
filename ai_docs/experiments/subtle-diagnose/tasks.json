@@ -1,0 +1,62 @@
+[
+ {
+  "task": "c1",
+  "helper": "scripts/claude_config.py",
+  "id": 305,
+  "caller": "tests/test_skill_drift.py"
+ },
+ {
+  "task": "c2",
+  "helper": "scripts/claude_config.py",
+  "id": 311,
+  "caller": "tests/test_skill_drift.py"
+ },
+ {
+  "task": "c3",
+  "helper": "scripts/claude_config.py",
+  "id": 274,
+  "caller": "tests/test_replaced.py"
+ },
+ {
+  "task": "c4",
+  "helper": "scripts/jevtools/core.py",
+  "id": 209,
+  "caller": "tests/test_jev_testing.py"
+ },
+ {
+  "task": "c5",
+  "helper": "scripts/jevtools/core.py",
+  "id": 250,
+  "caller": "tests/test_jev_testing.py"
+ },
+ {
+  "task": "c6",
+  "helper": "scripts/jevtools/core.py",
+  "id": 309,
+  "caller": "tests/test_jev_testing.py"
+ },
+ {
+  "task": "c7",
+  "helper": "scripts/jevtools/meta.py",
+  "id": 714,
+  "caller": "tests/test_stop_guard.py"
+ },
+ {
+  "task": "c8",
+  "helper": "scripts/jevtools/meta.py",
+  "id": 759,
+  "caller": "tests/test_stop_guard.py"
+ },
+ {
+  "task": "c9",
+  "helper": "scripts/pile.py",
+  "id": 174,
+  "caller": "tests/test_jev_meta.py"
+ },
+ {
+  "task": "c10",
+  "helper": "scripts/jevtools/core.py",
+  "id": 259,
+  "caller": "tests/test_jev_testing.py"
+ }
+]
