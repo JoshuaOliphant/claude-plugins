@@ -17,15 +17,17 @@ Then spawn the designers straight away; the user reads while they work.
 
 ## 2. Spawn the designers
 
-Spawn three subagents in one message so they run in parallel, or teammates when agent teams are
-enabled. Each gets the same technical brief with a different constraint:
+Pick two to four constraints from the menu below, the ones that would pull the designs furthest
+apart for this problem, and spawn one subagent per constraint in one message so they run in
+parallel, or teammates when agent teams are enabled. Each gets the same technical brief with its
+constraint. A narrow design space gets two; three designers who would converge add only cost.
 
-| Designer | Constraint |
-|---|---|
-| Minimal | Minimise the interface: one to three entry points. Maximise leverage per entry point. |
-| Flexible | Maximise flexibility: support many use cases and extension. |
-| Common case | Optimise for the most common caller: make the default call trivial. |
-| Ports (only for category 3 or 4 dependencies) | Design around a port and adapters for the cross-seam dependency. |
+| Designer | Constraint | Take it when |
+|---|---|---|
+| Minimal | Minimise the interface: one to three entry points. Maximise leverage per entry point. | Almost always |
+| Common case | Optimise for the most common caller: make the default call trivial. | Callers mostly make one kind of call |
+| Flexible | Maximise flexibility: support many use cases and extension. | A second real use case exists today; otherwise it designs speculative generality |
+| Ports | Design around a port and adapters for the cross-seam dependency. | A category 3 or 4 dependency crosses the seam |
 
 ### The brief
 

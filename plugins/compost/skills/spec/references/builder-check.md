@@ -8,14 +8,13 @@ build from the page alone, and asks what they would still need to know.
 
 Once the draft spec is written down (a file, or the issue body you are about to post), dispatch a
 fresh general-purpose subagent. Fresh means it has not seen this conversation; pass it only the
-spec. Fill in the role and the path:
+spec. Fill in the path:
 
 ```
-You are an experienced [ROLE, e.g. "backend engineer on this codebase"]. A spec has landed on
-your desk and your job is to plan how to build it. Its author is unreachable: whatever the page
-does not say, you would have to guess.
+Plan how you would build the spec at [SPEC_PATH], working from the page alone. Its author is
+unreachable: whatever the page does not say, you would have to guess.
 
-Read [SPEC_PATH]. You may read the code it touches to check your guesses.
+You may read the code it touches to check your guesses.
 
 List only the questions you would need answered before you could plan the build with confidence:
 the places where you would be guessing and a wrong guess would change what gets built. For each,

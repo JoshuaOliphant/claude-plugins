@@ -51,12 +51,14 @@ Spawn the attempts without asking. The cost is tokens; the payoff is not buildin
      don't start one on your own.
    If an attempt fails to produce its artifact, go on with the rest and note the dropout.
 
-4. **Judge against the rubric.** Once every attempt is in, spawn one read-only judge subagent with
-   the rubric and the attempts by label; use a different model from the one that wrote them when the
-   call is judgment-heavy. While it works, read every attempt end to end yourself and score each
-   criterion separately, not on overall feel. Then compare with the judge. Agreement confirms the
-   pick; disagreement means one of you is biased or the rubric is ambiguous, so reread both
-   rationales before deciding.
+4. **Judge against the rubric.** Once every attempt is in, skim them for convergence. When they
+   diverge, or you framed one hypothesis you favour, spawn one read-only judge subagent with the
+   rubric and the attempts by label, so your lean gets checked; use a different model from the one
+   that wrote them when the call is judgment-heavy. While it works, read every attempt end to end
+   yourself and score each criterion separately, not on overall feel. Then compare with the judge.
+   Agreement confirms the pick; disagreement means one of you is biased or the rubric is ambiguous,
+   so reread both rationales before deciding. When the attempts converge on one shape and you framed
+   no favourite, a judge would only confirm it: score them yourself and skip it.
 
 5. **Pick the base.**
    - For a design: the attempt a future maintainer can extend most easily without breaking its
@@ -78,7 +80,7 @@ Spawn the attempts without asking. The cost is tokens; the payoff is not buildin
 
 8. **Record the result.** Post it where the decision belongs: as a ruling comment on the issue
    (Ruling / Why / Cost if wrong), naming the base, the grafts and which attempt each came from, what
-   was rejected and why, and any dropouts. When the choice meets the ADR test in
+   was rejected and why, any dropouts, and whether a judge ran or the attempts converged. When the choice meets the ADR test in
    [domain docs](../spec/references/domain-docs.md), offer an ADR in `docs/adr/`. Delete the losing worktrees and scratch directories once
    the record is posted.
 
