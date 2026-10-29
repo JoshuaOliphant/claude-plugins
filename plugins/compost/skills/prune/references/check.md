@@ -1,4 +1,4 @@
-# Check: the subagent brief
+# Check: the doc-check brief
 
 Give each subagent this brief, its docs' paths, and their entries from the `doc_refs.py` scan. When you check the docs yourself, follow the same brief.
 
