@@ -326,7 +326,8 @@ test('a record of what was checked counts only where it cites a file:line', asyn
 })
 
 test('a reviewer with no findings and a cited record of what it checked is complete and shows that record', async () => {
-  const { result, schemas } = await run({ issue: 7 }, reviewers({ standards: { findings: [], checked: STANDARDS_CHECKED } }))
+  const { result, schemas, prompts } = await run({ issue: 7 }, reviewers({ standards: { findings: [], checked: STANDARDS_CHECKED } }))
+  assert.match(prompts['Standards reviewer'], /Under checked, list each rule you read against the diff and each changed file you opened, at the file:line/)
   assert.equal(result.complete, true)
   assert.equal(result.problem, undefined)
   assert.equal(result.standards.status, 'reviewed: 0 findings raised, 0 left unverified')
@@ -354,6 +355,9 @@ test('a clean Spec review maps every AC-N in the spec, and one that leaves an AC
   const gaps = await run({ issue: 7 }, reviewers({ scope, spec: { findings: [], checked: [all[0], uncitedAc2] } }))
   assert.equal(gaps.result.spec.status, 'failed: the reviewer did not map AC-2, AC-10 to the code')
   assert.equal(gaps.result.complete, false)
+
+  const prefixOnly = await run({ issue: 7 }, reviewers({ scope, spec: { findings: [], checked: all.slice(1) } }))
+  assert.equal(prefixOnly.result.spec.status, 'failed: the reviewer did not map AC-1 to the code', 'AC-10 does not map AC-1')
 })
 
 test('meta is a pure literal naming every phase the script uses', () => {
