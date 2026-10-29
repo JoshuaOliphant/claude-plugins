@@ -63,10 +63,25 @@ const SCOPE_SCHEMA = {
   },
 }
 
+// A reviewer that found nothing and one that looked at nothing both return no findings; this record tells them apart.
+const CHECKED_SCHEMA = {
+  type: 'array',
+  description: 'What you checked: each rule read against the diff, each changed file opened, and on Spec one entry per AC-N. An entry without a file:line does not count.',
+  items: {
+    type: 'object',
+    required: ['item', 'at'],
+    properties: {
+      item: { type: 'string', description: 'The rule, file, or AC-N checked, with your verdict on it' },
+      at: { type: 'string', description: 'The file:line you read to check it' },
+    },
+  },
+}
+
 const FINDINGS_SCHEMA = {
   type: 'object',
-  required: ['findings'],
+  required: ['findings', 'checked'],
   properties: {
+    checked: CHECKED_SCHEMA,
     findings: {
       type: 'array',
       items: {
@@ -101,9 +116,9 @@ function lightFindingsSchema(axisNames) {
       },
       checked: {
         type: 'object',
-        description: 'For each axis, what you checked: the rules read against the diff, and for Spec each AC-N with its verdict',
+        description: 'For each axis, what you checked on it',
         required: axisNames,
-        properties: Object.fromEntries(axisNames.map(name => [name, { type: 'string' }])),
+        properties: Object.fromEntries(axisNames.map(name => [name, CHECKED_SCHEMA])),
       },
     },
   }
@@ -231,7 +246,9 @@ Check the diff against:
 
 ${SMELL_BASELINE}
 
-Skip anything a linter, formatter, or type checker configured in this repo already enforces.`,
+Skip anything a linter, formatter, or type checker configured in this repo already enforces.
+
+Under checked, list each rule you read against the diff and each changed file you opened, at the file:line you read.`,
   },
   {
     name: 'Spec',
@@ -247,7 +264,9 @@ Report:
 - Each AC-N that is missing or only partly met. Quote the AC-N; point at the test that should prove it, or say none exists.
 - Each interface in the spec whose shape in the code differs from what the spec states.
 - Behaviour in the diff nobody asked for (scope creep), at file:line.
-- Each AC-N that looks implemented but where the implementation looks wrong.`,
+- Each AC-N that looks implemented but where the implementation looks wrong.
+
+Under checked, map every acceptance criterion: one entry per AC-N, naming it and its verdict (met, partly met, unmet), at the test or code line that shows it, or for an unmet one the line where it should be.`,
   },
 ]
 
@@ -262,7 +281,7 @@ ${axis.checks}`
 function lightPrompt(axes) {
   const names = axes.map(axis => axis.name)
   const sections = axes.map(axis => `## ${axis.name} axis: ${axis.question}\n\n${axis.checks}`).join('\n\n')
-  return `This diff is small, so you review it alone on ${names.length === 1 ? 'one axis' : 'both axes'}: ${names.join(' and ')}. Keep the axes apart as two reviewers would: set each finding's axis to ${names.map(name => `"${name}"`).join(' or ')}, and under checked say for each axis what you checked, so an axis with no findings reads as looked at, not skipped. Small is no reason to look less hard; it is a reason one reviewer can hold the whole diff.
+  return `This diff is small, so you review it alone on ${names.length === 1 ? 'one axis' : 'both axes'}: ${names.join(' and ')}. Keep the axes apart as two reviewers would: set each finding's axis to ${names.map(name => `"${name}"`).join(' or ')}, and under checked list for each axis what you checked on it, each at a file:line, so an axis with no findings reads as looked at, not skipped. Small is no reason to look less hard; it is a reason one reviewer can hold the whole diff.
 
 ${diffContext}
 
@@ -331,13 +350,30 @@ const light = !forceFull
   && lineCount <= LIGHT_MAX_CHANGED_LINES
   && risk.structural === false
 
+const FILE_LINE = /[\w./-]+:\d+/
+const specAcIds = [...new Set(String(scope.spec.text || '').match(/\bAC-\d+\b/g) || [])]
+
+// Returns why the reviewer's record of what it checked falls short, or '' when it holds.
+function uncheckedReason(axis, review) {
+  const entries = Array.isArray(review.checked) ? review.checked : []
+  if (entries.length === 0) {
+    return review.findings.length ? 'the reviewer did not say what it checked' : 'the reviewer returned no findings and no record of what it checked'
+  }
+  const cited = entries.filter(entry => entry && FILE_LINE.test(String(entry.at || '')))
+  if (cited.length === 0) return 'the reviewer cited no file:line for anything it checked'
+  if (axis.name !== 'Spec') return ''
+  const unmapped = specAcIds.filter(id => !cited.some(entry => new RegExp(`\\b${id}\\b`).test(String(entry.item || ''))))
+  return unmapped.length ? `the reviewer did not map ${unmapped.join(', ')} to the code` : ''
+}
+
 async function settleAxis(review, axis) {
   if (review && review.skipped && axis.problem) return failedAxis(axis.name, axis.problem)
   if (review && review.skipped) {
     return { axis: axis.name, status: 'skipped: no spec found', complete: true, survivors: [], refuted: [], unjudged: [] }
   }
   if (!review) return failedAxis(axis.name, 'the reviewer did not return')
-  if (light && !String(review.checked || '').trim()) return failedAxis(axis.name, 'the reviewer did not say what it checked on this axis')
+  const unchecked = uncheckedReason(axis, review)
+  if (unchecked) return failedAxis(axis.name, unchecked)
   const serious = review.findings.filter(worthSkeptic)
   const unverified = review.findings
     .filter(finding => !worthSkeptic(finding))
@@ -351,7 +387,7 @@ async function settleAxis(review, axis) {
     axis: axis.name,
     status: `${light ? 'reviewed (light)' : 'reviewed'}: ${review.findings.length} findings raised, ${unverified.length} left unverified`,
     complete: true,
-    ...(light ? { checked: review.checked } : {}),
+    checked: review.checked,
     survivors: [
       ...withVerdict('survived').map(j => ({ ...j.finding, upheldBecause: j.reasons, failedVotes: j.failed })),
       ...unverified,
@@ -398,13 +434,16 @@ function worst(axisResult) {
   return sorted.length ? `${sorted[0].severity}: ${sorted[0].claim}` : 'none'
 }
 
+const complete = standards.complete && spec.complete
+
 return {
   base: scope.base,
   head: scope.head,
   specSource,
   risk,
   path: light ? 'light' : 'full',
-  complete: standards.complete && spec.complete,
+  complete,
+  ...(complete ? {} : { problem: [standards, spec].filter(a => !a.complete).map(a => `${a.axis} ${a.status}`).join('; ') }),
   standards,
   spec,
   summary: [standards, spec]
