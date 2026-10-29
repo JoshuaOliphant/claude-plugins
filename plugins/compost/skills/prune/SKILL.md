@@ -28,9 +28,10 @@ code can't. The why is in [core docs](../../canon/core-docs.md) and
    not verdicts. A missing path can be an example (`src/orders.py` in a template) or a file the
    tool creates at runtime; a doc with no leads can still describe behaviour the code dropped.
 
-3. **Check every doc against the code.** Send subagents in one message, one per handful of non-core
-   docs, each with the brief in [check](references/check.md) and its docs' scan entries. Each
-   returns its docs' claims, sorted into four kinds with the file:line that settles each:
+3. **Check every doc against the code.** When the non-core docs fit in one careful read, check them
+   yourself with the brief in [check](references/check.md). When there are more, send subagents in
+   one message, one per handful of docs, each with that brief and its docs' scan entries. Either way
+   every doc's claims are sorted into four kinds with the file:line that settles each:
    - **Drifted:** the code says otherwise.
    - **Restated:** true today, and already said by the code: a signature, a config file, a test.
    - **Keeper:** something the code can't say: why it is this way, an alternative that was
