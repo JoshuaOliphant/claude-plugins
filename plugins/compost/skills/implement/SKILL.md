@@ -22,7 +22,9 @@ the work so each step can be checked before the next builds on it
 
 1. **Orient.** Read `docs/agents/issue-tracker.md` for the tracker and its commands; if it is absent,
    run `compost:setup` now, then continue. If `docs/agents/observability.md` is absent, run
-   `compost:setup`'s observability step on this branch before any worker branches from it. Read
+   `compost:setup`'s observability step on this branch before any worker branches from it. When
+   `docs/agents/testing.md` names no verify command, build it the same way, by `compost:verify`'s
+   step 1, so parallel lanes don't each write their own. Read
    the parent issue, every sub-issue, and every comment on them: earlier rulings bind you, and a
    status comment from `compost:pause` means you are resuming, so start from its next action. Read
    `CONTEXT.md` and the ADRs in `docs/adr/` for the areas the issues touch. Run `git log` and `git worktree list` to see what already landed.
