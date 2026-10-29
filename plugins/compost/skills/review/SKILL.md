@@ -5,7 +5,7 @@ description: Reviews a verified change with subagents on two axes, Standards and
 
 # Review
 
-A change that passes its tests can still break the repo's rules or quietly miss what the issue asked for. Review catches both before the change reaches `compost:finish`. Subagents do the reviewing so the reviewer never shares the author's context, and each finding has to survive a skeptic before it costs you a fix. The harness's own code review runs alongside them as a second opinion on correctness.
+A change that passes its tests can still break the repo's rules or quietly miss what the issue asked for. Review catches both before the change reaches `compost:finish`. Subagents do the reviewing so the reviewer never shares the author's context, and each finding has to survive a skeptic before it costs you a fix. On a diff that changes executable code, the harness's own code review runs alongside them as a second opinion on correctness.
 
 Run this after `compost:verify` passes on every issue. Nobody needs to ask.
 
