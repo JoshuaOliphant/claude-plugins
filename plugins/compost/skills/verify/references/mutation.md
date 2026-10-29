@@ -54,8 +54,8 @@ broke the run outright, such as an annotation that no longer evaluates, and no t
 every run, and the two `fail-under` 0 flags keep it from failing the collection: contexts are an
 input to mutation, not a gate, and one missed line would otherwise stop both steps.
 
-It runs cosmic-ray's operators only. `--operators all` adds thin's own, the breaks cosmic-ray never
-makes: a deleted statement or guard, a constant return, a dropped boolean term, a changed string, a
+It runs cosmic-ray's operators and thin's own, the breaks cosmic-ray never makes (`--operators stock`
+leaves them out): a deleted statement or guard, a constant return, a dropped boolean term, a changed string, a
 nudged float threshold, a dropped same-type call ([kill matrix](../../thin/references/kill-matrix.md#thins-own-operators)).
 A surviving string mutant is listed apart, in `survived_strings`, and doesn't fail the run, since it
 is most often a message nobody reads.
