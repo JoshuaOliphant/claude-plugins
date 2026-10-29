@@ -100,13 +100,21 @@ hand decides.
    subsumes it as a parametrize row when it documents an input class worth naming. Lead with the
    count of tests that go and the suite time saved. When the subsumer is a broad, slow test and
    the redundant one is focused, offer the swap: keep the focused one and narrow the broad one.
+   Name each test's AC rows too: find every issue's AC table, closed issues included, that names
+   it (the repo's verify command lists them; else search the tracker for the test's name and its
+   file), and list each row beside the test that subsumes it, or the new parametrize id for a fold.
+   A test an AC row names, with no other test to take that row, stays: say so in the plan.
    Wait for the user's yes, for all of it or test by test. Inside an unattended run, change
    nothing; post the plan where the run reports and stop.
 
 7. **Thin, then prove nothing was lost.** Remove only tests outside `minimal`, so every mutant the
    old suite killed is still killed by construction. A fold changes a test, so it goes through
    `compost:build`'s red check: break the code as step 5 did and watch the folded row fail. Run
-   the suite and the coverage gate. Commit as `test: fold tests that no mutant needed`.
+   the suite and the coverage gate. Remap each AC row the plan listed to the subsuming test's node
+   id: in the same commit when the table lives in a file, in the tracker when it lives in an issue
+   (do it before you push, and name the rows in the commit body). Then run the repo's verify
+   command, which fails on an AC row naming a missing test; where the repo has none, run each
+   remapped node id by hand. Commit as `test: fold tests that no mutant needed`.
 
 ## Next moves
 
