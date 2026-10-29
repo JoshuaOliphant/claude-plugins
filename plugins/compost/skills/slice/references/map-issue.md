@@ -99,7 +99,7 @@ there and give it a line under Out of scope.
 5. Add sub-issues for questions the answer made sharp, removing them from Not yet specified. Update
    or close decisions the answer made moot.
 
-The research decisions step 5 sends to subagents run in parallel. Other sessions may be editing the map at
+The research decisions that step 5 of Charting the map sends to subagents run in parallel. Other sessions may be editing the map at
 the same time, so re-read it before writing.
 
 The tracker commands for sub-issues, dependencies, claiming, and the frontier query are in
