@@ -697,7 +697,9 @@ def main(argv: list[str] | None = None) -> int:
     for flag in ("--pytest-args", "--timeout", "--workers"):
         action = next(a for a in run._actions if flag in a.option_strings)
         diff.add_argument(flag, type=action.type, default=action.default, help=action.help)
-    diff.add_argument("--operators", choices=["all", "stock"], default="stock", help="all: add thin's own operators")
+    diff.add_argument(
+        "--operators", choices=["all", "stock"], default="all", help=run._option_string_actions["--operators"].help
+    )
     args = parser.parse_args(argv)
 
     if args.command == "candidates":
