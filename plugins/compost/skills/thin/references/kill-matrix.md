@@ -43,13 +43,13 @@ redundant verdicts were wrong.
 
 ## Thin's own operators
 
-`--operators all` adds six ast-based operators, named `thin/...`, for the breaks above: a deleted
+`--operators all`, the default, adds six ast-based operators, named `thin/...`, for the breaks above: a deleted
 statement or guard (`DeleteStatement`), a constant return (`ReturnConstant`), one term dropped from
 an `and`, an `or`, or an `all`/`any` over a literal (`DropTerm`), a changed string
 (`ReplaceString`), a float threshold nudged one digit finer (`NudgeThreshold`), and a same-type
 call or `sorted` dropped (`DropCall`). A threshold set at import, such as a module constant, runs
-against every selected test of its module, since coverage gives its line no test. `matrix` uses
-them by default; `survivors` adds them only with `--operators all`, and lists surviving string
+against every selected test of its module, since coverage gives its line no test. Both `matrix` and `survivors` use
+them unless `--operators stock` leaves them out; `survivors` lists surviving string
 mutants apart, in `survived_strings`, since most are messages nobody reads.
 
 Measured on the 174 candidates outside `test_thin.py`, at 100% line coverage:
