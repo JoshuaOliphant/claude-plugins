@@ -1,0 +1,45 @@
+Item #,Description,Vendor Part,Cat,UOM,Pack,Unit Cost
+AC-1001,wood screw #8 M5,acx 501,SCRW,BOX,10,2.23
+AC-1002,sleeve anchor M6,acx 502,ANCH,CS,24,2.96
+AC-1003,duct tape 2in M7,acx 503,ADH,PK,6,4.69
+AC-1004,claw hammer 16oz M8,acx 504,TOOL,EACH,1,4.42
+AC-1005,safety glasses clear M9,acx 505,PPE,EA,1,5.15
+AC-1006,nitrile gloves L M10,acx 506,GLOV,BOX,10,6.88
+AC-1007,caution sign wet floor M11,acx 507,SIGN,CS,24,6.61
+AC-1008,glass cleaner 32oz M12,acx 508,CLEAN,PK,6,7.34
+AC-1009,hex bolt zinc M13,acx 509,FAST,EACH,1,9.07
+AC-1010,wood screw #8 M14,acx 510,SCRW,EA,1,8.80
+AC-1011,sleeve anchor M15,acx 511,ANCH,BOX,10,9.53
+AC-1012,duct tape 2in M4,acx 512,ADH,CS,24,11.26
+AC-1012,duct tape 2in M4,acx 512,ADH,CS,24,11.26
+AC-1013,claw hammer 16oz M5,acx 513,TOOL,PK,6,10.99
+AC-1014,safety glasses clear M6,acx 514,PPE,EACH,1,11.72
+AC-1015,nitrile gloves L M7,acx 515,GLOV,EA,1,13.45
+AC-1016,caution sign wet floor M8,acx 516,SIGN,BOX,10,13.18
+AC-1017,glass cleaner 32oz M9,acx 517,CLEAN,CS,24,13.91
+AC-1018,hex bolt zinc M10,acx 518,FAST,PK,6,15.64
+AC-1019,wood screw #8 M11,acx 519,SCRW,EACH,1,15.37
+AC-1020,sleeve anchor M12,acx 520,ANCH,EA,1,16.10
+AC-1021,duct tape 2in M13,acx 521,ADH,BOX,10,17.83
+AC-1022,claw hammer 16oz M14,acx 522,TOOL,CS,24,17.56
+AC-1023,safety glasses clear M15,acx 523,PPE,PK,6,18.29
+AC-1024,nitrile gloves L M4,acx 524,GLOV,EACH,1,20.02
+AC-1025,caution sign wet floor M5,acx 525,SIGN,EA,1,19.75
+AC-1026,glass cleaner 32oz M6,acx 526,CLEAN,BOX,10,20.48
+AC-1027,hex bolt zinc M7,acx 527,FAST,CS,24,22.21
+AC-1028,wood screw #8 M8,acx 528,SCRW,PK,6,21.94
+AC-1029,sleeve anchor M9,acx 529,ANCH,EACH,1,22.67
+AC-1030,duct tape 2in M10,acx 530,ADH,EA,1,24.40
+AC-1031,claw hammer 16oz M11,acx 531,TOOL,BOX,10,24.13
+AC-1032,safety glasses clear M12,acx 532,PPE,CS,24,24.86
+AC-1033,nitrile gloves L M13,acx 533,GLOV,PK,6,26.59
+AC-1034,caution sign wet floor M14,acx 534,SIGN,EACH,1,26.32
+AC-1035,glass cleaner 32oz M15,acx 535,CLEAN,EA,1,27.05
+AC-1036,hex bolt zinc M4,acx 536,FAST,BOX,10,28.78
+AC-1037,wood screw #8 M5,acx 537,SCRW,CS,24,28.51
+AC-1038,sleeve anchor M6,acx 538,ANCH,PK,6,29.24
+AC-1039,duct tape 2in M7,acx 539,ADH,EACH,1,30.97
+AC-1040,claw hammer 16oz M8,acx 540,TOOL,EA,1,30.70
+,Hex Bolt Zinc M4,acx 9036,FAST,EA,1,6.42
+AC-9999,mystery item,acx 9999,MISC,EA,1,3.10
+AC-9998,glue stick,acx 9998,ADH,TUBE,1,n/a

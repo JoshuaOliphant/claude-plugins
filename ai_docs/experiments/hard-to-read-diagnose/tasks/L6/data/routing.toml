@@ -1,0 +1,39 @@
+# First matching rule wins. Keys in [defaults] apply to every rule that
+# does not set them itself.
+
+[defaults]
+template = "default"
+suppress = false
+
+[[rule]]
+name = "security"
+categories = ["security"]
+channel = "incidents"
+template = "urgent"
+
+[[rule]]
+name = "outage"
+categories = ["outage"]
+channel = "incidents"
+template = "urgent"
+
+[[rule]]
+name = "urgent-anything"
+priorities = ["urgent"]
+channel = "incidents"
+template = "urgent"
+
+[[rule]]
+name = "billing"
+categories = ["billing"]
+channel = "billing"
+
+[[rule]]
+name = "quiet-general"
+categories = ["general"]
+priorities = ["low"]
+channel = "support"
+suppress = true
+
+[fallback]
+channel = "support"

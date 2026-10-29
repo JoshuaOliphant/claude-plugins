@@ -1,0 +1,26 @@
+{
+  "web": {
+    "currency": "USD",
+    "coupons": [],
+    "contact": {"email": null, "email_opt_in": false, "sms_opt_in": false},
+    "fulfillment": {"method": "ship", "speed": "standard", "gift_note": null, "inserts": []}
+  },
+  "app": {
+    "currency": "USD",
+    "coupons": [],
+    "contact": {"email": null, "email_opt_in": true, "sms_opt_in": false},
+    "fulfillment": {"method": "ship", "speed": "standard", "gift_note": null, "inserts": []}
+  },
+  "phone": {
+    "currency": "USD",
+    "coupons": [],
+    "contact": {"email": null, "email_opt_in": false, "sms_opt_in": false},
+    "fulfillment": {"method": "ship", "speed": "express", "gift_note": null, "inserts": []}
+  },
+  "store": {
+    "currency": "USD",
+    "coupons": [],
+    "contact": {"email": null, "email_opt_in": false, "sms_opt_in": false},
+    "fulfillment": {"method": "pickup", "speed": "standard", "gift_note": null, "inserts": []}
+  }
+}

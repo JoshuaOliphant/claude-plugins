@@ -1,0 +1,14 @@
+{
+  "default": "uncategorized",
+  "rules": [
+    {"pattern": "COFFEE|RESTAURANT|LUNCH", "category": "meals"},
+    {"pattern": "TRANSIT|TAXI|PARKING", "category": "local-transport"},
+    {"pattern": "AIRLINE|HOTEL", "category": "travel"},
+    {"pattern": "CLOUD HOSTING|SOFTWARE", "category": "software"},
+    {"pattern": "OFFICE SUPPLY|BOOKSHOP", "category": "office"},
+    {"pattern": "PHONE", "category": "telecom"},
+    {"pattern": "GREENGROCER", "category": "groceries", "accounts": ["bank:checking"]},
+    {"pattern": "GREENGROCER", "category": "meals"},
+    {"pattern": "PAYROLL", "category": "payroll", "min_abs_amount": "100.00"}
+  ]
+}

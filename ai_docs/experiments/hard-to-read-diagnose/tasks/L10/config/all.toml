@@ -1,0 +1,37 @@
+# Month-end consolidation: bank statement, card export and both partner feeds.
+[ledger]
+base_currency = "USD"
+output = "../out/consolidated-ledger.jsonl"
+
+[feeds]
+root = "../feeds"
+
+[retry]
+attempts = 4
+backoff_seconds = 0.5
+
+[validation]
+enabled = true
+sample_size = 25
+
+[[sources]]
+name = "bank"
+kind = "csv"
+path = "../samples/bank.csv"
+date_format = "%d/%m/%Y"
+
+[[sources]]
+name = "card"
+kind = "jsonl"
+path = "../samples/card.jsonl"
+
+[[sources]]
+name = "acme-feed"
+kind = "feed"
+feed = "acme"
+since = "2026-09-01"
+
+[[sources]]
+name = "nova-feed"
+kind = "feed"
+feed = "nova"

@@ -1,0 +1,85 @@
+{
+ "items": [
+  {
+   "id": "NOVA-0001",
+   "posted": "2026-09-03",
+   "amount": "-64.84",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "SOFTWARE SUBSCRIPTION"
+  },
+  {
+   "id": "NOVA-0002",
+   "posted": "2026-09-05",
+   "amount": "-56.80",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "PARKING GARAGE"
+  },
+  {
+   "id": "NOVA-0003",
+   "posted": "2026-09-07",
+   "amount": "-37.00",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "RESTAURANT LUNA"
+  },
+  {
+   "id": "NOVA-0004",
+   "posted": "2026-09-09",
+   "amount": "-5.36",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "TAXI SERVICE"
+  },
+  {
+   "id": "NOVA-0005",
+   "posted": "2026-09-11",
+   "amount": "-48.94",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "SOFTWARE SUBSCRIPTION"
+  },
+  {
+   "id": "NOVA-0006",
+   "posted": "2026-09-13",
+   "amount": "-43.63",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "CLOUD HOSTING INV"
+  },
+  {
+   "id": "NOVA-0007",
+   "posted": "2026-09-15",
+   "amount": "-20.82",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "SOFTWARE SUBSCRIPTION"
+  },
+  {
+   "id": "NOVA-0008",
+   "posted": "2026-09-17",
+   "amount": "-21.78",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "RESTAURANT LUNA"
+  },
+  {
+   "id": "NOVA-0009",
+   "posted": "2026-09-19",
+   "amount": "-88.68",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "PAYROLL TRANSFER"
+  },
+  {
+   "id": "NOVA-0010",
+   "posted": "2026-09-21",
+   "amount": "-85.04",
+   "currency": "GBP",
+   "account": "nova:0007",
+   "memo": "TAXI SERVICE"
+  }
+ ],
+ "next": "p002"
+}

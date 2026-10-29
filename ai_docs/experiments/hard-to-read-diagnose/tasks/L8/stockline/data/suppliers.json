@@ -1,0 +1,72 @@
+{
+  "suppliers": [
+    {
+      "code": "ACME",
+      "name": "Acme Industrial Supply",
+      "feed_format": "csv",
+      "filename_prefix": "acme",
+      "columns": {
+        "sku": "Item #",
+        "name": "Description",
+        "supplier_part": "Vendor Part",
+        "category": "Cat",
+        "uom": "UOM",
+        "pack_size": "Pack",
+        "cost": "Unit Cost"
+      },
+      "category_map": {
+        "FAST": "hardware.fasteners",
+        "SCRW": "hardware.fasteners.screws",
+        "ANCH": "hardware.fasteners.anchors",
+        "ADH": "hardware.adhesives",
+        "TOOL": "hardware.tools",
+        "PPE": "safety.ppe",
+        "GLOV": "safety.ppe.gloves",
+        "SIGN": "safety.signage",
+        "CLEAN": "janitorial.cleaning"
+      }
+    },
+    {
+      "code": "NWND",
+      "name": "Northwind Traders",
+      "feed_format": "jsonl",
+      "filename_prefix": "northwind",
+      "columns": {
+        "sku": "sku",
+        "name": "title",
+        "supplier_part": "mpn",
+        "category": "category",
+        "uom": "unit",
+        "pack_size": "qty_per_unit",
+        "cost": "cost"
+      },
+      "category_map": {
+        "office/paper": "office.paper",
+        "office/writing": "office.writing",
+        "office/filing": "office.filing",
+        "breakroom": "janitorial.breakroom",
+        "paper-goods": "janitorial.paper"
+      }
+    },
+    {
+      "code": "GLBX",
+      "name": "Globex Safety",
+      "feed_format": "csv",
+      "filename_prefix": "globex",
+      "columns": {
+        "sku": "SKU",
+        "name": "Name",
+        "supplier_part": "MfrPart",
+        "category": "Category",
+        "uom": "Unit",
+        "pack_size": "PerUnit",
+        "cost": "Cost"
+      },
+      "category_map": {
+        "gloves": "safety.ppe.gloves",
+        "eyewear": "safety.ppe",
+        "signs": "safety.signage"
+      }
+    }
+  ]
+}

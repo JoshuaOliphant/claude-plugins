@@ -1,0 +1,6 @@
+Date,Description,Account,Category,Amount,Memo
+2026-04-01,Acme Corp Payroll,checking,income:salary,4250.00,April salary
+2026-04-03,Maple Street Rentals,checking,housing:rent,-1650.00,rent
+2026-04-06,FreshMart,card,food:groceries,-120.75,weekly shop
+2026-04-12,"Books, Maps & More",card,leisure:books,-34.90,travel guide
+2026-04-15,Metro Transit,card,transport:pass,-95.00,monthly pass

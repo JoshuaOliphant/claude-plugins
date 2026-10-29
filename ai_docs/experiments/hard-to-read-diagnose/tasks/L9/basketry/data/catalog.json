@@ -1,0 +1,21 @@
+{
+  "version": 7,
+  "products": [
+    {"sku": "SCARF-MER", "name": "Merino Wool Scarf", "category": "apparel", "price_cents": 4500, "weight_grams": 180, "giftable": true, "tax_class": "clothing"},
+    {"sku": "BEANIE-CSH", "name": "Cashmere Beanie", "category": "apparel", "price_cents": 6200, "weight_grams": 110, "giftable": true, "tax_class": "clothing"},
+    {"sku": "SOCK-HIKE", "name": "Hiking Socks (3 pack)", "category": "apparel", "price_cents": 2400, "weight_grams": 240, "giftable": false, "tax_class": "clothing"},
+    {"sku": "MUG-STONE", "name": "Stoneware Mug", "category": "kitchen", "price_cents": 1800, "weight_grams": 420, "giftable": true, "tax_class": "general"},
+    {"sku": "KETTLE-GOOSE", "name": "Gooseneck Kettle", "category": "kitchen", "price_cents": 7900, "weight_grams": 1150, "giftable": true, "tax_class": "general"},
+    {"sku": "TEA-ASSAM", "name": "Assam Loose Leaf Tea", "category": "pantry", "price_cents": 1400, "weight_grams": 250, "giftable": true, "tax_class": "food"},
+    {"sku": "HONEY-RAW", "name": "Raw Wildflower Honey", "category": "pantry", "price_cents": 1100, "weight_grams": 500, "giftable": false, "tax_class": "food"},
+    {"sku": "CANDLE-CED", "name": "Cedar Soy Candle", "category": "home", "price_cents": 2800, "weight_grams": 360, "giftable": true, "tax_class": "general"},
+    {"sku": "THROW-LIN", "name": "Linen Throw Blanket", "category": "home", "price_cents": 11900, "weight_grams": 1300, "giftable": true, "tax_class": "general"},
+    {"sku": "JOURNAL-LTH", "name": "Leather Journal", "category": "stationery", "price_cents": 3600, "weight_grams": 390, "giftable": true, "tax_class": "general"},
+    {"sku": "PEN-FTN", "name": "Fountain Pen", "category": "stationery", "price_cents": 5400, "weight_grams": 60, "giftable": true, "tax_class": "general"},
+    {"sku": "INK-BLUE", "name": "Blue-Black Ink Bottle", "category": "stationery", "price_cents": 1600, "weight_grams": 140, "giftable": false, "tax_class": "general"},
+    {"sku": "PUZZLE-1000", "name": "1000-Piece Puzzle", "category": "games", "price_cents": 2900, "weight_grams": 700, "giftable": true, "tax_class": "general"},
+    {"sku": "CARDS-PLAY", "name": "Linen Playing Cards", "category": "games", "price_cents": 1200, "weight_grams": 110, "giftable": true, "tax_class": "general"},
+    {"sku": "SOAP-LAV", "name": "Lavender Soap Bar", "category": "bath", "price_cents": 900, "weight_grams": 120, "giftable": true, "tax_class": "general"},
+    {"sku": "SALTS-EUC", "name": "Eucalyptus Bath Salts", "category": "bath", "price_cents": 1900, "weight_grams": 600, "giftable": true, "tax_class": "general"}
+  ]
+}

@@ -1,0 +1,2636 @@
+{
+ "payments": [
+  {
+   "id": "PAY-00001",
+   "invoice": "INV25-00001",
+   "received": "2025-02-14",
+   "amount": "8653.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00002",
+   "invoice": "INV25-00002",
+   "received": "2025-01-20",
+   "amount": "2732.73",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00003",
+   "invoice": "INV25-00003",
+   "received": "2025-03-02",
+   "amount": "2793.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00004",
+   "invoice": "INV25-00004",
+   "received": "2025-03-04",
+   "amount": "6800.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00005",
+   "invoice": "INV25-00005",
+   "received": "2025-01-24",
+   "amount": "11128.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00006",
+   "invoice": "INV25-00007",
+   "received": "2025-01-30",
+   "amount": "9572.96",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00007",
+   "invoice": "INV25-00008",
+   "received": "2025-02-08",
+   "amount": "6591.35",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00008",
+   "invoice": "INV25-00009",
+   "received": "2025-02-08",
+   "amount": "4880.05",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00009",
+   "invoice": "INV25-00010",
+   "received": "2025-02-13",
+   "amount": "17146.29",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00010",
+   "invoice": "INV25-00011",
+   "received": "2025-02-05",
+   "amount": "21999.66",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00011",
+   "invoice": "INV25-00013",
+   "received": "2025-02-20",
+   "amount": "552.24",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00012",
+   "invoice": "INV25-00014",
+   "received": "2025-02-25",
+   "amount": "17306.25",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00013",
+   "invoice": "INV25-00015",
+   "received": "2025-01-30",
+   "amount": "4473.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00014",
+   "invoice": "INV25-00016",
+   "received": "2025-03-01",
+   "amount": "9437.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00015",
+   "invoice": "INV25-00017",
+   "received": "2025-01-17",
+   "amount": "3190.69",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00016",
+   "invoice": "INV25-00018",
+   "received": "2025-01-15",
+   "amount": "10145.15",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00017",
+   "invoice": "INV25-00019",
+   "received": "2025-01-31",
+   "amount": "22556.17",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00018",
+   "invoice": "INV25-00020",
+   "received": "2025-02-18",
+   "amount": "10983.91",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00019",
+   "invoice": "INV25-00021",
+   "received": "2025-03-06",
+   "amount": "4316.13",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00020",
+   "invoice": "INV25-00022",
+   "received": "2025-03-22",
+   "amount": "5523.38",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00021",
+   "invoice": "INV25-00023",
+   "received": "2025-03-05",
+   "amount": "5903.51",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00022",
+   "invoice": "INV25-00024",
+   "received": "2025-03-02",
+   "amount": "6142.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00023",
+   "invoice": "INV25-00025",
+   "received": "2025-02-06",
+   "amount": "9278.57",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00024",
+   "invoice": "INV25-00027",
+   "received": "2025-01-12",
+   "amount": "21517.02",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00025",
+   "invoice": "INV25-00028",
+   "received": "2025-03-02",
+   "amount": "28837.54",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00026",
+   "invoice": "INV25-00029",
+   "received": "2025-02-09",
+   "amount": "5133.44",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00027",
+   "invoice": "INV25-00030",
+   "received": "2025-02-28",
+   "amount": "13886.83",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00028",
+   "invoice": "INV25-00031",
+   "received": "2025-01-21",
+   "amount": "16847.72",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00029",
+   "invoice": "INV25-00032",
+   "received": "2025-03-10",
+   "amount": "16120.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00030",
+   "invoice": "INV25-00034",
+   "received": "2025-02-03",
+   "amount": "3900.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00031",
+   "invoice": "INV25-00035",
+   "received": "2025-03-21",
+   "amount": "14390.81",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00032",
+   "invoice": "INV25-00036",
+   "received": "2025-03-02",
+   "amount": "13330.37",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00033",
+   "invoice": "INV25-00037",
+   "received": "2025-04-20",
+   "amount": "7957.15",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00034",
+   "invoice": "INV25-00038",
+   "received": "2025-03-07",
+   "amount": "13295.46",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00035",
+   "invoice": "INV25-00040",
+   "received": "2025-03-16",
+   "amount": "6709.50",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00036",
+   "invoice": "INV25-00041",
+   "received": "2025-03-16",
+   "amount": "9609.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00037",
+   "invoice": "INV25-00042",
+   "received": "2025-03-09",
+   "amount": "18538.16",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00038",
+   "invoice": "INV25-00043",
+   "received": "2025-04-17",
+   "amount": "15363.92",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00039",
+   "invoice": "INV25-00044",
+   "received": "2025-03-08",
+   "amount": "7960.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00040",
+   "invoice": "INV25-00046",
+   "received": "2025-04-08",
+   "amount": "5133.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00041",
+   "invoice": "INV25-00047",
+   "received": "2025-03-20",
+   "amount": "12398.49",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00042",
+   "invoice": "INV25-00048",
+   "received": "2025-03-13",
+   "amount": "20916.63",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00043",
+   "invoice": "INV25-00049",
+   "received": "2025-03-17",
+   "amount": "14804.33",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00044",
+   "invoice": "INV25-00050",
+   "received": "2025-03-15",
+   "amount": "6511.89",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00045",
+   "invoice": "INV25-00051",
+   "received": "2025-03-02",
+   "amount": "18822.38",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00046",
+   "invoice": "INV25-00052",
+   "received": "2025-02-18",
+   "amount": "15924.87",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00047",
+   "invoice": "INV25-00053",
+   "received": "2025-02-28",
+   "amount": "10772.59",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00048",
+   "invoice": "INV25-00054",
+   "received": "2025-02-18",
+   "amount": "6162.50",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00049",
+   "invoice": "INV25-00055",
+   "received": "2025-02-19",
+   "amount": "2962.78",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00050",
+   "invoice": "INV25-00056",
+   "received": "2025-02-17",
+   "amount": "14851.60",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00051",
+   "invoice": "INV25-00057",
+   "received": "2025-03-20",
+   "amount": "6574.56",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00052",
+   "invoice": "INV25-00058",
+   "received": "2025-03-19",
+   "amount": "4675.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00053",
+   "invoice": "INV25-00059",
+   "received": "2025-04-11",
+   "amount": "11129.21",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00054",
+   "invoice": "INV25-00060",
+   "received": "2025-04-04",
+   "amount": "8772.45",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00055",
+   "invoice": "INV25-00061",
+   "received": "2025-02-28",
+   "amount": "12123.90",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00056",
+   "invoice": "INV25-00062",
+   "received": "2025-03-09",
+   "amount": "19935.09",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00057",
+   "invoice": "INV25-00063",
+   "received": "2025-03-28",
+   "amount": "417.48",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00058",
+   "invoice": "INV25-00064",
+   "received": "2025-04-03",
+   "amount": "10939.50",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00059",
+   "invoice": "INV25-00065",
+   "received": "2025-03-08",
+   "amount": "6542.25",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00060",
+   "invoice": "INV25-00066",
+   "received": "2025-04-02",
+   "amount": "8091.87",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00061",
+   "invoice": "INV25-00067",
+   "received": "2025-03-15",
+   "amount": "17665.30",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00062",
+   "invoice": "INV25-00068",
+   "received": "2025-03-06",
+   "amount": "5938.97",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00063",
+   "invoice": "INV25-00070",
+   "received": "2025-04-27",
+   "amount": "19160.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00064",
+   "invoice": "INV25-00071",
+   "received": "2025-03-29",
+   "amount": "26830.34",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00065",
+   "invoice": "INV25-00072",
+   "received": "2025-03-26",
+   "amount": "3067.20",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00066",
+   "invoice": "INV25-00073",
+   "received": "2025-04-30",
+   "amount": "10395.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00067",
+   "invoice": "INV25-00075",
+   "received": "2025-05-09",
+   "amount": "2240.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00068",
+   "invoice": "INV25-00076",
+   "received": "2025-05-13",
+   "amount": "18017.57",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00069",
+   "invoice": "INV25-00079",
+   "received": "2025-04-13",
+   "amount": "14027.50",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00070",
+   "invoice": "INV25-00080",
+   "received": "2025-04-01",
+   "amount": "14625.45",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00071",
+   "invoice": "INV25-00081",
+   "received": "2025-05-02",
+   "amount": "17428.13",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00072",
+   "invoice": "INV25-00083",
+   "received": "2025-04-24",
+   "amount": "5967.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00073",
+   "invoice": "INV25-00084",
+   "received": "2025-03-30",
+   "amount": "2038.40",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00074",
+   "invoice": "INV25-00085",
+   "received": "2025-04-25",
+   "amount": "9275.25",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00075",
+   "invoice": "INV25-00086",
+   "received": "2025-05-05",
+   "amount": "13794.84",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00076",
+   "invoice": "INV25-00089",
+   "received": "2025-04-09",
+   "amount": "20128.50",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00077",
+   "invoice": "INV25-00090",
+   "received": "2025-04-12",
+   "amount": "20106.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00078",
+   "invoice": "INV25-00091",
+   "received": "2025-04-06",
+   "amount": "10500.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00079",
+   "invoice": "INV25-00092",
+   "received": "2025-04-05",
+   "amount": "4504.50",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00080",
+   "invoice": "INV25-00093",
+   "received": "2025-05-03",
+   "amount": "20592.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00081",
+   "invoice": "INV25-00094",
+   "received": "2025-03-29",
+   "amount": "12942.86",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00082",
+   "invoice": "INV25-00095",
+   "received": "2025-04-09",
+   "amount": "11235.75",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00083",
+   "invoice": "INV25-00096",
+   "received": "2025-04-06",
+   "amount": "4626.86",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00084",
+   "invoice": "INV25-00098",
+   "received": "2025-05-06",
+   "amount": "14437.50",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00085",
+   "invoice": "INV25-00099",
+   "received": "2025-04-01",
+   "amount": "7252.46",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00086",
+   "invoice": "INV25-00100",
+   "received": "2025-03-24",
+   "amount": "8599.88",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00087",
+   "invoice": "INV25-00101",
+   "received": "2025-05-13",
+   "amount": "20986.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00088",
+   "invoice": "INV25-00102",
+   "received": "2025-04-07",
+   "amount": "315.32",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00089",
+   "invoice": "INV25-00103",
+   "received": "2025-05-04",
+   "amount": "15960.07",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00090",
+   "invoice": "INV25-00104",
+   "received": "2025-06-08",
+   "amount": "23319.50",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00091",
+   "invoice": "INV25-00105",
+   "received": "2025-05-25",
+   "amount": "3940.50",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00092",
+   "invoice": "INV25-00107",
+   "received": "2025-05-18",
+   "amount": "559.78",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00093",
+   "invoice": "INV25-00108",
+   "received": "2025-06-06",
+   "amount": "10071.71",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00094",
+   "invoice": "INV25-00110",
+   "received": "2025-05-22",
+   "amount": "4009.56",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00095",
+   "invoice": "INV25-00111",
+   "received": "2025-05-19",
+   "amount": "7064.39",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00096",
+   "invoice": "INV25-00112",
+   "received": "2025-05-06",
+   "amount": "7775.31",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00097",
+   "invoice": "INV25-00113",
+   "received": "2025-05-06",
+   "amount": "9317.87",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00098",
+   "invoice": "INV25-00114",
+   "received": "2025-04-23",
+   "amount": "19934.10",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00099",
+   "invoice": "INV25-00115",
+   "received": "2025-05-04",
+   "amount": "11578.50",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00100",
+   "invoice": "INV25-00116",
+   "received": "2025-04-22",
+   "amount": "8826.19",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00101",
+   "invoice": "INV25-00117",
+   "received": "2025-06-02",
+   "amount": "8768.90",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00102",
+   "invoice": "INV25-00118",
+   "received": "2025-05-14",
+   "amount": "10138.62",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00103",
+   "invoice": "INV25-00119",
+   "received": "2025-04-10",
+   "amount": "2579.20",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00104",
+   "invoice": "INV25-00120",
+   "received": "2025-05-03",
+   "amount": "6756.75",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00105",
+   "invoice": "INV25-00121",
+   "received": "2025-05-03",
+   "amount": "14276.43",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00106",
+   "invoice": "INV25-00122",
+   "received": "2025-04-18",
+   "amount": "4508.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00107",
+   "invoice": "INV25-00123",
+   "received": "2025-05-26",
+   "amount": "12346.35",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00108",
+   "invoice": "INV25-00124",
+   "received": "2025-05-26",
+   "amount": "1340.63",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00109",
+   "invoice": "INV25-00125",
+   "received": "2025-05-22",
+   "amount": "4178.90",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00110",
+   "invoice": "INV25-00126",
+   "received": "2025-05-10",
+   "amount": "15392.06",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00111",
+   "invoice": "INV25-00127",
+   "received": "2025-05-19",
+   "amount": "18072.38",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00112",
+   "invoice": "INV25-00128",
+   "received": "2025-05-08",
+   "amount": "28844.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00113",
+   "invoice": "INV25-00129",
+   "received": "2025-06-03",
+   "amount": "9861.28",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00114",
+   "invoice": "INV25-00130",
+   "received": "2025-05-26",
+   "amount": "15011.78",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00115",
+   "invoice": "INV25-00131",
+   "received": "2025-04-22",
+   "amount": "12464.40",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00116",
+   "invoice": "INV25-00132",
+   "received": "2025-04-25",
+   "amount": "7048.39",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00117",
+   "invoice": "INV25-00133",
+   "received": "2025-04-18",
+   "amount": "7242.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00118",
+   "invoice": "INV25-00135",
+   "received": "2025-05-16",
+   "amount": "6228.51",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00119",
+   "invoice": "INV25-00136",
+   "received": "2025-06-10",
+   "amount": "8003.84",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00120",
+   "invoice": "INV25-00137",
+   "received": "2025-05-17",
+   "amount": "16620.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00121",
+   "invoice": "INV25-00138",
+   "received": "2025-06-25",
+   "amount": "5282.40",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00122",
+   "invoice": "INV25-00139",
+   "received": "2025-05-21",
+   "amount": "16046.96",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00123",
+   "invoice": "INV25-00140",
+   "received": "2025-05-20",
+   "amount": "6579.05",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00124",
+   "invoice": "INV25-00141",
+   "received": "2025-06-28",
+   "amount": "18006.92",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00125",
+   "invoice": "INV25-00142",
+   "received": "2025-06-06",
+   "amount": "1300.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00126",
+   "invoice": "INV25-00143",
+   "received": "2025-06-11",
+   "amount": "15812.53",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00127",
+   "invoice": "INV25-00146",
+   "received": "2025-06-08",
+   "amount": "1106.31",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00128",
+   "invoice": "INV25-00147",
+   "received": "2025-06-04",
+   "amount": "4200.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00129",
+   "invoice": "INV25-00149",
+   "received": "2025-06-25",
+   "amount": "8686.50",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00130",
+   "invoice": "INV25-00150",
+   "received": "2025-07-02",
+   "amount": "3900.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00131",
+   "invoice": "INV25-00151",
+   "received": "2025-07-01",
+   "amount": "6972.21",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00132",
+   "invoice": "INV25-00152",
+   "received": "2025-06-22",
+   "amount": "12121.35",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00133",
+   "invoice": "INV25-00153",
+   "received": "2025-07-04",
+   "amount": "4035.72",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00134",
+   "invoice": "INV25-00154",
+   "received": "2025-06-10",
+   "amount": "6709.50",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00135",
+   "invoice": "INV25-00155",
+   "received": "2025-07-04",
+   "amount": "4504.50",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00136",
+   "invoice": "INV25-00156",
+   "received": "2025-06-09",
+   "amount": "6230.14",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00137",
+   "invoice": "INV25-00157",
+   "received": "2025-07-10",
+   "amount": "1312.16",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00138",
+   "invoice": "INV25-00158",
+   "received": "2025-05-17",
+   "amount": "15528.13",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00139",
+   "invoice": "INV25-00159",
+   "received": "2025-06-26",
+   "amount": "285.51",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00140",
+   "invoice": "INV25-00160",
+   "received": "2025-07-07",
+   "amount": "28248.06",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00141",
+   "invoice": "INV25-00162",
+   "received": "2025-06-17",
+   "amount": "4502.42",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00142",
+   "invoice": "INV25-00163",
+   "received": "2025-07-09",
+   "amount": "13343.66",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00143",
+   "invoice": "INV25-00164",
+   "received": "2025-07-18",
+   "amount": "6695.54",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00144",
+   "invoice": "INV25-00165",
+   "received": "2025-06-14",
+   "amount": "13097.50",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00145",
+   "invoice": "INV25-00166",
+   "received": "2025-06-12",
+   "amount": "14550.03",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00146",
+   "invoice": "INV25-00169",
+   "received": "2025-06-15",
+   "amount": "6350.06",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00147",
+   "invoice": "INV25-00170",
+   "received": "2025-06-30",
+   "amount": "4798.64",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00148",
+   "invoice": "INV25-00171",
+   "received": "2025-06-19",
+   "amount": "1389.83",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00149",
+   "invoice": "INV25-00172",
+   "received": "2025-08-07",
+   "amount": "11800.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00150",
+   "invoice": "INV25-00173",
+   "received": "2025-07-23",
+   "amount": "19468.52",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00151",
+   "invoice": "INV25-00174",
+   "received": "2025-07-15",
+   "amount": "7471.94",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00152",
+   "invoice": "INV25-00175",
+   "received": "2025-08-09",
+   "amount": "1383.38",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00153",
+   "invoice": "INV25-00176",
+   "received": "2025-07-12",
+   "amount": "14937.69",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00154",
+   "invoice": "INV25-00177",
+   "received": "2025-06-25",
+   "amount": "7386.60",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00155",
+   "invoice": "INV25-00178",
+   "received": "2025-07-27",
+   "amount": "14036.16",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00156",
+   "invoice": "INV25-00179",
+   "received": "2025-06-10",
+   "amount": "4153.50",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00157",
+   "invoice": "INV25-00180",
+   "received": "2025-07-09",
+   "amount": "8997.98",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00158",
+   "invoice": "INV25-00181",
+   "received": "2025-07-06",
+   "amount": "3819.87",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00159",
+   "invoice": "INV25-00183",
+   "received": "2025-07-20",
+   "amount": "13350.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00160",
+   "invoice": "INV25-00184",
+   "received": "2025-07-18",
+   "amount": "15041.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00161",
+   "invoice": "INV25-00185",
+   "received": "2025-07-19",
+   "amount": "4374.82",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00162",
+   "invoice": "INV25-00186",
+   "received": "2025-07-12",
+   "amount": "2324.07",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00163",
+   "invoice": "INV25-00187",
+   "received": "2025-07-21",
+   "amount": "7535.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00164",
+   "invoice": "INV25-00188",
+   "received": "2025-07-09",
+   "amount": "95.71",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00165",
+   "invoice": "INV25-00189",
+   "received": "2025-07-11",
+   "amount": "7759.75",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00166",
+   "invoice": "INV25-00191",
+   "received": "2025-07-22",
+   "amount": "4021.71",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00167",
+   "invoice": "INV25-00192",
+   "received": "2025-07-27",
+   "amount": "16366.33",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00168",
+   "invoice": "INV25-00193",
+   "received": "2025-06-23",
+   "amount": "925.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00169",
+   "invoice": "INV25-00194",
+   "received": "2025-07-24",
+   "amount": "13950.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00170",
+   "invoice": "INV25-00195",
+   "received": "2025-07-06",
+   "amount": "9450.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00171",
+   "invoice": "INV25-00196",
+   "received": "2025-06-30",
+   "amount": "16183.87",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00172",
+   "invoice": "INV25-00198",
+   "received": "2025-07-06",
+   "amount": "14478.75",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00173",
+   "invoice": "INV25-00199",
+   "received": "2025-07-26",
+   "amount": "10053.60",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00174",
+   "invoice": "INV25-00200",
+   "received": "2025-07-22",
+   "amount": "5304.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00175",
+   "invoice": "INV25-00201",
+   "received": "2025-07-15",
+   "amount": "5645.44",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00176",
+   "invoice": "INV25-00202",
+   "received": "2025-07-16",
+   "amount": "3762.50",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00177",
+   "invoice": "INV25-00203",
+   "received": "2025-07-29",
+   "amount": "14779.91",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00178",
+   "invoice": "INV25-00205",
+   "received": "2025-07-31",
+   "amount": "3762.73",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00179",
+   "invoice": "INV25-00206",
+   "received": "2025-07-24",
+   "amount": "10108.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00180",
+   "invoice": "INV25-00207",
+   "received": "2025-07-13",
+   "amount": "9665.41",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00181",
+   "invoice": "INV25-00208",
+   "received": "2025-08-06",
+   "amount": "13456.42",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00182",
+   "invoice": "INV25-00209",
+   "received": "2025-09-03",
+   "amount": "2928.63",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00183",
+   "invoice": "INV25-00210",
+   "received": "2025-07-18",
+   "amount": "243.53",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00184",
+   "invoice": "INV25-00211",
+   "received": "2025-09-03",
+   "amount": "4977.44",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00185",
+   "invoice": "INV25-00212",
+   "received": "2025-08-29",
+   "amount": "11459.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00186",
+   "invoice": "INV25-00213",
+   "received": "2025-09-02",
+   "amount": "6017.11",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00187",
+   "invoice": "INV25-00214",
+   "received": "2025-07-18",
+   "amount": "5360.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00188",
+   "invoice": "INV25-00216",
+   "received": "2025-08-28",
+   "amount": "25011.42",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00189",
+   "invoice": "INV25-00218",
+   "received": "2025-08-14",
+   "amount": "2795.54",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00190",
+   "invoice": "INV25-00219",
+   "received": "2025-08-25",
+   "amount": "759.33",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00191",
+   "invoice": "INV25-00220",
+   "received": "2025-08-06",
+   "amount": "15008.51",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00192",
+   "invoice": "INV25-00221",
+   "received": "2025-08-12",
+   "amount": "4460.12",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00193",
+   "invoice": "INV25-00222",
+   "received": "2025-07-23",
+   "amount": "6863.87",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00194",
+   "invoice": "INV25-00225",
+   "received": "2025-08-31",
+   "amount": "27690.88",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00195",
+   "invoice": "INV25-00226",
+   "received": "2025-07-27",
+   "amount": "3569.28",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00196",
+   "invoice": "INV25-00227",
+   "received": "2025-08-18",
+   "amount": "4218.24",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00197",
+   "invoice": "INV25-00228",
+   "received": "2025-08-08",
+   "amount": "16240.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00198",
+   "invoice": "INV25-00229",
+   "received": "2025-08-25",
+   "amount": "5031.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00199",
+   "invoice": "INV25-00230",
+   "received": "2025-07-12",
+   "amount": "20166.85",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00200",
+   "invoice": "INV25-00231",
+   "received": "2025-08-02",
+   "amount": "11902.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00201",
+   "invoice": "INV25-00232",
+   "received": "2025-07-16",
+   "amount": "6142.19",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00202",
+   "invoice": "INV25-00233",
+   "received": "2025-07-24",
+   "amount": "10392.64",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00203",
+   "invoice": "INV25-00234",
+   "received": "2025-07-26",
+   "amount": "7007.70",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00204",
+   "invoice": "INV25-00235",
+   "received": "2025-07-24",
+   "amount": "11951.93",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00205",
+   "invoice": "INV25-00236",
+   "received": "2025-09-11",
+   "amount": "24879.32",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00206",
+   "invoice": "INV25-00237",
+   "received": "2025-08-19",
+   "amount": "6542.25",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00207",
+   "invoice": "INV25-00238",
+   "received": "2025-08-24",
+   "amount": "3832.94",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00208",
+   "invoice": "INV25-00239",
+   "received": "2025-09-22",
+   "amount": "4485.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00209",
+   "invoice": "INV25-00240",
+   "received": "2025-09-08",
+   "amount": "10135.13",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00210",
+   "invoice": "INV25-00242",
+   "received": "2025-09-03",
+   "amount": "7242.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00211",
+   "invoice": "INV25-00243",
+   "received": "2025-10-05",
+   "amount": "5097.15",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00212",
+   "invoice": "INV25-00244",
+   "received": "2025-10-06",
+   "amount": "14341.47",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00213",
+   "invoice": "INV25-00245",
+   "received": "2025-09-01",
+   "amount": "17651.54",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00214",
+   "invoice": "INV25-00246",
+   "received": "2025-09-25",
+   "amount": "21957.64",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00215",
+   "invoice": "INV25-00247",
+   "received": "2025-09-05",
+   "amount": "1433.98",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00216",
+   "invoice": "INV25-00248",
+   "received": "2025-09-10",
+   "amount": "1392.53",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00217",
+   "invoice": "INV25-00249",
+   "received": "2025-09-24",
+   "amount": "9792.56",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00218",
+   "invoice": "INV25-00250",
+   "received": "2025-09-30",
+   "amount": "17028.40",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00219",
+   "invoice": "INV25-00252",
+   "received": "2025-10-02",
+   "amount": "4664.40",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00220",
+   "invoice": "INV25-00253",
+   "received": "2025-09-15",
+   "amount": "4675.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00221",
+   "invoice": "INV25-00254",
+   "received": "2025-08-13",
+   "amount": "15770.04",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00222",
+   "invoice": "INV25-00255",
+   "received": "2025-09-23",
+   "amount": "23605.50",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00223",
+   "invoice": "INV25-00256",
+   "received": "2025-09-28",
+   "amount": "13975.84",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00224",
+   "invoice": "INV25-00257",
+   "received": "2025-09-15",
+   "amount": "13942.81",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00225",
+   "invoice": "INV25-00258",
+   "received": "2025-09-26",
+   "amount": "11152.83",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00226",
+   "invoice": "INV25-00259",
+   "received": "2025-09-12",
+   "amount": "5910.75",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00227",
+   "invoice": "INV25-00260",
+   "received": "2025-08-10",
+   "amount": "16995.37",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00228",
+   "invoice": "INV25-00261",
+   "received": "2025-08-29",
+   "amount": "15311.99",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00229",
+   "invoice": "INV25-00263",
+   "received": "2025-09-04",
+   "amount": "1250.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00230",
+   "invoice": "INV25-00264",
+   "received": "2025-09-12",
+   "amount": "14008.82",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00231",
+   "invoice": "INV25-00265",
+   "received": "2025-08-29",
+   "amount": "18342.10",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00232",
+   "invoice": "INV25-00266",
+   "received": "2025-09-26",
+   "amount": "6720.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00233",
+   "invoice": "INV25-00267",
+   "received": "2025-10-07",
+   "amount": "17083.60",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00234",
+   "invoice": "INV25-00268",
+   "received": "2025-09-10",
+   "amount": "1936.36",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00235",
+   "invoice": "INV25-00269",
+   "received": "2025-09-15",
+   "amount": "17237.50",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00236",
+   "invoice": "INV25-00271",
+   "received": "2025-08-24",
+   "amount": "10806.15",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00237",
+   "invoice": "INV25-00273",
+   "received": "2025-10-23",
+   "amount": "11879.32",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00238",
+   "invoice": "INV25-00274",
+   "received": "2025-11-05",
+   "amount": "6921.81",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00239",
+   "invoice": "INV25-00275",
+   "received": "2025-09-19",
+   "amount": "7677.12",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00240",
+   "invoice": "INV25-00276",
+   "received": "2025-10-24",
+   "amount": "1417.92",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00241",
+   "invoice": "INV25-00277",
+   "received": "2025-10-24",
+   "amount": "18745.85",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00242",
+   "invoice": "INV25-00278",
+   "received": "2025-09-21",
+   "amount": "23525.85",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00243",
+   "invoice": "INV25-00279",
+   "received": "2025-10-17",
+   "amount": "10778.49",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00244",
+   "invoice": "INV25-00280",
+   "received": "2025-10-29",
+   "amount": "3940.50",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00245",
+   "invoice": "INV25-00281",
+   "received": "2025-10-20",
+   "amount": "4782.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00246",
+   "invoice": "INV25-00282",
+   "received": "2025-10-22",
+   "amount": "18993.51",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00247",
+   "invoice": "INV25-00284",
+   "received": "2025-09-17",
+   "amount": "7987.18",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00248",
+   "invoice": "INV25-00285",
+   "received": "2025-10-02",
+   "amount": "18477.75",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00249",
+   "invoice": "INV25-00286",
+   "received": "2025-10-07",
+   "amount": "16409.66",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00250",
+   "invoice": "INV25-00287",
+   "received": "2025-10-04",
+   "amount": "2855.52",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00251",
+   "invoice": "INV25-00288",
+   "received": "2025-10-06",
+   "amount": "6885.45",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00252",
+   "invoice": "INV25-00289",
+   "received": "2025-09-24",
+   "amount": "20927.25",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00253",
+   "invoice": "INV25-00290",
+   "received": "2025-09-28",
+   "amount": "11777.72",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00254",
+   "invoice": "INV25-00292",
+   "received": "2025-09-20",
+   "amount": "4169.23",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00255",
+   "invoice": "INV25-00293",
+   "received": "2025-10-09",
+   "amount": "853.63",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00256",
+   "invoice": "INV25-00294",
+   "received": "2025-09-22",
+   "amount": "13215.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00257",
+   "invoice": "INV25-00295",
+   "received": "2025-10-09",
+   "amount": "13844.97",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00258",
+   "invoice": "INV25-00296",
+   "received": "2025-09-27",
+   "amount": "4056.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00259",
+   "invoice": "INV25-00297",
+   "received": "2025-10-18",
+   "amount": "2252.25",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00260",
+   "invoice": "INV25-00299",
+   "received": "2025-10-02",
+   "amount": "12071.60",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00261",
+   "invoice": "INV25-00300",
+   "received": "2025-10-17",
+   "amount": "821.21",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00262",
+   "invoice": "INV25-00301",
+   "received": "2025-10-02",
+   "amount": "13356.17",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00263",
+   "invoice": "INV25-00302",
+   "received": "2025-10-18",
+   "amount": "4200.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00264",
+   "invoice": "INV25-00304",
+   "received": "2025-10-31",
+   "amount": "6330.89",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00265",
+   "invoice": "INV25-00305",
+   "received": "2025-09-28",
+   "amount": "4205.00",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00266",
+   "invoice": "INV25-00306",
+   "received": "2025-10-30",
+   "amount": "28597.14",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00267",
+   "invoice": "INV25-00307",
+   "received": "2025-10-23",
+   "amount": "1980.17",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00268",
+   "invoice": "INV25-00308",
+   "received": "2025-10-28",
+   "amount": "7949.91",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00269",
+   "invoice": "INV25-00309",
+   "received": "2025-11-18",
+   "amount": "16473.42",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00270",
+   "invoice": "INV25-00312",
+   "received": "2025-11-02",
+   "amount": "15363.13",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00271",
+   "invoice": "INV25-00313",
+   "received": "2025-11-18",
+   "amount": "14682.23",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00272",
+   "invoice": "INV25-00314",
+   "received": "2025-12-15",
+   "amount": "9268.29",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00273",
+   "invoice": "INV25-00316",
+   "received": "2025-11-29",
+   "amount": "4129.13",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00274",
+   "invoice": "INV25-00317",
+   "received": "2025-11-01",
+   "amount": "8974.79",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00275",
+   "invoice": "INV25-00318",
+   "received": "2025-12-05",
+   "amount": "18610.88",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00276",
+   "invoice": "INV25-00320",
+   "received": "2025-11-02",
+   "amount": "11746.51",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00277",
+   "invoice": "INV25-00321",
+   "received": "2025-11-18",
+   "amount": "7459.82",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00278",
+   "invoice": "INV25-00323",
+   "received": "2025-11-05",
+   "amount": "20380.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00279",
+   "invoice": "INV25-00324",
+   "received": "2025-12-12",
+   "amount": "13586.43",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00280",
+   "invoice": "INV25-00325",
+   "received": "2025-11-07",
+   "amount": "16826.74",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00281",
+   "invoice": "INV25-00326",
+   "received": "2025-10-18",
+   "amount": "11779.39",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00282",
+   "invoice": "INV25-00327",
+   "received": "2025-12-11",
+   "amount": "14523.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00283",
+   "invoice": "INV25-00328",
+   "received": "2025-11-28",
+   "amount": "10718.52",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00284",
+   "invoice": "INV25-00329",
+   "received": "2025-11-05",
+   "amount": "3918.20",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00285",
+   "invoice": "INV25-00330",
+   "received": "2025-10-18",
+   "amount": "9245.12",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00286",
+   "invoice": "INV25-00331",
+   "received": "2025-11-06",
+   "amount": "4153.50",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00287",
+   "invoice": "INV25-00332",
+   "received": "2025-10-29",
+   "amount": "6834.04",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00288",
+   "invoice": "INV25-00333",
+   "received": "2025-10-14",
+   "amount": "8471.59",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00289",
+   "invoice": "INV25-00334",
+   "received": "2025-11-11",
+   "amount": "3649.95",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00290",
+   "invoice": "INV25-00335",
+   "received": "2025-11-27",
+   "amount": "22605.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00291",
+   "invoice": "INV25-00336",
+   "received": "2025-11-01",
+   "amount": "15197.50",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00292",
+   "invoice": "INV25-00337",
+   "received": "2025-10-29",
+   "amount": "33716.30",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00293",
+   "invoice": "INV25-00338",
+   "received": "2025-12-01",
+   "amount": "17900.03",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00294",
+   "invoice": "INV25-00339",
+   "received": "2025-11-16",
+   "amount": "16400.68",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00295",
+   "invoice": "INV25-00340",
+   "received": "2025-11-19",
+   "amount": "12423.02",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00296",
+   "invoice": "INV25-00341",
+   "received": "2025-12-28",
+   "amount": "14822.67",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00297",
+   "invoice": "INV25-00343",
+   "received": "2025-12-06",
+   "amount": "3900.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00298",
+   "invoice": "INV25-00344",
+   "received": "2026-01-06",
+   "amount": "10631.19",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00299",
+   "invoice": "INV25-00345",
+   "received": "2025-12-28",
+   "amount": "6543.12",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00300",
+   "invoice": "INV25-00346",
+   "received": "2025-11-22",
+   "amount": "7041.24",
+   "currency": "EUR",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00301",
+   "invoice": "INV25-00347",
+   "received": "2025-11-28",
+   "amount": "8977.80",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00302",
+   "invoice": "INV25-00348",
+   "received": "2025-11-25",
+   "amount": "11471.19",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00303",
+   "invoice": "INV25-00349",
+   "received": "2025-12-09",
+   "amount": "8751.60",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00304",
+   "invoice": "INV25-00350",
+   "received": "2025-12-08",
+   "amount": "13974.91",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00305",
+   "invoice": "INV25-00351",
+   "received": "2025-12-21",
+   "amount": "17758.88",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00306",
+   "invoice": "INV25-00352",
+   "received": "2025-12-18",
+   "amount": "7533.78",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00307",
+   "invoice": "INV25-00354",
+   "received": "2025-12-06",
+   "amount": "3032.49",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00308",
+   "invoice": "INV25-00355",
+   "received": "2025-12-18",
+   "amount": "20541.72",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00309",
+   "invoice": "INV25-00357",
+   "received": "2026-01-04",
+   "amount": "22054.25",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00310",
+   "invoice": "INV25-00358",
+   "received": "2025-12-19",
+   "amount": "20916.50",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00311",
+   "invoice": "INV25-00359",
+   "received": "2025-12-27",
+   "amount": "8287.50",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00312",
+   "invoice": "INV25-00360",
+   "received": "2025-11-17",
+   "amount": "5773.37",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00313",
+   "invoice": "INV25-00361",
+   "received": "2025-12-03",
+   "amount": "26311.55",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00314",
+   "invoice": "INV25-00362",
+   "received": "2025-12-26",
+   "amount": "15237.35",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00315",
+   "invoice": "INV25-00363",
+   "received": "2025-11-19",
+   "amount": "21779.25",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00316",
+   "invoice": "INV25-00364",
+   "received": "2025-12-16",
+   "amount": "4719.23",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00317",
+   "invoice": "INV25-00365",
+   "received": "2025-12-02",
+   "amount": "3421.92",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00318",
+   "invoice": "INV25-00369",
+   "received": "2025-11-28",
+   "amount": "11173.76",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00319",
+   "invoice": "INV25-00370",
+   "received": "2025-12-03",
+   "amount": "20705.00",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00320",
+   "invoice": "INV25-00371",
+   "received": "2025-11-30",
+   "amount": "2047.40",
+   "currency": "EUR",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00321",
+   "invoice": "INV25-00372",
+   "received": "2025-12-09",
+   "amount": "925.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00322",
+   "invoice": "INV25-00373",
+   "received": "2025-12-01",
+   "amount": "6265.80",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00323",
+   "invoice": "INV25-00374",
+   "received": "2025-12-29",
+   "amount": "10902.96",
+   "currency": "USD",
+   "method": "card"
+  },
+  {
+   "id": "PAY-00324",
+   "invoice": "INV25-00378",
+   "received": "2026-01-12",
+   "amount": "21572.98",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00325",
+   "invoice": "INV25-00381",
+   "received": "2026-01-12",
+   "amount": "5312.16",
+   "currency": "EUR",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00326",
+   "invoice": "INV25-00393",
+   "received": "2026-02-16",
+   "amount": "17359.41",
+   "currency": "USD",
+   "method": "transfer"
+  },
+  {
+   "id": "PAY-00327",
+   "invoice": "INV25-00401",
+   "received": "2025-12-31",
+   "amount": "7082.25",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00328",
+   "invoice": "INV25-00403",
+   "received": "2026-01-11",
+   "amount": "2107.00",
+   "currency": "USD",
+   "method": "check"
+  },
+  {
+   "id": "PAY-00329",
+   "invoice": "INV25-00408",
+   "received": "2026-01-19",
+   "amount": "3400.00",
+   "currency": "USD",
+   "method": "transfer"
+  }
+ ]
+}

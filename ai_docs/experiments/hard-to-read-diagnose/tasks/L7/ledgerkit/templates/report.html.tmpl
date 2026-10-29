@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="$lang">
+<head>
+<meta charset="utf-8">
+<title>$title</title>
+<style>
+body { font-family: system-ui, sans-serif; margin: 2rem; }
+table { border-collapse: collapse; }
+th, td { padding: .25rem .75rem; border-bottom: 1px solid #ddd; }
+td.amount { text-align: right; font-variant-numeric: tabular-nums; }
+tr.expense td.amount { color: #a00; }
+</style>
+</head>
+<body>
+<h1>$title</h1>
+<p class="meta">Source: ${source} &middot; ${count} transactions &middot; ${period}</p>
+<table>
+<thead><tr><th>Date</th><th>Payee</th><th>Account</th><th>Category</th><th>Amount</th></tr></thead>
+<tbody>
+$rows
+</tbody>
+<tfoot><tr><th colspan="4">Net total</th><td class="amount">$total</td></tr></tfoot>
+</table>
+</body>
+</html>

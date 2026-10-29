@@ -1,0 +1,4 @@
+:rotating_light: [$PRIORITY] #$id $subject
+$customer ($tier) reported a $category issue $age ago.
+Status: $status - assignee: $assignee - tags: $tags
+On-call: please acknowledge in #incidents.

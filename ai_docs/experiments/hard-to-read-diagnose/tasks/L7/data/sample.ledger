@@ -1,0 +1,24 @@
+# Household ledger, Q1 2026
+!currency USD
+2026-01-02 | Acme Corp Payroll    | checking | income:salary       | 4,250.00 | January salary
+2026-01-03 | Maple Street Rentals | checking | housing:rent        | -1,650.00 | rent #fixed
+2026-01-05 | Corner Bakery        | checking | food:bakery         | -6.40 | croissants #weekend
+2026-01-07 | City Power & Light   | checking | utilities:electric  | -84.12 |
+2026-01-11 | FreshMart            | card     | food:groceries      | -132.57 | weekly shop
+2026-01-15 | Metro Transit        | card     | transport:pass      | -95.00 | monthly pass #fixed
+2026-01-21 | Riverside Pharmacy   | card     | health:pharmacy     | -18.99 |
+2026-01-25 | FreshMart            | card     | food:groceries      | -101.03 | weekly shop
+2026-02-02 | Acme Corp Payroll    | checking | income:salary       | 4,250.00 | February salary
+2026-02-03 | Maple Street Rentals | checking | housing:rent        | -1,650.00 | rent #fixed
+2026-02-09 | Cinema Paradiso      | card     | leisure:movies      | -27.50 | two tickets #weekend
+2026-02-12 | City Power & Light   | checking | utilities:electric  | -91.47 |
+2026-02-14 | FreshMart            | card     | food:groceries      | -144.20 | weekly shop
+2026-02-15 | Metro Transit        | card     | transport:pass      | -95.00 | monthly pass #fixed
+2026-02-27 | Savings transfer     | checking | transfer:savings    | -500.00 | "rainy day" fund
+2026-03-02 | Acme Corp Payroll    | checking | income:salary       | 4,250.00 | March salary
+2026-03-03 | Maple Street Rentals | checking | housing:rent        | -1,650.00 | rent #fixed
+2026-03-08 | Corner Bakery        | checking | food:bakery         | -8.15 | birthday cake, small #weekend
+2026-03-10 | City Power & Light   | checking | utilities:electric  | -77.30 |
+2026-03-15 | Metro Transit        | card     | transport:pass      | -95.00 | monthly pass #fixed
+2026-03-19 | FreshMart            | card     | food:groceries      | -1,018.66 | stock-up; party
+2026-03-28 | Tax refund           | checking | income:refund       | 312.45 | federal
