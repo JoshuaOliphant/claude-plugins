@@ -1,5 +1,5 @@
 # ABOUTME: Makes the no-tests variant of the real-fix diagnose tasks (#171): same trees, tests/ removed, so the agent must build its own repro.
-# ABOUTME: Env: FIX_WORK. Writes briefs for arms skill-nt and base-nt; trees go under runs/<arm>/tN.
+# ABOUTME: Env: FIX_WORK, PY, ARMS (default "skill base"; any arm but base reads the skill). Writes briefs for each <arm>-nt; trees go under runs/<arm>-nt/tN.
 import json
 import os
 import shutil
@@ -27,7 +27,7 @@ Rules:
 
 
 def main() -> None:
-    for arm in ("skill", "base"):
+    for arm in os.environ.get("ARMS", "skill base").split():
         for task in json.loads((WORK / "tasks.json").read_text()):
             name = task["task"]
             dst = WORK / "runs" / f"{arm}-nt" / name
@@ -36,7 +36,7 @@ def main() -> None:
             shutil.rmtree(dst / PLUGIN / "tests")
             method = (
                 "Method: first read /tmp/real-fix-diagnose/skill/diagnose/SKILL.md and follow that skill's discipline for this bug."
-                if arm == "skill"
+                if arm != "base"
                 else "Method: your choice."
             )
             brief = TEMPLATE.format(

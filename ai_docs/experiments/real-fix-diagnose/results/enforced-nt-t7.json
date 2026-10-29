@@ -1,0 +1,10 @@
+{
+ "task": "t7",
+ "green": true,
+ "hidden_failures": [],
+ "regressions": [],
+ "changed": [
+  "Files /tmp/real-fix-diagnose/pristine/t7/plugins/compost/scripts/doc_refs.py and /tmp/real-fix-diagnose/runs/enforced-nt/t7/plugins/compost/scripts/doc_refs.py differ",
+  "Only in /tmp/real-fix-diagnose/pristine/t7/plugins/compost: tests"
+ ]
+}
