@@ -111,9 +111,10 @@ hand decides.
    old suite killed is still killed by construction. A fold changes a test, so it goes through
    `compost:build`'s red check: break the code as step 5 did and watch the folded row fail. Run
    the suite and the coverage gate. Remap each AC row the plan listed to the subsuming test's node
-   id in the tracker, or in the file where the table lives, then run the repo's verify command: a
-   deleted or renamed node id leaves it red until every row is remapped. Commit as
-   `test: fold tests that no mutant needed`, and name the rows remapped in the commit body.
+   id: in the same commit when the table lives in a file, in the tracker when it lives in an issue
+   (do it before you push, and name the rows in the commit body). Then run the repo's verify
+   command, which fails on an AC row naming a missing test; where the repo has none, run each
+   remapped node id by hand. Commit as `test: fold tests that no mutant needed`.
 
 ## Next moves
 
