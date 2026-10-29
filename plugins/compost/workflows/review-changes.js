@@ -66,7 +66,7 @@ const SCOPE_SCHEMA = {
 // A reviewer that found nothing and one that looked at nothing both return no findings; this record tells them apart.
 const CHECKED_SCHEMA = {
   type: 'array',
-  description: 'What you checked: each rule read against the diff, each changed file opened, and on Spec one entry per AC-N. An entry without a file:line does not count.',
+  description: 'What you checked: each rule read against the diff, each changed file opened, and on Spec one entry per AC-N. An entry without a file:line does not count; an AC-N with no line to cite is a finding instead.',
   items: {
     type: 'object',
     required: ['item', 'at'],
@@ -266,7 +266,7 @@ Report:
 - Behaviour in the diff nobody asked for (scope creep), at file:line.
 - Each AC-N that looks implemented but where the implementation looks wrong.
 
-Under checked, map every acceptance criterion: one entry per AC-N, naming it and its verdict (met, partly met, unmet), at the test or code line that shows it, or for an unmet one the line where it should be.`,
+Under checked, map every acceptance criterion: one entry per AC-N, naming it and its verdict (met, partly met, unmet), at the test or code line that shows it. An AC-N with no code or test to point at is a finding (line null) instead.`,
   },
 ]
 
@@ -363,8 +363,8 @@ function uncheckedReason(axis, review) {
   const cited = entries.filter(entry => entry && FILE_LINE.test(String(entry.at || '')))
   if (cited.length === 0) return 'the reviewer cited no file:line for anything it checked'
   if (axis.name !== 'Spec') return ''
-  // An AC-N with no code behind it, or one a later comment dropped, has no line to cite; naming it is enough.
-  const named = [...entries.map(entry => entry && entry.item), ...review.findings.map(f => `${f.claim} ${f.evidence}`)].map(String)
+  // An AC-N with no code behind it has no line to cite, so a finding that names it maps it too.
+  const named = [...cited.map(entry => entry.item), ...review.findings.map(f => `${f.claim} ${f.evidence}`)].map(String)
   const unmapped = specAcs.filter(ac => !named.some(text => ac.named.test(text))).map(ac => ac.id)
   return unmapped.length ? `the reviewer did not map ${unmapped.join(', ')} to the code` : ''
 }

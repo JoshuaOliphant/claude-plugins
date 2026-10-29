@@ -355,14 +355,14 @@ test('a clean Spec review maps every AC-N in the spec, and one that leaves an AC
   assert.deepEqual(mapped.result.spec.checked.map(entry => entry.item.split(' ')[0]), ['AC-1', 'AC-2', 'AC-10'])
   assert.match(mapped.prompts['Spec reviewer'], /one entry per AC-N/)
 
-  const gaps = await run({ issue: 7 }, reviewers({ scope, spec: { findings: [], checked: [all[0]] } }))
+  const uncitedAc2 = { item: 'AC-2 met', at: 'tests' }
+  const gaps = await run({ issue: 7 }, reviewers({ scope, spec: { findings: [], checked: [all[0], uncitedAc2] } }))
   assert.equal(gaps.result.spec.status, 'failed: the reviewer did not map AC-2, AC-10 to the code')
   assert.equal(gaps.result.complete, false)
 
   const missingAc2 = { file: 'app/export.py', line: null, severity: 'blocker', claim: 'AC-2 has no code or test', evidence: 'AC-2 at #7' }
-  const dropped = { item: 'AC-10 dropped in a later comment on #7', at: '' }
-  const named = await run({ issue: 7 }, reviewers({ scope, spec: { findings: [missingAc2], checked: [all[0], dropped] } }))
-  assert.equal(named.result.spec.complete, true, 'an AC-N named by a finding or an uncited entry is mapped')
+  const named = await run({ issue: 7 }, reviewers({ scope, spec: { findings: [missingAc2], checked: [all[0], all[2]] } }))
+  assert.equal(named.result.spec.complete, true, 'an AC-N with no line to cite is mapped by the finding that names it')
 
   const prefixOnly = await run({ issue: 7 }, reviewers({ scope, spec: { findings: [], checked: all.slice(1) } }))
   assert.equal(prefixOnly.result.spec.status, 'failed: the reviewer did not map AC-1 to the code', 'AC-10 does not map AC-1')

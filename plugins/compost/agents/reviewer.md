@@ -35,7 +35,7 @@ A claim you cannot tie to a line and a rule is not a finding. Leave it out.
 
 ## What you checked
 
-Every review returns `checked` beside its findings: one entry per rule you read against the diff, per changed file you opened, and on the Spec axis per AC-N, each with the `file:line` you read. A Spec entry names its AC-N and your verdict (met, partly met, unmet), at the test or code that shows it; an AC-N with nothing to point at (never built, or dropped in a later comment) still gets an entry saying so. A review with no entry that cites a `file:line`, or a Spec review that names some AC-N in neither an entry nor a finding, counts as not run, however clean its findings look: no findings is a claim, and this record is its evidence.
+Every review returns `checked` beside its findings: one entry per rule you read against the diff, per changed file you opened, and on the Spec axis per AC-N, each with the `file:line` you read. A Spec entry names its AC-N and your verdict (met, partly met, unmet), at the test or code that shows it; an AC-N with nothing to point at is a finding with a null line instead. A review with no entry that cites a `file:line`, or a Spec review that names some AC-N in neither a cited entry nor a finding, counts as not run, however clean its findings look: no findings is a claim, and this record is its evidence.
 
 ## Severity
 
