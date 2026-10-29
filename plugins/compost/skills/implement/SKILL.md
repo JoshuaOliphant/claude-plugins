@@ -42,10 +42,13 @@ the work so each step can be checked before the next builds on it
 4. **Work the frontier.**
    - **One issue, or one lane, outside a lane-routing run:** do it yourself in this session. Load
      `compost:build`, then `compost:verify`. A subagent for a single issue only adds a handoff.
-   - **Several independent issues or lanes:** spawn one subagent per lane in a single message, so
-     the lanes run in parallel, each with `isolation: "worktree"` and in the background, without
-     asking. A lane of one issue is just that issue; a worker with a longer lane works its issues
-     in order. When agent teams are enabled (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`), spawn them
+   - **Several independent issues or lanes:** a lane earns a subagent when its work outweighs the
+     handoff: a brief, a worktree, a merge, and a report to read. Lanes that are each a short edit
+     (a doc fix, a config value, a few lines in one file) don't; work them yourself, in order, as
+     above. Spawn the rest, one subagent per lane in a single message, so the lanes run in
+     parallel, each with `isolation: "worktree"` and in the background, without asking. A lane of
+     one issue is just that issue; a worker with a longer lane works its issues in order. In a
+     lane-routing run every lane spawns, whatever its size. When agent teams are enabled (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`), spawn them
      as named teammates instead; a teammate spawn cannot take `isolation`, so its brief tells it to
      create its own worktree first.
    - An isolated worktree starts from the default branch, not the feature branch. Every brief names

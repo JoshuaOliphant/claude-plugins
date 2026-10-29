@@ -20,7 +20,7 @@ with review done by subagents every time, and records its rulings on the issue.
 | `implement` | The entry point once issues exist; picks the flow from there |
 | `build` | One issue, with its tests fitted into the existing suite |
 | `verify` | Before any claim of done: gates, AC-to-test map, the proof ladder |
-| `review` | After verify, always: `/compost:review-changes` plus the harness's built-in code review, then weigh the findings |
+| `review` | After verify, always: `/compost:review-changes`, plus the harness's built-in code review when the diff changes executable code, then weigh the findings |
 | `finish` | Integrate: re-run on the merge target, PR recap, clean up |
 | `diagnose` | Any bug or failing test, before a fix |
 | `deeper-ask` | A request made deeper, not bigger: what an expert would do, the rawest material, the tools, the independent check (spec runs it; you can too) |

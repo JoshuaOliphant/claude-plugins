@@ -1,6 +1,6 @@
-# Check: the subagent brief
+# Check: the doc-check brief
 
-Give each subagent this brief, its docs' paths, and their entries from the `doc_refs.py` scan.
+Give each subagent this brief, its docs' paths, and their entries from the `doc_refs.py` scan. When you check the docs yourself, follow the same brief.
 
 ````markdown
 Check these docs against the code in this repo. The code is the likely source of truth.

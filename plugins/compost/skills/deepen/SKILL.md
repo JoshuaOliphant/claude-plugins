@@ -90,10 +90,11 @@ where seams go, and keeps heavy architecture out unless a dependency earns it. T
    leakage, temporal decomposition, pass-through methods.
 
    When the interface is costly to get wrong (many callers, hard to change later, a public contract),
-   design it twice. Spawn three subagents in parallel, each designing a radically different interface
-   under one constraint: minimal (one to three entry points), flexible (many use cases), and
-   common-case (the default call is trivial). Add a fourth built around ports only when step 4 found a
-   remote-but-owned or external dependency. The brief and comparison are in
+   design it twice. Spawn two to four subagents in parallel, each designing a radically different
+   interface under one constraint. Pick the constraints that pull apart for this problem: minimal (one
+   to three entry points), common case (the default call is trivial), flexible (many use cases) only
+   when a second real use case exists, and ports only when step 4 found a remote-but-owned or external
+   dependency. Two stances that disagree teach more than three that converge. The brief and comparison are in
    [references/design-it-twice.md](references/design-it-twice.md). Compare on depth, locality, and
    seam placement, then recommend one, or a hybrid, with a clear opinion.
 
