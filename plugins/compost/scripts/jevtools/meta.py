@@ -13,9 +13,12 @@ PLUGIN_ROOT = Path(__file__).resolve().parents[2]
 
 ALLOWED_STOPS = [
     "merging to the repository's default branch",
+    "a force-push or a history rewrite on a shared branch",
+    "a deploy or release, including one flagged for the user's approval",
+    "deleting data",
     (
-        "irreversible or outward-facing actions: force-push, history rewrites on shared branches, deploys, data "
-        "deletion, messages that reach people"
+        "a message that reaches people beyond the run's own issues: an email, a chat post, or a comment, mention, "
+        "or review request on someone else's issue or pull request"
     ),
     "approval of an architectural spec",
     "starting a Claude Code workflow the agent wrote itself, since one can spawn dozens of agents",
@@ -366,9 +369,14 @@ MESSAGE_WAITS = Noul(
 )
 MESSAGE_ALLOWED = Noul(
     instructions=(
-        "Is what `message` waits on one of `allowed_stops`? Answer no when it waits on nothing, or on anything "
-        "else: a design or library choice, a policy, which option or approach to take, permission to commit, "
-        "push a feature branch, file an issue, or keep going."
+        "Is what `message` waits on one of `allowed_stops`? Answer yes when it waits on the user's go-ahead for "
+        "an action of that kind the agent is about to take itself (merging, deploying or releasing, sending an "
+        "email or chat post, or commenting on someone else's issue or pull request), even when that ask closes a "
+        "long report. Answer no when it "
+        "waits on nothing, or on anything else: a design or library choice (including how the code it builds "
+        "should deploy or send messages), a policy, "
+        "which option or approach to take, permission to commit, push a feature branch, file an issue or comment "
+        "on the run's own issues or pull request, or keep going."
     )
 )
 

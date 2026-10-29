@@ -114,8 +114,11 @@ the work so each step can be checked before the next builds on it
 
    A wrong ruling costs a review comment; a stalled run costs the user's day. Stop only for:
    - merging to the default branch;
-   - irreversible or outward-facing actions: force-push, history rewrites on shared branches,
-     deploys, data deletion, messages that reach people;
+   - a force-push or a history rewrite on a shared branch;
+   - a deploy or release, including one flagged for the user's approval;
+   - deleting data;
+   - a message that reaches people beyond the run's own issues: an email, a chat post, or a
+     comment, mention, or review request on someone else's issue or pull request;
    - approval of an architectural spec, when the work shows the approved design has to change;
    - starting a Claude Code workflow you wrote yourself (the plugin's own `/compost:review-changes`
      needs no ask).
