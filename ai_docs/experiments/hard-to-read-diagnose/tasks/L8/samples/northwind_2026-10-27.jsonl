@@ -1,0 +1,21 @@
+# northwind nightly export v2
+{"sku": "NW-2001", "title": "gel pen black 0.7mm (1)", "mpn": "N7001", "category": "office/writing", "unit": "BX", "qty_per_unit": 12, "cost": 5.17}
+{"sku": "NW-2002", "title": "hanging folders letter (2)", "mpn": "N7002", "category": "office/filing", "unit": "PK", "qty_per_unit": 25, "cost": 6.34}
+{"sku": "NW-2003", "title": "coffee filters basket (3)", "mpn": "N7003", "category": "breakroom", "unit": "EA", "qty_per_unit": 1, "cost": 7.51}
+{"sku": "NW-2004", "title": "paper towels multifold (4)", "mpn": "N7004", "category": "paper-goods", "unit": "CS", "qty_per_unit": 30, "cost": 8.68}
+{"sku": "NW-2005", "title": "copy paper letter 20lb (5)", "mpn": "N7005", "category": "office/paper", "unit": "CS", "qty_per_unit": 10, "cost": 9.85}
+{"sku": "NW-2006", "title": "gel pen black 0.7mm (6)", "mpn": "N7006", "category": "office/writing", "unit": "BX", "qty_per_unit": 12, "cost": 11.02}
+{"sku": "NW-2007", "title": "hanging folders letter (7)", "mpn": "N7007", "category": "office/filing", "unit": "PK", "qty_per_unit": 25, "cost": 12.19}
+{"sku": "NW-2008", "title": "coffee filters basket (8)", "mpn": "N7008", "category": "breakroom", "unit": "EA", "qty_per_unit": 1, "cost": 13.36}
+{"sku": "NW-2009", "title": "paper towels multifold (9)", "mpn": "N7009", "category": "paper-goods", "unit": "CS", "qty_per_unit": 30, "cost": 14.53}
+{"sku": "NW-2010", "title": "copy paper letter 20lb (10)", "mpn": "N7010", "category": "office/paper", "unit": "CS", "qty_per_unit": 10, "cost": 15.7}
+{"sku": "NW-2011", "title": "gel pen black 0.7mm (11)", "mpn": "N7011", "category": "office/writing", "unit": "BX", "qty_per_unit": 12, "cost": 16.87}
+{"sku": "NW-2012", "title": "hanging folders letter (12)", "mpn": "N7012", "category": "office/filing", "unit": "PK", "qty_per_unit": 25, "cost": 18.04}
+{"sku": "NW-2013", "title": "coffee filters basket (13)", "mpn": "N7013", "category": "breakroom", "unit": "EA", "qty_per_unit": 1, "cost": 19.21}
+{"sku": "NW-2014", "title": "paper towels multifold (14)", "mpn": "N7014", "category": "paper-goods", "unit": "CS", "qty_per_unit": 30, "cost": 20.38}
+{"sku": "NW-2015", "title": "copy paper letter 20lb (15)", "mpn": "N7015", "category": "office/paper", "unit": "CS", "qty_per_unit": 10, "cost": 21.55}
+{"sku": "NW-2016", "title": "gel pen black 0.7mm (16)", "mpn": "N7016", "category": "office/writing", "unit": "BX", "qty_per_unit": 12, "cost": 22.72}
+{"sku": "NW-2017", "title": "hanging folders letter (17)", "mpn": "N7017", "category": "office/filing", "unit": "PK", "qty_per_unit": 25, "cost": 23.89}
+{"sku": "NW-2018", "title": "coffee filters basket (18)", "mpn": "N7018", "category": "breakroom", "unit": "EA", "qty_per_unit": 1, "cost": 25.06}
+{"sku": "NW-2019", "title": "paper towels multifold (19)", "mpn": "N7019", "category": "paper-goods", "unit": "CS", "qty_per_unit": 30, "cost": 26.23}
+{"sku": "NW-2020", "title": "copy paper letter 20lb (20)", "mpn": "N7020", "category": "office/paper", "unit": "CS", "qty_per_unit": 10, "cost": 27.4}

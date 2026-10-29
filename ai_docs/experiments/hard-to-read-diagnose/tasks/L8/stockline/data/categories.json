@@ -1,0 +1,22 @@
+{
+  "categories": [
+    {"code": "hardware", "name": "Hardware"},
+    {"code": "hardware.fasteners", "name": "Fasteners", "parent": "hardware"},
+    {"code": "hardware.fasteners.screws", "name": "Screws", "parent": "hardware.fasteners"},
+    {"code": "hardware.fasteners.anchors", "name": "Anchors", "parent": "hardware.fasteners"},
+    {"code": "hardware.adhesives", "name": "Adhesives & Tape", "parent": "hardware"},
+    {"code": "hardware.tools", "name": "Hand Tools", "parent": "hardware"},
+    {"code": "safety", "name": "Safety"},
+    {"code": "safety.ppe", "name": "PPE", "parent": "safety"},
+    {"code": "safety.ppe.gloves", "name": "Gloves", "parent": "safety.ppe"},
+    {"code": "safety.signage", "name": "Signage", "parent": "safety"},
+    {"code": "janitorial", "name": "Janitorial"},
+    {"code": "janitorial.cleaning", "name": "Cleaning Chemicals", "parent": "janitorial"},
+    {"code": "janitorial.paper", "name": "Paper Products", "parent": "janitorial"},
+    {"code": "janitorial.breakroom", "name": "Breakroom", "parent": "janitorial"},
+    {"code": "office", "name": "Office"},
+    {"code": "office.paper", "name": "Paper", "parent": "office"},
+    {"code": "office.writing", "name": "Writing Instruments", "parent": "office"},
+    {"code": "office.filing", "name": "Filing & Storage", "parent": "office"}
+  ]
+}

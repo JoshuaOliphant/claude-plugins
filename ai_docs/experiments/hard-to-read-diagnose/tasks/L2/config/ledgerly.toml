@@ -1,0 +1,25 @@
+# Ledgerly settings
+
+[ledger]
+base_currency = "USD"
+due_days = 30
+
+[tax]
+default_region = "US-WA"
+
+[tax.rates]
+"US-WA" = "0.065"
+"US-OR" = "0"
+"US-CA" = "0.0725"
+"US-NY" = "0.04"
+"DE" = "0.19"
+
+[report]
+top_customers = 5
+aging_buckets = [30, 60, 90]
+forecast_window = 3
+
+[paths]
+data_dir = "data"
+customers = "customers.json"
+fx_rates = "fx_rates.json"

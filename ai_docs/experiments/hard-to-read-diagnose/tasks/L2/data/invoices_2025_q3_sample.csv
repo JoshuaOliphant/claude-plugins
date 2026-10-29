@@ -1,0 +1,32 @@
+invoice_id,customer_id,issue_date,currency,sku,description,quantity,unit_price,status
+Q3S-00001,C005,2025-07-12,USD,CONS-H,Consulting hours,41,160.00,issued
+Q3S-00001,C005,2025-07-12,USD,HW-SENS,Sensor kit,8,249.99,issued
+Q3S-00002,C002,2025-07-11,USD,CONS-H,Consulting hours,55,175.00,issued
+Q3S-00003,C004,2025-07-26,USD,TRAIN,On-site training day,2,2100.00,issued
+Q3S-00003,C004,2025-07-26,USD,SUP-M,"Support plan, monthly",1,2400.00,issued
+Q3S-00003,C004,2025-07-26,USD,HW-SENS,Sensor kit,28,249.99,issued
+Q3S-00003,C004,2025-07-26,USD,SUP-M,"Support plan, monthly",1,3900.00,issued
+Q3S-00004,C010,2025-07-07,USD,TRAIN,On-site training day,3,1850.00,issued
+Q3S-00004,C010,2025-07-07,USD,INTEG,Integration package,1,6800.00,issued
+Q3S-00004,C010,2025-07-07,USD,LIC-SEAT,License seats,27,49.00,issued
+Q3S-00004,C010,2025-07-07,USD,TRAVEL,Travel and expenses,1,1332.07,issued
+Q3S-00005,C002,2025-08-19,USD,LIC-SEAT,License seats,40,39.00,issued
+Q3S-00005,C002,2025-08-19,USD,LIC-SEAT,License seats,83,39.00,issued
+Q3S-00005,C002,2025-08-19,USD,CONS-H,Consulting hours,57.5,145.00,issued
+Q3S-00006,C007,2025-08-19,USD,SUP-M,"Support plan, monthly",1,3900.00,issued
+Q3S-00006,C007,2025-08-19,USD,SUP-M,"Support plan, monthly",1,3900.00,issued
+Q3S-00006,C007,2025-08-19,USD,HW-SENS,Sensor kit,34,212.50,issued
+Q3S-00006,C007,2025-08-19,USD,INTEG,Integration package,1,6800.00,issued
+Q3S-00007,C007,2025-08-11,USD,HW-SENS,Sensor kit,28,249.99,issued
+Q3S-00007,C007,2025-08-11,USD,INTEG,Integration package,1,9450.00,issued
+Q3S-00008,C005,2025-08-09,USD,SUP-M,"Support plan, monthly",1,2400.00,issued
+Q3S-00009,C004,2025-09-09,USD,SUP-M,"Support plan, monthly",1,3900.00,issued
+Q3S-00009,C004,2025-09-09,USD,LIC-SEAT,License seats,46,39.00,issued
+Q3S-00010,C010,2025-09-04,USD,TRAVEL,Travel and expenses,1,442.87,issued
+Q3S-00010,C010,2025-09-04,USD,LIC-SEAT,License seats,26,59.00,issued
+Q3S-00010,C010,2025-09-04,USD,HW-SENS,Sensor kit,8,249.99,issued
+Q3S-00010,C010,2025-09-04,USD,SUP-M,"Support plan, monthly",1,1250.00,issued
+Q3S-00011,C007,2025-09-25,USD,TRAIN,On-site training day,2,2100.00,issued
+Q3S-00011,C007,2025-09-25,USD,LIC-SEAT,License seats,6,49.00,issued
+Q3S-00011,C007,2025-09-25,USD,TRAIN,On-site training day,2,1850.00,issued
+Q3S-00012,C003,2025-09-09,USD,SUP-M,"Support plan, monthly",1,2400.00,issued

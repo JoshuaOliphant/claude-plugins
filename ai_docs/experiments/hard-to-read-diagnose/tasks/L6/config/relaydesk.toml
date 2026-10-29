@@ -1,0 +1,38 @@
+# relaydesk configuration. This is the file to edit; see README.md for the
+# full list of settings and how environment variables / flags override them.
+
+[service]
+name = "relaydesk"
+log_level = "warning"
+environment = "production"
+
+[sources]
+tickets = "data/tickets.jsonl"
+
+[delivery]
+endpoint = "https://hooks.example.invalid/helpdesk/v2"
+transport = "outbox"
+batch_size = 50
+timeout = "15s"
+verify_tls = true
+outbox_dir = "var/outbox"
+
+[rate]
+per_minute = 120
+burst = 20
+
+[retry]
+attempts = 4
+backoff = "1s"
+max_backoff = "20s"
+
+[routing]
+rules_file = "data/routing.toml"
+include_closed = false
+
+[templates]
+dir = "templates"
+max_summary = 120
+
+[state]
+db = "var/state.sqlite3"

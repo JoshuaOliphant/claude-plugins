@@ -1,0 +1,10 @@
+# Copy to relaydesk.local.toml for per-machine tweaks. That file is ignored
+# by git and is layered on top of relaydesk.toml.
+#
+# [service]
+# log_level = "debug"
+# environment = "development"
+#
+# [delivery]
+# transport = "outbox"
+# outbox_dir = "/tmp/relaydesk-outbox"

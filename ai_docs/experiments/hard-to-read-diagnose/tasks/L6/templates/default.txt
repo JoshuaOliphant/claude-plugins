@@ -1,0 +1,4 @@
+[$PRIORITY] #$id $subject
+$customer ($tier) - $category, $status, waiting $age
+Assignee: $assignee
+Tags: $tags
