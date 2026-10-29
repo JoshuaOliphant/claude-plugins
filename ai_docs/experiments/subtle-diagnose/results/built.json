@@ -1,0 +1,294 @@
+[
+ {
+  "task": "c1",
+  "helper": "scripts/claude_config.py",
+  "id": 305,
+  "caller": "tests/test_skill_drift.py",
+  "symptom": "/drift counts every hit on a plugin's skills as retired, even for plugins that are enabled, so those hits never show in the summary. Hits on personal skills are fine.",
+  "diff": [
+   [
+    161,
+    "        plugin = name.split(\":\", 1)[0]",
+    "        plugin = name.split(\":\", 0)[0]"
+   ]
+  ],
+  "baseline_failures": [
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file"
+  ],
+  "mutant_failures": [
+   "tests/test_claude_config.py::test_skill_active_reads_plugin_skills_and_personal_skills[skill-of-enabled-plugin]",
+   "tests/test_claude_config.py::test_skill_drift_and_replaced_agree_on_whether_a_plugin_is_active[enabled-by-cli-only]",
+   "tests/test_claude_config.py::test_skill_drift_and_replaced_agree_on_whether_a_plugin_is_active[synced-from-claude-ai]",
+   "tests/test_skill_drift.py::test_a_pattern_needs_the_same_kind_in_two_sessions[two-sessions-make-a-pattern]",
+   "tests/test_skill_drift.py::test_cli_prints_patterns_and_marks_reviews",
+   "tests/test_skill_drift.py::test_each_pattern_names_the_skills_owner_and_file[marketplace-plugin]",
+   "tests/test_skill_drift.py::test_each_pattern_names_the_skills_owner_and_file[someone-elses-plugin]",
+   "tests/test_skill_drift.py::test_hits_carry_their_id_evidence_and_transcript",
+   "tests/test_skill_drift.py::test_marked_hits_leave_later_runs",
+   "tests/test_skill_drift.py::test_min_sessions_is_adjustable_and_a_missing_log_is_empty",
+   "tests/test_skill_drift.py::test_only_the_latest_skill_version_counts_and_earlier_hits_are_reported",
+   "tests/test_skill_drift.py::test_skill_drift_runs_without_pile",
+   "tests/test_skill_drift.py::test_summary_lists_the_open_hits_patterns_counts",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[at-a-bool]",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[at-a-string]",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[missing-fields]",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[not-an-object]",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[p-a-string]",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[prompt-null]"
+  ]
+ },
+ {
+  "task": "c2",
+  "helper": "scripts/claude_config.py",
+  "id": 311,
+  "caller": "tests/test_skill_drift.py",
+  "symptom": "/drift drops hits on skills of my enabled plugins from the summary as retired. It is not all of them: a plugin installed from a marketplace with the same name as the plugin still shows up.",
+  "diff": [
+   [
+    162,
+    "        return any(plugin_id.split(\"@\", 1)[0] == plugin for plugin_id in self.enabled)",
+    "        return any(plugin_id.split(\"@\", 1)[ 1] == plugin for plugin_id in self.enabled)"
+   ]
+  ],
+  "baseline_failures": [
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file"
+  ],
+  "mutant_failures": [
+   "tests/test_claude_config.py::test_skill_active_reads_plugin_skills_and_personal_skills[skill-of-enabled-plugin]",
+   "tests/test_claude_config.py::test_skill_drift_and_replaced_agree_on_whether_a_plugin_is_active[enabled-by-cli-only]",
+   "tests/test_claude_config.py::test_skill_drift_and_replaced_agree_on_whether_a_plugin_is_active[synced-from-claude-ai]",
+   "tests/test_skill_drift.py::test_a_pattern_needs_the_same_kind_in_two_sessions[two-sessions-make-a-pattern]",
+   "tests/test_skill_drift.py::test_cli_prints_patterns_and_marks_reviews",
+   "tests/test_skill_drift.py::test_each_pattern_names_the_skills_owner_and_file[marketplace-plugin]",
+   "tests/test_skill_drift.py::test_each_pattern_names_the_skills_owner_and_file[someone-elses-plugin]",
+   "tests/test_skill_drift.py::test_hits_carry_their_id_evidence_and_transcript",
+   "tests/test_skill_drift.py::test_marked_hits_leave_later_runs",
+   "tests/test_skill_drift.py::test_min_sessions_is_adjustable_and_a_missing_log_is_empty",
+   "tests/test_skill_drift.py::test_only_the_latest_skill_version_counts_and_earlier_hits_are_reported",
+   "tests/test_skill_drift.py::test_skill_drift_runs_without_pile",
+   "tests/test_skill_drift.py::test_summary_lists_the_open_hits_patterns_counts",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[at-a-bool]",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[at-a-string]",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[missing-fields]",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[not-an-object]",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[p-a-string]",
+   "tests/test_skill_drift.py::test_unreadable_lines_are_counted_not_dropped_silently[prompt-null]"
+  ]
+ },
+ {
+  "task": "c3",
+  "helper": "scripts/claude_config.py",
+  "id": 274,
+  "caller": "tests/test_replaced.py",
+  "symptom": "`pile.py replaced` reports every plugin from a marketplace that still lists it as an orphan to uninstall, and it dies with a KeyError on installs whose marketplace has no listing at all.",
+  "diff": [
+   [
+    144,
+    "            if marketplace in listings and name not in listings[marketplace] and scope in UNINSTALLABLE_SCOPES:",
+    "            if marketplace in listings or name not in listings[marketplace] and scope in UNINSTALLABLE_SCOPES:"
+   ]
+  ],
+  "baseline_failures": [
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file"
+  ],
+  "mutant_failures": [
+   "tests/test_claude_config.py::test_a_malformed_marketplace_catalog_is_skipped_with_a_warning[entry-not-object]",
+   "tests/test_claude_config.py::test_a_malformed_marketplace_catalog_is_skipped_with_a_warning[entry-without-name]",
+   "tests/test_claude_config.py::test_a_malformed_marketplace_catalog_is_skipped_with_a_warning[no-plugins]",
+   "tests/test_claude_config.py::test_a_malformed_marketplace_catalog_is_skipped_with_a_warning[not-json]",
+   "tests/test_claude_config.py::test_a_malformed_marketplace_catalog_is_skipped_with_a_warning[not-utf8]",
+   "tests/test_claude_config.py::test_a_malformed_marketplace_catalog_is_skipped_with_a_warning[plugins-not-list]",
+   "tests/test_claude_config.py::test_a_malformed_marketplace_catalog_is_skipped_with_a_warning[top-level-list]",
+   "tests/test_claude_config.py::test_orphans_come_only_from_marketplaces_whose_clone_has_a_catalog",
+   "tests/test_claude_config.py::test_skill_drift_and_replaced_agree_on_whether_a_plugin_is_active[disabled-by-cli]",
+   "tests/test_claude_config.py::test_skill_drift_and_replaced_agree_on_whether_a_plugin_is_active[enabled-by-cli-only]",
+   "tests/test_claude_config.py::test_skill_drift_and_replaced_agree_on_whether_a_plugin_is_active[synced-from-claude-ai]",
+   "tests/test_replaced.py::test_apply_creates_settings_and_skips_the_hand_note_when_nothing_is_synced",
+   "tests/test_replaced.py::test_apply_disables_plugins_merges_overrides_into_settings_and_uninstalls_orphans",
+   "tests/test_replaced.py::test_cli_replaced_prints_the_report_and_reports_config_errors",
+   "tests/test_replaced.py::test_find_active_separates_local_plugins_synced_plugins_skills_and_orphaned_installs[kept-orphan-disabled]",
+   "tests/test_replaced.py::test_find_active_separates_local_plugins_synced_plugins_skills_and_orphaned_installs[orphan-uninstalled-not-disabled]",
+   "tests/test_replaced.py::test_nothing_active_says_so_and_apply_does_nothing",
+   "tests/test_replaced.py::test_orphaned_installs_are_reported_alone_and_uninstalled_only_on_apply[apply-uninstalls]",
+   "tests/test_replaced.py::test_orphaned_installs_are_reported_alone_and_uninstalled_only_on_apply[keep-orphans-uninstalls-nothing]",
+   "tests/test_replaced.py::test_orphaned_installs_are_reported_alone_and_uninstalled_only_on_apply[report-uninstalls-nothing]",
+   "tests/test_replaced.py::test_report_without_apply_changes_nothing"
+  ]
+ },
+ {
+  "task": "c4",
+  "helper": "scripts/jevtools/core.py",
+  "id": 209,
+  "caller": "tests/test_jev_testing.py",
+  "symptom": "find-test on a suite larger than the choice cap never offers the first test of each batch of tests. In a 600-test suite the tests at positions 0, 250 and 500 are never shown, and each batch is one test short.",
+  "diff": [
+   [
+    159,
+    "    return [options[index : index + CHOICE_LIMIT] for index in range(0, len(options), CHOICE_LIMIT)]",
+    "    return [options[index : index + CHOICE_LIMIT] for index in range( 1, len(options), CHOICE_LIMIT)]"
+   ]
+  ],
+  "baseline_failures": [
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file"
+  ],
+  "mutant_failures": [
+   "tests/test_jev_core.py::test_narrow_keeps_the_likeliest_groups_within_the_cap[fills",
+   "tests/test_jev_core.py::test_narrow_keeps_the_likeliest_groups_within_the_cap[keeps",
+   "tests/test_jev_core.py::test_narrow_keeps_the_likeliest_groups_within_the_cap[keeps",
+   "tests/test_jev_core.py::test_narrow_keeps_the_likeliest_groups_within_the_cap[skips",
+   "tests/test_jev_core.py::test_narrow_reports_options_two_stages_cannot_reach",
+   "tests/test_jev_core.py::test_narrow_splits_a_group_past_the_cap_so_every_option_stays_reachable",
+   "tests/test_jev_review.py::test_locate_past_the_choice_limit_picks_a_window_then_a_line_in_it",
+   "tests/test_jev_review.py::test_locate_picks_the_line_and_says_whether_the_file_addresses_the_claim[0.69-False]",
+   "tests/test_jev_review.py::test_locate_picks_the_line_and_says_whether_the_file_addresses_the_claim[0.7-True]",
+   "tests/test_jev_testing.py::test_a_suite_past_the_choice_limit_is_narrowed_by_file_first[a"
+  ]
+ },
+ {
+  "task": "c5",
+  "helper": "scripts/jevtools/core.py",
+  "id": 250,
+  "caller": "tests/test_jev_testing.py",
+  "symptom": "A suite with exactly as many tests as one choice can hold (250) is not offered whole. find-test splits it into groups and asks which group to look in, as if it were bigger than the cap.",
+  "diff": [
+   [
+    179,
+    "    if len(options) <= CHOICE_LIMIT:",
+    "    if len(options) >= CHOICE_LIMIT:"
+   ]
+  ],
+  "baseline_failures": [
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file"
+  ],
+  "mutant_failures": [
+   "tests/test_jev_cli.py::test_a_tool_reads_json_input_and_prints_its_judgment",
+   "tests/test_jev_core.py::test_narrow_keeps_the_likeliest_groups_within_the_cap[fills",
+   "tests/test_jev_core.py::test_narrow_keeps_the_likeliest_groups_within_the_cap[keeps",
+   "tests/test_jev_core.py::test_narrow_keeps_the_likeliest_groups_within_the_cap[keeps",
+   "tests/test_jev_core.py::test_narrow_keeps_the_likeliest_groups_within_the_cap[skips",
+   "tests/test_jev_core.py::test_narrow_keeps_the_likeliest_groups_within_the_cap[stops",
+   "tests/test_jev_core.py::test_narrow_reports_options_two_stages_cannot_reach",
+   "tests/test_jev_core.py::test_narrow_splits_a_group_past_the_cap_so_every_option_stays_reachable",
+   "tests/test_jev_review.py::test_locate_past_the_choice_limit_picks_a_window_then_a_line_in_it",
+   "tests/test_jev_review.py::test_locate_picks_the_line_and_says_whether_the_file_addresses_the_claim[0.69-False]",
+   "tests/test_jev_review.py::test_locate_picks_the_line_and_says_whether_the_file_addresses_the_claim[0.7-True]",
+   "tests/test_jev_testing.py::test_a_suite_past_the_choice_limit_is_narrowed_by_file_first[a",
+   "tests/test_jev_testing.py::test_a_suite_past_the_choice_limit_is_narrowed_by_file_first[narrowed",
+   "tests/test_jev_testing.py::test_find_test_extends_the_chosen_test_only_when_it_covers_the_criterion[chosen",
+   "tests/test_jev_testing.py::test_find_test_extends_the_chosen_test_only_when_it_covers_the_criterion[chosen"
+  ]
+ },
+ {
+  "task": "c6",
+  "helper": "scripts/jevtools/core.py",
+  "id": 309,
+  "caller": "tests/test_jev_testing.py",
+  "symptom": "When find-test keeps several groups from a big suite, the shortlist can come out longer than one choice can hold, and the next question built from it is rejected for having too many options.",
+  "diff": [
+   [
+    196,
+    "        if kept and len(kept) + len(split[label]) > CHOICE_LIMIT:",
+    "        if kept and len(kept) - len(split[label]) > CHOICE_LIMIT:"
+   ]
+  ],
+  "baseline_failures": [
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file"
+  ],
+  "mutant_failures": [
+   "tests/test_jev_core.py::test_narrow_keeps_the_likeliest_groups_within_the_cap[skips",
+   "tests/test_jev_core.py::test_narrow_keeps_the_likeliest_groups_within_the_cap[stops",
+   "tests/test_jev_testing.py::test_a_suite_past_the_choice_limit_is_narrowed_by_file_first[a",
+   "tests/test_jev_testing.py::test_a_suite_past_the_choice_limit_is_narrowed_by_file_first[narrowed"
+  ]
+ },
+ {
+  "task": "c7",
+  "helper": "scripts/jevtools/meta.py",
+  "id": 714,
+  "caller": "tests/test_stop_guard.py",
+  "symptom": "The stop guard blocks every stop in an unattended implement run, including a plain report of finished work. Its output shows block: true with a score of 0.0.",
+  "diff": [
+   [
+    358,
+    "BLOCK_AT = 0.5",
+    "BLOCK_AT = -0.5"
+   ]
+  ],
+  "baseline_failures": [
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file"
+  ],
+  "mutant_failures": [
+   "tests/test_jev_meta.py::test_stop_guard_blocks_a_wait_outside_the_allowed_stops[just",
+   "tests/test_stop_guard.py::test_an_allowed_stop_goes_through",
+   "tests/test_stop_guard.py::test_main_reads_stdin_and_prints_nothing_when_the_stop_is_allowed"
+  ]
+ },
+ {
+  "task": "c8",
+  "helper": "scripts/jevtools/meta.py",
+  "id": 759,
+  "caller": "tests/test_stop_guard.py",
+  "symptom": "The stop guard blocks the agent when it stops to ask for the go-ahead to merge, which is an allowed stop. The more clearly the message asks for something allowed, the higher the block score climbs.",
+  "diff": [
+   [
+    399,
+    "    score = waits * (1 - allowed)",
+    "    score = waits * (1 + allowed)"
+   ]
+  ],
+  "baseline_failures": [
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file"
+  ],
+  "mutant_failures": [
+   "tests/test_jev_meta.py::test_stop_guard_blocks_a_wait_outside_the_allowed_stops[just",
+   "tests/test_jev_meta.py::test_stop_guard_blocks_a_wait_outside_the_allowed_stops[waits,",
+   "tests/test_stop_guard.py::test_an_allowed_stop_goes_through"
+  ]
+ },
+ {
+  "task": "c9",
+  "helper": "scripts/pile.py",
+  "id": 174,
+  "caller": "tests/test_jev_meta.py",
+  "symptom": "`pile.py status` lists every changed upstream file as unmapped. No file attaches to any skill or mechanism it feeds, even though the feeds table names a directory for it.",
+  "diff": [
+   [
+    92,
+    "    return path == root or path.startswith(root + \"/\")",
+    "    return path == root and path.startswith(root + \"/\")"
+   ]
+  ],
+  "baseline_failures": [
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file"
+  ],
+  "mutant_failures": [
+   "tests/test_jev_meta.py::test_gather_changes_diffs_each_path_from_the_pin_to_upstream_head",
+   "tests/test_pile.py::test_a_renamed_fed_skill_still_reports_under_the_skill_it_fed",
+   "tests/test_pile.py::test_map_changes_matches_whole_path_segments[changed0-by_target0-unmapped0]",
+   "tests/test_pile.py::test_map_changes_matches_whole_path_segments[changed1-by_target1-unmapped1]",
+   "tests/test_pile.py::test_status_reports_nothing_new_then_changes_after_upstream_moves"
+  ]
+ },
+ {
+  "task": "c10",
+  "helper": "scripts/jevtools/core.py",
+  "id": 259,
+  "caller": "tests/test_jev_testing.py",
+  "symptom": "find-test on a big suite asks about groups labelled \"part 1 of 1\", and a group of 251 to 500 tests is offered whole as one oversized choice instead of being cut into parts.",
+  "diff": [
+   [
+    184,
+    "        if len(pieces) == 1:",
+    "        if len(pieces) == 2:"
+   ]
+  ],
+  "baseline_failures": [
+   "tests/test_plugin.py::test_git_ignores_no_shipped_file"
+  ],
+  "mutant_failures": [
+   "tests/test_jev_core.py::test_narrow_splits_a_group_past_the_cap_so_every_option_stays_reachable",
+   "tests/test_jev_review.py::test_locate_past_the_choice_limit_picks_a_window_then_a_line_in_it",
+   "tests/test_jev_testing.py::test_a_suite_past_the_choice_limit_is_narrowed_by_file_first[a"
+  ]
+ }
+]
