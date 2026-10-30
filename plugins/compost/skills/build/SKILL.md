@@ -124,14 +124,16 @@ no test counts until you have seen it fail for the right reason.
 
 10. **Mutate the code in your head.** For each realistic mutation, name the test that fails:
     - a wrong constant, argument, or comparison (`>` for `>=`)
+    - wiring: an argument dropped or swapped, a stdout/stderr hookup, the wrong signal sent
     - the wrong branch taken
     - a missing state change or side effect
     - an empty or default return
     - missing validation for zero, empty, None, unauthorized, or malformed input
 
-    A mutation that nothing catches is an unprotected behavior. Close it with a case in an
-    existing table or test, following step 4 again. When `docs/agents/testing.md` records a
-    mutation tool, run it on the diff after the walk to catch what you missed
+    A mutant that fails to build is not a kill: rewrite it so it compiles. A mutation that nothing
+    catches is an unprotected behavior. Close it with a case in an existing table or test,
+    following step 4 again. When `docs/agents/testing.md` records a mutation tool, run it on the
+    diff after the walk to catch what you missed
     ([mutation testing](../verify/references/mutation.md)); `compost:verify` runs it again on the
     finished branch.
 

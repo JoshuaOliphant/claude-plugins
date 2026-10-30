@@ -59,7 +59,11 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    files in place, run `git diff` after the run and restore any mutant an interrupted run left
    behind. Lines the tool does not cover, outside its recorded paths or in
    another language, have only `compost:build`'s walk by hand: name them in the report. With no
-   tool recorded, skip this step for the same reason.
+   tool recorded, skip this step for the same reason. Where a tool is recorded, check that the walk
+   did its job on those lines: it must have mutated every line the diff adds, including wiring
+   (args passed, stdout/stderr hookups, which signal is sent), not only the branch logic. A mutant
+   that fails to build is not a kill; it must have been rewritten so it compiles. Walk any line it
+   skipped yourself.
 
 5. **Map every acceptance criterion to a passing test.** Build a table from this run's results:
    AC-N, the test's node id, and pass or fail. Find the tests in the placement map
