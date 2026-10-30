@@ -11,6 +11,11 @@ is not evidence. This skill produces the evidence: the gates run fresh, every ac
 criterion tied to a passing test, and the one fact the change's safety rests on proven by running
 code. Read [prove it works](../../canon/prove-it-works.md) for the principle behind every step.
 
+The repo keeps the mechanical part of that proof as one verify command, so the next session reruns
+every check instead of redoing it by hand, and a closed issue's criteria stay checked after it
+closes. This skill builds that command when it is missing, runs it, extends it, and does what no
+command can: judge whether it ran what changed, and prove the fact the change is safe because of.
+
 ## Steps
 
 1. **Find the gates.** Read the gates `compost:setup` recorded in `docs/agents/testing.md`: the
@@ -21,11 +26,38 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    missing, run `compost:setup`'s observability step now, which records none when the repo has
    nothing running to observe and commits the file.
 
-2. **Run the full suite and every gate, fresh.** Run them in this worktree now, not earlier and
-   not somewhere else. Read each exit code and the whole output. Stop at the first failure and
-   read its log before touching anything else: the first failing log carries the information,
-   and later failures are often its echoes. A failing test outside the change gets run on the
-   base SHA first. Red there, it is pre-existing: file an issue, fix it in its own `fix:` commit
+   Then find the verify command `testing.md` names. When it names none, build one before running
+   anything: a `scripts/verify`, or a target in the repo's task runner, that
+   - runs every gate in order and exits non-zero on the first failure;
+   - fails when a gate collects, lints, or measures nothing;
+   - fails on a skipped or xfailed test that an AC table names;
+   - checks every issue's AC table (AC-N to test node id) against this run, closed issues
+     included: each named test must exist, run, and pass. A row whose test cell reads
+     `superseded by #N` is retired: the command skips it and prints it, so the report names it.
+     The table it reads looks like this:
+
+     ```markdown
+     | AC | Test |
+     |---|---|
+     | AC-1 | tests/test_fees.py::test_no_fee_inside_grace_period |
+     | AC-3 | superseded by #42 |
+     ```
+   - reads the tables in bulk, not one tracker call per issue: from the local tracker's files, or
+     for a remote tracker one listing call scoped to issues that carry a table, or a committed
+     cache of the tables. Verify refreshes the cache whenever it posts a table or retires a row,
+     and the command warns when the cache is older than the newest edit to an AC table itself:
+     the edit time of the comment or file that holds a table, not the issue's updated time, which
+     moves on every comment or label change and would make the warning noise. A table edited
+     outside verify won't reach the cache otherwise. With hundreds of issues, a call per issue is
+     slow and runs into rate limits.
+
+   Record it in `testing.md` as the gate and commit both, so the next session finds it.
+
+2. **Run the verify command, and any gate it leaves out, fresh.** Run them in this worktree now,
+   not earlier and not somewhere else. Read each exit code and the whole output. Stop at the first
+   failure and read its log before touching anything else: the first failing log carries the
+   information, and later failures are often its echoes. A failing test outside the change gets
+   run on the base SHA first. Red there, it is pre-existing: file an issue, fix it in its own `fix:` commit
    only if it blocks a gate, and post a ruling. Green there, the change broke it: fix it if the
    cause is plain; otherwise hand it to `compost:diagnose`. A warning the gate prints is a finding too: fix it, or say why it stays.
    When a subagent did the work, read `git diff` yourself rather than trusting its report.
@@ -74,6 +106,17 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
    every criterion in `to_read` against its test. One whose test never checks the Then is unmet.
    Exit 3: read each test's assertions against its Then yourself.
 
+   A green command proves only what it checks. When no line of its output covers an AC-N, extend
+   the repo before claiming anything: a test first (load `compost:build` to fit it in), and a new
+   check in the command only for what a test can't say. Then run the command again.
+
+   When this issue replaces an earlier issue's behaviour on purpose and removes or rewrites the
+   test its AC table names, retire that row instead of weakening the command: set its test cell to
+   `superseded by #N`, with N this issue, refresh the cache if the command keeps one, and post a
+   ruling on this issue naming the retired row.
+   The row edit and the ruling are the record; a row that just disappears, or a check that stops
+   reading closed issues, is not.
+
 6. **Prove the one fact the change is safe because of.** Most changes that look risky are safe
    because of one fact, such as "this call only evicts entries that are already expired". Name
    it, then push it as far down this ladder as is cheap:
@@ -121,8 +164,10 @@ code. Read [prove it works](../../canon/prove-it-works.md) for the principle beh
 9. **Report the evidence.** Give the commands and their counts (`214 passed, 0 failed`), the
    coverage result and any proposed exclusion, the mutants run, killed, and sorted as equivalent
    or excluded, the AC table, the safety fact with its rung and
-   the proof output (the telemetry query and what it returned, when a stack is recorded), and the comments removed. Post the AC table on the issue; on a re-run, edit
-   the AC-table comment you posted before instead of adding another. Before saying "done", ask
+   the proof output (the telemetry query and what it returned, when a stack is recorded), and the
+   comments removed. Post the AC table on the issue in the shape the verify command checks, so
+   every later run checks it too; on a re-run, edit the AC-table comment you posted before instead
+   of adding another. Before saying "done", ask
    Jev whether the output you captured backs each claim: run `claim-backed` with every claim
    and its command's output ([jev](references/jev.md)), and fix or drop each one in `unbacked`.
    Exit 3: reread each output against its claim yourself. Say "done" only
