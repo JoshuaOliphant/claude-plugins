@@ -45,8 +45,10 @@ command can: judge whether it ran what changed, and prove the fact the change is
    - reads the tables in bulk, not one tracker call per issue: from the local tracker's files, or
      for a remote tracker one listing call scoped to issues that carry a table, or a committed
      cache of the tables. Verify refreshes the cache whenever it posts a table or retires a row,
-     and the command warns when the cache is older than the tracker's last edit, since a table
-     edited outside verify won't reach it otherwise. With hundreds of issues, a call per issue is
+     and the command warns when the cache is older than the newest edit to an AC table itself:
+     the edit time of the comment or file that holds a table, not the issue's updated time, which
+     moves on every comment or label change and would make the warning noise. A table edited
+     outside verify won't reach the cache otherwise. With hundreds of issues, a call per issue is
      slow and runs into rate limits.
 
    Record it in `testing.md` as the gate and commit both, so the next session finds it.
