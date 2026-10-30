@@ -34,10 +34,20 @@ command can: judge whether it ran what changed, and prove the fact the change is
    - checks every issue's AC table (AC-N to test node id) against this run, closed issues
      included: each named test must exist, run, and pass. A row whose test cell reads
      `superseded by #N` is retired: the command skips it and prints it, so the report names it.
+     The table it reads looks like this:
+
+     ```markdown
+     | AC | Test |
+     |---|---|
+     | AC-1 | tests/test_fees.py::test_no_fee_inside_grace_period |
+     | AC-3 | superseded by #42 |
+     ```
    - reads the tables in bulk, not one tracker call per issue: from the local tracker's files, or
      for a remote tracker one listing call scoped to issues that carry a table, or a committed
-     cache of the tables that verify refreshes whenever it posts one. With hundreds of issues, a
-     call per issue is slow and runs into rate limits.
+     cache of the tables. Verify refreshes the cache whenever it posts a table or retires a row,
+     and the command warns when the cache is older than the tracker's last edit, since a table
+     edited outside verify won't reach it otherwise. With hundreds of issues, a call per issue is
+     slow and runs into rate limits.
 
    Record it in `testing.md` as the gate and commit both, so the next session finds it.
 
@@ -100,7 +110,8 @@ command can: judge whether it ran what changed, and prove the fact the change is
 
    When this issue replaces an earlier issue's behaviour on purpose and removes or rewrites the
    test its AC table names, retire that row instead of weakening the command: set its test cell to
-   `superseded by #N`, with N this issue, and post a ruling on this issue naming the retired row.
+   `superseded by #N`, with N this issue, refresh the cache if the command keeps one, and post a
+   ruling on this issue naming the retired row.
    The row edit and the ruling are the record; a row that just disappears, or a check that stops
    reading closed issues, is not.
 
