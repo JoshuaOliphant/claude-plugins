@@ -16,7 +16,8 @@ yours to do without asking.
 1. **Confirm the branch is ready.** A `compost:review` outcome is recorded for every issue in
    the work: its step 6 comment on the issue, or its result in this session for work with no
    issue. If one is missing, stop and run `compost:review` now, whatever the size of the diff.
-   A skipped review is a gap to close here, never a line under Risk. Every `compost:review`
+   A skipped review is a gap to close here, never a line under Risk, and so is one recorded as
+   incomplete on an axis. Every `compost:review`
    finding is fixed or answered on the issue with a `file:line` reason. `compost:verify` ran on
    the current HEAD. If commits landed after its last run, run it again first.
 
