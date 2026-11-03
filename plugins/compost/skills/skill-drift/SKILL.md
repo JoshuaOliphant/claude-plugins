@@ -11,11 +11,12 @@ covers. This is not upstream drift, which `compost:turn` handles; that is compos
 behind a source.
 
 The `skill-drift` mod, which ships with compost (`hooks/skill-drift.ts`), collects the evidence.
-After each turn that loaded a skill it asks TypeSafe Jev whether the turn drifted, and writes each
+After each turn that loaded a skill it asks Jev (TypeSafe's, or the model a local Ollaya server
+names in `TYPESAFE_BASE_URL` and `TYPESAFE_DEFAULT_MODEL`) whether the turn drifted, and writes each
 hit to `~/.claude/skill-drift/<date>-<session>.jsonl` with the turn's prompt, a trace excerpt, and
 a hash of the skill's text. It costs one Jev request per skill loaded in a turn, and one more per
 skill when the next prompt is checked for a correction. It never interrupts a session, and without
-a TypeSafe key it asks and writes nothing. It loads only where Claude Code runs plugin hooks
+a TypeSafe key or an Ollaya server it asks and writes nothing. It loads only where Claude Code runs plugin hooks
 modules (`CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` while they roll out), so an empty log can mean the
 mod is not running: say so in the digest rather than reporting a clean week. This skill reads that
 log, usually from a daily scheduled task, and proposes fixes.
@@ -42,7 +43,8 @@ so a skill already fixed stops producing patterns from its old text.
    mod look the same: `CLAUDE_CODE_ENABLE_FUNCTION_HOOKS` is `1` in the environment or in the
    `env` block of `~/.claude/settings.json`, compost's installed version ships
    `hooks/skill-drift.ts`, and a TypeSafe key exists in `TYPESAFE_API_KEY` or, failing that, in
-   the `typesafe` keychain entry (`security find-generic-password -s typesafe` exits 0). Name
+   the `typesafe` keychain entry (`security find-generic-password -s typesafe` exits 0), or
+   `TYPESAFE_BASE_URL` names another server such as Ollaya, which needs no key. Name
    the check that failed, or say all three passed, and stop. A scheduled run cannot prove the
    module loaded; when every check passes, call it a quiet stretch.
 2. **Read each pattern against the skill.** Open the skill file and read every hit's evidence

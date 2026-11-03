@@ -7,7 +7,9 @@ applies the thresholds; Jev only picks or checks. Every answer carries its raw p
 can overrule a decision you disagree with.
 
 Exit codes: 0 answered, 2 bad input (the message says what is missing), 3 Jev unavailable (no
-`TYPESAFE_API_KEY` and no Keychain item `typesafe`, or the API failed). On 2 or 3, make the call
+`TYPESAFE_API_KEY` and no Keychain item `typesafe`, or the API failed; `TYPESAFE_BASE_URL` and
+`TYPESAFE_DEFAULT_MODEL` point the tools at a local Ollaya server instead, as compost's README
+says). On 2 or 3, make the call
 yourself as the calling step describes. Answers are cached by content, so a re-run over unchanged
 input costs nothing.
 

@@ -110,7 +110,10 @@ edits the user made by hand.
 
 9. **Check the Jev key.** Run `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py status`. It looks for
    a TypeSafe key (`TYPESAFE_API_KEY`, then the macOS Keychain item `typesafe`) and builds the
-   client, but sends no request. Exit 0 means the Jev tools will answer. Exit 3 means every Jev step
+   client, but sends no request; its line names the model and server. When the user would rather
+   keep diffs on their machine or has no key, offer Ollaya, a local server with TypeSafe's wire
+   format: compost's README, "Running on Ollaya instead", has the three variables to export. With
+   `TYPESAFE_BASE_URL` set, status cannot tell whether that server is running, so say so. Exit 0 means the Jev tools will answer. Exit 3 means every Jev step
    will fall back to your own judgment: tell the user what they lose (cheaper test placement, review
    triage, the Stop guard in unattended runs) and pass on the fix its one line names. With no key,
    that is a command for them to run themselves, for example as

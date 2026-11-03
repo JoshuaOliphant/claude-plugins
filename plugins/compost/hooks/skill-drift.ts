@@ -1,10 +1,13 @@
-// ABOUTME: Watches each skill the model loads and asks TypeSafe Jev whether the turn deviated from it, lacked its guidance, or drew a correction.
+// ABOUTME: Watches each skill the model loads and asks Jev (TypeSafe's, or the model Ollaya serves) whether the turn deviated from it, lacked its guidance, or drew a correction.
 // ABOUTME: Hits go quietly to ~/.claude/skill-drift/<date>-<session>.jsonl; /drift prints scripts/skill_drift.py's summary of the open ones.
 import type { EngineInterface, Register, SessionMessage } from 'claude-code'
 
 import judgments from './skill-drift-judgments.ts'
 
-const ENDPOINT = 'https://api.typesafe.ai/v1/systemone'
+// The TypeSafe SDK's variables, read the way scripts/jevtools/core.py reads them, so Ollaya's setup covers the hook too.
+const TYPESAFE_URL = 'https://api.typesafe.ai'
+const DEFAULT_MODEL = 'jev-latest'
+const LOCAL_KEY = 'local'
 const TYPED_BY_A_PERSON = new Set(['composer', 'bridge'])
 const SKILL_CHARS = 8000
 const TURN_CHARS = 12000
@@ -24,25 +27,35 @@ export type Hit = {
   evidence: string
 }
 type Watched = { skill: string; text: string; trace: string; prompt: string; turn: string }
+type Server = { url: string; model: string; key: string }
 
-async function apiKey($: EngineInterface): Promise<string | undefined> {
-  const fromEnv = await $.env.get('TYPESAFE_API_KEY')
-  if (fromEnv) return fromEnv
+async function server($: EngineInterface): Promise<Server | undefined> {
+  const [base, chosen, fromEnv] = await Promise.all([
+    $.env.get('TYPESAFE_BASE_URL'),
+    $.env.get('TYPESAFE_DEFAULT_MODEL'),
+    $.env.get('TYPESAFE_API_KEY'),
+  ])
+  const url = (base || TYPESAFE_URL).replace(/\/+$/, '')
+  const model = chosen || DEFAULT_MODEL
+  if (fromEnv) return { url, model, key: fromEnv }
+  // Another server never gets the Keychain's TypeSafe key.
+  if (url !== TYPESAFE_URL) return { url, model, key: LOCAL_KEY }
   const keychain = await $.process.run(['security', 'find-generic-password', '-s', 'typesafe', '-w'])
-  return keychain.exitCode === 0 ? keychain.stdout.trim() || undefined : undefined
+  const key = keychain.exitCode === 0 ? keychain.stdout.trim() : ''
+  return key ? { url, model, key } : undefined
 }
 
-async function nouls($: EngineInterface, key: string, state: unknown, questions: Record<string, string>) {
-  const response = await $.http.fetch(ENDPOINT, {
+async function nouls($: EngineInterface, jev: Server, state: unknown, questions: Record<string, string>) {
+  const response = await $.http.fetch(`${jev.url}/v1/systemone`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${jev.key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'jev-latest',
+      model: jev.model,
       state,
       questions: Object.fromEntries(Object.entries(questions).map(([id, text]) => [id, { type: 'noul', instructions: text }])),
     }),
   })
-  if (!response.ok) throw new Error(`TypeSafe ${response.status}: ${response.text.slice(0, 200)}`)
+  if (!response.ok) throw new Error(`Jev ${response.status}: ${response.text.slice(0, 200)}`)
   const answers = JSON.parse(response.text).answers as Record<string, { noul: number }>
   return Object.fromEntries(Object.entries(answers).map(([id, answer]) => [id, answer.noul]))
 }
@@ -131,8 +144,8 @@ export const register: Register = on => {
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
     if (e.agentId || e.isAborted || loaded.size === 0) return result
-    const key = await apiKey($)
-    if (!key) return result
+    const jev = await server($)
+    if (!jev) return result
 
     const { prompt, trace } = turnTrace(await $.session.messages())
     const watched = [...loaded.entries()].map(([skill, text]) => ({ skill, text, trace, prompt, turn: e.turnId }))
@@ -140,7 +153,7 @@ export const register: Register = on => {
     pending = watched
 
     const answered = await Promise.all(
-      watched.map(w => nouls($, key, { skill: { name: w.skill, text: w.text }, turn: w.trace }, TURN_QUESTIONS)),
+      watched.map(w => nouls($, jev, { skill: { name: w.skill, text: w.text }, turn: w.trace }, TURN_QUESTIONS)),
     )
     const [session, at] = await Promise.all([$.session.id(), $.clock.now()])
     await record(
@@ -160,12 +173,12 @@ export const register: Register = on => {
     pending = []
     const result = await next(e)
     if (watched.length === 0 || e.text.trim().startsWith('/')) return result
-    const key = await apiKey($)
-    if (!key) return result
+    const jev = await server($)
+    if (!jev) return result
 
     const answered = await Promise.all(
       watched.map(w =>
-        nouls($, key, { skill: { name: w.skill, text: w.text }, turn: w.trace, next_user_message: e.text }, NEXT_MESSAGE_QUESTIONS),
+        nouls($, jev, { skill: { name: w.skill, text: w.text }, turn: w.trace, next_user_message: e.text }, NEXT_MESSAGE_QUESTIONS),
       ),
     )
     const [session, at] = await Promise.all([$.session.id(), $.clock.now()])

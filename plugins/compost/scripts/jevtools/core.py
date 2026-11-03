@@ -1,5 +1,5 @@
-# ABOUTME: The one door to TypeSafe Jev for compost's tools: key lookup, a content-hash cache, and bounded concurrency.
-# ABOUTME: Tools call Jev.ask(tool, state, questions) and read the Answers view, or get Unavailable; SDK types stay here.
+# ABOUTME: The one door to Jev (TypeSafe's, or Ollaya's local wire-compatible server) for compost's tools: server, model and
+# ABOUTME: key lookup, a content-hash cache, bounded concurrency. Tools call Jev.ask and read Answers, or get Unavailable.
 import asyncio
 import hashlib
 import json
@@ -14,7 +14,14 @@ from typesafe_sdk import AsyncTypeSafeClient, Choice, TypeSafeError
 
 from jevtools.registry import BadInput
 
-MODEL = "jev-latest"
+# The SDK's own env vars pick the server and model, so an Ollaya install (a local server with TypeSafe's wire format)
+# works the way its docs say: TYPESAFE_BASE_URL=http://localhost:11435, TYPESAFE_DEFAULT_MODEL=<open model>.
+DEFAULT_MODEL = "jev-latest"
+MODEL_VAR = "TYPESAFE_DEFAULT_MODEL"
+TYPESAFE_URL = "https://api.typesafe.ai"
+BASE_URL_VAR = "TYPESAFE_BASE_URL"
+# Sent to a server other than TypeSafe when TYPESAFE_API_KEY is unset; Ollaya accepts any key unless OLLAYA_API_KEY is set.
+LOCAL_KEY = "local"
 ENV_VAR = "TYPESAFE_API_KEY"
 KEYCHAIN_SERVICE = "typesafe"
 CACHE = Path.home() / ".cache" / "compost" / "jev-cache.json"
@@ -29,9 +36,19 @@ class Unavailable(Exception):
     """Jev cannot answer (no key, or the API failed); callers fall back to their own judgment."""
 
 
+def model() -> str:
+    return os.environ.get(MODEL_VAR) or DEFAULT_MODEL
+
+
+def base_url() -> str:
+    return (os.environ.get(BASE_URL_VAR) or TYPESAFE_URL).rstrip("/")
+
+
 def resolve_key() -> str | None:
     if os.environ.get(ENV_VAR):
         return os.environ[ENV_VAR]
+    if base_url() != TYPESAFE_URL:
+        return LOCAL_KEY  # never the Keychain's TypeSafe key: it would go to another host
     try:
         result = subprocess.run(
             ["security", "find-generic-password", "-s", KEYCHAIN_SERVICE, "-w"],
@@ -47,7 +64,7 @@ def resolve_key() -> str | None:
 
 def cache_key(tool: str, state: dict, questions: dict) -> str:
     described = {name: question.model_dump(mode="json") for name, question in questions.items()}
-    payload = json.dumps([MODEL, tool, state, described], sort_keys=True, default=str)
+    payload = json.dumps([base_url(), model(), tool, state, described], sort_keys=True, default=str)
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
@@ -116,7 +133,7 @@ class Jev:
             return Answers(hit)
         async with self.semaphore:
             try:
-                response = await self.client.system_one(state=state, questions=questions, model=MODEL)
+                response = await self.client.system_one(state=state, questions=questions, model=model())
             except (TypeSafeError, OSError) as error:
                 raise Unavailable(f"Jev request failed: {error}") from error
         answers = {name: answer.model_dump(mode="json") for name, answer in response.answers.items()}
@@ -131,7 +148,8 @@ class Jev:
 MISSING_KEY = (
     f"{ENV_VAR} is not set and no Keychain item '{KEYCHAIN_SERVICE}' exists; get a key at "
     f"https://docs.typesafe.ai, then store it with: security add-generic-password -s {KEYCHAIN_SERVICE} "
-    f'-a "$USER" -w  (or export {ENV_VAR} where the Keychain is unavailable)'
+    f'-a "$USER" -w  (or export {ENV_VAR} where the Keychain is unavailable); or run Ollaya locally and set '
+    f"{BASE_URL_VAR} and {MODEL_VAR}, which needs no key (compost's README, Jev tools)"
 )
 
 
@@ -140,7 +158,7 @@ def open_client() -> AsyncTypeSafeClient:
     if key is None:
         raise Unavailable(MISSING_KEY)
     try:
-        return AsyncTypeSafeClient(api_key=key)
+        return AsyncTypeSafeClient(api_key=key, base_url=base_url(), model=model())
     except (TypeSafeError, ValueError, ImportError) as error:
         # A malformed key, or a proxy setting the HTTP client cannot use (unknown scheme, SOCKS without socksio).
         raise Unavailable(f"TypeSafe client could not start: {error}") from error

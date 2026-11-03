@@ -7,7 +7,8 @@ import writtenHit from './skill-drift-hit.ts'
 
 type Asked = { state: Record<string, unknown>; questions: Record<string, unknown> }
 type Ran = { exitCode: number; stdout: string; stderr: string } | 'refused'
-type World = { asked: Asked[]; files: Map<string, string>; toasts: string[]; order: string[]; ran: string[][]; drift: Ran }
+type Sent = { url: string; authorization: string; model: unknown }
+type World = { asked: Asked[]; sent: Sent[]; keychain: number; files: Map<string, string>; toasts: string[]; order: string[]; ran: string[][]; drift: Ran }
 
 // compost's folder, the root the engine loads the mod from (this file sits in its tests/).
 const PLUGIN_ROOT = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
@@ -29,8 +30,9 @@ function engine(
   answers: Record<string, number> | 'outage',
   messages: unknown[] = TURN,
   key: string | null = 'test-key',
+  env: Record<string, string> = {},
 ): World {
-  const world: World = { asked: [], files: new Map(), toasts: [], order: [], ran: [], drift: { exitCode: 0, stdout: '', stderr: '' } }
+  const world: World = { asked: [], sent: [], keychain: 0, files: new Map(), toasts: [], order: [], ran: [], drift: { exitCode: 0, stdout: '', stderr: '' } }
   on('session.start', (_$, e) => ({ cwd: e.cwd }))
   on('command.register', () => ({ value: { command: 'drift' } }) as never)
   on('skill.prompt', (_$, e) => ({ text: e.text }))
@@ -41,9 +43,14 @@ function engine(
   })
   on('session.messages', () => ({ value: messages }) as never)
   on('session.id', () => ({ value: 'session-9' }) as never)
-  on('env.get', (_$, e) => ({ value: (e as { name: string }).name === 'HOME' ? '/home/me' : (key ?? undefined) }) as never)
+  on('env.get', (_$, e) => {
+    const { name } = e as { name: string }
+    const values: Record<string, string | undefined> = { HOME: '/home/me', TYPESAFE_API_KEY: key ?? undefined, ...env }
+    return { value: values[name] } as never
+  })
   on('process.run', (_$, e) => {
     const { argv } = e as { argv: string[] }
+    if (argv[0] === 'security') world.keychain += 1
     if (argv[0] !== 'uv') return { value: { exitCode: 44, stdout: '', stderr: 'not found' } } as never
     world.ran.push(argv)
     return (world.drift === 'refused' ? { deny: 'uv is not installed' } : { value: world.drift }) as never
@@ -69,8 +76,10 @@ function engine(
     return { value: names.map(name => ({ name, kind: 'file', size: 1, mtimeMs: 0, isLink: false })) } as never
   })
   on('http.fetch', (_$, e) => {
-    const body = JSON.parse((e as { init: { body: string } }).init.body) as Asked
+    const { url, init } = e as { url: string; init: { body: string; headers: Record<string, string> } }
+    const body = JSON.parse(init.body) as Asked & { model: unknown }
     world.asked.push(body)
+    world.sent.push({ url, authorization: init.headers.Authorization, model: body.model })
     world.order.push('jev asked')
     if (answers === 'outage') return { value: { status: 503, ok: false, headers: {}, text: 'unavailable' } } as never
     const out = Object.fromEntries(Object.keys(body.questions).map(id => [id, { type: 'noul', noul: answers[id] ?? 0 }]))
@@ -97,6 +106,25 @@ test('a turn that used a skill is judged against it and its drift is logged', as
   expect(JSON.stringify(world.asked[0].state)).toContain('ERROR no such command')
   expect(logged(world)).toEqual([writtenHit])
   expect(world.toasts).toEqual([])
+})
+
+test('by default the hook asks TypeSafe for jev-latest', async ($, on) => {
+  const world = engine(on, {})
+  await $.session.start(START)
+  await $.skill.prompt({ skill: 'compost:verify', text: 'steps' })
+  await $.turn.complete(ENDED)
+  expect(world.sent).toEqual([{ url: 'https://api.typesafe.ai/v1/systemone', authorization: 'Bearer test-key', model: 'jev-latest' }])
+})
+
+test('pointed at Ollaya, the hook asks its model there without the Keychain key', async ($, on) => {
+  const local = { TYPESAFE_BASE_URL: 'http://localhost:11435/', TYPESAFE_DEFAULT_MODEL: 'winnow:e4b' }
+  const world = engine(on, { deviated: 0.99 }, TURN, null, local)
+  await $.session.start(START)
+  await $.skill.prompt({ skill: 'compost:verify', text: 'steps' })
+  await $.turn.complete(ENDED)
+  expect(world.sent).toEqual([{ url: 'http://localhost:11435/v1/systemone', authorization: 'Bearer local', model: 'winnow:e4b' }])
+  expect(world.keychain).toBe(0)
+  expect(logged(world).map(hit => hit.kind)).toEqual(['deviated'])
 })
 
 test('a turn that loaded no skill is not judged', async ($, on) => {

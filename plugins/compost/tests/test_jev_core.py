@@ -77,6 +77,44 @@ def test_a_client_that_cannot_start_is_unavailable(monkeypatch, key, proxy, reas
         core.open_client()
 
 
+def test_typesafe_and_jev_latest_are_the_defaults():
+    assert (core.base_url(), core.model()) == ("https://api.typesafe.ai", "jev-latest")
+
+
+def test_the_sdk_variables_pick_another_server_and_model(monkeypatch):
+    monkeypatch.setenv(core.BASE_URL_VAR, "http://localhost:11435/")
+    monkeypatch.setenv(core.MODEL_VAR, "winnow:e4b")
+    assert (core.base_url(), core.model()) == ("http://localhost:11435", "winnow:e4b")
+
+
+def test_another_server_never_gets_the_keychain_key(tmp_path, monkeypatch):
+    monkeypatch.delenv(core.ENV_VAR, raising=False)
+    monkeypatch.setenv(core.BASE_URL_VAR, "http://localhost:11435")
+    fake_security(tmp_path, monkeypatch, "echo typesafe-secret")
+    assert core.resolve_key() == core.LOCAL_KEY
+
+
+def test_another_server_gets_an_exported_key(monkeypatch):
+    monkeypatch.setenv(core.ENV_VAR, "ollaya-key")
+    monkeypatch.setenv(core.BASE_URL_VAR, "http://localhost:11435")
+    assert core.resolve_key() == "ollaya-key"
+
+
+def test_open_client_targets_the_configured_server_and_model(monkeypatch):
+    monkeypatch.delenv(core.ENV_VAR, raising=False)
+    monkeypatch.setenv(core.BASE_URL_VAR, "http://localhost:11435")
+    monkeypatch.setenv(core.MODEL_VAR, "laya")
+    config = core.open_client()._config
+    assert (config.base_url, config.default_model, config.api_key) == ("http://localhost:11435", "laya", "local")
+
+
+def test_ask_names_the_configured_model(tmp_path, monkeypatch):
+    monkeypatch.setenv(core.MODEL_VAR, "winnow:e4b")
+    client = StubClient(lambda state, asked: {"flag": noul(0.7)})
+    asyncio.run(core.Jev(client, core.Cache(tmp_path / "c.json")).ask("t", {"text": "a"}, QUESTIONS))
+    assert client.models == ["winnow:e4b"]
+
+
 def test_open_client_with_a_key(monkeypatch):
     monkeypatch.setenv(core.ENV_VAR, "k")
     assert core.open_client() is not None
@@ -108,6 +146,15 @@ def test_cache_key_depends_on_tool_state_and_question_text():
     assert base != core.cache_key("u", {"text": "a"}, QUESTIONS)
     assert base != core.cache_key("t", {"text": "b"}, QUESTIONS)
     assert base != core.cache_key("t", {"text": "a"}, {"flag": Noul(instructions="Is `text` about code?")})
+
+
+@pytest.mark.parametrize(
+    ("variable", "value"), [("MODEL_VAR", "winnow:e4b"), ("BASE_URL_VAR", "http://localhost:11435")]
+)
+def test_cache_key_depends_on_the_model_and_server(monkeypatch, variable, value):
+    base = core.cache_key("t", {"text": "a"}, QUESTIONS)
+    monkeypatch.setenv(getattr(core, variable), value)
+    assert base != core.cache_key("t", {"text": "a"}, QUESTIONS)
 
 
 def test_api_failures_become_unavailable(tmp_path):

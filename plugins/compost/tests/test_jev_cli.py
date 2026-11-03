@@ -32,7 +32,16 @@ def placing(state, questions):
 def test_status_reports_a_key_without_calling_the_api(monkeypatch, capsys):
     monkeypatch.setenv("TYPESAFE_API_KEY", "k")
     assert jev.main(["status"]) == 0
-    assert capsys.readouterr().out.startswith("jev ready: a TypeSafe key was found; 17 tools available")
+    assert capsys.readouterr().out.startswith("jev ready: jev-latest at https://api.typesafe.ai; 17 tools available")
+
+
+def test_status_against_a_local_server_needs_no_key(monkeypatch, capsys):
+    monkeypatch.delenv("TYPESAFE_API_KEY", raising=False)
+    monkeypatch.setenv("PATH", "")
+    monkeypatch.setenv("TYPESAFE_BASE_URL", "http://localhost:11435")
+    monkeypatch.setenv("TYPESAFE_DEFAULT_MODEL", "winnow:e4b")
+    assert jev.main(["status"]) == 0
+    assert capsys.readouterr().out.startswith("jev ready: winnow:e4b at http://localhost:11435;")
 
 
 def test_status_without_a_key_exits_3_and_says_how_to_store_one(monkeypatch, capsys):

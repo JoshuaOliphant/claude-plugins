@@ -61,8 +61,31 @@ Skills call `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py <tool> --input <file.js
 names them all. Code gathers the candidates, Jev picks or checks, and thresholds in code decide.
 Results are cached by content hash in `~/.cache/compost/`. The key comes from `TYPESAFE_API_KEY`
 or the macOS Keychain item `typesafe`. Without one, a tool exits 3 and the skill makes the call
-itself, so Jev speeds compost up and never blocks it. `jev.py status` checks for a key without
-calling the API; `compost:setup` runs it and tells you how to store one.
+itself, so Jev speeds compost up and never blocks it. `jev.py status` names the model and server it
+will use and checks for a key without calling the API; `compost:setup` runs it and tells you how to
+store one.
+
+### Running on Ollaya instead
+
+[Ollaya](https://github.com/ollaya-dev/ollaya) serves open decision models on your own machine
+behind TypeSafe's wire format, so no key, no per-call cost, and no diff or transcript leaves the
+machine. compost reads the TypeSafe SDK's own variables, the ones Ollaya's docs tell you to set;
+the Jev tools, jev-lint, the Stop guard, and the skill-drift mod all follow them:
+
+```sh
+ollaya pull winnow:e4b                        # or laya without an NVIDIA GPU
+export TYPESAFE_BASE_URL=http://localhost:11435
+export TYPESAFE_DEFAULT_MODEL=winnow:e4b      # unset, compost asks for jev-latest, which Ollaya does not serve
+export NO_PROXY=localhost,127.0.0.1           # keep local requests off a system proxy
+```
+
+With `TYPESAFE_BASE_URL` pointing anywhere but `https://api.typesafe.ai`, compost sends
+`TYPESAFE_API_KEY` if you export one (set it when the server sets `OLLAYA_API_KEY`) and otherwise
+a placeholder; it never sends the Keychain's TypeSafe key to another host. Answers are cached per
+model and server, so switching back and forth never mixes them. Two things to know: the
+thresholds and eval numbers below were measured on Jev, and a model whose option budget is smaller
+than a tool's list (such as `laya:en`, about 125) refuses that ask, so that one step falls back to
+your own judgment as it does on any outage.
 
 | Tool | Primitive | Used by | Live eval (cases) |
 | --- | --- | --- | --- |
