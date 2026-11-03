@@ -127,6 +127,25 @@ test('pointed at Ollaya, the hook asks its model there without the Keychain key'
   expect(logged(world).map(hit => hit.kind)).toEqual(['deviated'])
 })
 
+test('an exported key is held back from a plain-HTTP server elsewhere', async ($, on) => {
+  const remote = { TYPESAFE_BASE_URL: 'http://192.168.1.20:11435', TYPESAFE_DEFAULT_MODEL: 'laya' }
+  const plain = engine(on, {}, TURN, 'exported', remote)
+  await $.session.start(START)
+  await $.skill.prompt({ skill: 'compost:verify', text: 'steps' })
+  await $.turn.complete(ENDED)
+  expect(plain.sent.map(sent => sent.authorization)).toEqual(['Bearer local'])
+  expect(plain.keychain).toBe(0)
+})
+
+test('an exported key goes to an HTTPS server', async ($, on) => {
+  const secure = { TYPESAFE_BASE_URL: 'https://decisions.example.com', TYPESAFE_DEFAULT_MODEL: 'laya' }
+  const world = engine(on, {}, TURN, 'exported', secure)
+  await $.session.start(START)
+  await $.skill.prompt({ skill: 'compost:verify', text: 'steps' })
+  await $.turn.complete(ENDED)
+  expect(world.sent).toEqual([{ url: 'https://decisions.example.com/v1/systemone', authorization: 'Bearer exported', model: 'laya' }])
+})
+
 test('a turn that loaded no skill is not judged', async ($, on) => {
   const world = engine(on, { deviated: 0.99 })
   await $.session.start(START)

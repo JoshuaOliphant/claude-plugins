@@ -2,6 +2,7 @@
 # ABOUTME: model and key lookup, a content-hash cache, bounded concurrency. Tools call Jev.ask and read Answers, or get Unavailable.
 import asyncio
 import hashlib
+import ipaddress
 import json
 import os
 import subprocess
@@ -9,6 +10,7 @@ import tempfile
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from typesafe_sdk import AsyncTypeSafeClient, Choice, TypeSafeError
 
@@ -21,7 +23,7 @@ DEFAULT_MODEL = "jev-latest"
 MODEL_VAR = "TYPESAFE_DEFAULT_MODEL"
 TYPESAFE_URL = "https://api.typesafe.ai"
 BASE_URL_VAR = "TYPESAFE_BASE_URL"
-# Sent to a server other than TypeSafe when TYPESAFE_API_KEY is unset; Ollaya accepts any key unless OLLAYA_API_KEY is set.
+# Sent to a server other than TypeSafe instead of a real key; Ollaya accepts any key unless OLLAYA_API_KEY is set.
 LOCAL_KEY = "local"
 ENV_VAR = "TYPESAFE_API_KEY"
 KEYCHAIN_SERVICE = "typesafe"
@@ -45,11 +47,25 @@ def base_url() -> str:
     return (os.environ.get(BASE_URL_VAR) or TYPESAFE_URL).rstrip("/")
 
 
+def carries_key(url: str) -> bool:
+    """Whether an exported key may go to `url`: over HTTPS, or to this machine. Plain HTTP elsewhere would expose it."""
+    parsed = urlsplit(url)
+    if parsed.scheme == "https":
+        return True
+    host = parsed.hostname or ""
+    try:
+        return host == "localhost" or ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
 def resolve_key() -> str | None:
-    if os.environ.get(ENV_VAR):
-        return os.environ[ENV_VAR]
+    exported = os.environ.get(ENV_VAR)
     if base_url() != TYPESAFE_URL:
-        return LOCAL_KEY  # never the Keychain's TypeSafe key: it would go to another host
+        # Never the Keychain's TypeSafe key, and an exported one only where carries_key allows.
+        return exported if exported and carries_key(base_url()) else LOCAL_KEY
+    if exported:
+        return exported
     try:
         result = subprocess.run(
             ["security", "find-generic-password", "-s", KEYCHAIN_SERVICE, "-w"],
@@ -65,7 +81,9 @@ def resolve_key() -> str | None:
 
 def cache_key(tool: str, state: dict, questions: dict) -> str:
     described = {name: question.model_dump(mode="json") for name, question in questions.items()}
-    payload = json.dumps([base_url(), model(), tool, state, described], sort_keys=True, default=str)
+    # TypeSafe's URL stays out of the key, so caches written before other servers were possible still hit.
+    server = [] if base_url() == TYPESAFE_URL else [base_url()]
+    payload = json.dumps([model(), tool, state, described, *server], sort_keys=True, default=str)
     return hashlib.sha256(payload.encode()).hexdigest()
 
 

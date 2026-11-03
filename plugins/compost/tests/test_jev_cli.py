@@ -41,7 +41,7 @@ def test_status_against_a_local_server_needs_no_key(monkeypatch, capsys):
     monkeypatch.setenv("TYPESAFE_BASE_URL", "http://localhost:11435")
     monkeypatch.setenv("TYPESAFE_DEFAULT_MODEL", "winnow:e4b")
     assert jev.main(["status"]) == 0
-    assert capsys.readouterr().out.startswith("jev ready: winnow:e4b at http://localhost:11435;")
+    assert capsys.readouterr().out.startswith("jev configured (not contacted): winnow:e4b at http://localhost:11435;")
 
 
 def test_status_without_a_key_exits_3_and_says_how_to_store_one(monkeypatch, capsys):

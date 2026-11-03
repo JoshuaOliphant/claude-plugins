@@ -2,7 +2,11 @@
 # ABOUTME: caching, token counting, and turning API failures into Unavailable.
 import ast
 import asyncio
+import hashlib
 import importlib.util
+import json
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.metadata import version
 
 import pytest
@@ -100,12 +104,60 @@ def test_another_server_gets_an_exported_key(monkeypatch):
     assert core.resolve_key() == "ollaya-key"
 
 
-def test_open_client_targets_the_configured_server_and_model(monkeypatch):
+@pytest.mark.parametrize(
+    ("url", "carries"),
+    [
+        ("https://decisions.example.com", True),
+        ("http://localhost:11435", True),
+        ("http://127.0.0.2:11435", True),
+        ("http://[::1]:11435", True),
+        ("http://192.168.1.20:11435", False),
+        ("http://ollaya.lan:11435", False),
+    ],
+)
+def test_an_exported_key_goes_only_over_https_or_to_this_machine(monkeypatch, url, carries):
+    monkeypatch.setenv(core.ENV_VAR, "exported")
+    monkeypatch.setenv(core.BASE_URL_VAR, url)
+    assert core.resolve_key() == ("exported" if carries else core.LOCAL_KEY)
+
+
+class OllayaStandIn(BaseHTTPRequestHandler):
+    """Speaks the slice of Ollaya's /v1/systemone that one Noul needs, and records what reached it."""
+
+    seen: list[dict] = []
+
+    def do_POST(self):
+        body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+        type(self).seen.append({"path": self.path, "auth": self.headers["Authorization"], "model": body["model"]})
+        answers = {name: {"type": "noul", "noul": 0.3} for name in body["questions"]}
+        out = json.dumps({"model": body["model"], "answers": answers, "usage": {"input_tokens": 7, "output_tokens": 0}})
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(out.encode())
+
+    def log_message(self, *args):
+        pass
+
+
+def test_open_client_reaches_the_configured_server_with_its_model_and_the_placeholder(tmp_path, monkeypatch):
+    OllayaStandIn.seen = []
+    server = ThreadingHTTPServer(("127.0.0.1", 0), OllayaStandIn)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
     monkeypatch.delenv(core.ENV_VAR, raising=False)
-    monkeypatch.setenv(core.BASE_URL_VAR, "http://localhost:11435")
-    monkeypatch.setenv(core.MODEL_VAR, "laya")
-    config = core.open_client()._config
-    assert (config.base_url, config.default_model, config.api_key) == ("http://localhost:11435", "laya", "local")
+    monkeypatch.setenv(core.BASE_URL_VAR, f"http://127.0.0.1:{server.server_port}")
+    monkeypatch.setenv(core.MODEL_VAR, "winnow:e4b")
+    monkeypatch.setenv("NO_PROXY", "127.0.0.1")
+
+    async def ask():
+        async with core.session(cache=core.Cache(tmp_path / "c.json")) as jev:
+            return await jev.ask("t", {"text": "a"}, QUESTIONS)
+
+    try:
+        assert asyncio.run(ask()).noul("flag") == 0.3
+    finally:
+        server.shutdown()
+    assert OllayaStandIn.seen == [{"path": "/v1/systemone", "auth": "Bearer local", "model": "winnow:e4b"}]
 
 
 def test_ask_names_the_configured_model(tmp_path, monkeypatch):
@@ -146,6 +198,12 @@ def test_cache_key_depends_on_tool_state_and_question_text():
     assert base != core.cache_key("u", {"text": "a"}, QUESTIONS)
     assert base != core.cache_key("t", {"text": "b"}, QUESTIONS)
     assert base != core.cache_key("t", {"text": "a"}, {"flag": Noul(instructions="Is `text` about code?")})
+
+
+def test_cache_keys_on_typesafe_are_the_ones_written_before_other_servers_were_possible():
+    described = {name: question.model_dump(mode="json") for name, question in QUESTIONS.items()}
+    before = json.dumps(["jev-latest", "t", {"text": "a"}, described], sort_keys=True, default=str)
+    assert core.cache_key("t", {"text": "a"}, QUESTIONS) == hashlib.sha256(before.encode()).hexdigest()
 
 
 @pytest.mark.parametrize(

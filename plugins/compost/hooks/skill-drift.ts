@@ -30,6 +30,19 @@ export type Hit = {
 type Watched = { skill: string; text: string; trace: string; prompt: string; turn: string }
 type Server = { url: string; model: string; key: string }
 
+// Mirrors carries_key in scripts/jevtools/core.py: an exported key goes only over HTTPS or to this machine.
+function carriesKey(url: string): boolean {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return false
+  }
+  if (parsed.protocol === 'https:') return true
+  const host = parsed.hostname.replace(/^\[|\]$/g, '')
+  return host === 'localhost' || host === '::1' || /^127\.\d+\.\d+\.\d+$/.test(host)
+}
+
 async function server($: EngineInterface): Promise<Server | undefined> {
   const [base, chosen, fromEnv] = await Promise.all([
     $.env.get('TYPESAFE_BASE_URL'),
@@ -38,9 +51,9 @@ async function server($: EngineInterface): Promise<Server | undefined> {
   ])
   const url = (base || TYPESAFE_URL).replace(/\/+$/, '')
   const model = chosen || DEFAULT_MODEL
+  // Another server never gets the Keychain's TypeSafe key, and an exported one only where carriesKey allows.
+  if (url !== TYPESAFE_URL) return { url, model, key: fromEnv && carriesKey(url) ? fromEnv : LOCAL_KEY }
   if (fromEnv) return { url, model, key: fromEnv }
-  // Another server never gets the Keychain's TypeSafe key.
-  if (url !== TYPESAFE_URL) return { url, model, key: LOCAL_KEY }
   const keychain = await $.process.run(['security', 'find-generic-password', '-s', 'typesafe', '-w'])
   const key = keychain.exitCode === 0 ? keychain.stdout.trim() : ''
   return key ? { url, model, key } : undefined
