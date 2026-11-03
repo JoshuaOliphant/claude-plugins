@@ -1,5 +1,5 @@
-# ABOUTME: The one door to Jev (TypeSafe's, or Ollaya's local wire-compatible server) for compost's tools: server, model and
-# ABOUTME: key lookup, a content-hash cache, bounded concurrency. Tools call Jev.ask and read Answers, or get Unavailable.
+# ABOUTME: The one door to the decision model for compost's tools (TypeSafe Jev, or an open model a local Ollaya serves): server,
+# ABOUTME: model and key lookup, a content-hash cache, bounded concurrency. Tools call Jev.ask and read Answers, or get Unavailable.
 import asyncio
 import hashlib
 import json
@@ -16,6 +16,7 @@ from jevtools.registry import BadInput
 
 # The SDK's own env vars pick the server and model, so an Ollaya install (a local server with TypeSafe's wire format)
 # works the way its docs say: TYPESAFE_BASE_URL=http://localhost:11435, TYPESAFE_DEFAULT_MODEL=<open model>.
+# hooks/skill-drift.ts repeats these constants and the key rule in TypeScript; test_skill_drift_mod.py holds them equal.
 DEFAULT_MODEL = "jev-latest"
 MODEL_VAR = "TYPESAFE_DEFAULT_MODEL"
 TYPESAFE_URL = "https://api.typesafe.ai"

@@ -1,10 +1,11 @@
-// ABOUTME: Watches each skill the model loads and asks Jev (TypeSafe's, or the model Ollaya serves) whether the turn deviated from it, lacked its guidance, or drew a correction.
+// ABOUTME: Watches each skill the model loads and asks the decision model (TypeSafe Jev, or one a local Ollaya serves) whether the turn deviated from it, lacked its guidance, or drew a correction.
 // ABOUTME: Hits go quietly to ~/.claude/skill-drift/<date>-<session>.jsonl; /drift prints scripts/skill_drift.py's summary of the open ones.
 import type { EngineInterface, Register, SessionMessage } from 'claude-code'
 
 import judgments from './skill-drift-judgments.ts'
 
 // The TypeSafe SDK's variables, read the way scripts/jevtools/core.py reads them, so Ollaya's setup covers the hook too.
+// tests/test_skill_drift_mod.py holds these constants equal to core.py's.
 const TYPESAFE_URL = 'https://api.typesafe.ai'
 const DEFAULT_MODEL = 'jev-latest'
 const LOCAL_KEY = 'local'
@@ -45,17 +46,17 @@ async function server($: EngineInterface): Promise<Server | undefined> {
   return key ? { url, model, key } : undefined
 }
 
-async function nouls($: EngineInterface, jev: Server, state: unknown, questions: Record<string, string>) {
-  const response = await $.http.fetch(`${jev.url}/v1/systemone`, {
+async function nouls($: EngineInterface, target: Server, state: unknown, questions: Record<string, string>) {
+  const response = await $.http.fetch(`${target.url}/v1/systemone`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${jev.key}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${target.key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: jev.model,
+      model: target.model,
       state,
       questions: Object.fromEntries(Object.entries(questions).map(([id, text]) => [id, { type: 'noul', instructions: text }])),
     }),
   })
-  if (!response.ok) throw new Error(`Jev ${response.status}: ${response.text.slice(0, 200)}`)
+  if (!response.ok) throw new Error(`Decision model ${response.status}: ${response.text.slice(0, 200)}`)
   const answers = JSON.parse(response.text).answers as Record<string, { noul: number }>
   return Object.fromEntries(Object.entries(answers).map(([id, answer]) => [id, answer.noul]))
 }
@@ -144,8 +145,8 @@ export const register: Register = on => {
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
     if (e.agentId || e.isAborted || loaded.size === 0) return result
-    const jev = await server($)
-    if (!jev) return result
+    const target = await server($)
+    if (!target) return result
 
     const { prompt, trace } = turnTrace(await $.session.messages())
     const watched = [...loaded.entries()].map(([skill, text]) => ({ skill, text, trace, prompt, turn: e.turnId }))
@@ -153,7 +154,7 @@ export const register: Register = on => {
     pending = watched
 
     const answered = await Promise.all(
-      watched.map(w => nouls($, jev, { skill: { name: w.skill, text: w.text }, turn: w.trace }, TURN_QUESTIONS)),
+      watched.map(w => nouls($, target, { skill: { name: w.skill, text: w.text }, turn: w.trace }, TURN_QUESTIONS)),
     )
     const [session, at] = await Promise.all([$.session.id(), $.clock.now()])
     await record(
@@ -173,12 +174,12 @@ export const register: Register = on => {
     pending = []
     const result = await next(e)
     if (watched.length === 0 || e.text.trim().startsWith('/')) return result
-    const jev = await server($)
-    if (!jev) return result
+    const target = await server($)
+    if (!target) return result
 
     const answered = await Promise.all(
       watched.map(w =>
-        nouls($, jev, { skill: { name: w.skill, text: w.text }, turn: w.trace, next_user_message: e.text }, NEXT_MESSAGE_QUESTIONS),
+        nouls($, target, { skill: { name: w.skill, text: w.text }, turn: w.trace, next_user_message: e.text }, NEXT_MESSAGE_QUESTIONS),
       ),
     )
     const [session, at] = await Promise.all([$.session.id(), $.clock.now()])
