@@ -83,12 +83,13 @@ With `TYPESAFE_BASE_URL` pointing anywhere but `https://api.typesafe.ai`, the Ke
 key stays home. An exported `TYPESAFE_API_KEY` does go to the server you name (that is how you
 send one when the server sets `OLLAYA_API_KEY`, and if it holds your TypeSafe key, the other
 server sees it), but only over HTTPS or to this machine (`localhost`, `127.0.0.0/8`, `::1`); a
-plain-HTTP server elsewhere gets the placeholder `local` instead. Answers are cached per model and
-server, so switching back and forth never mixes them; TypeSafe answers cached before 0.32.0 still
-hit. Two things to know: the
-thresholds and eval numbers below were measured on Jev, and a model whose option budget is smaller
-than a tool's list (such as `laya:en`, about 125) refuses that ask, so that one step falls back to
-your own judgment as it does on any outage.
+plain-HTTP server elsewhere gets the placeholder `local` instead, so a keyed Ollaya on another
+machine answers 401 and every step falls back until you put it behind HTTPS or tunnel it to
+localhost. Answers are cached per model and server, so switching back and forth never mixes them;
+TypeSafe answers cached before 0.32.0 still hit. Two things to know: the thresholds and eval
+numbers below were measured on Jev, and a model whose option budget is smaller than a tool's list
+(such as `laya:en`, about 125) refuses that ask, so that one step falls back to your own judgment
+as it does on any outage.
 
 | Tool | Primitive | Used by | Live eval (cases) |
 | --- | --- | --- | --- |

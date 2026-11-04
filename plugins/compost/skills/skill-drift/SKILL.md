@@ -11,15 +11,16 @@ covers. This is not upstream drift, which `compost:turn` handles; that is compos
 behind a source.
 
 The `skill-drift` mod, which ships with compost (`hooks/skill-drift.ts`), collects the evidence.
-After each turn that loaded a skill it asks Jev (TypeSafe's, or the model a local Ollaya server
-names in `TYPESAFE_BASE_URL` and `TYPESAFE_DEFAULT_MODEL`) whether the turn drifted, and writes each
-hit to `~/.claude/skill-drift/<date>-<session>.jsonl` with the turn's prompt, a trace excerpt, and
-a hash of the skill's text. It costs one Jev request per skill loaded in a turn, and one more per
-skill when the next prompt is checked for a correction. It never interrupts a session, and without
-a TypeSafe key or an Ollaya server it asks and writes nothing. It loads only where Claude Code runs plugin hooks
-modules (`CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` while they roll out), so an empty log can mean the
-mod is not running: say so in the digest rather than reporting a clean week. This skill reads that
-log, usually from a daily scheduled task, and proposes fixes.
+After each turn that loaded a skill it asks the decision model (TypeSafe Jev, or the model a local
+Ollaya server names in `TYPESAFE_BASE_URL` and `TYPESAFE_DEFAULT_MODEL`) whether the turn drifted,
+and writes each hit to `~/.claude/skill-drift/<date>-<session>.jsonl` with the turn's prompt, a
+trace excerpt, and a hash of the skill's text. It costs one Jev request per skill loaded in a
+turn, and one more per skill when the next prompt is checked for a correction. It never interrupts
+a session, and without a TypeSafe key or an Ollaya server it asks and writes nothing. It loads
+only where Claude Code runs plugin hooks modules (`CLAUDE_CODE_ENABLE_FUNCTION_HOOKS=1` while they
+roll out), so an empty log can mean the mod is not running: say so in the digest rather than
+reporting a clean week. This skill reads that log, usually from a daily scheduled task, and
+proposes fixes.
 
 One hit proves little: a turn can stray for reasons of its own. The same kind of drift on the
 same skill in two separate sessions is a pattern, and patterns are what this skill acts on. When

@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from typesafe_sdk import AsyncTypeSafeClient, Choice, TypeSafeError
+from typesafe_sdk import AsyncTypeSafeClient, Choice, TypeSafeAuthenticationError, TypeSafeError
 
 from jevtools.registry import BadInput
 
@@ -57,6 +57,17 @@ def carries_key(url: str) -> bool:
         return host == "localhost" or ipaddress.ip_address(host).is_loopback
     except ValueError:
         return False
+
+
+def refused_placeholder(error: Exception) -> str:
+    """Why a 401 came back from a server that was sent the placeholder because it is plain HTTP and not this machine."""
+    url = base_url()
+    if not isinstance(error, TypeSafeAuthenticationError) or url == TYPESAFE_URL or carries_key(url):
+        return ""
+    return (
+        f"; {url} wants a key, and compost sends an exported {ENV_VAR} only over HTTPS or to this machine, "
+        "so put the server behind HTTPS or tunnel it to localhost"
+    )
 
 
 def resolve_key() -> str | None:
@@ -154,7 +165,7 @@ class Jev:
             try:
                 response = await self.client.system_one(state=state, questions=questions, model=model())
             except (TypeSafeError, OSError) as error:
-                raise Unavailable(f"Jev request failed: {error}") from error
+                raise Unavailable(f"Jev request failed: {error}{refused_placeholder(error)}") from error
         answers = {name: answer.model_dump(mode="json") for name, answer in response.answers.items()}
         self.input_tokens += response.usage.input_tokens
         missing = [name for name in questions if name not in answers]

@@ -14,7 +14,7 @@ from packaging.version import Version
 from conftest import PLUGIN_ROOT, StubClient, StubJev, choice, noul, score
 from jevtools import core
 from jevtools.registry import BadInput
-from typesafe_sdk import Choice, Noul
+from typesafe_sdk import Choice, Noul, TypeSafeAuthenticationError
 
 QUESTIONS = {"flag": Noul(instructions="Is `text` about tests?")}
 SDK = Version(version("typesafe-sdk"))
@@ -219,6 +219,19 @@ def test_api_failures_become_unavailable(tmp_path):
     jev = core.Jev(StubClient(error=OSError("ssl")), core.Cache(tmp_path / "c.json"))
     with pytest.raises(core.Unavailable, match="Jev request failed"):
         asyncio.run(jev.ask("t", {"text": "a"}, QUESTIONS))
+
+
+@pytest.mark.parametrize(
+    ("url", "explained"),
+    [("http://192.168.1.20:11435", True), ("https://decisions.example.com", False), ("http://localhost:11435", False)],
+)
+def test_a_refused_placeholder_says_how_to_send_a_key(tmp_path, monkeypatch, url, explained):
+    monkeypatch.setenv(core.BASE_URL_VAR, url)
+    refused = TypeSafeAuthenticationError(401, {"error": "unauthorized"}, {})
+    jev = core.Jev(StubClient(error=refused), core.Cache(tmp_path / "c.json"))
+    with pytest.raises(core.Unavailable) as raised:
+        asyncio.run(jev.ask("t", {"text": "a"}, QUESTIONS))
+    assert ("tunnel it to localhost" in str(raised.value)) is explained
 
 
 def test_a_dropped_answer_is_unavailable_and_nothing_is_cached(tmp_path):
