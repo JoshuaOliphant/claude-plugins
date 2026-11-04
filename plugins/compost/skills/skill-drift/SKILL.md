@@ -43,8 +43,9 @@ so a skill already fixed stops producing patterns from its old text.
    `env` block of `~/.claude/settings.json`, compost's installed version ships
    `hooks/skill-drift.ts`, and a TypeSafe key exists in `TYPESAFE_API_KEY` or, failing that, in
    the `typesafe` keychain entry (`security find-generic-password -s typesafe` exits 0). Name
-   the check that failed, or say all three passed, and stop. A scheduled run cannot prove the
-   module loaded; when every check passes, call it a quiet stretch.
+   the check that failed, or say all three passed. A scheduled run cannot prove the module
+   loaded; when every check passes, call it a quiet stretch. Then go straight to the digest in
+   step 6.
 2. **Read each pattern against the skill.** Open the skill file and read every hit's evidence
    next to the step it concerns. When the excerpt is too thin, search the hit's transcript for its
    prompt and read that turn. A pattern whose hits describe different things is not a pattern:
@@ -74,7 +75,11 @@ so a skill already fixed stops producing patterns from its old text.
 6. **Write the digest** to `~/.claude/skill-drift/digests/<date>.md` and end with the same text:
    one line per pattern with its ruling and outcome (pull request link, proposal, or no change),
    the retired and unreadable counts, and any skill whose `earlier_versions` is non-zero and has
-   drifted again, since that means its last fix did not hold.
+   drifted again, since that means its last fix did not hold. Every run writes one, including a
+   run with no patterns, whose digest also carries step 1's check results. List the open hits
+   below the two-session bar from `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/skill_drift.py summary`,
+   with no ruling, and leave them unmarked: `patterns` leaves them out, and a later session can
+   still make them a pattern.
 
 ## Run it on a schedule
 
