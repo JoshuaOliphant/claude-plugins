@@ -179,7 +179,8 @@ MISSING_KEY = (
     f"{ENV_VAR} is not set and no Keychain item '{KEYCHAIN_SERVICE}' exists; get a key at "
     f"https://docs.typesafe.ai, then store it with: security add-generic-password -s {KEYCHAIN_SERVICE} "
     f'-a "$USER" -w  (or export {ENV_VAR} where the Keychain is unavailable); or run Ollaya locally and set '
-    f"{BASE_URL_VAR} and {MODEL_VAR}, which needs no key (compost's README, Jev tools)"
+    f"{BASE_URL_VAR} and {MODEL_VAR}, which needs a key only if it sets OLLAYA_API_KEY "
+    "(compost's README, Jev tools)"
 )
 
 

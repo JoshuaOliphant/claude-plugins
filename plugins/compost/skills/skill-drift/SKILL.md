@@ -45,9 +45,9 @@ so a skill already fixed stops producing patterns from its old text.
    `env` block of `~/.claude/settings.json`, compost's installed version ships
    `hooks/skill-drift.ts`, and a TypeSafe key exists in `TYPESAFE_API_KEY` or, failing that, in
    the `typesafe` keychain entry (`security find-generic-password -s typesafe` exits 0), or
-   `TYPESAFE_BASE_URL` names another server such as Ollaya, which needs no key. Name
-   the check that failed, or say all three passed, and stop. A scheduled run cannot prove the
-   module loaded; when every check passes, call it a quiet stretch.
+   `TYPESAFE_BASE_URL` names another server such as Ollaya (which needs a key only if it sets
+   `OLLAYA_API_KEY`). Name the check that failed, or say all three passed, and stop. A scheduled
+   run cannot prove the module loaded; when every check passes, call it a quiet stretch.
 2. **Read each pattern against the skill.** Open the skill file and read every hit's evidence
    next to the step it concerns. When the excerpt is too thin, search the hit's transcript for its
    prompt and read that turn. A pattern whose hits describe different things is not a pattern:

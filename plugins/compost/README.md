@@ -68,9 +68,11 @@ store one.
 ### Running on Ollaya instead
 
 [Ollaya](https://github.com/ollaya-dev/ollaya) serves open decision models on your own machine
-behind TypeSafe's wire format, so no key, no per-call cost, and no diff or transcript leaves the
-machine. compost reads the TypeSafe SDK's own variables, the ones Ollaya's docs tell you to set;
-the Jev tools, jev-lint, the Stop guard, and the skill-drift mod all follow them:
+behind TypeSafe's wire format, so usually no key, no per-call cost, and no diff or transcript
+leaves the machine. compost's Ollaya support is built to that wire format and tested against a
+stand-in server, not yet against a real Ollaya. compost reads the TypeSafe SDK's own variables,
+the ones Ollaya's docs tell you to set; the Jev tools, jev-lint, the Stop guard, and the
+skill-drift mod all follow them:
 
 ```sh
 ollaya pull winnow:e4b                        # or laya without an NVIDIA GPU
