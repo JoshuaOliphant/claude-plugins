@@ -68,6 +68,14 @@ def private_jev_cache(tmp_path, monkeypatch):
     return tmp_path / "jev-cache.json"
 
 
+@pytest.fixture(autouse=True)
+def typesafe_server(request, monkeypatch):
+    """Unit tests run against TypeSafe's defaults even where the developer points Jev at Ollaya; live evals keep it."""
+    if request.node.get_closest_marker("jev") is None:
+        monkeypatch.delenv(core.BASE_URL_VAR, raising=False)
+        monkeypatch.delenv(core.MODEL_VAR, raising=False)
+
+
 def choice(chosen: str, options=(), confidence: float = 0.9, *, probabilities: dict | None = None) -> dict:
     """The other `options` share `1 - confidence`; `probabilities` instead gives every label's probability."""
     if probabilities is not None:
@@ -105,9 +113,11 @@ class StubClient:
         self.answer = answer
         self.error = error
         self.calls: list[tuple[dict, dict]] = []
+        self.models: list[str | None] = []
 
     async def system_one(self, state, questions, model=None):
         self.calls.append((state, questions))
+        self.models.append(model)
         if self.error:
             raise self.error
         return response(self.answer(state, questions))
