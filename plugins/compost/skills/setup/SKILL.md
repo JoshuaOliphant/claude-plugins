@@ -110,13 +110,19 @@ edits the user made by hand.
 
 9. **Check the Jev key.** Run `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/jev.py status`. It looks for
    a TypeSafe key (`TYPESAFE_API_KEY`, then the macOS Keychain item `typesafe`) and builds the
-   client, but sends no request. Exit 0 means the Jev tools will answer. Exit 3 means every Jev step
-   will fall back to your own judgment: tell the user what they lose (cheaper test placement, review
-   triage, the Stop guard in unattended runs) and pass on the fix its one line names. With no key,
-   that is a command for them to run themselves, for example as
+   client, but sends no request; its line names the model and server. When the user would rather
+   keep diffs on their machine or has no key, offer Ollaya, a local server with TypeSafe's wire
+   format: compost's README, "Running on Ollaya instead", has the variables to export (including
+   `NO_PROXY` for a machine behind a system proxy). Tell them its thresholds were measured on Jev
+   and that a model with a small option budget falls back on the asks it cannot fit. With
+   `TYPESAFE_BASE_URL` set, status says "configured (not contacted)": it cannot tell whether that
+   server is running, so say so. Exit 0 with "ready" means the Jev tools will answer. Exit 3
+   means every Jev step will fall back to your own judgment: tell the user what they lose
+   (cheaper test placement, review triage, the Stop guard in unattended runs) and pass on the fix
+   its one line names. With no key, that is a command for them to run themselves, for example as
    `! security add-generic-password -s typesafe -a "$USER" -w`; when the client could not start,
-   it is the key's format or the proxy setting it quotes. Never ask for the key
-   in chat or write it anywhere. The key belongs to the machine, not the repo, so record nothing.
+   it is the key's format or the proxy setting it quotes. Never ask for the key in chat or write
+   it anywhere. The key belongs to the machine, not the repo, so record nothing.
 
 10. **Switch off what compost replaces.** Run
     `uv run ${CLAUDE_PLUGIN_ROOT}/scripts/pile.py replaced`. It reads the `[replaces]` table in

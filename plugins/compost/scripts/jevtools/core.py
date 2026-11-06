@@ -1,7 +1,8 @@
-# ABOUTME: The one door to TypeSafe Jev for compost's tools: key lookup, a content-hash cache, and bounded concurrency.
-# ABOUTME: Tools call Jev.ask(tool, state, questions) and read the Answers view, or get Unavailable; SDK types stay here.
+# ABOUTME: The one door to the decision model for compost's tools (TypeSafe Jev, or an open model a local Ollaya serves): server,
+# ABOUTME: model and key lookup, a content-hash cache, bounded concurrency. Tools call Jev.ask and read Answers, or get Unavailable.
 import asyncio
 import hashlib
+import ipaddress
 import json
 import os
 import subprocess
@@ -9,12 +10,21 @@ import tempfile
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import urlsplit
 
-from typesafe_sdk import AsyncTypeSafeClient, Choice, TypeSafeError
+from typesafe_sdk import AsyncTypeSafeClient, Choice, TypeSafeAuthenticationError, TypeSafeError
 
 from jevtools.registry import BadInput
 
-MODEL = "jev-latest"
+# The SDK's own env vars pick the server and model, so an Ollaya install (a local server with TypeSafe's wire format)
+# works the way its docs say: TYPESAFE_BASE_URL=http://localhost:11435, TYPESAFE_DEFAULT_MODEL=<open model>.
+# hooks/skill-drift.ts repeats these constants and the key rule in TypeScript; test_skill_drift_mod.py holds them equal.
+DEFAULT_MODEL = "jev-latest"
+MODEL_VAR = "TYPESAFE_DEFAULT_MODEL"
+TYPESAFE_URL = "https://api.typesafe.ai"
+BASE_URL_VAR = "TYPESAFE_BASE_URL"
+# Sent to a server other than TypeSafe instead of a real key; Ollaya accepts any key unless OLLAYA_API_KEY is set.
+LOCAL_KEY = "local"
 ENV_VAR = "TYPESAFE_API_KEY"
 KEYCHAIN_SERVICE = "typesafe"
 CACHE = Path.home() / ".cache" / "compost" / "jev-cache.json"
@@ -29,9 +39,44 @@ class Unavailable(Exception):
     """Jev cannot answer (no key, or the API failed); callers fall back to their own judgment."""
 
 
+def model() -> str:
+    return os.environ.get(MODEL_VAR) or DEFAULT_MODEL
+
+
+def base_url() -> str:
+    return (os.environ.get(BASE_URL_VAR) or TYPESAFE_URL).rstrip("/")
+
+
+def carries_key(url: str) -> bool:
+    """Whether an exported key may go to `url`: over HTTPS, or to this machine. Plain HTTP elsewhere would expose it."""
+    parsed = urlsplit(url)
+    if parsed.scheme == "https":
+        return True
+    host = parsed.hostname or ""
+    try:
+        return host == "localhost" or ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
+def refused_placeholder(error: Exception) -> str:
+    """Why a 401 came back from a server that was sent the placeholder because it is plain HTTP and not this machine."""
+    url = base_url()
+    if not isinstance(error, TypeSafeAuthenticationError) or url == TYPESAFE_URL or carries_key(url):
+        return ""
+    return (
+        f"; {url} wants a key, and compost sends an exported {ENV_VAR} only over HTTPS or to this machine, "
+        "so put the server behind HTTPS or tunnel it to localhost"
+    )
+
+
 def resolve_key() -> str | None:
-    if os.environ.get(ENV_VAR):
-        return os.environ[ENV_VAR]
+    exported = os.environ.get(ENV_VAR)
+    if base_url() != TYPESAFE_URL:
+        # Never the Keychain's TypeSafe key, and an exported one only where carries_key allows.
+        return exported if exported and carries_key(base_url()) else LOCAL_KEY
+    if exported:
+        return exported
     try:
         result = subprocess.run(
             ["security", "find-generic-password", "-s", KEYCHAIN_SERVICE, "-w"],
@@ -47,7 +92,9 @@ def resolve_key() -> str | None:
 
 def cache_key(tool: str, state: dict, questions: dict) -> str:
     described = {name: question.model_dump(mode="json") for name, question in questions.items()}
-    payload = json.dumps([MODEL, tool, state, described], sort_keys=True, default=str)
+    # TypeSafe's URL stays out of the key, so caches written before other servers were possible still hit.
+    server = [] if base_url() == TYPESAFE_URL else [base_url()]
+    payload = json.dumps([model(), tool, state, described, *server], sort_keys=True, default=str)
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
@@ -116,9 +163,9 @@ class Jev:
             return Answers(hit)
         async with self.semaphore:
             try:
-                response = await self.client.system_one(state=state, questions=questions, model=MODEL)
+                response = await self.client.system_one(state=state, questions=questions, model=model())
             except (TypeSafeError, OSError) as error:
-                raise Unavailable(f"Jev request failed: {error}") from error
+                raise Unavailable(f"Jev request failed: {error}{refused_placeholder(error)}") from error
         answers = {name: answer.model_dump(mode="json") for name, answer in response.answers.items()}
         self.input_tokens += response.usage.input_tokens
         missing = [name for name in questions if name not in answers]
@@ -131,7 +178,9 @@ class Jev:
 MISSING_KEY = (
     f"{ENV_VAR} is not set and no Keychain item '{KEYCHAIN_SERVICE}' exists; get a key at "
     f"https://docs.typesafe.ai, then store it with: security add-generic-password -s {KEYCHAIN_SERVICE} "
-    f'-a "$USER" -w  (or export {ENV_VAR} where the Keychain is unavailable)'
+    f'-a "$USER" -w  (or export {ENV_VAR} where the Keychain is unavailable); or run Ollaya locally and set '
+    f"{BASE_URL_VAR} and {MODEL_VAR}, which needs a key only if it sets OLLAYA_API_KEY "
+    "(compost's README, Jev tools)"
 )
 
 
@@ -140,7 +189,7 @@ def open_client() -> AsyncTypeSafeClient:
     if key is None:
         raise Unavailable(MISSING_KEY)
     try:
-        return AsyncTypeSafeClient(api_key=key)
+        return AsyncTypeSafeClient(api_key=key, base_url=base_url(), model=model())
     except (TypeSafeError, ValueError, ImportError) as error:
         # A malformed key, or a proxy setting the HTTP client cannot use (unknown scheme, SOCKS without socksio).
         raise Unavailable(f"TypeSafe client could not start: {error}") from error

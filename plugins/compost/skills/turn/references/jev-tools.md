@@ -7,9 +7,12 @@ applies the thresholds; Jev only picks or checks. Every answer carries its raw p
 can overrule a decision you disagree with.
 
 Exit codes: 0 answered, 2 bad input (the message says what is missing), 3 Jev unavailable (no
-`TYPESAFE_API_KEY` and no Keychain item `typesafe`, or the API failed). On 2 or 3, make the call
-yourself as the calling step describes. Answers are cached by content, so a re-run over unchanged
-input costs nothing.
+`TYPESAFE_API_KEY` and no Keychain item `typesafe`, or the API failed; `TYPESAFE_BASE_URL` and
+`TYPESAFE_DEFAULT_MODEL` point the tools at a local Ollaya server instead, as compost's README
+says; there, a model whose option budget is smaller than a tool's list refuses that ask with exit
+3, and a server left behind a system proxy needs `NO_PROXY=localhost,127.0.0.1`). On 2 or 3, make
+the call yourself as the calling step describes. Answers are cached by content, so a re-run over
+unchanged input costs nothing.
 
 ## classify-change
 

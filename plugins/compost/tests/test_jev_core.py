@@ -2,7 +2,11 @@
 # ABOUTME: caching, token counting, and turning API failures into Unavailable.
 import ast
 import asyncio
+import hashlib
 import importlib.util
+import json
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.metadata import version
 
 import pytest
@@ -10,7 +14,7 @@ from packaging.version import Version
 from conftest import PLUGIN_ROOT, StubClient, StubJev, choice, noul, score
 from jevtools import core
 from jevtools.registry import BadInput
-from typesafe_sdk import Choice, Noul
+from typesafe_sdk import Choice, Noul, TypeSafeAuthenticationError
 
 QUESTIONS = {"flag": Noul(instructions="Is `text` about tests?")}
 SDK = Version(version("typesafe-sdk"))
@@ -77,6 +81,92 @@ def test_a_client_that_cannot_start_is_unavailable(monkeypatch, key, proxy, reas
         core.open_client()
 
 
+def test_typesafe_and_jev_latest_are_the_defaults():
+    assert (core.base_url(), core.model()) == ("https://api.typesafe.ai", "jev-latest")
+
+
+def test_the_sdk_variables_pick_another_server_and_model(monkeypatch):
+    monkeypatch.setenv(core.BASE_URL_VAR, "http://localhost:11435/")
+    monkeypatch.setenv(core.MODEL_VAR, "winnow:e4b")
+    assert (core.base_url(), core.model()) == ("http://localhost:11435", "winnow:e4b")
+
+
+def test_another_server_never_gets_the_keychain_key(tmp_path, monkeypatch):
+    monkeypatch.delenv(core.ENV_VAR, raising=False)
+    monkeypatch.setenv(core.BASE_URL_VAR, "http://localhost:11435")
+    fake_security(tmp_path, monkeypatch, "echo typesafe-secret")
+    assert core.resolve_key() == core.LOCAL_KEY
+
+
+def test_another_server_gets_an_exported_key(monkeypatch):
+    monkeypatch.setenv(core.ENV_VAR, "ollaya-key")
+    monkeypatch.setenv(core.BASE_URL_VAR, "http://localhost:11435")
+    assert core.resolve_key() == "ollaya-key"
+
+
+@pytest.mark.parametrize(
+    ("url", "carries"),
+    [
+        ("https://decisions.example.com", True),
+        ("http://localhost:11435", True),
+        ("http://127.0.0.2:11435", True),
+        ("http://[::1]:11435", True),
+        ("http://192.168.1.20:11435", False),
+        ("http://ollaya.lan:11435", False),
+    ],
+)
+def test_an_exported_key_goes_only_over_https_or_to_this_machine(monkeypatch, url, carries):
+    monkeypatch.setenv(core.ENV_VAR, "exported")
+    monkeypatch.setenv(core.BASE_URL_VAR, url)
+    assert core.resolve_key() == ("exported" if carries else core.LOCAL_KEY)
+
+
+class OllayaStandIn(BaseHTTPRequestHandler):
+    """Speaks the slice of Ollaya's /v1/systemone that one Noul needs, and records what reached it."""
+
+    seen: list[dict] = []
+
+    def do_POST(self):
+        body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+        type(self).seen.append({"path": self.path, "auth": self.headers["Authorization"], "model": body["model"]})
+        answers = {name: {"type": "noul", "noul": 0.3} for name in body["questions"]}
+        out = json.dumps({"model": body["model"], "answers": answers, "usage": {"input_tokens": 7, "output_tokens": 0}})
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(out.encode())
+
+    def log_message(self, *args):
+        pass
+
+
+def test_open_client_reaches_the_configured_server_with_its_model_and_the_placeholder(tmp_path, monkeypatch):
+    OllayaStandIn.seen = []
+    server = ThreadingHTTPServer(("127.0.0.1", 0), OllayaStandIn)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    monkeypatch.delenv(core.ENV_VAR, raising=False)
+    monkeypatch.setenv(core.BASE_URL_VAR, f"http://127.0.0.1:{server.server_port}")
+    monkeypatch.setenv(core.MODEL_VAR, "winnow:e4b")
+    monkeypatch.setenv("NO_PROXY", "127.0.0.1")
+
+    async def ask():
+        async with core.session(cache=core.Cache(tmp_path / "c.json")) as jev:
+            return await jev.ask("t", {"text": "a"}, QUESTIONS)
+
+    try:
+        assert asyncio.run(ask()).noul("flag") == 0.3
+    finally:
+        server.shutdown()
+    assert OllayaStandIn.seen == [{"path": "/v1/systemone", "auth": "Bearer local", "model": "winnow:e4b"}]
+
+
+def test_ask_names_the_configured_model(tmp_path, monkeypatch):
+    monkeypatch.setenv(core.MODEL_VAR, "winnow:e4b")
+    client = StubClient(lambda state, asked: {"flag": noul(0.7)})
+    asyncio.run(core.Jev(client, core.Cache(tmp_path / "c.json")).ask("t", {"text": "a"}, QUESTIONS))
+    assert client.models == ["winnow:e4b"]
+
+
 def test_open_client_with_a_key(monkeypatch):
     monkeypatch.setenv(core.ENV_VAR, "k")
     assert core.open_client() is not None
@@ -110,10 +200,38 @@ def test_cache_key_depends_on_tool_state_and_question_text():
     assert base != core.cache_key("t", {"text": "a"}, {"flag": Noul(instructions="Is `text` about code?")})
 
 
+def test_cache_keys_on_typesafe_are_the_ones_written_before_other_servers_were_possible():
+    described = {name: question.model_dump(mode="json") for name, question in QUESTIONS.items()}
+    before = json.dumps(["jev-latest", "t", {"text": "a"}, described], sort_keys=True, default=str)
+    assert core.cache_key("t", {"text": "a"}, QUESTIONS) == hashlib.sha256(before.encode()).hexdigest()
+
+
+@pytest.mark.parametrize(
+    ("variable", "value"), [("MODEL_VAR", "winnow:e4b"), ("BASE_URL_VAR", "http://localhost:11435")]
+)
+def test_cache_key_depends_on_the_model_and_server(monkeypatch, variable, value):
+    base = core.cache_key("t", {"text": "a"}, QUESTIONS)
+    monkeypatch.setenv(getattr(core, variable), value)
+    assert base != core.cache_key("t", {"text": "a"}, QUESTIONS)
+
+
 def test_api_failures_become_unavailable(tmp_path):
     jev = core.Jev(StubClient(error=OSError("ssl")), core.Cache(tmp_path / "c.json"))
     with pytest.raises(core.Unavailable, match="Jev request failed"):
         asyncio.run(jev.ask("t", {"text": "a"}, QUESTIONS))
+
+
+@pytest.mark.parametrize(
+    ("url", "explained"),
+    [("http://192.168.1.20:11435", True), ("https://decisions.example.com", False), ("http://localhost:11435", False)],
+)
+def test_a_refused_placeholder_says_how_to_send_a_key(tmp_path, monkeypatch, url, explained):
+    monkeypatch.setenv(core.BASE_URL_VAR, url)
+    refused = TypeSafeAuthenticationError(401, {"error": "unauthorized"}, {})
+    jev = core.Jev(StubClient(error=refused), core.Cache(tmp_path / "c.json"))
+    with pytest.raises(core.Unavailable) as raised:
+        asyncio.run(jev.ask("t", {"text": "a"}, QUESTIONS))
+    assert ("tunnel it to localhost" in str(raised.value)) is explained
 
 
 def test_a_dropped_answer_is_unavailable_and_nothing_is_cached(tmp_path):

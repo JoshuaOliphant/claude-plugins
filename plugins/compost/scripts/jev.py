@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import needs_uv  # first: re-execs under uv when typesafe-sdk is missing
 from jevtools import meta, review, spec, testing  # noqa: F401  (importing registers the tools)
-from jevtools.core import Cache, Unavailable, open_client, session
+from jevtools.core import TYPESAFE_URL, Cache, Unavailable, base_url, model, open_client, session
 from jevtools.registry import TOOLS, BadInput
 
 EXIT_BAD_INPUT = 2
@@ -53,7 +53,9 @@ def main(argv: list[str] | None = None, client_factory=open_client) -> int:
     try:
         if args.tool == "status":
             client_factory()  # builds the client without a request, so a key or proxy it can't use shows here
-            print(f"jev ready: a TypeSafe key was found; {len(TOOLS)} tools available")
+            # A key proves TypeSafe will answer; another server may not be running, and status sends nothing to it.
+            state = "ready" if base_url() == TYPESAFE_URL else "configured (not contacted)"
+            print(f"jev {state}: {model()} at {base_url()}; {len(TOOLS)} tools available")
             return 0
         result = asyncio.run(run(args.tool, read_input(args.input), client_factory))
     except BadInput as error:

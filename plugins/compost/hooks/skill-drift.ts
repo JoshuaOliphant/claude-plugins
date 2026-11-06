@@ -1,10 +1,14 @@
-// ABOUTME: Watches each skill the model loads and asks TypeSafe Jev whether the turn deviated from it, lacked its guidance, or drew a correction.
+// ABOUTME: Watches each skill the model loads and asks the decision model (TypeSafe Jev, or one a local Ollaya serves) whether the turn deviated from it, lacked its guidance, or drew a correction.
 // ABOUTME: Hits go quietly to ~/.claude/skill-drift/<date>-<session>.jsonl; /drift prints scripts/skill_drift.py's summary of the open ones.
 import type { EngineInterface, Register, SessionMessage } from 'claude-code'
 
 import judgments from './skill-drift-judgments.ts'
 
-const ENDPOINT = 'https://api.typesafe.ai/v1/systemone'
+// The TypeSafe SDK's variables, read the way scripts/jevtools/core.py reads them, so Ollaya's setup covers the hook too.
+// tests/test_skill_drift_mod.py holds these constants equal to core.py's.
+const TYPESAFE_URL = 'https://api.typesafe.ai'
+const DEFAULT_MODEL = 'jev-latest'
+const LOCAL_KEY = 'local'
 const TYPED_BY_A_PERSON = new Set(['composer', 'bridge'])
 const SKILL_CHARS = 8000
 const TURN_CHARS = 12000
@@ -24,25 +28,48 @@ export type Hit = {
   evidence: string
 }
 type Watched = { skill: string; text: string; trace: string; prompt: string; turn: string }
+type Server = { url: string; model: string; key: string }
 
-async function apiKey($: EngineInterface): Promise<string | undefined> {
-  const fromEnv = await $.env.get('TYPESAFE_API_KEY')
-  if (fromEnv) return fromEnv
-  const keychain = await $.process.run(['security', 'find-generic-password', '-s', 'typesafe', '-w'])
-  return keychain.exitCode === 0 ? keychain.stdout.trim() || undefined : undefined
+// Mirrors carries_key in scripts/jevtools/core.py: an exported key goes only over HTTPS or to this machine.
+function carriesKey(url: string): boolean {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return false
+  }
+  if (parsed.protocol === 'https:') return true
+  const host = parsed.hostname.replace(/^\[|\]$/g, '')
+  return host === 'localhost' || host === '::1' || /^127\.\d+\.\d+\.\d+$/.test(host)
 }
 
-async function nouls($: EngineInterface, key: string, state: unknown, questions: Record<string, string>) {
-  const response = await $.http.fetch(ENDPOINT, {
+async function server($: EngineInterface): Promise<Server | undefined> {
+  const [base, chosen, fromEnv] = await Promise.all([
+    $.env.get('TYPESAFE_BASE_URL'),
+    $.env.get('TYPESAFE_DEFAULT_MODEL'),
+    $.env.get('TYPESAFE_API_KEY'),
+  ])
+  const url = (base || TYPESAFE_URL).replace(/\/+$/, '')
+  const model = chosen || DEFAULT_MODEL
+  // Another server never gets the Keychain's TypeSafe key, and an exported one only where carriesKey allows.
+  if (url !== TYPESAFE_URL) return { url, model, key: fromEnv && carriesKey(url) ? fromEnv : LOCAL_KEY }
+  if (fromEnv) return { url, model, key: fromEnv }
+  const keychain = await $.process.run(['security', 'find-generic-password', '-s', 'typesafe', '-w'])
+  const key = keychain.exitCode === 0 ? keychain.stdout.trim() : ''
+  return key ? { url, model, key } : undefined
+}
+
+async function nouls($: EngineInterface, target: Server, state: unknown, questions: Record<string, string>) {
+  const response = await $.http.fetch(`${target.url}/v1/systemone`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${target.key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'jev-latest',
+      model: target.model,
       state,
       questions: Object.fromEntries(Object.entries(questions).map(([id, text]) => [id, { type: 'noul', instructions: text }])),
     }),
   })
-  if (!response.ok) throw new Error(`TypeSafe ${response.status}: ${response.text.slice(0, 200)}`)
+  if (!response.ok) throw new Error(`Decision model ${response.status}: ${response.text.slice(0, 200)}`)
   const answers = JSON.parse(response.text).answers as Record<string, { noul: number }>
   return Object.fromEntries(Object.entries(answers).map(([id, answer]) => [id, answer.noul]))
 }
@@ -131,8 +158,8 @@ export const register: Register = on => {
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
     if (e.agentId || e.isAborted || loaded.size === 0) return result
-    const key = await apiKey($)
-    if (!key) return result
+    const target = await server($)
+    if (!target) return result
 
     const { prompt, trace } = turnTrace(await $.session.messages())
     const watched = [...loaded.entries()].map(([skill, text]) => ({ skill, text, trace, prompt, turn: e.turnId }))
@@ -140,7 +167,7 @@ export const register: Register = on => {
     pending = watched
 
     const answered = await Promise.all(
-      watched.map(w => nouls($, key, { skill: { name: w.skill, text: w.text }, turn: w.trace }, TURN_QUESTIONS)),
+      watched.map(w => nouls($, target, { skill: { name: w.skill, text: w.text }, turn: w.trace }, TURN_QUESTIONS)),
     )
     const [session, at] = await Promise.all([$.session.id(), $.clock.now()])
     await record(
@@ -160,12 +187,12 @@ export const register: Register = on => {
     pending = []
     const result = await next(e)
     if (watched.length === 0 || e.text.trim().startsWith('/')) return result
-    const key = await apiKey($)
-    if (!key) return result
+    const target = await server($)
+    if (!target) return result
 
     const answered = await Promise.all(
       watched.map(w =>
-        nouls($, key, { skill: { name: w.skill, text: w.text }, turn: w.trace, next_user_message: e.text }, NEXT_MESSAGE_QUESTIONS),
+        nouls($, target, { skill: { name: w.skill, text: w.text }, turn: w.trace, next_user_message: e.text }, NEXT_MESSAGE_QUESTIONS),
       ),
     )
     const [session, at] = await Promise.all([$.session.id(), $.clock.now()])

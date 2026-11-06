@@ -30,8 +30,8 @@ pytest, adopted from the existing suites.
 | Lint | `uv run --group dev ruff check .` (run by `check_all.py`) | passing |
 | Format | `uv run --group dev ruff format --check .` (run by `check_all.py`) | passing |
 
-The live Jev evals in compost (`pytest -m jev`) are not a gate: they need a TypeSafe key and the
-private compost-evals checkout.
+The live Jev evals in compost (`pytest -m jev`) are not a gate: they need a TypeSafe key (or an Ollaya
+server, though their floors were set on Jev) and the private compost-evals checkout.
 
 ## Coverage
 
