@@ -23,7 +23,10 @@ fi
 
 # Stage 2: sinks — Vector flushes JSONL on a short interval; poll up to 15s.
 check_sink() {
-    local kind="$1" needle="$2" file="$JSONL/$kind/$DAY.jsonl"
+    # Two statements: bash expands every assignment in one `local` before setting any of them,
+    # so `file` built from `$kind` on the same line trips `set -u`.
+    local kind="$1" needle="$2"
+    local file="$JSONL/$kind/$DAY.jsonl"
     for _ in $(seq 1 15); do
         [ -f "$file" ] && grep -qF "$needle" "$file" && return 0
         sleep 1
