@@ -4,7 +4,7 @@
 # dependencies = ["typesafe-sdk>=0.7.1"]
 # ///
 # ABOUTME: Stop hook for compost:implement runs: blocks a stop that waits on the user for anything but an allowed stop.
-# ABOUTME: A run ends when compost:finish loads; a message the user typed during the run makes waiting on them fine.
+# ABOUTME: A run ends when compost:finish loads; a message the user sent during the run makes waiting on them fine.
 # ABOUTME: Jev's stop-guard tool judges the final message; any error or a missing key allows the stop and logs a line.
 import asyncio
 import json
@@ -75,8 +75,14 @@ def prompt(entry: dict) -> list[str]:
     return [block.get("text", "") for block in blocks(entry) if block.get("type") == "text"]
 
 
-def typed(texts: list[str]) -> bool:
-    """Whether the user typed a prompt or slash command, as opposed to Claude Code injecting it (<task-notification>)."""
+def typed(entry: dict, texts: list[str]) -> bool:
+    """Whether the user sent a prompt or slash command, as opposed to Claude Code injecting it (<task-notification>).
+
+    An entry's `origin` is Claude Code's own record of the sender, so it decides when present: a host that wraps the
+    user's message whole (a Claude Projects <wake>) leaves no text for the tag rule, which only judges entries without.
+    """
+    if "origin" in entry:
+        return (entry["origin"] or {}).get("kind") == "human"
     return any(COMMAND.search(text) or INJECTED.sub("", text).strip() for text in texts)
 
 
@@ -88,8 +94,8 @@ def unattended_run(transcript: list[dict]) -> bool:
     since = transcript[starts[-1] + 1 :]
     if any(loads(entry, FINISH) for entry in since):
         return False
-    prompts = [texts for texts in map(prompt, since) if texts]
-    return not (prompts and typed(prompts[-1]))
+    prompts = [(entry, texts) for entry in since if (texts := prompt(entry))]
+    return not (prompts and typed(*prompts[-1]))
 
 
 def final_message(transcript: list[dict]) -> str:
