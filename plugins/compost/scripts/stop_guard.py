@@ -75,7 +75,7 @@ def prompt(entry: dict) -> list[str]:
     return [block.get("text", "") for block in blocks(entry) if block.get("type") == "text"]
 
 
-def typed(entry: dict, texts: list[str]) -> bool:
+def sent_by_user(entry: dict, texts: list[str]) -> bool:
     """Whether the user sent a prompt or slash command, as opposed to Claude Code injecting it (<task-notification>).
 
     An entry's `origin` is Claude Code's own record of the sender, so it decides when present: a host that wraps the
@@ -87,7 +87,7 @@ def typed(entry: dict, texts: list[str]) -> bool:
 
 
 def unattended_run(transcript: list[dict]) -> bool:
-    """An implement run is on (no compost:finish since it loaded) and the latest prompt since then is not typed."""
+    """An implement run is on (no compost:finish since it loaded) and the user did not send the latest prompt since then."""
     starts = [index for index, entry in enumerate(transcript) if loads(entry, IMPLEMENT)]
     if not starts:
         return False
@@ -95,7 +95,7 @@ def unattended_run(transcript: list[dict]) -> bool:
     if any(loads(entry, FINISH) for entry in since):
         return False
     prompts = [(entry, texts) for entry in since if (texts := prompt(entry))]
-    return not (prompts and typed(*prompts[-1]))
+    return not (prompts and sent_by_user(*prompts[-1]))
 
 
 def final_message(transcript: list[dict]) -> str:
