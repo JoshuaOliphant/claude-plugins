@@ -247,3 +247,31 @@ def test_a_notification_after_the_answered_message_puts_the_run_back_on_its_own(
 def test_a_message_typed_before_the_run_started_does_not_attend_it(transcript):
     path = transcript(user("Implement #78 please."), SLASH_IMPLEMENT, said("m1", "Which library do you prefer?"))
     assert stop_guard.decide({"transcript_path": path}, judging(0.9, 0.1))["decision"] == "block"
+
+
+# A Claude Projects thread delivers the user's message as one entry wrapped whole in a <wake>, so no text survives
+# INJECTED; Claude Code's own `origin` on the entry says who sent it (#206).
+WOKEN = (
+    '<wake reason="mention">\n  <message from="human" trust="principal">Is csi or syseng the better fit?</message>\n'
+    "</wake>"
+)
+
+
+def test_a_wrapped_message_the_user_sent_attends_the_run(transcript):
+    client = StubClient(lambda state, questions: {})
+    path = transcript(LOADS_IMPLEMENT, said("m1", "PR #52 is up."), user(WOKEN, origin={"kind": "human"}), WAITS)
+    assert stop_guard.decide({"transcript_path": path}, lambda: client) is None
+    assert client.calls == []
+
+
+@pytest.mark.parametrize(
+    "origin", [{"kind": "task-notification"}, {"kind": "peer"}, {}], ids=["notification", "peer", "no kind"]
+)
+def test_a_prompt_whose_origin_is_not_human_is_not_the_users_whatever_its_text(transcript, origin):
+    path = transcript(LOADS_IMPLEMENT, user("Should the ledger live under scripts/?", origin=origin), WAITS)
+    assert stop_guard.decide({"transcript_path": path}, judging(0.9, 0.1))["decision"] == "block"
+
+
+def test_a_wrapped_message_with_no_origin_keeps_the_text_rule(transcript):
+    path = transcript(LOADS_IMPLEMENT, user(WOKEN), WAITS)
+    assert stop_guard.decide({"transcript_path": path}, judging(0.9, 0.1))["decision"] == "block"
