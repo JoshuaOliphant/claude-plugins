@@ -5,6 +5,9 @@ every operation. Run inside a clone, it fills `{owner}/{repo}` from `git remote 
 commands (`gh issue view`, `list`, `create`, `comment`, `edit`, `close`; `gh pr create`, `edit`,
 `view`, `ready`, `merge`, `close`; `gh repo view`) go through GraphQL, which Claude Code cloud sessions block with an HTTP 403; REST works there and locally.
 
+Before writing this file, `compost:setup` confirms `gh api repos/{owner}/{repo}` reports
+`has_issues: true`. With issues off, every issue command below fails.
+
 ## Commands
 
 - **Create:** `gh api repos/{owner}/{repo}/issues -f title="..." -f "labels[]=..." -F body=@-` with

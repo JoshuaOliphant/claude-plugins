@@ -3,6 +3,9 @@
 Specs, slices, and maps for this repo live as GitLab issues. Use the `glab` CLI for every
 operation; it infers the project from `git remote -v` when run inside a clone.
 
+Before writing this file, `compost:setup` confirms `glab api projects/:id` reports
+`issues_enabled: true`. With issues off, every command below fails.
+
 ## Commands
 
 - **Create:** `glab issue create --title "..." --label "..." --description "..."`, using a heredoc

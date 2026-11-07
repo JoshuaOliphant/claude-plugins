@@ -55,6 +55,12 @@ edits the user made by hand.
    (`gh api repos/{owner}/{repo}/labels --paginate --jq '.[].name'` / `glab label list`) and create
    every label in the table that it lacks (the template's label command / `glab label create`) now,
    so the first issue labelled `spec` doesn't fail.
+   Before recording GitHub or GitLab, confirm the tracker has issues turned on: GitLab,
+   `glab api projects/:id` reports `issues_enabled: true`; GitHub, `gh api repos/{owner}/{repo}`
+   reports `has_issues: true`. When issues are off, record nothing yet and ask whether to enable
+   them or pick another tracker. When the check can't run (no auth, host unreachable), say so and
+   ask; don't record on a guess. Otherwise the disabled tracker only surfaces when `compost:spec`
+   fails to post.
 
 4. **Domain docs.** Default to a single context: one `CONTEXT.md` and `docs/adr/` at the root.
    Write that without asking. Offer a `CONTEXT-MAP.md` with one `CONTEXT.md` per context only
