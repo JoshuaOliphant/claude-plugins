@@ -265,7 +265,9 @@ def test_a_wrapped_message_the_user_sent_attends_the_run(transcript):
 
 
 @pytest.mark.parametrize(
-    "origin", [{"kind": "task-notification"}, {"kind": "peer"}, {}], ids=["notification", "peer", "no kind"]
+    "origin",
+    [{"kind": "task-notification"}, {"kind": "peer"}, {}, None, "human"],
+    ids=["notification", "peer", "no kind", "null", "not a dict"],
 )
 def test_a_prompt_whose_origin_is_not_human_is_not_the_users_whatever_its_text(transcript, origin):
     path = transcript(LOADS_IMPLEMENT, user("Should the ledger live under scripts/?", origin=origin), WAITS)

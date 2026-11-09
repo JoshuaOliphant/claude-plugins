@@ -82,7 +82,8 @@ def sent_by_user(entry: dict, texts: list[str]) -> bool:
     user's message whole (a Claude Projects <wake>) leaves no text for the tag rule, which only judges entries without.
     """
     if "origin" in entry:
-        return (entry["origin"] or {}).get("kind") == "human"
+        origin = entry["origin"]
+        return isinstance(origin, dict) and origin.get("kind") == "human"
     return any(COMMAND.search(text) or INJECTED.sub("", text).strip() for text in texts)
 
 
