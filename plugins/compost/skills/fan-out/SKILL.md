@@ -48,7 +48,7 @@ Spawn the attempts without asking. The cost is tokens; the payoff is not buildin
      challenging.
    - A Claude Code workflow is the tool when the fan-out runs to dozens of agents, but a workflow
      you write yourself for a fan-out needs the user's explicit ask. Suggest it and wait for a yes;
-     don't start one on your own.
+     don't start one on your own ([codify the orchestration](../../canon/codify-the-orchestration.md)).
    If an attempt fails to produce its artifact, go on with the rest and note the dropout.
 
 4. **Judge against the rubric.** Once every attempt is in, skim them for convergence. When they

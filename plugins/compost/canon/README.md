@@ -25,4 +25,5 @@ only when relevant.
 - [Model the domain](model-the-domain.md): give domain rules a structure that fits instead of scattered conditionals.
 - [Subtract before you add](subtract-before-you-add.md): remove first, replace instead of deprecating, build for observed usage.
 - [Core docs](core-docs.md): say it in the code; keep docs to what code can't say, and trust the code when they disagree.
+- [Codify the orchestration](codify-the-orchestration.md): put a fixed multi-agent shape in a workflow script and keep the judgment in the conversation; recommend it, never start your own unasked.
 - [Sequence verifiable units](sequence-verifiable-units.md): small units, each checked green before the next, delivered in an order that proves the work.

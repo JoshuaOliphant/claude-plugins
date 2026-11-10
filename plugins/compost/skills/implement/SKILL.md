@@ -126,7 +126,8 @@ the work so each step can be checked before the next builds on it
      comment, mention, or review request on someone else's issue or pull request;
    - approval of an architectural spec, when the work shows the approved design has to change;
    - starting a Claude Code workflow you wrote yourself (the plugin's own `/compost:review-changes`
-     needs no ask).
+     needs no ask). When a job fits [codify the orchestration](../../canon/codify-the-orchestration.md),
+     propose it in a ruling comment and carry on without it.
 
    compost's Stop hook holds you to this list during an implement run: when your last message waits
    on the user for anything else, Jev flags it and the hook sends you back to post a ruling and
