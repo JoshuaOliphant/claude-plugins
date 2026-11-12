@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ABOUTME: Fails when a branch changes a plugin's shipped files without raising its version past main's.
+# ABOUTME: Fails when a branch changes a plugin's shipped files without a version above main's or a changelog entry for it.
 # ABOUTME: CI runs it on pull requests into main; lanes of an integration branch are not checked.
 """Check that every plugin a branch changes has a bumped version.
 
@@ -16,8 +16,12 @@ install that already recorded 0.9.0 would never fetch its content (#84). The rul
 lives in ``unbumped()``, which takes versions and touches no git; ``main()`` reads
 the repo and prints.
 
+A changed plugin must also have a ``## [<version>]`` heading for its head version in
+its CHANGELOG.md (``missing_entries()``), so no bump merges without saying what it holds.
+
 A plugin's tests/ directory doesn't count as shipped content. A plugin that is new
-on the branch has nothing to bump from and is skipped.
+on the branch has nothing to bump from and is skipped by the bump rule, but still
+needs its changelog entry.
 
 Usage:
     python scripts/check_version_bumps.py              # compare against origin/main
@@ -28,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -76,6 +81,25 @@ def unbumped(
     return found
 
 
+def missing_entries(
+    head_versions: dict[str, str | None],
+    changelogs: dict[str, str | None],
+    changed: set[str],
+) -> list[str]:
+    """One line per changed plugin whose CHANGELOG.md has no ``## [<head version>]`` heading."""
+    found: list[str] = []
+    for name in sorted(changed):
+        version = head_versions.get(name)
+        if version is None:
+            continue  # unbumped() already reports a missing version
+        text = changelogs.get(name)
+        if text is None:
+            found.append(f"{name}: no CHANGELOG.md")
+        elif not re.search(rf"^## \[{re.escape(version)}\]", text, re.MULTILINE):
+            found.append(f"{name}: CHANGELOG.md has no '## [{version}]' entry")
+    return found
+
+
 def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True)
 
@@ -102,6 +126,11 @@ def _version_at(root: Path, ref: str, name: str) -> str | None:
     return json.loads(shown.stdout).get("version")
 
 
+def _changelog(root: Path, name: str) -> str | None:
+    path = root / "plugins" / name / "CHANGELOG.md"
+    return path.read_text() if path.exists() else None
+
+
 def main(argv: list[str] | None = None, root: Path = REPO_ROOT) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--base", default="origin/main", help="ref the branch merges into")
@@ -114,11 +143,16 @@ def main(argv: list[str] | None = None, root: Path = REPO_ROOT) -> int:
 
     marketplace = json.loads((root / ".claude-plugin" / "marketplace.json").read_text())
     names = [entry["name"] for entry in marketplace["plugins"]]
+    head_versions = {name: _version_at(root, "HEAD", name) for name in names}
+    changed = {name for name in names if _changed(root, merge_base.stdout.strip(), name)}
     found = unbumped(
         {name: _version_at(root, base, name) for name in names},
-        {name: _version_at(root, "HEAD", name) for name in names},
-        {name for name in names if _changed(root, merge_base.stdout.strip(), name)},
+        head_versions,
+        changed,
         base,
+    )
+    no_entry = missing_entries(
+        head_versions, {name: _changelog(root, name) for name in changed}, changed
     )
 
     if found:
@@ -128,9 +162,17 @@ def main(argv: list[str] | None = None, root: Path = REPO_ROOT) -> int:
         )
         for line in found:
             print(f"  - {line}")
+    if no_entry:
+        print("Plugins whose version has no changelog entry (add '## [<version>] - <date>'):")
+        for line in no_entry:
+            print(f"  - {line}")
+    if found or no_entry:
         return 1
 
-    print(f"OK: every plugin changed since {base} has a version above {base}'s.")
+    print(
+        f"OK: every plugin changed since {base} has a version above {base}'s "
+        "and a changelog entry for it."
+    )
     return 0
 
 

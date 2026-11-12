@@ -13,7 +13,7 @@
       "name": "mochi-creator",
       "source": "./plugins/mochi-creator",
       "description": "Create evidence-based spaced repetition flashcards using cognitive science principles. Applies the 5 properties of effective prompts for long-term retention.",
-      "version": "1.5.0",
+      "version": "1.5.1",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -30,7 +30,7 @@
       "name": "hexagonal-agents",
       "source": "./plugins/hexagonal-agents",
       "description": "Build web apps where an AI agent dynamically generates HTML UI using hexagonal architecture with HTMX",
-      "version": "1.6.2",
+      "version": "1.6.3",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -50,7 +50,7 @@
       "name": "compound-knowledge",
       "source": "./plugins/compound-knowledge",
       "description": "Capture solved problems, retrieve past solutions, and graduate accumulated knowledge into living context. Skills: compound-capture, compound-retrieve, compound-graduate.",
-      "version": "0.10.2",
+      "version": "0.10.3",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -66,8 +66,8 @@
     {
       "name": "observability-harness",
       "source": "./plugins/observability-harness",
-      "description": "Install a local, Docker-free OTLP observability stack (OpenTelemetry → Vector → JSONL, optionally VictoriaLogs + VictoriaMetrics) into a project and instrument the code, with a scan-and-propose step for domain-appropriate spans and metrics — then query that telemetry as a development feedback signal (observability-query skill, status --json contract, scripted end-to-end verify).",
-      "version": "0.3.1",
+      "description": "Install a local, Docker-free OTLP observability stack (OpenTelemetry \u2192 Vector \u2192 JSONL, optionally VictoriaLogs + VictoriaMetrics) into a project and instrument the code, with a scan-and-propose step for domain-appropriate spans and metrics \u2014 then query that telemetry as a development feedback signal (observability-query skill, status --json contract, scripted end-to-end verify).",
+      "version": "0.3.2",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -89,7 +89,7 @@
       "name": "understand",
       "source": "./plugins/understand",
       "description": "Process information for real understanding with the explain-back skill: explain from memory, grade against the real source, struggle-then-teach per gap, output Mochi cards and a resumable session record. An antidote to the illusion of clarity.",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -107,7 +107,7 @@
       "name": "compost",
       "source": "./plugins/compost",
       "description": "One software-engineering workflow composted from Matt Pocock's skills, superpowers, pstack, Imbue's blueprint, and autonomous-sdlc: specs with BDD acceptance criteria, tracer-bullet issues in your tracker, builds that fit tests into the existing suite, automatic subagent review, browser diff review, semantic lint for Python, a prune skill that keeps docs to what the code can't say, and a turn skill that works in upstream changes.",
-      "version": "0.32.4",
+      "version": "0.32.5",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -128,7 +128,7 @@
       "name": "superfan",
       "source": "./plugins/superfan",
       "description": "Superfans: one headless Claude per component, obsessively watching its telemetry through your read-only MCP servers (Splunk, Prometheus, Kubernetes, ...) on a local schedule. Findings land in a local inbox, page-worthy ones raise a clickable desktop notification that opens a triage session, and every verdict feeds a ledger that teaches the superfan what normal looks like.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "Joshua Oliphant"
       },
@@ -148,7 +148,7 @@
       "name": "learn-harness",
       "source": "./plugins/learn-harness",
       "description": "Turn a Claude project or a folder into a learning harness for one subject. Lesson sessions probe your edge, plan a minimal dependency tree, and teach one checked reasoning step at a time; Practice sessions train retrieval with a hint ladder; Field sessions grade an artifact you produce against a pre-committed rubric. A knowledge graph, an append-only ledger and a frontier record carry it across sessions. Adapted from learnharness.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "Joshua Oliphant"
       },
