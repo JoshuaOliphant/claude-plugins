@@ -25,7 +25,7 @@ claude-plugins/
 │   ├── cloud-setup.sh                 # Cloud environment setup: installs bubblewrap + socat (Bash sandbox), compost + typesafe plugins
 │   ├── check_all.py                   # One-command repo health check (versions + sync + tests + lint + format)
 │   ├── check_marketplace_versions.py  # Asserts marketplace.json ⇄ plugin.json (versions + registration)
-│   ├── check_version_bumps.py         # CI on PRs into main: every changed plugin's version is above main's
+│   ├── check_version_bumps.py         # CI on PRs into main: every changed plugin's version is above main's, with a CHANGELOG.md entry
 │   ├── sync_shared.py                 # Asserts/regenerates per-plugin copies of shared artifacts
 │   └── shared/                        # Canonical sources for artifacts duplicated across plugins
 ├── knowledge/                      # Captured solutions (compound-knowledge output for this repo)
@@ -58,6 +58,7 @@ Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json` (the
 
 Each plugin follows a consistent layout:
 - `.claude-plugin/plugin.json` — metadata (name, version, description, author, keywords)
+- `CHANGELOG.md` — one `## [x.y.z]` section per released version
 - `skills/<skill>/SKILL.md` — the instruction set / trigger surface for each skill; deep content lives in adjacent `references/*.md` rather than inline
 - `agents/*.md` — subagent definitions (frontmatter sets `model`, `tools`, `hooks`, `skills`)
 - `commands/*.md` — slash-command entry points
@@ -126,8 +127,9 @@ Two version scopes must stay in sync:
 When changing a plugin:
 1. Bump the version in `plugins/{name}/.claude-plugin/plugin.json`
 2. Copy that version into the matching entry in `.claude-plugin/marketplace.json`
-3. Only bump `metadata.version` if the marketplace itself changed (plugin added/removed)
-4. Run `python scripts/check_marketplace_versions.py` to confirm they match. This
+3. Add a `## [<new version>] - YYYY-MM-DD` section to `plugins/{name}/CHANGELOG.md`, in the same commit as the bump. Format is [Keep a Changelog](https://keepachangelog.com/en/1.1.0/): newest first, grouped under `### Added`, `### Changed`, `### Fixed`, `### Removed`, one bullet per user-visible change (say what a user of the plugin now sees, not which files moved)
+4. Only bump `metadata.version` if the marketplace itself changed (plugin added/removed)
+5. Run `python scripts/check_marketplace_versions.py` to confirm they match. This
    check is bidirectional: it also fails if a directory under `plugins/` has no
    marketplace entry, or if a non-plugin directory (no `.claude-plugin/plugin.json`)
    is sitting under `plugins/`.
