@@ -10,10 +10,8 @@ dependencies = []
 package = false
 
 [dependency-groups]
-# Repo-wide dev tooling. Individual plugins that need more (e.g. compost's
-# coverage gate) declare their own dependency-group in their own pyproject.toml.
+# Repo-wide dev tooling.
 dev = [
-    "cosmic-ray>=8.7.0",
     "pytest>=8",
     "pytest-asyncio>=0.23",
     "pyyaml>=6.0.3",
@@ -24,20 +22,7 @@ dev = [
 [tool.pytest.ini_options]
 # `uv run --group dev pytest` from the repo root discovers every plugin's tests, scripts/tests, and the
 # experiment harnesses' tests under ai_docs/experiments.
-# compost's coverage-gated config lives in its own pyproject and only applies
-# when pytest is invoked from that directory; at the repo root those tests still
-# run (without the coverage gate). compost's live Jev evals call the TypeSafe API and need a key,
-# so they stay out of the default run here too.
 testpaths = ["plugins", "scripts", "ai_docs"]
-addopts = "-m \"not jev\""
-markers = ["jev: live evals against the TypeSafe API (uv run --group dev pytest -m jev)"]
 
 [tool.ruff]
 line-length = 100
-# Seeded buggy trees and their hidden tests: the bugs are the point, so they are not linted or formatted.
-extend-exclude = [
-    "ai_docs/experiments/hard-to-read-diagnose/tasks",
-    "ai_docs/experiments/hard-to-read-diagnose/hidden",
-    "ai_docs/experiments/hard-to-read-diagnose/reference",
-    "ai_docs/experiments/hard-to-read-diagnose/author",
-]

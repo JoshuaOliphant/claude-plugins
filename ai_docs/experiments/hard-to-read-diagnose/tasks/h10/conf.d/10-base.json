@@ -1,1 +1,0 @@
-{"max_workers": 4, "log": {"level": "info", "json": false}, "db": {"pool": 5}}

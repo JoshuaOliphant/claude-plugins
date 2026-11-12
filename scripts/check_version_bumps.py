@@ -19,7 +19,9 @@ the repo and prints.
 A changed plugin must also have a ``## [<version>]`` heading for its head version in
 its CHANGELOG.md (``missing_entries()``), so no bump merges without saying what it holds.
 
-A plugin's tests/ directory doesn't count as shipped content. A plugin that is new
+Plugins are found from marketplace.json: each entry with a local source path is checked
+there, and an entry sourced from another repository is skipped, since that repository
+versions it. A plugin's tests/ directory doesn't count as shipped content. A plugin that is new
 on the branch has nothing to bump from and is skipped by the bump rule, but still
 needs its changelog entry.
 
@@ -104,31 +106,35 @@ def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True)
 
 
-def _changed(root: Path, merge_base: str, name: str) -> bool:
+def local_plugins(marketplace: dict) -> dict[str, str]:
+    """Each plugin this repo ships, by name, mapped to its directory relative to the repo root.
+
+    An entry whose source is another repository (a dict, such as git-subdir) is versioned there.
+    """
+    return {
+        entry["name"]: entry["source"].removeprefix("./").rstrip("/")
+        for entry in marketplace["plugins"]
+        if isinstance(entry.get("source"), str)
+    }
+
+
+def _changed(root: Path, merge_base: str, path: str) -> bool:
     """True when the branch changed the plugin's files outside tests/ since merge_base."""
-    diff = _git(
-        root,
-        "diff",
-        "--quiet",
-        merge_base,
-        "--",
-        f"plugins/{name}",
-        f":(exclude)plugins/{name}/tests",
-    )
+    diff = _git(root, "diff", "--quiet", merge_base, "--", path, f":(exclude){path}/tests")
     return diff.returncode == 1
 
 
-def _version_at(root: Path, ref: str, name: str) -> str | None:
+def _version_at(root: Path, ref: str, path: str) -> str | None:
     """The plugin's version at ref, or None when the plugin doesn't exist there."""
-    shown = _git(root, "show", f"{ref}:plugins/{name}/.claude-plugin/plugin.json")
+    shown = _git(root, "show", f"{ref}:{path}/.claude-plugin/plugin.json")
     if shown.returncode != 0:
         return None
     return json.loads(shown.stdout).get("version")
 
 
-def _changelog(root: Path, name: str) -> str | None:
-    path = root / "plugins" / name / "CHANGELOG.md"
-    return path.read_text() if path.exists() else None
+def _changelog(root: Path, path: str) -> str | None:
+    changelog = root / path / "CHANGELOG.md"
+    return changelog.read_text() if changelog.exists() else None
 
 
 def main(argv: list[str] | None = None, root: Path = REPO_ROOT) -> int:
@@ -142,17 +148,19 @@ def main(argv: list[str] | None = None, root: Path = REPO_ROOT) -> int:
         return 2
 
     marketplace = json.loads((root / ".claude-plugin" / "marketplace.json").read_text())
-    names = [entry["name"] for entry in marketplace["plugins"]]
-    head_versions = {name: _version_at(root, "HEAD", name) for name in names}
-    changed = {name for name in names if _changed(root, merge_base.stdout.strip(), name)}
+    plugins = local_plugins(marketplace)
+    head_versions = {name: _version_at(root, "HEAD", path) for name, path in plugins.items()}
+    changed = {
+        name for name, path in plugins.items() if _changed(root, merge_base.stdout.strip(), path)
+    }
     found = unbumped(
-        {name: _version_at(root, base, name) for name in names},
+        {name: _version_at(root, base, path) for name, path in plugins.items()},
         head_versions,
         changed,
         base,
     )
     no_entry = missing_entries(
-        head_versions, {name: _changelog(root, name) for name in changed}, changed
+        head_versions, {name: _changelog(root, plugins[name]) for name in changed}, changed
     )
 
     if found:

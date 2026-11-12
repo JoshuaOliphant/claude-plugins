@@ -10,7 +10,6 @@ __pycache__/
 *.so
 .Python
 build/
-!plugins/compost/skills/build/
 develop-eggs/
 dist/
 downloads/
@@ -69,8 +68,6 @@ trees/
 # Skill eval run workspaces (scratch artifacts from eval executions)
 /trigger-eval-workspace/
 
-# compost plugin-eval suite: lives in private compost-evals, linked in locally to run
-/plugins/compost/evals
 
 # compost:build's per-issue worktrees
 .worktrees/

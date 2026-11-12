@@ -1,3 +1,0 @@
-:rotating_light: #$id $subject
-$customer ($tier) reported a $category issue $age ago.
-Status: $status - assignee: $assignee

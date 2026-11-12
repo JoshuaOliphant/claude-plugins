@@ -15,7 +15,9 @@ from collections import defaultdict
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent.parent.parent / "plugins" / "compost" / "scripts"))
+# compost lives in its own repo now; COMPOST points at a checkout of it (default: a sibling of this one).
+COMPOST = Path(os.environ.get("COMPOST", HERE.parent.parent.parent.parent / "compost"))
+sys.path.insert(0, str(COMPOST / "plugin" / "scripts"))
 
 from typesafe_sdk import Choice  # noqa: E402
 

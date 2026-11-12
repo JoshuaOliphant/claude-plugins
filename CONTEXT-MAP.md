@@ -6,7 +6,7 @@ own vocabulary; the marketplace itself (catalog, versions, shared artifacts, CI)
 | Context | Glossary | What it is about |
 |---|---|---|
 | Marketplace | this file and `docs/adr/` | plugin registration, version sync, shared-artifact copies, CI |
-| compost | `plugins/compost/CONTEXT.md` | the SDLC skills, the canon, the pile of sources, Jev tools, diff review, semantic lint |
+| compost | [JoshuaOliphant/compost](https://github.com/JoshuaOliphant/compost) `plugin/CONTEXT.md` | the SDLC skills, the canon, the pile of sources, Jev tools, diff review, semantic lint |
 | compound-knowledge | `plugins/compound-knowledge/CONTEXT.md` | captured solutions, retrieval, graduation |
 | hexagonal-agents | `plugins/hexagonal-agents/CONTEXT.md` | agent-generated HTML UI behind ports and adapters |
 | mochi-creator | `plugins/mochi-creator/CONTEXT.md` | flashcards, decks, and prompt quality |

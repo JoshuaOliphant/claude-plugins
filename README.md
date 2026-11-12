@@ -69,7 +69,8 @@ acceptance criteria, tracer-bullet issues in your tracker, builds that fit tests
 suite, and review by subagents on every change. It also carries what used to be the review-diff
 plugin (comment on a diff in your browser) and jev-lint (semantic lint for Python).
 `compost:setup` configures a repo and offers to switch off the collections compost replaces.
-See [plugins/compost](plugins/compost/README.md).
+It lives in its own repo, [JoshuaOliphant/compost](https://github.com/JoshuaOliphant/compost);
+this marketplace still installs it as `compost@oliphant-plugins`.
 
 #### hexagonal-agents
 
