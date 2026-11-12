@@ -39,6 +39,12 @@ def test_registered_plugin_with_no_directory_is_missing():
     assert findings.missing == ["a: plugins/a/.claude-plugin/plugin.json not found"]
 
 
+def test_plugin_sourced_from_another_repo_needs_no_manifest_here():
+    external = {"name": "c", "source": {"source": "git-subdir", "url": "o/c", "path": "plugin"}}
+    marketplace = {"plugins": [*catalog(a="1.0.0")["plugins"], external]}
+    assert not cmv.drift(marketplace, {"a": {"version": "1.0.0"}})
+
+
 def test_unregistered_plugin_is_reported():
     findings = cmv.drift(catalog(), {"new": {"version": "0.1.0"}})
     assert findings.unregistered == ["new"]

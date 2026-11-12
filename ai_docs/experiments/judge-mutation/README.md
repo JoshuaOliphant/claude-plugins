@@ -10,7 +10,7 @@ Reference material only, not a shipped tool. Sibling idea: `../skill-mutation/` 
 ## Run it
 
 ```bash
-COMPOST_EVALS=<compost-evals>/evals uv run --script ai_docs/experiments/judge-mutation/mutate_judge.py
+COMPOST=<compost checkout> COMPOST_EVALS=<compost-evals>/evals uv run --script ai_docs/experiments/judge-mutation/mutate_judge.py
 ```
 
 Needs `TYPESAFE_API_KEY`. The cases, the hand-written mutants (`judge-mutation/hand-mutants.json`) and the results all live in the private compost-evals repo, because the claims and outputs come from its cases. Answers are cached under `<evals>/judge-mutation/results/jev-cache.json`, so a rerun on the same inputs spends no tokens.

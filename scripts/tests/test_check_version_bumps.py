@@ -83,6 +83,19 @@ def test_plugin_without_a_version_is_left_to_the_bump_rule():
     assert cvb.missing_entries({"a": None}, {"a": None}, {"a"}) == []
 
 
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("./plugins/a", {"a": "plugins/a"}),
+        ("./plugin/", {"a": "plugin"}),
+        ({"source": "git-subdir", "url": "o/a", "path": "plugin"}, {}),
+    ],
+    ids=["marketplace-layout", "one-plugin-repo", "external-source"],
+)
+def test_only_plugins_with_a_local_source_are_checked(source, expected):
+    assert cvb.local_plugins({"plugins": [{"name": "a", "source": source}]}) == expected
+
+
 def _git(root: Path, *args: str) -> str:
     return subprocess.run(
         ["git", *args], cwd=root, check=True, capture_output=True, text=True
@@ -92,7 +105,7 @@ def _git(root: Path, *args: str) -> str:
 def _commit(root: Path, version: str, path: str, message: str, changelog: bool = True) -> None:
     (root / ".claude-plugin").mkdir(exist_ok=True)
     (root / ".claude-plugin" / "marketplace.json").write_text(
-        json.dumps({"plugins": [{"name": "a", "version": version}]})
+        json.dumps({"plugins": [{"name": "a", "source": "./plugins/a", "version": version}]})
     )
     manifest = root / "plugins" / "a" / ".claude-plugin" / "plugin.json"
     manifest.parent.mkdir(parents=True, exist_ok=True)

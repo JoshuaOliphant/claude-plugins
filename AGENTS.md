@@ -4,7 +4,7 @@ This file provides guidance to coding agents (Claude Code reads it natively) whe
 
 ## Project Overview
 
-This is a Claude Code plugin marketplace (`oliphant-plugins`). It distributes eight plugins that extend Claude Code with specialized skills, subagents, commands, and hooks. Each plugin is self-contained under `plugins/` and registered in `.claude-plugin/marketplace.json`.
+This is a Claude Code plugin marketplace (`oliphant-plugins`). It distributes eight plugins (seven live here; compost is sourced from its own repo) that extend Claude Code with specialized skills, subagents, commands, and hooks. Each plugin is self-contained under `plugins/` and registered in `.claude-plugin/marketplace.json`.
 
 ## Repository Structure
 
@@ -19,7 +19,6 @@ claude-plugins/
 │   ├── observability-harness/      # Local Docker-free OTLP stack (OTel → Vector → JSONL/Victoria*)
 │   ├── understand/                 # Explain-back learning loop (graded recall → Mochi cards)
 │   ├── learn-harness/              # Per-subject learning harness (Lesson / Practice / Field, graph + ledger)
-│   ├── compost/                    # One SDLC workflow composted from several skill collections
 │   └── superfan/                   # Scheduled per-component telemetry watchers (headless Claude + launchd)
 ├── scripts/
 │   ├── cloud-setup.sh                 # Cloud environment setup: installs bubblewrap + socat (Bash sandbox), compost + typesafe plugins
@@ -50,7 +49,7 @@ Each plugin owns its version in `plugins/{name}/.claude-plugin/plugin.json` (the
 | **understand** | Process information for real understanding (antidote to the illusion of clarity) | `explain-back` skill: graded recall, struggle-then-teach per gap, Mochi-card output, resumable session record |
 | **learn-harness** | Per-subject learning harness adapted from learnharness | `learn-setup` bootstraps a learn root and records; `learn-session` runs Lesson, Practice and Field sessions under `references/doctrine.md`; no scripts |
 | **superfan** | One headless Claude per component watching telemetry through read-only MCP tools | `setup` + `triage` skills, `scripts/superfan.py` (run loop, ledger, launchd, notifiers), `scripts/watch_prompt.md` |
-| **compost** | One SDLC workflow made from Matt Pocock's skills, superpowers, pstack, blueprint, and the retired autonomous-sdlc and stick-shift plugins | 18 skills linked by Next moves plus the user-invoked `/compost:wait-what`, `canon/` essays, `compost:prune` + `scripts/doc_refs.py` keeping docs to the core, `compost:thin` + `scripts/thin.py` finding tests no mutant needs and, as `thin.py survivors`, the mutants a diff leaves alive for `compost:verify`, `/compost:review-changes` workflow + `reviewer` agent, Jev tools (`scripts/jev.py`), browser diff review (`scripts/review_diff/`), semantic Python lint (`scripts/lint/`), `pile.toml` + `scripts/pile.py` tracking upstream sources for `compost:turn` |
+| **compost** | One SDLC workflow; lives in [JoshuaOliphant/compost](https://github.com/JoshuaOliphant/compost) | Listed here through a `git-subdir` source, so `compost@oliphant-plugins` installs it from that repo; versioned and changelogged there |
 
 ## Key Architectural Concepts
 
@@ -62,16 +61,15 @@ Each plugin follows a consistent layout:
 - `skills/<skill>/SKILL.md` — the instruction set / trigger surface for each skill; deep content lives in adjacent `references/*.md` rather than inline
 - `agents/*.md` — subagent definitions (frontmatter sets `model`, `tools`, `hooks`, `skills`)
 - `commands/*.md` — slash-command entry points
-- `hooks/` + `hooks.json`: plugin-wide hooks (compost's implement-run Stop guard, and its one hooks module `compost.ts` carrying the skill-drift and architecture-review mods)
+- `hooks/` + `hooks.json`: plugin-wide hooks
 - `scripts/` — Python helpers, importable and/or CLI-executable
 
 ### compost
 
-compost has no state machine: each skill ends with Next moves naming the skills that usually
-follow, and work is tracked in the repo's issue tracker. Its `[replaces]` table in `pile.toml`
-lists the plugins and skills it supersedes, which `compost:setup` offers to switch off. Its own
-vocabulary is in `plugins/compost/CONTEXT.md`; the workflow is described in
-`plugins/compost/README.md`.
+compost lives in [JoshuaOliphant/compost](https://github.com/JoshuaOliphant/compost). Its
+marketplace entry here has a `git-subdir` source and no `version`: compost's version is its own
+`plugin.json`, and the version checks skip entries sourced from another repository. Change compost
+there, not here.
 
 ### Mochi API Client Architecture
 
@@ -171,7 +169,7 @@ Multiple contexts, one per plugin plus the marketplace, listed in `CONTEXT-MAP.m
 
 ### Tests and gates
 
-pytest per plugin; `scripts/check_all.py` plus the 100% coverage gate in compost. See `docs/agents/testing.md`.
+pytest per plugin; `scripts/check_all.py`. See `docs/agents/testing.md`.
 
 ### Observability
 

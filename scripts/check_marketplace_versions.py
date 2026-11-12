@@ -10,7 +10,8 @@ This script enforces that rule so the catalog never advertises a stale version.
 The rules live in ``drift()``, which takes parsed JSON and touches no files;
 ``main()`` reads the repo and prints. Plugin directories come from
 ``git ls-files`` plus the catalog's own names, so untracked leftovers under
-plugins/ don't count.
+plugins/ don't count. An entry sourced from another repository (git-subdir, github)
+carries no version here and is skipped.
 
 Usage:
     python scripts/check_marketplace_versions.py
@@ -67,6 +68,8 @@ def drift(marketplace: dict, manifests: dict[str, dict | None]) -> Findings:
     registered = {entry["name"] for entry in entries}
 
     for entry in entries:
+        if not isinstance(entry.get("source", ""), str):
+            continue  # sourced from another repository, which versions it
         name = entry["name"]
         manifest = manifests.get(name)
         if manifest is None:
