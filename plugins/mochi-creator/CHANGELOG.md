@@ -18,4 +18,4 @@ All notable changes to the mochi-creator plugin. Format follows [Keep a Changelo
 
 ### Added
 
-- First version tracked in this repository.
+- Initial release.

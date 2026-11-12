@@ -12,4 +12,4 @@ All notable changes to the superfan plugin. Format follows [Keep a Changelog](ht
 
 ### Added
 
-- First version tracked in this repository.
+- Initial release.

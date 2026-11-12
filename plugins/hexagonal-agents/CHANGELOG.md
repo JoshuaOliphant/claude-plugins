@@ -10,19 +10,15 @@ All notable changes to the hexagonal-agents plugin. Format follows [Keep a Chang
 
 ## [1.6.2] - 2026-10-17
 
-### Fixed
+### Changed
 
-- fix(hexagonal-agents): name the eval datasets
+- Name the eval datasets
 
 ## [1.6.1] - 2026-10-17
 
 ### Changed
 
-- docs(hexagonal-agents): list_empty_state asserts the seed arrived
-
-### Fixed
-
-- fix(hexagonal-agents): carry eval seed state in case inputs
+- Carry eval seed state in case inputs
 
 ## [1.6.0] - 2026-10-17
 
@@ -34,11 +30,11 @@ All notable changes to the hexagonal-agents plugin. Format follows [Keep a Chang
 
 ### Changed
 
-- hexagonal-agents: build the eval task function on the real Agent SDK API
-- hexagonal-agents: serialize eval runs over the shared DATA_FILE and count cached tokens
+- Hexagonal-agents: build the eval task function on the real Agent SDK API
+- Hexagonal-agents: serialize eval runs over the shared DATA_FILE and count cached tokens
 
 ## [1.5.0] - 2026-10-17
 
 ### Added
 
-- First version tracked in this repository.
+- Initial release.

@@ -12,17 +12,13 @@ All notable changes to the compound-knowledge plugin. Format follows [Keep a Cha
 
 ### Changed
 
-- test(compound-knowledge): detect corpus readers beyond path="{write_path}" (#157)
-
-### Removed
-
-- test(compound-knowledge): unit-test the corpus-reader detector, drop redundant verbs (#157)
+- Maintenance release.
 
 ## [0.10.1] - 2026-10-17
 
 ### Changed
 
-- test(compound-knowledge): every corpus reader must skip _archive/ (#141)
+- Maintenance release.
 
 ## [0.10.0] - 2026-10-17
 
@@ -46,11 +42,11 @@ All notable changes to the compound-knowledge plugin. Format follows [Keep a Cha
 
 ### Changed
 
-- compound-knowledge: make the solution schema and the captured corpus agree (#73)
-- compound-retrieve: ship fixture KBs with the evals so they measure the skill (#116)
+- Compound-knowledge: make the solution schema and the captured corpus agree (#73)
+- Compound-retrieve: ship fixture KBs with the evals so they measure the skill (#116)
 
 ## [0.8.7] - 2026-10-17
 
 ### Added
 
-- First version tracked in this repository.
+- Initial release.

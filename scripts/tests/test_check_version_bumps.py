@@ -145,3 +145,36 @@ def test_bump_without_a_changelog_entry_fails_until_one_is_added(tmp_path, capsy
     _commit(tmp_path, "0.9.0", "feature.md", "feature, with entry")
     assert cvb.main(["--base", "main"], root=tmp_path) == 0
     assert "and a changelog entry" in capsys.readouterr().out
+
+
+def test_changelog_only_edit_counts_as_a_shipped_change(tmp_path, capsys):
+    """AC-2.4: CHANGELOG.md is shipped content, so editing it alone still needs a bump."""
+    _git(tmp_path, "init", "-q", "-b", "main")
+    _git(tmp_path, "config", "user.email", "t@example.com")
+    _git(tmp_path, "config", "user.name", "t")
+    _commit(tmp_path, "0.8.1", "base.md", "base")
+    _git(tmp_path, "checkout", "-q", "-b", "feature")
+    changelog = tmp_path / "plugins" / "a" / "CHANGELOG.md"
+    changelog.write_text(changelog.read_text() + "\nA note.\n")
+    _git(tmp_path, "commit", "-qam", "edit the changelog only")
+
+    assert cvb.main(["--base", "main"], root=tmp_path) == 1
+    assert "a: changed since main, at 0.8.1, needs more than 0.8.1" in capsys.readouterr().out
+
+
+def test_plugin_new_on_the_branch_still_needs_its_changelog_entry(tmp_path, capsys):
+    """AC-2.3: a new plugin skips the bump rule but not the changelog rule."""
+    _git(tmp_path, "init", "-q", "-b", "main")
+    _git(tmp_path, "config", "user.email", "t@example.com")
+    _git(tmp_path, "config", "user.name", "t")
+    (tmp_path / "README.md").write_text("base")
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-q", "-m", "base")
+    _git(tmp_path, "checkout", "-q", "-b", "feature")
+    _commit(tmp_path, "0.1.0", "skill.md", "new plugin", changelog=False)
+
+    assert cvb.main(["--base", "main"], root=tmp_path) == 1
+    assert "a: no CHANGELOG.md" in capsys.readouterr().out
+
+    _commit(tmp_path, "0.1.0", "skill.md", "new plugin, with entry")
+    assert cvb.main(["--base", "main"], root=tmp_path) == 0

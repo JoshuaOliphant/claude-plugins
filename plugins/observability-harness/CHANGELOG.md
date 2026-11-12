@@ -10,12 +10,12 @@ All notable changes to the observability-harness plugin. Format follows [Keep a 
 
 ## [0.3.1] - 2026-11-06
 
-### Fixed
+### Changed
 
-- fix(observability-harness): verify.sh stage 2 no longer dies on an unbound variable (#203)
+- Verify.sh stage 2 no longer dies on an unbound variable (#203)
 
 ## [0.3.0] - 2026-10-17
 
 ### Added
 
-- First version tracked in this repository.
+- Initial release.

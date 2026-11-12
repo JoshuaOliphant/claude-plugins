@@ -18,4 +18,4 @@ All notable changes to the understand plugin. Format follows [Keep a Changelog](
 
 ### Added
 
-- First version tracked in this repository.
+- Initial release.
